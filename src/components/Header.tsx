@@ -1,20 +1,21 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, ShoppingCart, MapPin, Clock, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-
 interface HeaderProps {
   cartItems: number;
   onCartClick: () => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
 }
-
-const Header = ({ cartItems, onCartClick, searchQuery, onSearchChange }: HeaderProps) => {
-  return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b shadow-sm">
+const Header = ({
+  cartItems,
+  onCartClick,
+  searchQuery,
+  onSearchChange
+}: HeaderProps) => {
+  return <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -29,9 +30,7 @@ const Header = ({ cartItems, onCartClick, searchQuery, onSearchChange }: HeaderP
 
           {/* Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
-            <Link to="/categories" className="text-gray-600 hover:text-green-600 transition-colors">
-              Categories
-            </Link>
+            
           </nav>
 
           {/* Location */}
@@ -45,13 +44,7 @@ const Header = ({ cartItems, onCartClick, searchQuery, onSearchChange }: HeaderP
           <div className="flex-1 max-w-lg mx-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                type="text"
-                placeholder="Search for groceries, fruits, vegetables..."
-                value={searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
-                className="pl-10 w-full"
-              />
+              <Input type="text" placeholder="Search for groceries, fruits, vegetables..." value={searchQuery} onChange={e => onSearchChange(e.target.value)} className="pl-10 w-full" />
             </div>
           </div>
 
@@ -69,30 +62,25 @@ const Header = ({ cartItems, onCartClick, searchQuery, onSearchChange }: HeaderP
             </Link>
             
             <Link to="/cart">
-              <Button 
-                variant="outline" 
-                className="relative hover:bg-green-50 border-green-200"
-              >
+              <Button variant="outline" className="relative hover:bg-green-50 border-green-200">
                 <ShoppingCart className="h-4 w-4" />
-                {cartItems > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                {cartItems > 0 && <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                     {cartItems}
-                  </span>
-                )}
+                  </span>}
               </Button>
             </Link>
           </div>
         </div>
       </div>
-    </header>
-  );
+    </header>;
 };
 
 // Fix missing import
-const Package = ({ className }: { className?: string }) => (
-  <svg className={className} fill="currentColor" viewBox="0 0 20 20">
+const Package = ({
+  className
+}: {
+  className?: string;
+}) => <svg className={className} fill="currentColor" viewBox="0 0 20 20">
     <path d="M10 2L3 7v10l7 5 7-5V7l-7-5z" />
-  </svg>
-);
-
+  </svg>;
 export default Header;
