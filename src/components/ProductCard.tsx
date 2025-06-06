@@ -24,19 +24,19 @@ interface ProductCardProps {
 
 const ProductCard = ({ product, onAddToCart, cartQuantity, onUpdateQuantity }: ProductCardProps) => {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group">
+    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group">
       <div className="relative overflow-hidden">
         <img
           src={product.image}
           alt={product.name}
-          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300 rounded-t-2xl"
         />
         {product.discount && (
-          <Badge className="absolute top-2 left-2 bg-red-500 hover:bg-red-500">
+          <Badge className="absolute top-2 left-2 bg-red-500 hover:bg-red-500 rounded-full">
             {product.discount}% OFF
           </Badge>
         )}
-        <div className="absolute top-2 right-2 bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
+        <div className="absolute top-2 right-2 bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium">
           {product.deliveryTime}
         </div>
       </div>
@@ -61,7 +61,7 @@ const ProductCard = ({ product, onAddToCart, cartQuantity, onUpdateQuantity }: P
         {cartQuantity === 0 ? (
           <Button
             onClick={() => onAddToCart(product)}
-            className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-0"
+            className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-0 rounded-xl"
             size="sm"
           >
             ADD
@@ -72,7 +72,7 @@ const ProductCard = ({ product, onAddToCart, cartQuantity, onUpdateQuantity }: P
               onClick={() => onUpdateQuantity(product.id, cartQuantity - 1)}
               variant="outline"
               size="sm"
-              className="w-8 h-8 p-0 border-green-200 text-green-600 hover:bg-green-50"
+              className="w-8 h-8 p-0 border-green-200 text-green-600 hover:bg-green-50 rounded-full"
             >
               -
             </Button>
@@ -81,7 +81,7 @@ const ProductCard = ({ product, onAddToCart, cartQuantity, onUpdateQuantity }: P
               onClick={() => onUpdateQuantity(product.id, cartQuantity + 1)}
               variant="outline"
               size="sm"
-              className="w-8 h-8 p-0 border-green-200 text-green-600 hover:bg-green-50"
+              className="w-8 h-8 p-0 border-green-200 text-green-600 hover:bg-green-50 rounded-full"
             >
               +
             </Button>

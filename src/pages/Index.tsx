@@ -1,9 +1,9 @@
-
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Header from '../components/Header';
 import CategoryGrid from '../components/CategoryGrid';
 import ProductCard, { Product } from '../components/ProductCard';
 import Cart from '../components/Cart';
+import LocationDetectionPopup from '../components/LocationDetectionPopup';
 import { Button } from '@/components/ui/button';
 import { Clock, Truck, Package } from 'lucide-react';
 
@@ -100,6 +100,22 @@ const Index = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [showLocationPopup, setShowLocationPopup] = useState(false);
+  const [userLocation, setUserLocation] = useState<string>('');
+
+  // Show location popup on first visit
+  useEffect(() => {
+    const hasSeenLocationPopup = localStorage.getItem('esygrab_location_popup_seen');
+    if (!hasSeenLocationPopup) {
+      setShowLocationPopup(true);
+    }
+  }, []);
+
+  const handleLocationSet = (location: string) => {
+    setUserLocation(location);
+    localStorage.setItem('esygrab_user_location', location);
+    localStorage.setItem('esygrab_location_popup_seen', 'true');
+  };
 
   // Filter products based on search and category
   const filteredProducts = useMemo(() => {
@@ -171,7 +187,7 @@ const Index = () => {
               </span>
             </h1>
             <p className="text-xl md:text-2xl text-green-100 mb-8">
-              Fresh groceries & essentials delivered to your doorstep
+              Fresh groceries & essentials delivered to your doorstep with EsyGrab
             </p>
             
             <div className="flex flex-wrap justify-center gap-6 mb-8">
@@ -235,7 +251,7 @@ const Index = () => {
         {/* Features Section */}
         <div className="py-16 bg-white rounded-2xl mb-8 shadow-sm">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Why Choose QuickMart?</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Why Choose EsyGrab?</h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
               Experience the fastest grocery delivery with fresh quality products
             </p>
@@ -275,6 +291,12 @@ const Index = () => {
         items={cartItems}
         onUpdateQuantity={updateQuantity}
         onRemoveItem={removeFromCart}
+      />
+
+      <LocationDetectionPopup
+        isOpen={showLocationPopup}
+        onClose={() => setShowLocationPopup(false)}
+        onLocationSet={handleLocationSet}
       />
     </div>
   );
