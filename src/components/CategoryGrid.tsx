@@ -1,5 +1,5 @@
-
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const categories = [
   { id: 1, name: 'Fruits & Vegetables', image: 'https://images.unsplash.com/photo-1518843875459-f738682238a6?w=200&h=200&fit=crop&crop=center', color: 'from-green-400 to-emerald-500' },
@@ -17,12 +17,20 @@ interface CategoryGridProps {
 const CategoryGrid = ({ onCategorySelect }: CategoryGridProps) => {
   return (
     <div className="py-8">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Shop by Category</h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold text-gray-900">Shop by Category</h2>
+        <Link 
+          to="/categories" 
+          className="text-green-600 hover:text-green-700 font-medium"
+        >
+          View All
+        </Link>
+      </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {categories.map((category) => (
-          <div
+          <Link
             key={category.id}
-            onClick={() => onCategorySelect(category.id)}
+            to={`/categories/${category.id}`}
             className="group cursor-pointer transform transition-all duration-300 hover:scale-105"
           >
             <div className={`bg-gradient-to-br ${category.color} rounded-2xl p-6 text-center shadow-lg hover:shadow-xl transition-all duration-300`}>
@@ -37,7 +45,7 @@ const CategoryGrid = ({ onCategorySelect }: CategoryGridProps) => {
                 {category.name}
               </h3>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>

@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
-import { Search, ShoppingCart, MapPin, Clock } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Search, ShoppingCart, MapPin, Clock, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -17,14 +18,21 @@ const Header = ({ cartItems, onCartClick, searchQuery, onSearchChange }: HeaderP
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <div className="flex items-center space-x-2">
+          <Link to="/" className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
               <Package className="h-5 w-5 text-white" />
             </div>
             <h1 className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-              QuickMart
+              EsyGrab
             </h1>
-          </div>
+          </Link>
+
+          {/* Navigation */}
+          <nav className="hidden md:flex items-center space-x-6">
+            <Link to="/categories" className="text-gray-600 hover:text-green-600 transition-colors">
+              Categories
+            </Link>
+          </nav>
 
           {/* Location */}
           <div className="hidden md:flex items-center space-x-2 text-sm text-gray-600">
@@ -47,25 +55,32 @@ const Header = ({ cartItems, onCartClick, searchQuery, onSearchChange }: HeaderP
             </div>
           </div>
 
-          {/* Delivery Time & Cart */}
+          {/* Right side actions */}
           <div className="flex items-center space-x-4">
             <div className="hidden md:flex items-center space-x-1 text-sm text-green-600">
               <Clock className="h-4 w-4" />
               <span className="font-medium">10 mins</span>
             </div>
             
-            <Button 
-              variant="outline" 
-              onClick={onCartClick}
-              className="relative hover:bg-green-50 border-green-200"
-            >
-              <ShoppingCart className="h-4 w-4" />
-              {cartItems > 0 && (
-                <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {cartItems}
-                </span>
-              )}
-            </Button>
+            <Link to="/profile">
+              <Button variant="outline" className="hover:bg-green-50 border-green-200">
+                <User className="h-4 w-4" />
+              </Button>
+            </Link>
+            
+            <Link to="/cart">
+              <Button 
+                variant="outline" 
+                className="relative hover:bg-green-50 border-green-200"
+              >
+                <ShoppingCart className="h-4 w-4" />
+                {cartItems > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {cartItems}
+                  </span>
+                )}
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
