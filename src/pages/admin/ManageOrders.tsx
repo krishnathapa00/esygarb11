@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Search, Filter, Eye, TruckDelivery } from 'lucide-react';
+import { Search, Filter, Eye, Truck } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -122,7 +122,7 @@ const ManageOrders = () => {
                       </Button>
                       {(order.status === 'Confirmed' || order.status === 'Pending') && (
                         <Button variant="ghost" size="sm" className="text-green-600 hover:text-green-800 hover:bg-green-50">
-                          <TruckDelivery className="h-4 w-4 mr-1" />
+                          <Truck className="h-4 w-4 mr-1" />
                           Assign
                         </Button>
                       )}
