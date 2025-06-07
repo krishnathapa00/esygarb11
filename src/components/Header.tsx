@@ -4,6 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Search, ShoppingCart, MapPin, Clock, User, Home, Grid3X3, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import LocationDetectionPopup from './LocationDetectionPopup';
 
 interface HeaderProps {
   cartItems: number;
@@ -19,7 +20,22 @@ const Header = ({
   onSearchChange
 }: HeaderProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showLocationPopup, setShowLocationPopup] = useState(false);
+  const [userLocation, setUserLocation] = useState(() => {
+    const saved = localStorage.getItem('esygrab_user_location');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return parsed.address || 'Current Location';
+    }
+    return 'Set Location';
+  });
   const location = useLocation();
+
+  const handleLocationSet = (location: string) => {
+    setUserLocation(location);
+    localStorage.setItem('esygrab_user_location', JSON.stringify({ address: location }));
+    setShowLocationPopup(false);
+  };
 
   const MobileNavButton = ({ to, icon: Icon, label, isActive }: { to: string; icon: any; label: string; isActive: boolean }) => (
     <Link 
@@ -49,10 +65,18 @@ const Header = ({
             </Link>
 
             {/* Location - Hidden on mobile */}
-            <div className="hidden md:flex items-center space-x-3 text-sm text-gray-600 ml-6">
-              <MapPin className="h-4 w-4" />
-              <span>Deliver to</span>
-              <span className="font-medium text-gray-900">Home - 110001</span>
+            <div className="hidden md:flex items-center space-x-4 text-sm text-gray-600 ml-8">
+              <Button
+                variant="ghost"
+                onClick={() => setShowLocationPopup(true)}
+                className="flex items-center space-x-2 hover:bg-green-50"
+              >
+                <MapPin className="h-4 w-4 text-green-600" />
+                <div className="text-left">
+                  <span className="text-xs text-gray-500 block">Deliver to</span>
+                  <span className="font-medium text-gray-900 text-sm">{userLocation}</span>
+                </div>
+              </Button>
             </div>
 
             {/* Search Bar */}
@@ -108,7 +132,14 @@ const Header = ({
         </div>
       </header>
 
-      {/* Mobile Bottom Navigation */}
+      {/* Location Detection Popup */}
+      <LocationDetectionPopup
+        isOpen={showLocationPopup}
+        onClose={() => setShowLocationPopup(false)}
+        onLocationSet={handleLocationSet}
+      />
+
+      {/* Mobile Bottom Navigation - Only visible on mobile */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t shadow-lg">
         <div className="flex justify-around items-center py-2 px-4">
           <MobileNavButton 
