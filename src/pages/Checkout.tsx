@@ -20,10 +20,31 @@ const Checkout = () => {
   });
 
   useEffect(() => {
+    // Auto-fill from profile data (simulated - in real app this would come from database/context)
+    const profileData = {
+      fullName: 'John Doe',
+      phone: '+1 555-123-4567'
+    };
+    
+    setFormData(prev => ({
+      ...prev,
+      fullName: profileData.fullName,
+      phone: profileData.phone
+    }));
+
     // Auto-fill location from previous detection
     const savedLocation = localStorage.getItem('esygrab_user_location');
     if (savedLocation && savedLocation !== 'Current Location Detected') {
-      setFormData(prev => ({ ...prev, address: savedLocation }));
+      const savedLocationData = JSON.parse(savedLocation || '{}');
+      if (savedLocationData.address) {
+        setFormData(prev => ({
+          ...prev,
+          address: savedLocationData.address,
+          city: savedLocationData.city || '',
+          state: savedLocationData.state || '',
+          pincode: savedLocationData.pincode || ''
+        }));
+      }
     }
   }, []);
 
@@ -34,30 +55,35 @@ const Checkout = () => {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           try {
-            // Using reverse geocoding to get address
-            const response = await fetch(
-              `https://api.opencagedata.com/geocode/v1/json?q=${position.coords.latitude}+${position.coords.longitude}&key=YOUR_API_KEY`
-            );
+            // Simulate a successful geocoding response
+            const locationData = {
+              address: '123 Main Street, Downtown Area',
+              city: 'New York',
+              state: 'NY',
+              pincode: '10001',
+              formatted: '123 Main Street, Downtown Area, New York, NY 10001'
+            };
+
+            setFormData(prev => ({
+              ...prev,
+              address: locationData.address,
+              city: locationData.city,
+              state: locationData.state,
+              pincode: locationData.pincode
+            }));
+
+            // Save to localStorage
+            localStorage.setItem('esygrab_user_location', JSON.stringify(locationData));
             
-            if (response.ok) {
-              const data = await response.json();
-              const result = data.results[0];
-              if (result) {
-                setFormData(prev => ({
-                  ...prev,
-                  address: result.formatted || 'Location detected',
-                  city: result.components.city || result.components.town || '',
-                  state: result.components.state || '',
-                  pincode: result.components.postcode || ''
-                }));
-              }
-            } else {
-              // Fallback
-              setFormData(prev => ({ ...prev, address: 'Current location detected' }));
-            }
           } catch (error) {
             console.log('Using fallback location');
-            setFormData(prev => ({ ...prev, address: 'Current location detected' }));
+            const fallbackData = {
+              address: 'Current location detected',
+              city: 'Unknown',
+              state: 'Unknown',
+              pincode: ''
+            };
+            setFormData(prev => ({ ...prev, ...fallbackData }));
           }
           setIsDetectingLocation(false);
         },
@@ -77,7 +103,7 @@ const Checkout = () => {
   };
   
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
       <Header
         cartItems={3}
         onCartClick={() => {}}
@@ -98,7 +124,7 @@ const Checkout = () => {
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             {/* Delivery Address */}
-            <div className="bg-white rounded-lg p-6 shadow-sm">
+            <div className="bg-white rounded-lg p-4 md:p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-2">
                   <MapPin className="h-5 w-5 text-green-600" />
@@ -125,8 +151,8 @@ const Checkout = () => {
                 </Button>
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
                   <Label htmlFor="fullName">Full Name</Label>
                   <Input 
                     id="fullName" 
@@ -153,7 +179,7 @@ const Checkout = () => {
                     onChange={(e) => handleInputChange('pincode', e.target.value)}
                   />
                 </div>
-                <div className="col-span-2">
+                <div className="md:col-span-2">
                   <Label htmlFor="address">Complete Address</Label>
                   <Input 
                     id="address" 
@@ -184,7 +210,7 @@ const Checkout = () => {
             </div>
 
             {/* Payment Method */}
-            <div className="bg-white rounded-lg p-6 shadow-sm">
+            <div className="bg-white rounded-lg p-4 md:p-6 shadow-sm">
               <div className="flex items-center space-x-2 mb-4">
                 <CreditCard className="h-5 w-5 text-green-600" />
                 <h3 className="text-lg font-semibold">Payment Method</h3>
@@ -210,7 +236,7 @@ const Checkout = () => {
           </div>
 
           {/* Order Summary */}
-          <div className="bg-white rounded-lg p-6 shadow-sm h-fit">
+          <div className="bg-white rounded-lg p-4 md:p-6 shadow-sm h-fit">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h3>
             
             <div className="space-y-3 mb-4">
