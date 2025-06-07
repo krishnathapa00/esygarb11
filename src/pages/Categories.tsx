@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../components/Header';
 import { ArrowLeft } from 'lucide-react';
@@ -15,13 +15,16 @@ const categories = [
 ];
 
 const Categories = () => {
+  const [cartItems, setCartItems] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
       <Header
-        cartItems={0}
+        cartItems={cartItems}
         onCartClick={() => {}}
-        searchQuery=""
-        onSearchChange={() => {}}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
       />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">

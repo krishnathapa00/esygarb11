@@ -50,6 +50,10 @@ const sampleProducts: Product[] = [
 const SubCategories = () => {
   const { categoryId } = useParams();
   const [selectedSubCategory, setSelectedSubCategory] = useState<number | null>(null);
+  const [cartItems, setCartItems] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [cart, setCart] = useState<Record<number, number>>({});
+  
   const categorySubCategories = subCategories[Number(categoryId) as keyof typeof subCategories] || [];
   
   const categoryNames = {
@@ -60,13 +64,38 @@ const SubCategories = () => {
   
   const categoryName = categoryNames[Number(categoryId) as keyof typeof categoryNames] || 'Category';
 
+  const handleAddToCart = (product: Product) => {
+    setCart(prev => ({
+      ...prev,
+      [product.id]: (prev[product.id] || 0) + 1
+    }));
+    setCartItems(prev => prev + 1);
+  };
+
+  const handleUpdateQuantity = (productId: number, quantity: number) => {
+    setCart(prev => {
+      const newCart = { ...prev };
+      const currentQty = newCart[productId] || 0;
+      const diff = quantity - currentQty;
+      
+      if (quantity <= 0) {
+        delete newCart[productId];
+      } else {
+        newCart[productId] = quantity;
+      }
+      
+      setCartItems(prevTotal => prevTotal + diff);
+      return newCart;
+    });
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
       <Header
-        cartItems={0}
+        cartItems={cartItems}
         onCartClick={() => {}}
-        searchQuery=""
-        onSearchChange={() => {}}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
       />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -129,9 +158,9 @@ const SubCategories = () => {
                 <ProductCard
                   key={product.id}
                   product={product}
-                  onAddToCart={() => {}}
-                  cartQuantity={0}
-                  onUpdateQuantity={() => {}}
+                  onAddToCart={handleAddToCart}
+                  cartQuantity={cart[product.id] || 0}
+                  onUpdateQuantity={handleUpdateQuantity}
                 />
               ))}
             </div>

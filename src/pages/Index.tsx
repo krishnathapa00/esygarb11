@@ -2,10 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import CategoryGrid from '../components/CategoryGrid';
-import ProductCard from '../components/ProductCard';
+import ProductSection from '../components/ProductSection';
 import LocationDetectionPopup from '../components/LocationDetectionPopup';
 import BannerCarousel from '../components/BannerCarousel';
 import Footer from '../components/Footer';
+import { Product } from '../components/ProductCard';
 
 const Index = () => {
   const [cartItems, setCartItems] = useState(0);
@@ -26,7 +27,7 @@ const Index = () => {
     setShowLocationPopup(false);
   };
 
-  const handleAddToCart = (product: any) => {
+  const handleAddToCart = (product: Product) => {
     setCart(prev => ({
       ...prev,
       [product.id]: (prev[product.id] || 0) + 1
@@ -53,11 +54,10 @@ const Index = () => {
 
   const handleCategorySelect = (categoryId: number) => {
     console.log('Category selected:', categoryId);
-    // Navigate to category page or filter products
   };
 
-  // Sample products data - updated to match ProductCard interface
-  const featuredProducts = [
+  // Products organized by category
+  const fruitProducts: Product[] = [
     {
       id: 1,
       name: "Fresh Bananas",
@@ -101,7 +101,10 @@ const Index = () => {
       discount: 20,
       deliveryTime: "10 mins",
       category: "Fruits"
-    },
+    }
+  ];
+
+  const vegetableProducts: Product[] = [
     {
       id: 5,
       name: "Green Cabbage",
@@ -123,7 +126,10 @@ const Index = () => {
       discount: 18,
       deliveryTime: "10 mins",
       category: "Vegetables"
-    },
+    }
+  ];
+
+  const dairyProducts: Product[] = [
     {
       id: 7,
       name: "Fresh Milk",
@@ -172,26 +178,30 @@ const Index = () => {
           <CategoryGrid onCategorySelect={handleCategorySelect} />
         </section>
 
-        {/* Featured Products */}
-        <section className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-bold text-gray-900">Featured Products</h3>
-            <button className="text-green-600 hover:text-green-700 font-medium text-sm">
-              View All
-            </button>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
-            {featuredProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onAddToCart={handleAddToCart}
-                cartQuantity={cart[product.id] || 0}
-                onUpdateQuantity={handleUpdateQuantity}
-              />
-            ))}
-          </div>
-        </section>
+        {/* Products by Category */}
+        <ProductSection
+          title="Fresh Fruits"
+          products={fruitProducts}
+          onAddToCart={handleAddToCart}
+          cart={cart}
+          onUpdateQuantity={handleUpdateQuantity}
+        />
+
+        <ProductSection
+          title="Fresh Vegetables"
+          products={vegetableProducts}
+          onAddToCart={handleAddToCart}
+          cart={cart}
+          onUpdateQuantity={handleUpdateQuantity}
+        />
+
+        <ProductSection
+          title="Dairy & Eggs"
+          products={dairyProducts}
+          onAddToCart={handleAddToCart}
+          cart={cart}
+          onUpdateQuantity={handleUpdateQuantity}
+        />
       </main>
 
       {/* Footer - Desktop Only */}
