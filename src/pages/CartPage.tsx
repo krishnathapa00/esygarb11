@@ -1,12 +1,72 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../components/Header';
-import { ArrowLeft, Truck, Clock } from 'lucide-react';
+import { ArrowLeft, Truck, Clock, MapPin, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const CartPage = () => {
+  const [userInfo, setUserInfo] = useState({
+    name: '',
+    phone: '',
+    deliveryLocation: ''
+  });
+
+  // Load user info from localStorage
+  useEffect(() => {
+    // Get user profile info
+    const savedProfile = localStorage.getItem('esygrab_user_profile');
+    const savedLocation = localStorage.getItem('esygrab_user_location');
+    
+    if (savedProfile) {
+      try {
+        const profile = JSON.parse(savedProfile);
+        setUserInfo(prev => ({
+          ...prev,
+          name: profile.name || 'John Doe',
+          phone: profile.phone || '+1 555-123-4567'
+        }));
+      } catch (error) {
+        console.error('Error parsing profile:', error);
+        setUserInfo(prev => ({
+          ...prev,
+          name: 'John Doe',
+          phone: '+1 555-123-4567'
+        }));
+      }
+    } else {
+      setUserInfo(prev => ({
+        ...prev,
+        name: 'John Doe',
+        phone: '+1 555-123-4567'
+      }));
+    }
+
+    if (savedLocation) {
+      try {
+        const location = JSON.parse(savedLocation);
+        setUserInfo(prev => ({
+          ...prev,
+          deliveryLocation: location.address || 'Current Location'
+        }));
+      } catch (error) {
+        console.error('Error parsing location:', error);
+        setUserInfo(prev => ({
+          ...prev,
+          deliveryLocation: 'Set delivery location'
+        }));
+      }
+    } else {
+      setUserInfo(prev => ({
+        ...prev,
+        deliveryLocation: 'Set delivery location'
+      }));
+    }
+  }, []);
+
   // Mock cart data
   const cartItems = [
     {
@@ -33,7 +93,7 @@ const CartPage = () => {
   const finalTotal = totalPrice + deliveryFee;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
       <Header
         cartItems={totalItems}
         onCartClick={() => {}}
@@ -96,6 +156,51 @@ const CartPage = () => {
                 </div>
               </div>
             ))}
+
+            {/* Delivery Information */}
+            <div className="bg-white rounded-lg p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <User className="h-5 w-5 mr-2 text-green-600" />
+                Delivery Information
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="name">Full Name</Label>
+                  <Input 
+                    id="name" 
+                    value={userInfo.name}
+                    onChange={(e) => setUserInfo({...userInfo, name: e.target.value})}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <Input 
+                    id="phone" 
+                    value={userInfo.phone}
+                    onChange={(e) => setUserInfo({...userInfo, phone: e.target.value})}
+                    className="mt-1"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="address">Delivery Address</Label>
+                  <div className="flex space-x-2 mt-1">
+                    <Input 
+                      id="address"
+                      value={userInfo.deliveryLocation}
+                      onChange={(e) => setUserInfo({...userInfo, deliveryLocation: e.target.value})}
+                      className="flex-1"
+                    />
+                    <Link to="/map-location">
+                      <Button variant="outline" size="sm" className="px-3">
+                        <MapPin className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Order Summary */}

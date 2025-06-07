@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../components/Header';
 import { ArrowLeft, User, MapPin } from 'lucide-react';
@@ -34,8 +34,31 @@ const UserProfile = () => {
     ],
   });
 
+  // Load profile from localStorage on component mount
+  useEffect(() => {
+    const savedProfile = localStorage.getItem('esygrab_user_profile');
+    if (savedProfile) {
+      try {
+        const parsed = JSON.parse(savedProfile);
+        setProfile(prev => ({ ...prev, ...parsed }));
+      } catch (error) {
+        console.error('Error parsing saved profile:', error);
+      }
+    }
+  }, []);
+
+  const handleUpdateProfile = () => {
+    // Save profile to localStorage
+    localStorage.setItem('esygrab_user_profile', JSON.stringify({
+      name: profile.name,
+      phone: profile.phone,
+      email: profile.email
+    }));
+    alert('Profile updated successfully!');
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
       <Header
         cartItems={0}
         onCartClick={() => {}}
@@ -90,7 +113,10 @@ const UserProfile = () => {
             </div>
             
             <div className="mt-4">
-              <Button className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700">
+              <Button 
+                onClick={handleUpdateProfile}
+                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+              >
                 Update Profile
               </Button>
             </div>
@@ -103,9 +129,11 @@ const UserProfile = () => {
                 <MapPin className="h-5 w-5 text-green-600" />
                 <h3 className="text-lg font-semibold">My Addresses</h3>
               </div>
-              <Button variant="outline" size="sm">
-                Add New Address
-              </Button>
+              <Link to="/map-location">
+                <Button variant="outline" size="sm">
+                  Add New Address
+                </Button>
+              </Link>
             </div>
             
             <div className="space-y-4">

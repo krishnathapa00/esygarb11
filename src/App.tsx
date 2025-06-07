@@ -1,9 +1,6 @@
-
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Toaster } from "@/components/ui/sonner";
 import Index from "./pages/Index";
 import Categories from "./pages/Categories";
 import SubCategories from "./pages/SubCategories";
@@ -12,57 +9,47 @@ import CartPage from "./pages/CartPage";
 import Checkout from "./pages/Checkout";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import OrderTracking from "./pages/OrderTracking";
-import UserProfile from "./pages/UserProfile";
 import OrderHistory from "./pages/OrderHistory";
+import UserProfile from "./pages/UserProfile";
 import LoginSignup from "./pages/LoginSignup";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import ManageProducts from "./pages/admin/ManageProducts";
-import ManageOrders from "./pages/admin/ManageOrders";
-import AssignDelivery from "./pages/admin/AssignDelivery";
-import ManageUsers from "./pages/admin/ManageUsers";
-import Transactions from "./pages/admin/Transactions";
-import AdminLogin from "./pages/admin/AdminLogin";
-import DeliveryList from "./pages/admin/DeliveryList";
-import AssignOrder from "./pages/admin/AssignOrder";
 import NotFound from "./pages/NotFound";
+import MapLocation from "./pages/MapLocation";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminProducts from "./pages/AdminProducts";
+import AdminOrders from "./pages/AdminOrders";
+import AdminUsers from "./pages/AdminUsers";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/categories" element={<Categories />} />
-          <Route path="/categories/:categoryId" element={<SubCategories />} />
-          <Route path="/product/:productId" element={<ProductDetails />} />
-          <Route path="/cart" element={<CartPage />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/order-confirmation" element={<OrderConfirmation />} />
-          <Route path="/order-tracking/:orderId" element={<OrderTracking />} />
-          <Route path="/profile" element={<UserProfile />} />
-          <Route path="/order-history" element={<OrderHistory />} />
-          <Route path="/login" element={<LoginSignup />} />
-          
-          {/* Admin Routes */}
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/products" element={<ManageProducts />} />
-          <Route path="/admin/orders" element={<ManageOrders />} />
-          <Route path="/admin/assign-delivery" element={<AssignDelivery />} />
-          <Route path="/admin/users" element={<ManageUsers />} />
-          <Route path="/admin/transactions" element={<Transactions />} />
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin/delivery-list" element={<DeliveryList />} />
-          <Route path="/admin/assign-order/:orderId" element={<AssignOrder />} />
-          
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Router>
+        <div className="min-h-screen bg-background">
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/categories" element={<Categories />} />
+            <Route path="/categories/:category" element={<SubCategories />} />
+            <Route path="/product/:id" element={<ProductDetails />} />
+            <Route path="/cart" element={<CartPage />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/order-confirmation" element={<OrderConfirmation />} />
+            <Route path="/order-tracking/:id" element={<OrderTracking />} />
+            <Route path="/order-history" element={<OrderHistory />} />
+            <Route path="/profile" element={<UserProfile />} />
+            <Route path="/login" element={<LoginSignup />} />
+            <Route path="/map-location" element={<MapLocation />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/products" element={<AdminProducts />} />
+            <Route path="/admin/orders" element={<AdminOrders />} />
+            <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <Toaster />
+        </div>
+      </Router>
+    </QueryClientProvider>
+  );
+}
 
 export default App;
