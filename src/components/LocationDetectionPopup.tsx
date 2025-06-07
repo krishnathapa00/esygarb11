@@ -23,25 +23,55 @@ const LocationDetectionPopup = ({ isOpen, onClose, onLocationSet }: LocationDete
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           try {
-            // Using a reverse geocoding service (you can replace with your preferred service)
+            console.log('Location detected:', position.coords.latitude, position.coords.longitude);
+            
+            // Using OpenStreetMap Nominatim API for reverse geocoding (free alternative)
             const response = await fetch(
-              `https://api.opencagedata.com/geocode/v1/json?q=${position.coords.latitude}+${position.coords.longitude}&key=YOUR_API_KEY`
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}&zoom=18&addressdetails=1`
             );
             
             if (response.ok) {
               const data = await response.json();
-              const location = data.results[0]?.formatted || 'Location detected';
-              setDetectedLocation(location);
-              onLocationSet(location);
+              console.log('Geocoding response:', data);
+              
+              // Extract meaningful address components
+              const address = data.address || {};
+              const locationParts = [];
+              
+              if (address.house_number && address.road) {
+                locationParts.push(`${address.house_number} ${address.road}`);
+              } else if (address.road) {
+                locationParts.push(address.road);
+              }
+              
+              if (address.neighbourhood || address.suburb) {
+                locationParts.push(address.neighbourhood || address.suburb);
+              }
+              
+              if (address.city || address.town || address.village) {
+                locationParts.push(address.city || address.town || address.village);
+              }
+              
+              if (address.state) {
+                locationParts.push(address.state);
+              }
+              
+              const formattedLocation = locationParts.length > 0 
+                ? locationParts.join(', ')
+                : data.display_name || 'Location detected successfully';
+              
+              console.log('Formatted location:', formattedLocation);
+              setDetectedLocation(formattedLocation);
+              onLocationSet(formattedLocation);
             } else {
-              // Fallback to a generic location
-              const fallbackLocation = 'Current Location Detected';
+              console.log('Geocoding failed, using coordinates');
+              const fallbackLocation = `Lat: ${position.coords.latitude.toFixed(4)}, Lng: ${position.coords.longitude.toFixed(4)}`;
               setDetectedLocation(fallbackLocation);
               onLocationSet(fallbackLocation);
             }
           } catch (error) {
-            console.log('Using fallback location detection');
-            const fallbackLocation = 'Current Location Detected';
+            console.error('Geocoding error:', error);
+            const fallbackLocation = `Lat: ${position.coords.latitude.toFixed(4)}, Lng: ${position.coords.longitude.toFixed(4)}`;
             setDetectedLocation(fallbackLocation);
             onLocationSet(fallbackLocation);
           }
@@ -51,12 +81,26 @@ const LocationDetectionPopup = ({ isOpen, onClose, onLocationSet }: LocationDete
         (error) => {
           console.error('Geolocation error:', error);
           setIsDetecting(false);
-          // Don't close popup, let user enter manually
+          
+          let errorMessage = 'Location access denied';
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage = 'Location access denied. Please enable location services.';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = 'Location information unavailable.';
+              break;
+            case error.TIMEOUT:
+              errorMessage = 'Location request timed out.';
+              break;
+          }
+          
+          alert(errorMessage);
         }
       );
     } else {
       setIsDetecting(false);
-      console.log('Geolocation not supported');
+      alert('Geolocation is not supported by this browser.');
     }
   };
 
