@@ -27,14 +27,14 @@ const Categories = () => {
         onSearchChange={setSearchQuery}
       />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex items-center mb-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="flex items-center mb-4">
           <Link to="/">
             <Button variant="ghost" size="sm" className="mr-3">
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900">All Categories</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900">All Categories</h1>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">

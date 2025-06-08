@@ -63,8 +63,8 @@ const Header = ({
               </h1>
             </Link>
 
-            {/* Location - Hidden on mobile */}
-            <div className="hidden md:flex items-center space-x-4 text-sm text-gray-600 ml-8">
+            {/* Location - Desktop */}
+            <div className="hidden md:flex items-center space-x-4 text-sm text-gray-600 ml-8 flex-1">
               <Button
                 variant="ghost"
                 onClick={() => setShowLocationPopup(true)}
@@ -76,20 +76,6 @@ const Header = ({
                   <span className="font-medium text-gray-900 text-sm">{userLocation}</span>
                 </div>
               </Button>
-            </div>
-
-            {/* Search Bar - Bigger on mobile */}
-            <div className="flex-1 max-w-lg mx-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input 
-                  type="text" 
-                  placeholder="Search for groceries, fruits, vegetables..." 
-                  value={searchQuery} 
-                  onChange={e => onSearchChange(e.target.value)} 
-                  className="pl-10 w-full h-10 md:h-9" 
-                />
-              </div>
             </div>
 
             {/* Right side actions - Desktop only */}
@@ -127,6 +113,22 @@ const Header = ({
               >
                 <MapPin className="h-5 w-5 text-green-600" />
               </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Search Bar Section - Below Header */}
+        <div className="bg-white border-t border-gray-100">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Input 
+                type="text" 
+                placeholder="Search for groceries, fruits, vegetables..." 
+                value={searchQuery} 
+                onChange={e => onSearchChange(e.target.value)} 
+                className="pl-12 w-full h-12 text-base rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-green-500 transition-all duration-200" 
+              />
             </div>
           </div>
         </div>
