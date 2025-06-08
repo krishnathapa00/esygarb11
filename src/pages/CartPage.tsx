@@ -12,6 +12,7 @@ const CartPage = () => {
   const navigate = useNavigate();
   const [deliveryLocation, setDeliveryLocation] = useState('Set delivery location');
   const [isDetecting, setIsDetecting] = useState(false);
+  const [buttonClicked, setButtonClicked] = useState<'auto' | 'manual' | null>(null);
 
   // Load delivery location from localStorage
   useEffect(() => {
@@ -19,12 +20,12 @@ const CartPage = () => {
       const savedLocation = localStorage.getItem('esygrab_user_location');
       if (savedLocation && savedLocation !== 'null' && savedLocation !== 'undefined') {
         try {
-          const location = JSON.parse(savedLocation);
-          if (location && typeof location === 'object') {
-            setDeliveryLocation(location.address || 'Set delivery location');
+          const parsedLocation = JSON.parse(savedLocation);
+          if (parsedLocation && typeof parsedLocation === 'object' && parsedLocation.address) {
+            setDeliveryLocation(parsedLocation.address);
           }
-        } catch (error) {
-          console.error('Error parsing location:', error);
+        } catch (parseError) {
+          console.error('Error parsing saved location:', parseError);
           localStorage.removeItem('esygrab_user_location');
           setDeliveryLocation('Set delivery location');
         }
@@ -36,7 +37,11 @@ const CartPage = () => {
   }, []);
 
   const handleAutoDetect = () => {
+    setButtonClicked('auto');
     setIsDetecting(true);
+    
+    // Reset button color after 200ms
+    setTimeout(() => setButtonClicked(null), 200);
     
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
@@ -134,6 +139,9 @@ const CartPage = () => {
   };
 
   const handleSetManually = () => {
+    setButtonClicked('manual');
+    // Reset button color after 200ms
+    setTimeout(() => setButtonClicked(null), 200);
     navigate('/map-location');
   };
 
@@ -251,7 +259,11 @@ const CartPage = () => {
                     onClick={handleAutoDetect}
                     disabled={isDetecting}
                     variant="outline"
-                    className="flex-1"
+                    className={`flex-1 transition-colors ${
+                      buttonClicked === 'auto' 
+                        ? 'bg-green-500 text-white border-green-500' 
+                        : 'hover:bg-green-50 hover:border-green-300'
+                    }`}
                   >
                     {isDetecting ? (
                       <>
@@ -269,7 +281,11 @@ const CartPage = () => {
                   <Button
                     onClick={handleSetManually}
                     variant="outline"
-                    className="flex-1"
+                    className={`flex-1 transition-colors ${
+                      buttonClicked === 'manual' 
+                        ? 'bg-green-500 text-white border-green-500' 
+                        : 'hover:bg-green-50 hover:border-green-300'
+                    }`}
                   >
                     Set Manually
                   </Button>
