@@ -1,8 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { MapPin, Loader2 } from 'lucide-react';
 
 interface LocationDetectionPopupProps {
@@ -12,9 +12,8 @@ interface LocationDetectionPopupProps {
 }
 
 const LocationDetectionPopup = ({ isOpen, onClose, onLocationSet }: LocationDetectionPopupProps) => {
+  const navigate = useNavigate();
   const [isDetecting, setIsDetecting] = useState(false);
-  const [manualLocation, setManualLocation] = useState('');
-  const [detectedLocation, setDetectedLocation] = useState('');
 
   const detectLocation = () => {
     setIsDetecting(true);
@@ -61,18 +60,15 @@ const LocationDetectionPopup = ({ isOpen, onClose, onLocationSet }: LocationDete
                 : data.display_name || 'Location detected successfully';
               
               console.log('Formatted location:', formattedLocation);
-              setDetectedLocation(formattedLocation);
               onLocationSet(formattedLocation);
             } else {
               console.log('Geocoding failed, using coordinates');
               const fallbackLocation = `Lat: ${position.coords.latitude.toFixed(4)}, Lng: ${position.coords.longitude.toFixed(4)}`;
-              setDetectedLocation(fallbackLocation);
               onLocationSet(fallbackLocation);
             }
           } catch (error) {
             console.error('Geocoding error:', error);
             const fallbackLocation = `Lat: ${position.coords.latitude.toFixed(4)}, Lng: ${position.coords.longitude.toFixed(4)}`;
-            setDetectedLocation(fallbackLocation);
             onLocationSet(fallbackLocation);
           }
           setIsDetecting(false);
@@ -104,11 +100,9 @@ const LocationDetectionPopup = ({ isOpen, onClose, onLocationSet }: LocationDete
     }
   };
 
-  const handleManualSubmit = () => {
-    if (manualLocation.trim()) {
-      onLocationSet(manualLocation);
-      onClose();
-    }
+  const handleSetManually = () => {
+    onClose();
+    navigate('/map-location');
   };
 
   return (
@@ -124,7 +118,7 @@ const LocationDetectionPopup = ({ isOpen, onClose, onLocationSet }: LocationDete
           <div className="text-center">
             <MapPin className="h-12 w-12 text-green-600 mx-auto mb-3" />
             <p className="text-gray-600">
-              To provide you with the best delivery experience, please allow us to detect your location or enter it manually.
+              To provide you with the best delivery experience, please set your location.
             </p>
           </div>
 
@@ -142,36 +136,18 @@ const LocationDetectionPopup = ({ isOpen, onClose, onLocationSet }: LocationDete
               ) : (
                 <>
                   <MapPin className="h-4 w-4 mr-2" />
-                  Auto-Detect Location
+                  Auto Detect
                 </>
               )}
             </Button>
 
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-gray-500">or</span>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <Input
-                placeholder="Enter your area/city manually"
-                value={manualLocation}
-                onChange={(e) => setManualLocation(e.target.value)}
-                className="rounded-xl"
-              />
-              <Button
-                onClick={handleManualSubmit}
-                variant="outline"
-                className="w-full rounded-xl"
-                disabled={!manualLocation.trim()}
-              >
-                Set Location
-              </Button>
-            </div>
+            <Button
+              onClick={handleSetManually}
+              variant="outline"
+              className="w-full rounded-xl"
+            >
+              Set Manually
+            </Button>
           </div>
         </div>
       </DialogContent>

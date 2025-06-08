@@ -1,88 +1,141 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
-import { ArrowLeft, Truck, Clock, MapPin, User } from 'lucide-react';
+import { ArrowLeft, Truck, Clock, MapPin, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 const CartPage = () => {
-  const [userInfo, setUserInfo] = useState({
-    name: '',
-    phone: '',
-    deliveryLocation: ''
-  });
+  const navigate = useNavigate();
+  const [deliveryLocation, setDeliveryLocation] = useState('Set delivery location');
+  const [isDetecting, setIsDetecting] = useState(false);
 
-  // Load user info from localStorage with proper error handling
+  // Load delivery location from localStorage
   useEffect(() => {
     try {
-      // Get user profile info
-      const savedProfile = localStorage.getItem('esygrab_user_profile');
       const savedLocation = localStorage.getItem('esygrab_user_location');
-      
-      if (savedProfile && savedProfile !== 'null' && savedProfile !== 'undefined') {
-        try {
-          const profile = JSON.parse(savedProfile);
-          if (profile && typeof profile === 'object') {
-            setUserInfo(prev => ({
-              ...prev,
-              name: profile.name || 'John Doe',
-              phone: profile.phone || '+1 555-123-4567'
-            }));
-          }
-        } catch (error) {
-          console.error('Error parsing profile:', error);
-          // Clear corrupted data
-          localStorage.removeItem('esygrab_user_profile');
-          setUserInfo(prev => ({
-            ...prev,
-            name: 'John Doe',
-            phone: '+1 555-123-4567'
-          }));
-        }
-      } else {
-        setUserInfo(prev => ({
-          ...prev,
-          name: 'John Doe',
-          phone: '+1 555-123-4567'
-        }));
-      }
-
       if (savedLocation && savedLocation !== 'null' && savedLocation !== 'undefined') {
         try {
           const location = JSON.parse(savedLocation);
           if (location && typeof location === 'object') {
-            setUserInfo(prev => ({
-              ...prev,
-              deliveryLocation: location.address || 'Set delivery location'
-            }));
+            setDeliveryLocation(location.address || 'Set delivery location');
           }
         } catch (error) {
           console.error('Error parsing location:', error);
-          // Clear corrupted data
           localStorage.removeItem('esygrab_user_location');
-          setUserInfo(prev => ({
-            ...prev,
-            deliveryLocation: 'Set delivery location'
-          }));
+          setDeliveryLocation('Set delivery location');
         }
-      } else {
-        setUserInfo(prev => ({
-          ...prev,
-          deliveryLocation: 'Set delivery location'
-        }));
       }
     } catch (error) {
-      console.error('Error loading user info:', error);
-      setUserInfo({
-        name: 'John Doe',
-        phone: '+1 555-123-4567',
-        deliveryLocation: 'Set delivery location'
-      });
+      console.error('Error loading location:', error);
+      setDeliveryLocation('Set delivery location');
     }
   }, []);
+
+  const handleAutoDetect = () => {
+    setIsDetecting(true);
+    
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            console.log('Location detected:', position.coords.latitude, position.coords.longitude);
+            
+            // Using OpenStreetMap Nominatim API for reverse geocoding
+            const response = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}&zoom=18&addressdetails=1`
+            );
+            
+            if (response.ok) {
+              const data = await response.json();
+              console.log('Geocoding response:', data);
+              
+              // Extract meaningful address components
+              const address = data.address || {};
+              const locationParts = [];
+              
+              if (address.house_number && address.road) {
+                locationParts.push(`${address.house_number} ${address.road}`);
+              } else if (address.road) {
+                locationParts.push(address.road);
+              }
+              
+              if (address.neighbourhood || address.suburb) {
+                locationParts.push(address.neighbourhood || address.suburb);
+              }
+              
+              if (address.city || address.town || address.village) {
+                locationParts.push(address.city || address.town || address.village);
+              }
+              
+              if (address.state) {
+                locationParts.push(address.state);
+              }
+              
+              const formattedLocation = locationParts.length > 0 
+                ? locationParts.join(', ')
+                : data.display_name || 'Location detected successfully';
+              
+              console.log('Formatted location:', formattedLocation);
+              setDeliveryLocation(formattedLocation);
+              
+              // Save to localStorage
+              localStorage.setItem('esygrab_user_location', JSON.stringify({
+                address: formattedLocation,
+                coordinates: { lat: position.coords.latitude, lng: position.coords.longitude }
+              }));
+            } else {
+              console.log('Geocoding failed, using coordinates');
+              const fallbackLocation = `Lat: ${position.coords.latitude.toFixed(4)}, Lng: ${position.coords.longitude.toFixed(4)}`;
+              setDeliveryLocation(fallbackLocation);
+              localStorage.setItem('esygrab_user_location', JSON.stringify({
+                address: fallbackLocation,
+                coordinates: { lat: position.coords.latitude, lng: position.coords.longitude }
+              }));
+            }
+          } catch (error) {
+            console.error('Geocoding error:', error);
+            const fallbackLocation = `Lat: ${position.coords.latitude.toFixed(4)}, Lng: ${position.coords.longitude.toFixed(4)}`;
+            setDeliveryLocation(fallbackLocation);
+            localStorage.setItem('esygrab_user_location', JSON.stringify({
+              address: fallbackLocation,
+              coordinates: { lat: position.coords.latitude, lng: position.coords.longitude }
+            }));
+          }
+          setIsDetecting(false);
+        },
+        (error) => {
+          console.error('Geolocation error:', error);
+          setIsDetecting(false);
+          
+          let errorMessage = 'Location access denied';
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage = 'Location access denied. Please enable location services.';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = 'Location information unavailable.';
+              break;
+            case error.TIMEOUT:
+              errorMessage = 'Location request timed out.';
+              break;
+          }
+          
+          alert(errorMessage);
+        }
+      );
+    } else {
+      setIsDetecting(false);
+      alert('Geolocation is not supported by this browser.');
+    }
+  };
+
+  const handleSetManually = () => {
+    navigate('/map-location');
+  };
 
   // Mock cart data
   const cartItems = [
@@ -174,47 +227,52 @@ const CartPage = () => {
               </div>
             ))}
 
-            {/* Delivery Information */}
+            {/* Delivery Location Selection */}
             <div className="bg-white rounded-lg p-6 shadow-sm">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <User className="h-5 w-5 mr-2 text-green-600" />
-                Delivery Information
+                <MapPin className="h-5 w-5 mr-2 text-green-600" />
+                Delivery Location
               </h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <div>
-                  <Label htmlFor="name">Full Name</Label>
+                  <Label htmlFor="address">Current Location</Label>
                   <Input 
-                    id="name" 
-                    value={userInfo.name}
-                    onChange={(e) => setUserInfo({...userInfo, name: e.target.value})}
+                    id="address"
+                    value={deliveryLocation}
+                    onChange={(e) => setDeliveryLocation(e.target.value)}
                     className="mt-1"
+                    placeholder="Enter delivery address"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input 
-                    id="phone" 
-                    value={userInfo.phone}
-                    onChange={(e) => setUserInfo({...userInfo, phone: e.target.value})}
-                    className="mt-1"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <Label htmlFor="address">Delivery Address</Label>
-                  <div className="flex space-x-2 mt-1">
-                    <Input 
-                      id="address"
-                      value={userInfo.deliveryLocation}
-                      onChange={(e) => setUserInfo({...userInfo, deliveryLocation: e.target.value})}
-                      className="flex-1"
-                    />
-                    <Link to="/map-location">
-                      <Button variant="outline" size="sm" className="px-3">
-                        <MapPin className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                  </div>
+                
+                <div className="flex space-x-3">
+                  <Button
+                    onClick={handleAutoDetect}
+                    disabled={isDetecting}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    {isDetecting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Detecting...
+                      </>
+                    ) : (
+                      <>
+                        <MapPin className="h-4 w-4 mr-2" />
+                        Auto Detect
+                      </>
+                    )}
+                  </Button>
+                  
+                  <Button
+                    onClick={handleSetManually}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    Set Manually
+                  </Button>
                 </div>
               </div>
             </div>

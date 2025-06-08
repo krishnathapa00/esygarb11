@@ -108,14 +108,14 @@ const SubCategories = () => {
           <h1 className="text-2xl font-bold text-gray-900">{categoryName}</h1>
         </div>
 
-        <div className="flex gap-6">
-          {/* Sidebar */}
-          <div className="w-64 bg-white rounded-lg shadow-sm p-4">
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Sidebar - Hidden on mobile, shown as horizontal scroll on tablet, sidebar on desktop */}
+          <div className="lg:w-64 bg-white rounded-lg shadow-sm p-4">
             <h3 className="font-semibold text-gray-900 mb-4">Sub Categories</h3>
-            <div className="space-y-2">
+            <div className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-x-visible">
               <button
                 onClick={() => setSelectedSubCategory(null)}
-                className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                className={`whitespace-nowrap lg:w-full text-left px-3 py-2 rounded-lg transition-colors ${
                   selectedSubCategory === null 
                     ? 'bg-green-100 text-green-700 font-medium' 
                     : 'hover:bg-gray-100'
@@ -127,7 +127,7 @@ const SubCategories = () => {
                 <button
                   key={subCategory.id}
                   onClick={() => setSelectedSubCategory(subCategory.id)}
-                  className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                  className={`whitespace-nowrap lg:w-full text-left px-3 py-2 rounded-lg transition-colors ${
                     selectedSubCategory === subCategory.id 
                       ? 'bg-green-100 text-green-700 font-medium' 
                       : 'hover:bg-gray-100'
@@ -135,7 +135,7 @@ const SubCategories = () => {
                 >
                   <div className="flex justify-between items-center">
                     <span>{subCategory.name}</span>
-                    <span className="text-sm text-gray-500">({subCategory.productCount})</span>
+                    <span className="text-sm text-gray-500 hidden lg:inline">({subCategory.productCount})</span>
                   </div>
                 </button>
               ))}
@@ -153,6 +153,7 @@ const SubCategories = () => {
               </h2>
             </div>
             
+            {/* Mobile: 2 columns, Tablet: 3 columns, Desktop: 4 columns */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {sampleProducts.map((product) => (
                 <ProductCard
