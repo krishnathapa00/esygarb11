@@ -34,27 +34,41 @@ const UserProfile = () => {
     ],
   });
 
-  // Load profile from localStorage on component mount
+  // Load profile from localStorage on component mount with proper error handling
   useEffect(() => {
-    const savedProfile = localStorage.getItem('esygrab_user_profile');
-    if (savedProfile) {
-      try {
-        const parsed = JSON.parse(savedProfile);
-        setProfile(prev => ({ ...prev, ...parsed }));
-      } catch (error) {
-        console.error('Error parsing saved profile:', error);
+    try {
+      const savedProfile = localStorage.getItem('esygrab_user_profile');
+      if (savedProfile && savedProfile !== 'null' && savedProfile !== 'undefined') {
+        try {
+          const parsed = JSON.parse(savedProfile);
+          if (parsed && typeof parsed === 'object') {
+            setProfile(prev => ({ ...prev, ...parsed }));
+          }
+        } catch (error) {
+          console.error('Error parsing saved profile:', error);
+          // Clear corrupted data
+          localStorage.removeItem('esygrab_user_profile');
+        }
       }
+    } catch (error) {
+      console.error('Error loading profile:', error);
     }
   }, []);
 
   const handleUpdateProfile = () => {
-    // Save profile to localStorage
-    localStorage.setItem('esygrab_user_profile', JSON.stringify({
-      name: profile.name,
-      phone: profile.phone,
-      email: profile.email
-    }));
-    alert('Profile updated successfully!');
+    try {
+      // Save profile to localStorage
+      const profileData = {
+        name: profile.name,
+        phone: profile.phone,
+        email: profile.email
+      };
+      localStorage.setItem('esygrab_user_profile', JSON.stringify(profileData));
+      alert('Profile updated successfully!');
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      alert('Error updating profile. Please try again.');
+    }
   };
 
   return (

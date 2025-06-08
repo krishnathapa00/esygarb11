@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
@@ -14,10 +15,6 @@ import UserProfile from "./pages/UserProfile";
 import LoginSignup from "./pages/LoginSignup";
 import NotFound from "./pages/NotFound";
 import MapLocation from "./pages/MapLocation";
-import AdminDashboard from "./pages/AdminDashboard";
-import AdminProducts from "./pages/AdminProducts";
-import AdminOrders from "./pages/AdminOrders";
-import AdminUsers from "./pages/AdminUsers";
 
 const queryClient = new QueryClient();
 
@@ -39,10 +36,6 @@ function App() {
             <Route path="/profile" element={<UserProfile />} />
             <Route path="/login" element={<LoginSignup />} />
             <Route path="/map-location" element={<MapLocation />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/products" element={<AdminProducts />} />
-            <Route path="/admin/orders" element={<AdminOrders />} />
-            <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Toaster />

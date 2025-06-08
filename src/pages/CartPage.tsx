@@ -15,55 +15,72 @@ const CartPage = () => {
     deliveryLocation: ''
   });
 
-  // Load user info from localStorage
+  // Load user info from localStorage with proper error handling
   useEffect(() => {
-    // Get user profile info
-    const savedProfile = localStorage.getItem('esygrab_user_profile');
-    const savedLocation = localStorage.getItem('esygrab_user_location');
-    
-    if (savedProfile) {
-      try {
-        const profile = JSON.parse(savedProfile);
-        setUserInfo(prev => ({
-          ...prev,
-          name: profile.name || 'John Doe',
-          phone: profile.phone || '+1 555-123-4567'
-        }));
-      } catch (error) {
-        console.error('Error parsing profile:', error);
+    try {
+      // Get user profile info
+      const savedProfile = localStorage.getItem('esygrab_user_profile');
+      const savedLocation = localStorage.getItem('esygrab_user_location');
+      
+      if (savedProfile && savedProfile !== 'null' && savedProfile !== 'undefined') {
+        try {
+          const profile = JSON.parse(savedProfile);
+          if (profile && typeof profile === 'object') {
+            setUserInfo(prev => ({
+              ...prev,
+              name: profile.name || 'John Doe',
+              phone: profile.phone || '+1 555-123-4567'
+            }));
+          }
+        } catch (error) {
+          console.error('Error parsing profile:', error);
+          // Clear corrupted data
+          localStorage.removeItem('esygrab_user_profile');
+          setUserInfo(prev => ({
+            ...prev,
+            name: 'John Doe',
+            phone: '+1 555-123-4567'
+          }));
+        }
+      } else {
         setUserInfo(prev => ({
           ...prev,
           name: 'John Doe',
           phone: '+1 555-123-4567'
         }));
       }
-    } else {
-      setUserInfo(prev => ({
-        ...prev,
-        name: 'John Doe',
-        phone: '+1 555-123-4567'
-      }));
-    }
 
-    if (savedLocation) {
-      try {
-        const location = JSON.parse(savedLocation);
-        setUserInfo(prev => ({
-          ...prev,
-          deliveryLocation: location.address || 'Current Location'
-        }));
-      } catch (error) {
-        console.error('Error parsing location:', error);
+      if (savedLocation && savedLocation !== 'null' && savedLocation !== 'undefined') {
+        try {
+          const location = JSON.parse(savedLocation);
+          if (location && typeof location === 'object') {
+            setUserInfo(prev => ({
+              ...prev,
+              deliveryLocation: location.address || 'Set delivery location'
+            }));
+          }
+        } catch (error) {
+          console.error('Error parsing location:', error);
+          // Clear corrupted data
+          localStorage.removeItem('esygrab_user_location');
+          setUserInfo(prev => ({
+            ...prev,
+            deliveryLocation: 'Set delivery location'
+          }));
+        }
+      } else {
         setUserInfo(prev => ({
           ...prev,
           deliveryLocation: 'Set delivery location'
         }));
       }
-    } else {
-      setUserInfo(prev => ({
-        ...prev,
+    } catch (error) {
+      console.error('Error loading user info:', error);
+      setUserInfo({
+        name: 'John Doe',
+        phone: '+1 555-123-4567',
         deliveryLocation: 'Set delivery location'
-      }));
+      });
     }
   }, []);
 
