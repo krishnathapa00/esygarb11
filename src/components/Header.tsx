@@ -31,7 +31,18 @@ const Header = ({
   const location = useLocation();
 
   const handleLocationSet = (location: string) => {
-    setUserLocation(location);
+    // Simplify location display - show main area and add "..."
+    let simplifiedLocation = location;
+    if (location.length > 25) {
+      const parts = location.split(',');
+      if (parts.length > 1) {
+        simplifiedLocation = parts[0].trim() + '...';
+      } else {
+        simplifiedLocation = location.substring(0, 22) + '...';
+      }
+    }
+    
+    setUserLocation(simplifiedLocation);
     localStorage.setItem('esygrab_user_location', JSON.stringify({ address: location }));
     setShowLocationPopup(false);
   };

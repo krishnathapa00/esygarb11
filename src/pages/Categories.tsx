@@ -14,7 +14,7 @@ const categories = [
   { id: 6, name: 'Baby Care', image: 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=400&h=400&fit=crop', color: 'from-yellow-400 to-orange-500', productCount: 95 },
 ];
 
-const Categories = () => {
+const AllCategories = () => {
   const [cartItems, setCartItems] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -34,7 +34,7 @@ const Categories = () => {
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900">All Categories</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900">Shop by Category</h1>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -67,4 +67,4 @@ const Categories = () => {
   );
 };
 
-export default Categories;
+export default AllCategories;

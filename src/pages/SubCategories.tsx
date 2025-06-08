@@ -48,7 +48,7 @@ const sampleProducts: Product[] = [
   },
 ];
 
-const SubCategories = () => {
+const CategoryProducts = () => {
   const { categoryId } = useParams();
   const [selectedSubCategory, setSelectedSubCategory] = useState<number | null>(null);
   const [cartItems, setCartItems] = useState(0);
@@ -93,41 +93,45 @@ const SubCategories = () => {
   };
 
   const SidebarContent = () => (
-    <div className="bg-white rounded-lg shadow-sm p-4 h-fit">
-      <h3 className="font-semibold text-gray-900 mb-4">Categories</h3>
-      <div className="space-y-2">
-        <button
-          onClick={() => {
-            setSelectedSubCategory(null);
-            if (isMobile) setIsSidebarOpen(false);
-          }}
-          className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-            selectedSubCategory === null 
-              ? 'bg-green-100 text-green-700 font-medium' 
-              : 'hover:bg-gray-100 text-gray-700'
-          }`}
-        >
-          All Products
-        </button>
-        {categorySubCategories.map((subCategory) => (
+    <div className="bg-white h-full">
+      <div className="p-4 border-b">
+        <h3 className="font-semibold text-gray-900">Categories</h3>
+      </div>
+      <div className="p-4">
+        <div className="space-y-1">
           <button
-            key={subCategory.id}
             onClick={() => {
-              setSelectedSubCategory(subCategory.id);
+              setSelectedSubCategory(null);
               if (isMobile) setIsSidebarOpen(false);
             }}
-            className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
-              selectedSubCategory === subCategory.id 
+            className={`w-full text-left px-3 py-3 rounded-lg transition-colors text-sm ${
+              selectedSubCategory === null 
                 ? 'bg-green-100 text-green-700 font-medium' 
-                : 'hover:bg-gray-100 text-gray-700'
+                : 'hover:bg-gray-50 text-gray-700'
             }`}
           >
-            <div className="flex justify-between items-center">
-              <span>{subCategory.name}</span>
-              <span className="text-sm text-gray-500">({subCategory.productCount})</span>
-            </div>
+            All Products
           </button>
-        ))}
+          {categorySubCategories.map((subCategory) => (
+            <button
+              key={subCategory.id}
+              onClick={() => {
+                setSelectedSubCategory(subCategory.id);
+                if (isMobile) setIsSidebarOpen(false);
+              }}
+              className={`w-full text-left px-3 py-3 rounded-lg transition-colors text-sm ${
+                selectedSubCategory === subCategory.id 
+                  ? 'bg-green-100 text-green-700 font-medium' 
+                  : 'hover:bg-gray-50 text-gray-700'
+              }`}
+            >
+              <div className="flex justify-between items-center">
+                <span>{subCategory.name}</span>
+                <span className="text-xs text-gray-500">({subCategory.productCount})</span>
+              </div>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -141,71 +145,78 @@ const SubCategories = () => {
         onSearchChange={setSearchQuery}
       />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="flex items-center mb-4">
-          <Link to="/categories">
-            <Button variant="ghost" size="sm" className="mr-3">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900 flex-1">{categoryName}</h1>
-          
-          {/* Mobile Filter Button */}
-          {isMobile && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsSidebarOpen(true)}
-              className="ml-auto"
-            >
-              <Menu className="h-4 w-4" />
-            </Button>
-          )}
+      {/* Mobile Filter Overlay */}
+      {isMobile && isSidebarOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="fixed inset-0 bg-black/50" onClick={() => setIsSidebarOpen(false)} />
+          <div className="fixed left-0 top-0 h-full w-80 bg-white shadow-xl z-50">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-lg font-semibold">Filters</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsSidebarOpen(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <SidebarContent />
+          </div>
+        </div>
+      )}
+
+      <div className="max-w-7xl mx-auto">
+        {/* Header Section */}
+        <div className="bg-white border-b">
+          <div className="px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Link to="/categories">
+                  <Button variant="ghost" size="sm" className="mr-2 p-2">
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                </Link>
+                <h1 className="text-lg md:text-xl font-semibold text-gray-900">{categoryName}</h1>
+              </div>
+              
+              {/* Mobile Filter Button */}
+              {isMobile && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Menu className="h-4 w-4" />
+                  <span className="text-xs">Filter</span>
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
 
-        <div className="flex gap-4 md:gap-6">
+        <div className="flex">
           {/* Desktop Sidebar */}
           {!isMobile && (
-            <div className="w-64 flex-shrink-0">
+            <div className="w-64 flex-shrink-0 border-r bg-white">
               <SidebarContent />
             </div>
           )}
 
-          {/* Mobile Sidebar Overlay */}
-          {isMobile && isSidebarOpen && (
-            <div className="fixed inset-0 z-50 lg:hidden">
-              <div className="fixed inset-0 bg-black/50" onClick={() => setIsSidebarOpen(false)} />
-              <div className="fixed left-0 top-0 h-full w-80 bg-white shadow-xl">
-                <div className="flex items-center justify-between p-4 border-b">
-                  <h2 className="text-lg font-semibold">Filters</h2>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsSidebarOpen(false)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="p-4">
-                  <SidebarContent />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Products Grid */}
-          <div className="flex-1 min-w-0">
+          {/* Products Section */}
+          <div className="flex-1 p-4">
             <div className="mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">
+              <h2 className="text-base font-medium text-gray-900">
                 {selectedSubCategory 
                   ? categorySubCategories.find(sub => sub.id === selectedSubCategory)?.name 
                   : 'All Products'
                 }
               </h2>
+              <p className="text-sm text-gray-500 mt-1">{sampleProducts.length} products</p>
             </div>
             
-            {/* Products Grid - Always 2 columns on mobile */}
-            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+            {/* Products Grid - Zepto style */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
               {sampleProducts.map((product) => (
                 <ProductCard
                   key={product.id}
@@ -223,4 +234,4 @@ const SubCategories = () => {
   );
 };
 
-export default SubCategories;
+export default CategoryProducts;
