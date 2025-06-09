@@ -21,10 +21,20 @@ const Header = ({
 }: HeaderProps) => {
   const [showLocationPopup, setShowLocationPopup] = useState(false);
   const [userLocation, setUserLocation] = useState(() => {
-    const saved = localStorage.getItem('esygrab_user_location');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      return parsed.address || 'Current Location';
+    try {
+      const saved = localStorage.getItem('esygrab_user_location');
+      if (saved && saved !== 'null' && saved !== 'undefined') {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object' && parsed.address) {
+          return parsed.address.length > 25 
+            ? parsed.address.split(',')[0].trim() + '...' 
+            : parsed.address;
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing location data:', error);
+      // Clear corrupted data
+      localStorage.removeItem('esygrab_user_location');
     }
     return 'Set Location';
   });
@@ -43,7 +53,11 @@ const Header = ({
     }
     
     setUserLocation(simplifiedLocation);
-    localStorage.setItem('esygrab_user_location', JSON.stringify({ address: location }));
+    try {
+      localStorage.setItem('esygrab_user_location', JSON.stringify({ address: location }));
+    } catch (error) {
+      console.error('Error saving location:', error);
+    }
     setShowLocationPopup(false);
   };
 
@@ -127,23 +141,23 @@ const Header = ({
             </div>
           </div>
         </div>
+      </header>
 
-        {/* Search Bar Section - Below Header */}
-        <div className="bg-white border-t border-gray-100">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <Input 
-                type="text" 
-                placeholder="Search for groceries, fruits, vegetables..." 
-                value={searchQuery} 
-                onChange={e => onSearchChange(e.target.value)} 
-                className="pl-12 w-full h-12 text-base rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-green-500 transition-all duration-200" 
-              />
-            </div>
+      {/* Search Bar Section - Below Header */}
+      <div className="sticky top-16 z-40 bg-white border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <Input 
+              type="text" 
+              placeholder="Search for groceries, fruits, vegetables..." 
+              value={searchQuery} 
+              onChange={e => onSearchChange(e.target.value)} 
+              className="pl-12 w-full h-12 text-base rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-green-500 transition-all duration-200" 
+            />
           </div>
         </div>
-      </header>
+      </div>
 
       {/* Location Detection Popup */}
       <LocationDetectionPopup
