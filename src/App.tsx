@@ -14,6 +14,8 @@ import OrderTracking from "./pages/OrderTracking";
 import OrderHistory from "./pages/OrderHistory";
 import UserProfile from "./pages/UserProfile";
 import LoginSignup from "./pages/LoginSignup";
+import DeliveryPartnerAuth from "./pages/DeliveryPartnerAuth";
+import DeliveryDashboard from "./pages/DeliveryDashboard";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import ManageProducts from "./pages/admin/ManageProducts";
@@ -33,26 +35,31 @@ function App() {
         <Router>
           <div className="min-h-screen bg-background">
             <Routes>
+              {/* Customer Routes */}
               <Route path="/" element={<Index />} />
               <Route path="/categories" element={<AllCategories />} />
               <Route path="/categories/:categoryId" element={<CategoryProducts />} />
               <Route path="/product/:id" element={<ProductDetails />} />
-              <Route path="/cart" element={<CartPage />} />
+              <Route path="/shopping-cart" element={<CartPage />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/order-confirmation" element={<OrderConfirmation />} />
-              <Route path="/order-tracking/:id" element={<OrderTracking />} />
+              <Route path="/track-order/:id" element={<OrderTracking />} />
               <Route path="/order-history" element={<OrderHistory />} />
-              <Route path="/profile" element={<UserProfile />} />
-              <Route path="/login" element={<LoginSignup />} />
-              <Route path="/map-location" element={<MapLocation />} />
+              <Route path="/my-profile" element={<UserProfile />} />
+              <Route path="/customer-login" element={<LoginSignup />} />
+              <Route path="/delivery-location" element={<MapLocation />} />
+              
+              {/* Delivery Partner Routes */}
+              <Route path="/delivery-partner" element={<DeliveryPartnerAuth />} />
+              <Route path="/delivery-dashboard" element={<DeliveryDashboard />} />
               
               {/* Admin Routes */}
-              <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/admin" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
-              <Route path="/admin/products" element={<AdminLayout><ManageProducts /></AdminLayout>} />
-              <Route path="/admin/orders" element={<AdminLayout><ManageOrders /></AdminLayout>} />
-              <Route path="/admin/users" element={<AdminLayout><ManageUsers /></AdminLayout>} />
-              <Route path="/admin/transactions" element={<AdminLayout><Transactions /></AdminLayout>} />
+              <Route path="/admin-login" element={<AdminLogin />} />
+              <Route path="/admin-dashboard" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
+              <Route path="/admin-products" element={<AdminLayout><ManageProducts /></AdminLayout>} />
+              <Route path="/admin-orders" element={<AdminLayout><ManageOrders /></AdminLayout>} />
+              <Route path="/admin-users" element={<AdminLayout><ManageUsers /></AdminLayout>} />
+              <Route path="/admin-transactions" element={<AdminLayout><Transactions /></AdminLayout>} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>
