@@ -8,7 +8,6 @@ import BannerCarousel from '../components/BannerCarousel';
 import Footer from '../components/Footer';
 import { useProducts } from '../hooks/useProducts';
 import { useAuth } from '../contexts/AuthContext';
-import { Product } from '../components/ProductCard';
 
 const Index = () => {
   const [cartItems, setCartItems] = useState(0);
@@ -32,7 +31,7 @@ const Index = () => {
     setShowLocationPopup(false);
   };
 
-  const handleAddToCart = (product: Product) => {
+  const handleAddToCart = (product: any) => {
     setCart(prev => ({
       ...prev,
       [product.id]: (prev[product.id] || 0) + 1

@@ -10,7 +10,7 @@ export interface Product {
   originalPrice?: number;
   discount?: number;
   image: string;
-  weight?: string;
+  weight: string; // Made required to match ProductCard interface
   deliveryTime: string;
   category: string;
   stockQuantity?: number;
@@ -37,11 +37,11 @@ export const useProducts = () => {
         id: product.id,
         name: product.name,
         description: product.description,
-        price: parseFloat(product.price),
-        originalPrice: product.original_price ? parseFloat(product.original_price) : undefined,
+        price: product.price, // Already a number from database
+        originalPrice: product.original_price || undefined,
         discount: product.discount,
         image: product.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&h=300&fit=crop',
-        weight: product.weight,
+        weight: product.weight || '1 unit', // Provide default if null
         deliveryTime: product.delivery_time || '10-15 mins',
         category: product.categories?.name || 'Unknown',
         stockQuantity: product.stock_quantity,
@@ -72,11 +72,11 @@ export const useProductsByCategory = (categoryId: number) => {
         id: product.id,
         name: product.name,
         description: product.description,
-        price: parseFloat(product.price),
-        originalPrice: product.original_price ? parseFloat(product.original_price) : undefined,
+        price: product.price, // Already a number from database
+        originalPrice: product.original_price || undefined,
         discount: product.discount,
         image: product.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&h=300&fit=crop',
-        weight: product.weight,
+        weight: product.weight || '1 unit', // Provide default if null
         deliveryTime: product.delivery_time || '10-15 mins',
         category: product.categories?.name || 'Unknown',
         stockQuantity: product.stock_quantity,
