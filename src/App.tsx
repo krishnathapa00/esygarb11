@@ -2,6 +2,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
+import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import AllCategories from "./pages/Categories";
 import CategoryProducts from "./pages/SubCategories";
@@ -13,34 +14,52 @@ import OrderTracking from "./pages/OrderTracking";
 import OrderHistory from "./pages/OrderHistory";
 import UserProfile from "./pages/UserProfile";
 import LoginSignup from "./pages/LoginSignup";
+import AdminLogin from "./pages/admin/AdminLogin";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import ManageProducts from "./pages/admin/ManageProducts";
+import ManageOrders from "./pages/admin/ManageOrders";
+import ManageUsers from "./pages/admin/ManageUsers";
+import Transactions from "./pages/admin/Transactions";
 import NotFound from "./pages/NotFound";
 import MapLocation from "./pages/MapLocation";
+import AdminLayout from "./pages/admin/components/AdminLayout";
 
 const queryClient = new QueryClient();
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
-        <div className="min-h-screen bg-background">
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/categories" element={<AllCategories />} />
-            <Route path="/categories/:categoryId" element={<CategoryProducts />} />
-            <Route path="/product/:id" element={<ProductDetails />} />
-            <Route path="/cart" element={<CartPage />} />
-            <Route path="/checkout" element={<Checkout />} />
-            <Route path="/order-confirmation" element={<OrderConfirmation />} />
-            <Route path="/order-tracking/:id" element={<OrderTracking />} />
-            <Route path="/order-history" element={<OrderHistory />} />
-            <Route path="/profile" element={<UserProfile />} />
-            <Route path="/login" element={<LoginSignup />} />
-            <Route path="/map-location" element={<MapLocation />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <Toaster />
-        </div>
-      </Router>
+      <AuthProvider>
+        <Router>
+          <div className="min-h-screen bg-background">
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/categories" element={<AllCategories />} />
+              <Route path="/categories/:categoryId" element={<CategoryProducts />} />
+              <Route path="/product/:id" element={<ProductDetails />} />
+              <Route path="/cart" element={<CartPage />} />
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/order-confirmation" element={<OrderConfirmation />} />
+              <Route path="/order-tracking/:id" element={<OrderTracking />} />
+              <Route path="/order-history" element={<OrderHistory />} />
+              <Route path="/profile" element={<UserProfile />} />
+              <Route path="/login" element={<LoginSignup />} />
+              <Route path="/map-location" element={<MapLocation />} />
+              
+              {/* Admin Routes */}
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
+              <Route path="/admin/products" element={<AdminLayout><ManageProducts /></AdminLayout>} />
+              <Route path="/admin/orders" element={<AdminLayout><ManageOrders /></AdminLayout>} />
+              <Route path="/admin/users" element={<AdminLayout><ManageUsers /></AdminLayout>} />
+              <Route path="/admin/transactions" element={<AdminLayout><Transactions /></AdminLayout>} />
+              
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <Toaster />
+          </div>
+        </Router>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

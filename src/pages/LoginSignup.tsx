@@ -6,27 +6,121 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 const LoginSignup = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [fullName, setFullName] = useState('');
   const [otp, setOtp] = useState('');
   const [isOtpSent, setIsOtpSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('login');
+  
+  const { sendOtp, verifyOtp, signUp } = useAuth();
+  const { toast } = useToast();
   const navigate = useNavigate();
   
-  const handleSendOtp = () => {
-    if (phoneNumber.length >= 10) {
-      setIsOtpSent(true);
-      // Mock OTP sending
-      console.log(`OTP sent to ${phoneNumber}`);
+  const handleSendOtp = async () => {
+    if (phoneNumber.length < 10) {
+      toast({
+        title: "Invalid Phone Number",
+        description: "Please enter a valid 10-digit phone number",
+        variant: "destructive",
+      });
+      return;
     }
+    
+    setLoading(true);
+    
+    try {
+      if (activeTab === 'signup' && !fullName.trim()) {
+        toast({
+          title: "Name Required",
+          description: "Please enter your full name",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+      
+      if (activeTab === 'signup') {
+        const { error: signUpError } = await signUp(phoneNumber, fullName);
+        if (signUpError) {
+          toast({
+            title: "Signup Error",
+            description: signUpError.message,
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+      }
+      
+      const { error } = await sendOtp(phoneNumber);
+      if (error) {
+        toast({
+          title: "Error",
+          description: "Failed to send OTP. Please try again.",
+          variant: "destructive",
+        });
+      } else {
+        setIsOtpSent(true);
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    }
+    
+    setLoading(false);
   };
   
-  const handleVerifyOtp = () => {
-    if (otp.length === 4) {
-      // Mock OTP verification
-      console.log('OTP verified');
-      navigate('/');
+  const handleVerifyOtp = async () => {
+    if (otp.length !== 4) {
+      toast({
+        title: "Invalid OTP",
+        description: "Please enter a valid 4-digit OTP",
+        variant: "destructive",
+      });
+      return;
     }
+    
+    setLoading(true);
+    
+    try {
+      const { error } = await verifyOtp(phoneNumber, otp);
+      if (error) {
+        toast({
+          title: "Verification Failed",
+          description: error.message || "Invalid OTP. Please try again.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Login successful!",
+        });
+        navigate('/');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    }
+    
+    setLoading(false);
+  };
+
+  const resetForm = () => {
+    setIsOtpSent(false);
+    setOtp('');
+    setPhoneNumber('');
+    setFullName('');
   };
 
   return (
@@ -48,7 +142,7 @@ const LoginSignup = () => {
           </div>
           
           <div className="bg-white rounded-xl shadow-sm p-8">
-            <Tabs defaultValue="login" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="login">Login</TabsTrigger>
                 <TabsTrigger value="signup">Sign Up</TabsTrigger>
@@ -71,9 +165,9 @@ const LoginSignup = () => {
                       <Button 
                         className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
                         onClick={handleSendOtp}
-                        disabled={phoneNumber.length < 10}
+                        disabled={phoneNumber.length < 10 || loading}
                       >
-                        Send OTP
+                        {loading ? 'Sending...' : 'Send OTP'}
                       </Button>
                     </>
                   ) : (
@@ -93,14 +187,14 @@ const LoginSignup = () => {
                       <Button 
                         className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
                         onClick={handleVerifyOtp}
-                        disabled={otp.length !== 4}
+                        disabled={otp.length !== 4 || loading}
                       >
-                        Verify OTP
+                        {loading ? 'Verifying...' : 'Verify OTP'}
                       </Button>
                       <Button 
                         variant="link" 
                         className="w-full text-sm text-gray-600"
-                        onClick={() => setIsOtpSent(false)}
+                        onClick={resetForm}
                       >
                         Change Phone Number
                       </Button>
@@ -118,6 +212,8 @@ const LoginSignup = () => {
                         <Input
                           id="signupName"
                           placeholder="Enter your full name"
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
                         />
                       </div>
                       <div>
@@ -133,9 +229,9 @@ const LoginSignup = () => {
                       <Button 
                         className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
                         onClick={handleSendOtp}
-                        disabled={phoneNumber.length < 10}
+                        disabled={phoneNumber.length < 10 || !fullName.trim() || loading}
                       >
-                        Send OTP
+                        {loading ? 'Creating Account...' : 'Create Account'}
                       </Button>
                     </>
                   ) : (
@@ -155,14 +251,14 @@ const LoginSignup = () => {
                       <Button 
                         className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
                         onClick={handleVerifyOtp}
-                        disabled={otp.length !== 4}
+                        disabled={otp.length !== 4 || loading}
                       >
-                        Verify OTP
+                        {loading ? 'Verifying...' : 'Verify OTP'}
                       </Button>
                       <Button 
                         variant="link" 
                         className="w-full text-sm text-gray-600"
-                        onClick={() => setIsOtpSent(false)}
+                        onClick={resetForm}
                       >
                         Change Phone Number
                       </Button>
