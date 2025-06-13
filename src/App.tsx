@@ -24,7 +24,6 @@ import ManageUsers from "./pages/admin/ManageUsers";
 import Transactions from "./pages/admin/Transactions";
 import NotFound from "./pages/NotFound";
 import MapLocation from "./pages/MapLocation";
-import AdminLayout from "./pages/admin/components/AdminLayout";
 
 const queryClient = new QueryClient();
 
@@ -46,8 +45,10 @@ function App() {
               <Route path="/track-order/:id" element={<OrderTracking />} />
               <Route path="/order-history" element={<OrderHistory />} />
               <Route path="/my-profile" element={<UserProfile />} />
+              <Route path="/profile" element={<UserProfile />} />
               <Route path="/customer-login" element={<LoginSignup />} />
               <Route path="/delivery-location" element={<MapLocation />} />
+              <Route path="/map-location" element={<MapLocation />} />
               
               {/* Delivery Partner Routes */}
               <Route path="/delivery-partner" element={<DeliveryPartnerAuth />} />
@@ -55,11 +56,11 @@ function App() {
               
               {/* Admin Routes */}
               <Route path="/admin-login" element={<AdminLogin />} />
-              <Route path="/admin-dashboard" element={<AdminLayout><AdminDashboard /></AdminLayout>} />
-              <Route path="/admin-products" element={<AdminLayout><ManageProducts /></AdminLayout>} />
-              <Route path="/admin-orders" element={<AdminLayout><ManageOrders /></AdminLayout>} />
-              <Route path="/admin-users" element={<AdminLayout><ManageUsers /></AdminLayout>} />
-              <Route path="/admin-transactions" element={<AdminLayout><Transactions /></AdminLayout>} />
+              <Route path="/admin-dashboard" element={<AdminDashboard />} />
+              <Route path="/admin-products" element={<ManageProducts />} />
+              <Route path="/admin-orders" element={<ManageOrders />} />
+              <Route path="/admin-users" element={<ManageUsers />} />
+              <Route path="/admin-transactions" element={<Transactions />} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>

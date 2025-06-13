@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const DeliveryDashboard = () => {
-  // Mock data - replace with real data later
+  // Mock data with Rs currency
   const stats = {
     todayDeliveries: 12,
-    totalEarnings: 1850,
+    totalEarnings: 18500,
     pendingOrders: 3,
     completedOrders: 156
   };
@@ -21,7 +21,7 @@ const DeliveryDashboard = () => {
       address: 'Thamel, Kathmandu',
       phone: '+977 9876543210',
       items: 5,
-      amount: 850,
+      amount: 8500,
       estimatedTime: '15 mins'
     },
     {
@@ -30,7 +30,7 @@ const DeliveryDashboard = () => {
       address: 'New Road, Kathmandu',
       phone: '+977 9876543211',
       items: 3,
-      amount: 650,
+      amount: 6500,
       estimatedTime: '20 mins'
     }
   ];
@@ -84,7 +84,7 @@ const DeliveryDashboard = () => {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">NPR {stats.totalEarnings}</div>
+              <div className="text-2xl font-bold">Rs {stats.totalEarnings}</div>
               <p className="text-xs text-muted-foreground">+15% from yesterday</p>
             </CardContent>
           </Card>
@@ -127,7 +127,7 @@ const DeliveryDashboard = () => {
                       <p className="text-sm text-gray-600">{order.customerName}</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-green-600">NPR {order.amount}</p>
+                      <p className="font-semibold text-green-600">Rs {order.amount}</p>
                       <p className="text-sm text-gray-500">{order.items} items</p>
                     </div>
                   </div>
