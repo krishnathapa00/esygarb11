@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,7 +7,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (phoneNumber: string, fullName: string) => Promise<{ error: any }>;
+  signUp: (phoneNumber: string, fullName: string, role?: string) => Promise<{ error: any }>;
   signIn: (phoneNumber: string) => Promise<{ error: any }>;
   verifyOtp: (phoneNumber: string, otp: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -86,7 +85,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const signUp = async (phoneNumber: string, fullName: string) => {
+  const signUp = async (phoneNumber: string, fullName: string, role: string = 'customer') => {
     try {
       // Create a dummy email for Supabase auth (since we're using phone-based auth)
       const email = `${phoneNumber.replace(/\D/g, '')}@esygrab.app`;
@@ -100,6 +99,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           data: {
             full_name: fullName,
             phone_number: phoneNumber,
+            role: role,
           }
         }
       });
