@@ -67,17 +67,17 @@ const Index = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading products...</p>
+          <p className="mt-4 text-gray-600 text-sm sm:text-base">Loading products...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
+    <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
       <Header
         cartItems={cartItems}
         onCartClick={() => {}}
@@ -91,49 +91,55 @@ const Index = () => {
         onLocationSet={handleLocationSet}
       />
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
         {/* Hero Banner Section */}
-        <BannerCarousel />
+        <div className="mb-6 sm:mb-8">
+          <BannerCarousel />
+        </div>
 
         {/* Categories */}
-        <section className="mb-8">
+        <section className="mb-6 sm:mb-8">
           <CategoryGrid onCategorySelect={handleCategorySelect} />
         </section>
 
         {/* Products by Category */}
-        {fruitProducts.length > 0 && (
-          <ProductSection
-            title="Fresh Fruits & Vegetables"
-            products={fruitProducts}
-            onAddToCart={handleAddToCart}
-            cart={cart}
-            onUpdateQuantity={handleUpdateQuantity}
-          />
-        )}
+        <div className="space-y-6 sm:space-y-8">
+          {fruitProducts.length > 0 && (
+            <ProductSection
+              title="Fresh Fruits & Vegetables"
+              products={fruitProducts}
+              onAddToCart={handleAddToCart}
+              cart={cart}
+              onUpdateQuantity={handleUpdateQuantity}
+            />
+          )}
 
-        {dairyProducts.length > 0 && (
-          <ProductSection
-            title="Dairy & Eggs"
-            products={dairyProducts}
-            onAddToCart={handleAddToCart}
-            cart={cart}
-            onUpdateQuantity={handleUpdateQuantity}
-          />
-        )}
+          {dairyProducts.length > 0 && (
+            <ProductSection
+              title="Dairy & Eggs"
+              products={dairyProducts}
+              onAddToCart={handleAddToCart}
+              cart={cart}
+              onUpdateQuantity={handleUpdateQuantity}
+            />
+          )}
 
-        {snackProducts.length > 0 && (
-          <ProductSection
-            title="Snacks & Beverages"
-            products={snackProducts}
-            onAddToCart={handleAddToCart}
-            cart={cart}
-            onUpdateQuantity={handleUpdateQuantity}
-          />
-        )}
+          {snackProducts.length > 0 && (
+            <ProductSection
+              title="Snacks & Beverages"
+              products={snackProducts}
+              onAddToCart={handleAddToCart}
+              cart={cart}
+              onUpdateQuantity={handleUpdateQuantity}
+            />
+          )}
+        </div>
       </main>
 
       {/* Footer - Desktop Only */}
-      <Footer />
+      <div className="hidden lg:block">
+        <Footer />
+      </div>
     </div>
   );
 };
