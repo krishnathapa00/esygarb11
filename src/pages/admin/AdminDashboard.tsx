@@ -58,8 +58,8 @@ const AdminDashboard = () => {
             <CardContent>
               <div className="flex justify-between items-center">
                 <div>
-                  <div className="text-2xl font-bold">Rs {dashboardData.totalRevenue}</div>
-                  <p className="text-xs text-green-600">+Rs {dashboardData.revenueToday} today</p>
+                  <div className="text-2xl font-bold">Rs {dashboardData.totalRevenue.toLocaleString()}</div>
+                  <p className="text-xs text-green-600">+Rs {dashboardData.revenueToday.toLocaleString()} today</p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-green-600 opacity-80" />
               </div>
@@ -107,7 +107,7 @@ const AdminDashboard = () => {
               <div className="flex justify-between items-center">
                 <div>
                   <div className="text-2xl font-bold">{dashboardData.refundsProcessed}</div>
-                  <p className="text-xs text-blue-600">Rs {dashboardData.refundAmount} total</p>
+                  <p className="text-xs text-blue-600">Rs {dashboardData.refundAmount.toLocaleString()} total</p>
                 </div>
                 <RotateCcw className="h-8 w-8 text-blue-600 opacity-80" />
               </div>
@@ -127,7 +127,7 @@ const AdminDashboard = () => {
                   <div key={index} className="flex justify-between items-center border-b pb-2">
                     <div>
                       <p className="font-medium">Order #ORD123456{index}</p>
-                      <p className="text-xs text-gray-500">June {6-index}, 2025 • Rs {Math.floor(Math.random() * 5000) + 1000}</p>
+                      <p className="text-xs text-gray-500">June {6-index}, 2025 • Rs {(Math.floor(Math.random() * 5000) + 1000).toLocaleString()}</p>
                     </div>
                     <div className="flex items-center space-x-2">
                       <span className={`px-2 py-1 rounded-full text-xs ${
@@ -154,7 +154,7 @@ const AdminDashboard = () => {
               </div>
               
               <div className="mt-4">
-                <Link to="/admin-orders">
+                <Link to="/admin/orders">
                   <button className="text-sm text-green-600 hover:text-green-700 font-medium">
                     View all orders
                   </button>
@@ -187,7 +187,7 @@ const AdminDashboard = () => {
               </div>
               
               <div className="mt-4">
-                <Link to="/admin-products">
+                <Link to="/admin/products">
                   <button className="text-sm text-green-600 hover:text-green-700 font-medium">
                     Manage inventory
                   </button>

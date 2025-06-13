@@ -9,9 +9,16 @@ interface GoogleMapsProps {
   onLocationSelect: (location: { lat: number; lng: number; address: string }) => void;
 }
 
+// Declare global google types
+declare global {
+  interface Window {
+    google: any;
+  }
+}
+
 const GoogleMaps: React.FC<GoogleMapsProps> = ({ onLocationSelect }) => {
   const mapRef = useRef<HTMLDivElement>(null);
-  const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [map, setMap] = useState<any>(null);
   const [address, setAddress] = useState('');
   const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [apiKeyEntered, setApiKeyEntered] = useState(false);
@@ -28,26 +35,26 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({ onLocationSelect }) => {
   };
 
   const initMap = () => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || !window.google) return;
 
     // Default to Kathmandu, Nepal
     const defaultLocation = { lat: 27.7172, lng: 85.3240 };
     
-    const newMap = new google.maps.Map(mapRef.current, {
+    const newMap = new window.google.maps.Map(mapRef.current, {
       zoom: 13,
       center: defaultLocation,
     });
 
     // Add click listener to map
-    newMap.addListener('click', (event: google.maps.MapMouseEvent) => {
+    newMap.addListener('click', (event: any) => {
       if (event.latLng) {
         const lat = event.latLng.lat();
         const lng = event.latLng.lng();
         setSelectedLocation({ lat, lng });
         
         // Reverse geocoding to get address
-        const geocoder = new google.maps.Geocoder();
-        geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+        const geocoder = new window.google.maps.Geocoder();
+        geocoder.geocode({ location: { lat, lng } }, (results: any, status: any) => {
           if (status === 'OK' && results && results[0]) {
             const formattedAddress = results[0].formatted_address;
             setAddress(formattedAddress);
@@ -56,7 +63,7 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({ onLocationSelect }) => {
         });
 
         // Add marker
-        new google.maps.Marker({
+        new window.google.maps.Marker({
           position: { lat, lng },
           map: newMap,
           title: 'Selected Location'
@@ -75,24 +82,24 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({ onLocationSelect }) => {
           const lng = position.coords.longitude;
           setSelectedLocation({ lat, lng });
           
-          if (map) {
+          if (map && window.google) {
             map.setCenter({ lat, lng });
-            new google.maps.Marker({
+            new window.google.maps.Marker({
               position: { lat, lng },
               map: map,
               title: 'Your Location'
             });
-          }
 
-          // Reverse geocoding
-          const geocoder = new google.maps.Geocoder();
-          geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-            if (status === 'OK' && results && results[0]) {
-              const formattedAddress = results[0].formatted_address;
-              setAddress(formattedAddress);
-              onLocationSelect({ lat, lng, address: formattedAddress });
-            }
-          });
+            // Reverse geocoding
+            const geocoder = new window.google.maps.Geocoder();
+            geocoder.geocode({ location: { lat, lng } }, (results: any, status: any) => {
+              if (status === 'OK' && results && results[0]) {
+                const formattedAddress = results[0].formatted_address;
+                setAddress(formattedAddress);
+                onLocationSelect({ lat, lng, address: formattedAddress });
+              }
+            });
+          }
         },
         (error) => {
           console.error('Error getting location:', error);

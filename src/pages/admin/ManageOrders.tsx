@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Search, Filter, Eye, Truck } from 'lucide-react';
+import { Search, Filter, Eye, Truck, Edit } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,13 +18,13 @@ const ManageOrders = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   
   // Mock order data
-  const orders = [
+  const [orders, setOrders] = useState([
     { id: 'ORD1234567', customer: 'John Doe', date: 'June 6, 2025', amount: 160, status: 'Pending', items: 3 },
     { id: 'ORD1234566', customer: 'Jane Smith', date: 'June 6, 2025', amount: 210, status: 'Confirmed', items: 4 },
     { id: 'ORD1234565', customer: 'Robert Johnson', date: 'June 6, 2025', amount: 180, status: 'Dispatched', items: 2 },
     { id: 'ORD1234564', customer: 'Emily Wilson', date: 'June 5, 2025', amount: 95, status: 'Delivered', items: 1 },
     { id: 'ORD1234563', customer: 'Michael Brown', date: 'June 5, 2025', amount: 320, status: 'Cancelled', items: 5 },
-  ];
+  ]);
   
   const getStatusColor = (status: string) => {
     switch(status) {
@@ -37,10 +37,16 @@ const ManageOrders = () => {
     }
   };
 
+  const handleStatusChange = (orderId: string, newStatus: string) => {
+    setOrders(orders.map(order => 
+      order.id === orderId ? { ...order, status: newStatus } : order
+    ));
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Manage Orders</h1>
+        <h1 className="text-2xl font-bold">Orders Management</h1>
         
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
           <div className="relative flex-1">
@@ -108,12 +114,23 @@ const ManageOrders = () => {
                       <div className="text-sm text-gray-900">{order.date}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">₹{order.amount}</div>
+                      <div className="text-sm font-medium text-gray-900">Rs {order.amount}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge className={getStatusColor(order.status)}>
-                        {order.status}
-                      </Badge>
+                      <Select value={order.status} onValueChange={(value) => handleStatusChange(order.id, value)}>
+                        <SelectTrigger className="w-[120px]">
+                          <Badge className={getStatusColor(order.status)}>
+                            {order.status}
+                          </Badge>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Pending">Pending</SelectItem>
+                          <SelectItem value="Confirmed">Confirmed</SelectItem>
+                          <SelectItem value="Dispatched">Dispatched</SelectItem>
+                          <SelectItem value="Delivered">Delivered</SelectItem>
+                          <SelectItem value="Cancelled">Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <Button variant="ghost" size="sm">

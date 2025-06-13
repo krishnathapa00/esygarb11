@@ -8,6 +8,7 @@ import AdminLayout from './components/AdminLayout';
 
 const ManageProducts = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [showAddProduct, setShowAddProduct] = useState(false);
   
   // Mock product data
   const products = [
@@ -18,12 +19,21 @@ const ManageProducts = () => {
     { id: 5, name: 'Potato Chips', category: 'Snacks & Beverages', price: 25, stock: 200, image: 'https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=64&h=64&fit=crop' },
   ];
 
+  const handleAddProduct = () => {
+    setShowAddProduct(true);
+    // This would open a modal or navigate to add product page
+    alert('Add Product form would open here');
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
-          <h1 className="text-2xl font-bold">Manage Products</h1>
-          <Button className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700">
+          <h1 className="text-2xl font-bold">Products Management</h1>
+          <Button 
+            onClick={handleAddProduct}
+            className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+          >
             <Plus className="h-4 w-4 mr-2" /> Add New Product
           </Button>
         </div>
@@ -86,7 +96,7 @@ const ManageProducts = () => {
                       <Badge variant="secondary">{product.category}</Badge>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">₹{product.price}</div>
+                      <div className="text-sm text-gray-900">Rs {product.price}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${

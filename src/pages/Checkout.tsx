@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../components/Header';
+import PaymentGateway from '../components/PaymentGateway';
 import { ArrowLeft, MapPin, CreditCard, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +11,7 @@ import { Label } from '@/components/ui/label';
 const Checkout = () => {
   const [selectedPayment, setSelectedPayment] = useState('cod');
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+  const [showPaymentGateway, setShowPaymentGateway] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
@@ -19,11 +21,13 @@ const Checkout = () => {
     state: ''
   });
 
+  const totalAmount = 160;
+
   useEffect(() => {
     // Auto-fill from profile data (simulated - in real app this would come from database/context)
     const profileData = {
       fullName: 'John Doe',
-      phone: '+1 555-123-4567'
+      phone: '+977 9876543210'
     };
     
     setFormData(prev => ({
@@ -57,11 +61,11 @@ const Checkout = () => {
           try {
             // Simulate a successful geocoding response
             const locationData = {
-              address: '123 Main Street, Downtown Area',
-              city: 'New York',
-              state: 'NY',
-              pincode: '10001',
-              formatted: '123 Main Street, Downtown Area, New York, NY 10001'
+              address: 'Thamel, Kathmandu',
+              city: 'Kathmandu',
+              state: 'Bagmati',
+              pincode: '44600',
+              formatted: 'Thamel, Kathmandu, Bagmati 44600'
             };
 
             setFormData(prev => ({
@@ -79,8 +83,8 @@ const Checkout = () => {
             console.log('Using fallback location');
             const fallbackData = {
               address: 'Current location detected',
-              city: 'Unknown',
-              state: 'Unknown',
+              city: 'Kathmandu',
+              state: 'Bagmati',
               pincode: ''
             };
             setFormData(prev => ({ ...prev, ...fallbackData }));
@@ -100,6 +104,28 @@ const Checkout = () => {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handlePaymentSuccess = (paymentId: string) => {
+    console.log('Payment successful:', paymentId);
+    // Redirect to order confirmation
+    window.location.href = '/order-confirmation';
+  };
+
+  const handlePaymentError = (error: string) => {
+    console.error('Payment failed:', error);
+    alert('Payment failed. Please try again.');
+    setShowPaymentGateway(false);
+  };
+
+  const handlePlaceOrder = () => {
+    if (selectedPayment === 'cod') {
+      // Direct to order confirmation for COD
+      window.location.href = '/order-confirmation';
+    } else {
+      // Show payment gateway for digital payments
+      setShowPaymentGateway(true);
+    }
   };
   
   return (
@@ -198,7 +224,7 @@ const Checkout = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="state">State</Label>
+                  <Label htmlFor="state">State/Province</Label>
                   <Input 
                     id="state" 
                     placeholder="Enter state"
@@ -216,22 +242,45 @@ const Checkout = () => {
                 <h3 className="text-lg font-semibold">Payment Method</h3>
               </div>
               
-              <div className="space-y-3">
-                <div className="flex items-center space-x-3">
-                  <input
-                    type="radio"
-                    id="cod"
-                    name="payment"
-                    value="cod"
-                    checked={selectedPayment === 'cod'}
-                    onChange={(e) => setSelectedPayment(e.target.value)}
-                    className="text-green-600"
-                  />
-                  <label htmlFor="cod" className="text-sm font-medium">
-                    Cash on Delivery (COD)
-                  </label>
+              {!showPaymentGateway ? (
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="radio"
+                      id="cod"
+                      name="payment"
+                      value="cod"
+                      checked={selectedPayment === 'cod'}
+                      onChange={(e) => setSelectedPayment(e.target.value)}
+                      className="text-green-600"
+                    />
+                    <label htmlFor="cod" className="text-sm font-medium">
+                      Cash on Delivery (COD)
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="radio"
+                      id="digital"
+                      name="payment"
+                      value="digital"
+                      checked={selectedPayment === 'digital'}
+                      onChange={(e) => setSelectedPayment(e.target.value)}
+                      className="text-green-600"
+                    />
+                    <label htmlFor="digital" className="text-sm font-medium">
+                      Digital Payment (eSewa, Khalti)
+                    </label>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <PaymentGateway
+                  amount={totalAmount}
+                  orderId="ORD123456789"
+                  onSuccess={handlePaymentSuccess}
+                  onError={handlePaymentError}
+                />
+              )}
             </div>
           </div>
 
@@ -242,25 +291,26 @@ const Checkout = () => {
             <div className="space-y-3 mb-4">
               <div className="flex justify-between text-sm">
                 <span>Subtotal (3 items)</span>
-                <span>₹140</span>
+                <span>Rs 140</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span>Delivery Fee</span>
-                <span>₹20</span>
+                <span>Rs 20</span>
               </div>
               <div className="border-t pt-3">
                 <div className="flex justify-between font-semibold text-lg">
                   <span>Total</span>
-                  <span>₹160</span>
+                  <span>Rs {totalAmount}</span>
                 </div>
               </div>
             </div>
 
-            <Link to="/order-confirmation">
-              <Button className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700">
-                Place Order
-              </Button>
-            </Link>
+            <Button 
+              onClick={handlePlaceOrder}
+              className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+            >
+              {selectedPayment === 'cod' ? 'Place Order' : 'Proceed to Payment'}
+            </Button>
           </div>
         </div>
       </div>
