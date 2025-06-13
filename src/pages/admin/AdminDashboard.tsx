@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { BarChart3, ShoppingBag, Users, TrendingUp, Package, UserCheck, Clock, Refund } from 'lucide-react';
+import { BarChart3, ShoppingBag, Users, TrendingUp, Package, UserCheck, Clock, RotateCcw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -107,7 +107,7 @@ const AdminDashboard = () => {
                 <div className="text-2xl font-bold">{dashboardData.refundsProcessed}</div>
                 <p className="text-xs text-blue-600">Rs {dashboardData.refundAmount} total</p>
               </div>
-              <Refund className="h-8 w-8 text-blue-600 opacity-80" />
+              <RotateCcw className="h-8 w-8 text-blue-600 opacity-80" />
             </div>
           </CardContent>
         </Card>
@@ -142,7 +142,7 @@ const AdminDashboard = () => {
                         onClick={() => handleRefund(`ORD123456${index}`)}
                         className="text-xs"
                       >
-                        <Refund className="h-3 w-3 mr-1" />
+                        <RotateCcw className="h-3 w-3 mr-1" />
                         Refund
                       </Button>
                     )}
