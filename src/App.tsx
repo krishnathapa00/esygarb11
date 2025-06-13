@@ -54,7 +54,7 @@ function App() {
               <Route path="/delivery-partner" element={<DeliveryPartnerAuth />} />
               <Route path="/delivery-dashboard" element={<DeliveryDashboard />} />
               
-              {/* Admin Routes */}
+              {/* Admin Routes - Fixed to match actual paths */}
               <Route path="/admin-login" element={<AdminLogin />} />
               <Route path="/admin-dashboard" element={<AdminDashboard />} />
               <Route path="/admin-products" element={<ManageProducts />} />

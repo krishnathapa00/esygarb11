@@ -3,7 +3,7 @@ import React, { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Package, ShoppingBag, Users, Wallet, 
-  LogOut, ChevronRight, Menu, X
+  LogOut, Menu, X
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -15,11 +15,11 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
   
   const navigationItems = [
-    { name: 'Dashboard', icon: LayoutDashboard, href: '/admin' },
-    { name: 'Products', icon: Package, href: '/admin/products' },
-    { name: 'Orders', icon: ShoppingBag, href: '/admin/orders' },
-    { name: 'Users', icon: Users, href: '/admin/users' },
-    { name: 'Transactions', icon: Wallet, href: '/admin/transactions' },
+    { name: 'Dashboard', icon: LayoutDashboard, href: '/admin-dashboard' },
+    { name: 'Products', icon: Package, href: '/admin-products' },
+    { name: 'Orders', icon: ShoppingBag, href: '/admin-orders' },
+    { name: 'Users', icon: Users, href: '/admin-users' },
+    { name: 'Transactions', icon: Wallet, href: '/admin-transactions' },
   ];
   
   const isActive = (path: string) => location.pathname === path;
@@ -53,7 +53,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         </div>
         <div className="px-4 py-4 border-t border-gray-200">
           <Link
-            to="/admin/login"
+            to="/admin-login"
             className="group flex items-center px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50"
           >
             <LogOut className="flex-shrink-0 h-5 w-5 mr-3 text-gray-400 group-hover:text-gray-600" />
@@ -102,7 +102,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           </div>
           <div className="px-4 py-4 border-t border-gray-200">
             <Link
-              to="/admin/login"
+              to="/admin-login"
               className="group flex items-center px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50"
             >
               <LogOut className="flex-shrink-0 h-5 w-5 mr-3 text-gray-400 group-hover:text-gray-600" />
