@@ -36,37 +36,26 @@ function App() {
             <Routes>
               {/* Customer Routes */}
               <Route path="/" element={<Index />} />
-              <Route path="/home" element={<Index />} />
               <Route path="/categories" element={<AllCategories />} />
               <Route path="/categories/:categoryId" element={<CategoryProducts />} />
-              <Route path="/category/:categoryId" element={<CategoryProducts />} />
               <Route path="/product/:id" element={<ProductDetails />} />
               <Route path="/cart" element={<CartPage />} />
               <Route path="/shopping-cart" element={<CartPage />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/order-confirmation" element={<OrderConfirmation />} />
-              <Route path="/order-success" element={<OrderConfirmation />} />
               <Route path="/track-order/:id" element={<OrderTracking />} />
-              <Route path="/order-tracking/:id" element={<OrderTracking />} />
               <Route path="/order-history" element={<OrderHistory />} />
-              <Route path="/orders" element={<OrderHistory />} />
               <Route path="/profile" element={<UserProfile />} />
               <Route path="/my-profile" element={<UserProfile />} />
-              <Route path="/account" element={<UserProfile />} />
               <Route path="/login" element={<LoginSignup />} />
-              <Route path="/signup" element={<LoginSignup />} />
-              <Route path="/auth" element={<LoginSignup />} />
               <Route path="/customer-login" element={<LoginSignup />} />
               <Route path="/location" element={<MapLocation />} />
               <Route path="/delivery-location" element={<MapLocation />} />
               <Route path="/map-location" element={<MapLocation />} />
-              <Route path="/map" element={<MapLocation />} />
               
               {/* Delivery Partner Routes */}
               <Route path="/delivery-partner" element={<DeliveryPartnerAuth />} />
-              <Route path="/delivery-login" element={<DeliveryPartnerAuth />} />
               <Route path="/delivery-dashboard" element={<DeliveryDashboard />} />
-              <Route path="/delivery" element={<DeliveryDashboard />} />
               
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminLogin />} />

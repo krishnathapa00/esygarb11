@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight } from 'lucide-react';
 
 const categories = [
   { id: 1, name: 'Fruits & Vegetables', image: 'https://images.unsplash.com/photo-1518843875459-f738682238a6?w=200&h=200&fit=crop&crop=center', color: 'from-green-400 to-emerald-500' },
@@ -18,19 +17,17 @@ interface CategoryGridProps {
 
 const CategoryGrid = ({ onCategorySelect }: CategoryGridProps) => {
   return (
-    <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-100 p-3 sm:p-4 lg:p-6">
-      <div className="flex items-center justify-between mb-3 sm:mb-4">
-        <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">Shop by Category</h2>
+    <div className="py-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold text-gray-900">Shop by Category</h2>
         <Link 
           to="/categories" 
-          className="flex items-center text-green-600 hover:text-green-700 font-medium text-xs sm:text-sm transition-colors duration-200 group"
+          className="text-green-600 hover:text-green-700 font-medium text-sm"
         >
-          <span>View All</span>
-          <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 ml-1 group-hover:translate-x-0.5 transition-transform duration-200" />
+          View All
         </Link>
       </div>
-      
-      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3 lg:gap-4">
+      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
         {categories.map((category) => (
           <Link
             key={category.id}
@@ -38,15 +35,15 @@ const CategoryGrid = ({ onCategorySelect }: CategoryGridProps) => {
             onClick={() => onCategorySelect(category.id)}
             className="group cursor-pointer transform transition-all duration-300 hover:scale-105"
           >
-            <div className={`bg-gradient-to-br ${category.color} rounded-xl p-3 sm:p-4 lg:p-5 text-center shadow-md hover:shadow-lg transition-all duration-300 aspect-square flex flex-col justify-center items-center`}>
-              <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 mx-auto mb-2 sm:mb-3 rounded-full overflow-hidden bg-white/20 backdrop-blur-sm">
+            <div className={`bg-gradient-to-br ${category.color} rounded-xl p-3 md:p-4 text-center shadow-md hover:shadow-lg transition-all duration-300`}>
+              <div className="w-10 h-10 md:w-12 md:h-12 mx-auto mb-2 rounded-full overflow-hidden bg-white/20 backdrop-blur-sm">
                 <img
                   src={category.image}
                   alt={category.name}
                   className="w-full h-full object-cover"
                 />
               </div>
-              <h3 className="text-white font-medium text-xs sm:text-sm lg:text-base leading-tight text-center">
+              <h3 className="text-white font-medium text-xs md:text-sm leading-tight">
                 {category.name}
               </h3>
             </div>

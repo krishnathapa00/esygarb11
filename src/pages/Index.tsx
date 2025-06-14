@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import CategoryGrid from '../components/CategoryGrid';
@@ -7,7 +8,6 @@ import BannerCarousel from '../components/BannerCarousel';
 import Footer from '../components/Footer';
 import { useProducts } from '../hooks/useProducts';
 import { useAuth } from '../contexts/AuthContext';
-import { useIsMobile } from '../hooks/use-mobile';
 
 const Index = () => {
   const [cartItems, setCartItems] = useState(0);
@@ -17,7 +17,6 @@ const Index = () => {
   
   const { data: products = [], isLoading } = useProducts();
   const { user } = useAuth();
-  const isMobile = useIsMobile();
 
   useEffect(() => {
     // Check if location has been set before
@@ -68,17 +67,17 @@ const Index = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-green-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 text-xs sm:text-base">Loading fresh products...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading products...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={`min-h-screen bg-gray-50 ${isMobile ? 'pb-16' : 'pb-8'}`}>
+    <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
       <Header
         cartItems={cartItems}
         onCartClick={() => {}}
@@ -92,55 +91,49 @@ const Index = () => {
         onLocationSet={handleLocationSet}
       />
       
-      <main className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Hero Banner Section */}
-        <div className="mb-6 sm:mb-8 lg:mb-10 pt-4 sm:pt-6 lg:pt-8">
-          <BannerCarousel />
-        </div>
+        <BannerCarousel />
 
-        {/* Categories Section */}
-        <section className="mb-8 sm:mb-10 lg:mb-12">
+        {/* Categories */}
+        <section className="mb-8">
           <CategoryGrid onCategorySelect={handleCategorySelect} />
         </section>
 
-        {/* Products by Category - Horizontal Sliders */}
-        <div className="space-y-8 sm:space-y-10 lg:space-y-12 pb-6">
-          {fruitProducts.length > 0 && (
-            <ProductSection
-              title="Fresh Fruits & Vegetables"
-              products={fruitProducts}
-              onAddToCart={handleAddToCart}
-              cart={cart}
-              onUpdateQuantity={handleUpdateQuantity}
-            />
-          )}
+        {/* Products by Category */}
+        {fruitProducts.length > 0 && (
+          <ProductSection
+            title="Fresh Fruits & Vegetables"
+            products={fruitProducts}
+            onAddToCart={handleAddToCart}
+            cart={cart}
+            onUpdateQuantity={handleUpdateQuantity}
+          />
+        )}
 
-          {dairyProducts.length > 0 && (
-            <ProductSection
-              title="Dairy & Eggs"
-              products={dairyProducts}
-              onAddToCart={handleAddToCart}
-              cart={cart}
-              onUpdateQuantity={handleUpdateQuantity}
-            />
-          )}
+        {dairyProducts.length > 0 && (
+          <ProductSection
+            title="Dairy & Eggs"
+            products={dairyProducts}
+            onAddToCart={handleAddToCart}
+            cart={cart}
+            onUpdateQuantity={handleUpdateQuantity}
+          />
+        )}
 
-          {snackProducts.length > 0 && (
-            <ProductSection
-              title="Snacks & Beverages"
-              products={snackProducts}
-              onAddToCart={handleAddToCart}
-              cart={cart}
-              onUpdateQuantity={handleUpdateQuantity}
-            />
-          )}
-        </div>
+        {snackProducts.length > 0 && (
+          <ProductSection
+            title="Snacks & Beverages"
+            products={snackProducts}
+            onAddToCart={handleAddToCart}
+            cart={cart}
+            onUpdateQuantity={handleUpdateQuantity}
+          />
+        )}
       </main>
 
       {/* Footer - Desktop Only */}
-      <div className="hidden lg:block mt-12 lg:mt-16">
-        <Footer />
-      </div>
+      <Footer />
     </div>
   );
 };
