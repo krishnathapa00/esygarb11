@@ -70,14 +70,14 @@ const Index = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-green-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 text-xs sm:text-base">Loading products...</p>
+          <p className="mt-4 text-gray-600 text-xs sm:text-base">Loading fresh products...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-16 lg:pb-0">
+    <div className="min-h-screen bg-gray-50 pb-16 lg:pb-8">
       <Header
         cartItems={cartItems}
         onCartClick={() => {}}
@@ -93,17 +93,17 @@ const Index = () => {
       
       <main className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8">
         {/* Hero Banner Section */}
-        <div className="mb-4 sm:mb-6 lg:mb-8 pt-2 sm:pt-4">
+        <div className="mb-6 sm:mb-8 lg:mb-10 pt-4 sm:pt-6 lg:pt-8">
           <BannerCarousel />
         </div>
 
         {/* Categories Section */}
-        <section className="mb-6 sm:mb-8">
+        <section className="mb-8 sm:mb-10 lg:mb-12">
           <CategoryGrid onCategorySelect={handleCategorySelect} />
         </section>
 
         {/* Products by Category - Horizontal Sliders */}
-        <div className="space-y-6 sm:space-y-8 pb-4">
+        <div className="space-y-8 sm:space-y-10 lg:space-y-12 pb-6">
           {fruitProducts.length > 0 && (
             <ProductSection
               title="Fresh Fruits & Vegetables"
@@ -137,7 +137,7 @@ const Index = () => {
       </main>
 
       {/* Footer - Desktop Only */}
-      <div className="hidden lg:block mt-8">
+      <div className="hidden lg:block mt-12 lg:mt-16">
         <Footer />
       </div>
     </div>

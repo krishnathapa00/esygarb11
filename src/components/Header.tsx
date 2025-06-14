@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Search, ShoppingCart, MapPin, Clock, User, Home, Grid3X3, Menu, X } from 'lucide-react';
+import { Search, ShoppingCart, MapPin, Clock, User, Home, Grid3X3, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import LocationDetectionPopup from './LocationDetectionPopup';
@@ -73,21 +73,36 @@ const Header = ({
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b shadow-sm">
+      {/* Desktop Header - Not Sticky */}
+      <header className="lg:relative lg:top-0 sticky top-0 z-50 bg-white border-b shadow-sm">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-14 sm:h-16">
+          <div className="flex items-center justify-between h-14 sm:h-16 lg:h-20">
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-2 flex-shrink-0">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
-                <Package className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+              <div className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
+                <Package className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-white" />
               </div>
-              <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+              <h1 className="text-lg sm:text-xl lg:text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                 EsyGrab
               </h1>
             </Link>
 
-            {/* Location - All screens */}
-            <div className="flex items-center flex-1 mx-2 sm:mx-4 max-w-xs sm:max-w-none">
+            {/* Desktop Search Bar - Center */}
+            <div className="hidden lg:flex flex-1 max-w-2xl mx-8">
+              <div className="relative w-full">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Input 
+                  type="text" 
+                  placeholder="Search groceries, fruits, vegetables..." 
+                  value={searchQuery} 
+                  onChange={e => onSearchChange(e.target.value)} 
+                  className="pl-12 w-full h-12 text-base rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-green-500 transition-all duration-200" 
+                />
+              </div>
+            </div>
+
+            {/* Location - Mobile & Tablet */}
+            <div className="lg:hidden flex items-center flex-1 mx-2 sm:mx-4 max-w-xs sm:max-w-none">
               <Button
                 variant="ghost"
                 onClick={() => setShowLocationPopup(true)}
@@ -101,8 +116,20 @@ const Header = ({
               </Button>
             </div>
 
-            {/* Right side actions - Desktop only */}
-            <div className="hidden lg:flex items-center space-x-3">
+            {/* Desktop Right Side Actions */}
+            <div className="hidden lg:flex items-center space-x-4">
+              <Button
+                variant="ghost"
+                onClick={() => setShowLocationPopup(true)}
+                className="flex items-center space-x-2 hover:bg-green-50 text-sm"
+              >
+                <MapPin className="h-4 w-4 text-green-600" />
+                <div className="text-left">
+                  <span className="text-xs text-gray-500 block">Deliver to</span>
+                  <span className="font-medium text-gray-900 text-sm">{userLocation}</span>
+                </div>
+              </Button>
+              
               <div className="flex items-center space-x-1 text-sm text-green-600">
                 <Clock className="h-4 w-4" />
                 <span className="font-medium">10 mins</span>
@@ -110,13 +137,15 @@ const Header = ({
               
               <Link to="/profile">
                 <Button variant="outline" size="sm" className="hover:bg-green-50 border-green-200">
-                  <User className="h-4 w-4" />
+                  <User className="h-4 w-4 mr-2" />
+                  Profile
                 </Button>
               </Link>
               
               <Link to="/cart">
                 <Button variant="outline" size="sm" className="relative hover:bg-green-50 border-green-200">
-                  <ShoppingCart className="h-4 w-4" />
+                  <ShoppingCart className="h-4 w-4 mr-2" />
+                  Cart
                   {cartItems > 0 && (
                     <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                       {cartItems}
@@ -135,9 +164,9 @@ const Header = ({
         </div>
       </header>
 
-      {/* Search Bar Section - Below Header */}
-      <div className="sticky top-14 sm:top-16 z-40 bg-white border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-3">
+      {/* Mobile Search Bar Section */}
+      <div className="lg:hidden sticky top-14 sm:top-16 z-40 bg-white border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2 sm:py-3">
           <div className="relative">
             <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
             <Input 
@@ -197,12 +226,5 @@ const Header = ({
     </>
   );
 };
-
-// Fix missing import
-const Package = ({ className }: { className?: string }) => (
-  <svg className={className} fill="currentColor" viewBox="0 0 20 20">
-    <path d="M10 2L3 7v10l7 5 7-5V7l-7-5z" />
-  </svg>
-);
 
 export default Header;

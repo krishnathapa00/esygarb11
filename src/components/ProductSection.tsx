@@ -26,23 +26,26 @@ const ProductSection = ({ title, products, onAddToCart, cart, onUpdateQuantity }
   };
 
   return (
-    <section className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-100 p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6">
-      <div className="flex items-center justify-between mb-3 sm:mb-4">
-        <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">{title}</h3>
+    <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8">
+      <div className="flex items-center justify-between mb-4 sm:mb-6">
+        <div>
+          <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-1">{title}</h3>
+          <p className="text-sm sm:text-base text-gray-600">Fresh and quality products</p>
+        </div>
         <Link 
           to={`/categories/${getCategoryId(title)}`}
-          className="flex items-center text-green-600 hover:text-green-700 font-medium text-xs sm:text-sm transition-colors duration-200 group"
+          className="flex items-center text-green-600 hover:text-green-700 font-semibold text-sm sm:text-base transition-colors duration-200 group bg-green-50 hover:bg-green-100 px-3 sm:px-4 py-2 rounded-lg"
         >
           <span>View All</span>
-          <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 ml-1 group-hover:translate-x-0.5 transition-transform duration-200" />
+          <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 ml-1 group-hover:translate-x-1 transition-transform duration-200" />
         </Link>
       </div>
       
       {/* Horizontal Scrolling Container */}
       <div className="relative">
-        <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 sm:pb-4 scrollbar-hide scroll-smooth">
-          {products.slice(0, 8).map((product) => (
-            <div key={product.id} className="flex-shrink-0 w-36 sm:w-44 lg:w-48">
+        <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 scrollbar-hide scroll-smooth">
+          {products.slice(0, 10).map((product) => (
+            <div key={product.id} className="flex-shrink-0 w-48 sm:w-56 lg:w-64">
               <ProductCard
                 product={product}
                 onAddToCart={onAddToCart}
@@ -54,7 +57,7 @@ const ProductSection = ({ title, products, onAddToCart, cart, onUpdateQuantity }
         </div>
         
         {/* Gradient fade effect for better UX */}
-        <div className="absolute top-0 right-0 w-6 sm:w-8 h-full bg-gradient-to-l from-white to-transparent pointer-events-none"></div>
+        <div className="absolute top-0 right-0 w-8 sm:w-12 h-full bg-gradient-to-l from-white via-white/80 to-transparent pointer-events-none"></div>
       </div>
     </section>
   );
