@@ -214,8 +214,8 @@ const CategoryProducts = () => {
               </h2>
             </div>
             
-            {/* Products Grid - 2 columns for mobile */}
-            <div className="grid grid-cols-2 gap-3">
+            {/* Products Grid - 2 columns for mobile, more for larger screens */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
               {sampleProducts.map((product) => (
                 <ProductCard
                   key={product.id}

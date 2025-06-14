@@ -43,9 +43,9 @@ const ProductSection = ({ title, products, onAddToCart, cart, onUpdateQuantity }
       
       {/* Horizontal Scrolling Container */}
       <div className="relative">
-        <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 scrollbar-hide scroll-smooth">
+        <div className="flex gap-3 sm:gap-4 lg:gap-6 overflow-x-auto pb-4 scrollbar-hide scroll-smooth">
           {products.slice(0, 10).map((product) => (
-            <div key={product.id} className="flex-shrink-0 w-48 sm:w-56 lg:w-64">
+            <div key={product.id} className="flex-shrink-0 w-36 sm:w-44 md:w-48 lg:w-52">
               <ProductCard
                 product={product}
                 onAddToCart={onAddToCart}
@@ -57,7 +57,7 @@ const ProductSection = ({ title, products, onAddToCart, cart, onUpdateQuantity }
         </div>
         
         {/* Gradient fade effect for better UX */}
-        <div className="absolute top-0 right-0 w-8 sm:w-12 h-full bg-gradient-to-l from-white via-white/80 to-transparent pointer-events-none"></div>
+        <div className="absolute top-0 right-0 w-6 sm:w-8 lg:w-12 h-full bg-gradient-to-l from-white via-white/80 to-transparent pointer-events-none"></div>
       </div>
     </section>
   );

@@ -38,15 +38,15 @@ const CategoryGrid = ({ onCategorySelect }: CategoryGridProps) => {
             onClick={() => onCategorySelect(category.id)}
             className="group cursor-pointer transform transition-all duration-300 hover:scale-105"
           >
-            <div className={`bg-gradient-to-br ${category.color} rounded-xl p-2 sm:p-3 lg:p-4 text-center shadow-md hover:shadow-lg transition-all duration-300`}>
-              <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 mx-auto mb-1 sm:mb-2 rounded-full overflow-hidden bg-white/20 backdrop-blur-sm">
+            <div className={`bg-gradient-to-br ${category.color} rounded-xl p-3 sm:p-4 lg:p-5 text-center shadow-md hover:shadow-lg transition-all duration-300 aspect-square flex flex-col justify-center items-center`}>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 mx-auto mb-2 sm:mb-3 rounded-full overflow-hidden bg-white/20 backdrop-blur-sm">
                 <img
                   src={category.image}
                   alt={category.name}
                   className="w-full h-full object-cover"
                 />
               </div>
-              <h3 className="text-white font-medium text-xs sm:text-sm lg:text-base leading-tight">
+              <h3 className="text-white font-medium text-xs sm:text-sm lg:text-base leading-tight text-center">
                 {category.name}
               </h3>
             </div>
