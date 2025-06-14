@@ -64,10 +64,10 @@ const ProductCard = ({ product, onAddToCart, cartQuantity, onUpdateQuantity }: P
         
         <div className="flex items-center justify-between mb-3 mt-auto">
           <div className="flex items-center space-x-2">
-            <span className="font-bold text-gray-900 text-base sm:text-lg">₹{product.price}</span>
+            <span className="font-bold text-gray-900 text-base sm:text-lg">Rs {product.price}</span>
             {product.originalPrice && (
               <span className="text-sm text-gray-400 line-through">
-                ₹{product.originalPrice}
+                Rs {product.originalPrice}
               </span>
             )}
           </div>

@@ -8,6 +8,7 @@ import BannerCarousel from '../components/BannerCarousel';
 import Footer from '../components/Footer';
 import { useProducts } from '../hooks/useProducts';
 import { useAuth } from '../contexts/AuthContext';
+import { useIsMobile } from '../hooks/use-mobile';
 
 const Index = () => {
   const [cartItems, setCartItems] = useState(0);
@@ -17,6 +18,7 @@ const Index = () => {
   
   const { data: products = [], isLoading } = useProducts();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     // Check if location has been set before
@@ -77,7 +79,7 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-16 lg:pb-8">
+    <div className={`min-h-screen bg-gray-50 ${isMobile ? 'pb-16' : 'pb-8'}`}>
       <Header
         cartItems={cartItems}
         onCartClick={() => {}}

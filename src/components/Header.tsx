@@ -5,6 +5,7 @@ import { Search, ShoppingCart, MapPin, Clock, User, Home, Grid3X3, Package } fro
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import LocationDetectionPopup from './LocationDetectionPopup';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface HeaderProps {
   cartItems: number;
@@ -38,6 +39,7 @@ const Header = ({
     return 'Set Location';
   });
   const location = useLocation();
+  const isMobile = useIsMobile();
 
   const handleLocationSet = (location: string) => {
     let simplifiedLocation = location;
@@ -187,42 +189,44 @@ const Header = ({
         onLocationSet={handleLocationSet}
       />
 
-      {/* Mobile Bottom Navigation */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t shadow-lg safe-area-pb">
-        <div className="flex justify-around items-center py-1 px-2">
-          <MobileNavButton 
-            to="/" 
-            icon={Home} 
-            label="Home" 
-            isActive={location.pathname === '/'} 
-          />
-          <MobileNavButton 
-            to="/categories" 
-            icon={Grid3X3} 
-            label="Categories" 
-            isActive={location.pathname === '/categories'} 
-          />
-          <Link to="/cart" className="relative flex-shrink-0">
+      {/* Mobile Bottom Navigation - Only show on mobile devices */}
+      {isMobile && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t shadow-lg safe-area-pb">
+          <div className="flex justify-around items-center py-1 px-2">
             <MobileNavButton 
-              to="/cart" 
-              icon={ShoppingCart} 
-              label="Cart" 
-              isActive={location.pathname === '/cart'} 
+              to="/" 
+              icon={Home} 
+              label="Home" 
+              isActive={location.pathname === '/'} 
             />
-            {cartItems > 0 && (
-              <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                {cartItems > 9 ? '9+' : cartItems}
-              </span>
-            )}
-          </Link>
-          <MobileNavButton 
-            to="/profile" 
-            icon={User} 
-            label="Account" 
-            isActive={location.pathname === '/profile'} 
-          />
+            <MobileNavButton 
+              to="/categories" 
+              icon={Grid3X3} 
+              label="Categories" 
+              isActive={location.pathname === '/categories'} 
+            />
+            <Link to="/cart" className="relative flex-shrink-0">
+              <MobileNavButton 
+                to="/cart" 
+                icon={ShoppingCart} 
+                label="Cart" 
+                isActive={location.pathname === '/cart'} 
+              />
+              {cartItems > 0 && (
+                <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                  {cartItems > 9 ? '9+' : cartItems}
+                </span>
+              )}
+            </Link>
+            <MobileNavButton 
+              to="/profile" 
+              icon={User} 
+              label="Account" 
+              isActive={location.pathname === '/profile'} 
+            />
+          </div>
         </div>
-      </div>
+      )}
     </>
   );
 };
