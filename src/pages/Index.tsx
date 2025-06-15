@@ -61,9 +61,9 @@ const Index = () => {
   };
 
   // Group products by category
-  const fruitProducts = products.filter(p => p.category === 'Fruits & Vegetables');
-  const dairyProducts = products.filter(p => p.category === 'Dairy & Eggs');
-  const snackProducts = products.filter(p => p.category === 'Snacks & Beverages');
+  const fruitProducts = products.filter(p => p.category === 'Fruits & Vegetables').slice(0, 8);
+  const dairyProducts = products.filter(p => p.category === 'Dairy & Eggs').slice(0, 8);
+  const snackProducts = products.filter(p => p.category === 'Snacks & Beverages').slice(0, 8);
 
   if (isLoading) {
     return (
@@ -132,7 +132,7 @@ const Index = () => {
         )}
       </main>
 
-      {/* Footer - Desktop Only */}
+      {/* Footer */}
       <Footer />
     </div>
   );
