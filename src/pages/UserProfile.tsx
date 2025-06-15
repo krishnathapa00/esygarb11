@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import EditAddressModal from '../components/EditAddressModal';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 import { toast } from "@/hooks/use-toast";
+import { v4 as uuidv4 } from "uuid";
 
 const UserProfile = () => {
   const { user } = useAuth();
@@ -42,6 +43,9 @@ const UserProfile = () => {
       },
     ],
   });
+
+  const [addresses, setAddresses] = useState<any[]>([]);
+  const [loadingAddresses, setLoadingAddresses] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -154,18 +158,65 @@ const UserProfile = () => {
     setUpdating(false);
   };
 
-  // Edit address handler
+  // Fetch addresses from Supabase on mount
+  useEffect(() => {
+    const fetchAddresses = async () => {
+      if (!user) return;
+      setLoadingAddresses(true);
+      const { data, error } = await supabase
+        .from("addresses")
+        .select("*")
+        .eq("user_id", user.id);
+
+      if (error) {
+        toast({
+          title: "Failed to fetch addresses",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        setAddresses(data || []);
+      }
+      setLoadingAddresses(false);
+    };
+
+    fetchAddresses();
+  }, [user]);
+
+  // Add new address (opens map location page as per old logic)
+  const handleAddNewAddress = () => {
+    // For now, redirect to /map-location as before.
+    // If you want a modal/form, let me know!
+  };
+
+  // Edit Address modal logic
   const handleEditClick = (address: any) => {
     setEditAddress(address);
     setEditModalOpen(true);
   };
 
-  // Save updated address (local only)
-  const handleSaveAddress = (updated: any) => {
-    setProfile(prev => ({
-      ...prev,
-      addresses: prev.addresses.map(addr => addr.id === updated.id ? updated : addr),
-    }));
+  const handleSaveAddress = async (updated: any) => {
+    if (!user) return;
+    // Update in Supabase
+    const { error } = await supabase
+      .from("addresses")
+      .update({
+        ...updated,
+      })
+      .eq("id", updated.id)
+      .eq("user_id", user.id);
+
+    if (error) {
+      toast({
+        title: "Error updating address",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+    setAddresses((prev) =>
+      prev.map((addr) => (addr.id === updated.id ? { ...updated } : addr))
+    );
     setEditModalOpen(false);
     toast({
       title: "Address updated",
@@ -173,17 +224,30 @@ const UserProfile = () => {
     });
   };
 
-  // Delete address handler (open modal)
-  const handleDeleteClick = (id: number) => {
+  // Delete Address logic
+  const handleDeleteClick = (id: string) => {
     setDeleteAddressId(id);
     setDeleteModalOpen(true);
   };
-  // Confirm delete
-  const handleConfirmDelete = () => {
-    setProfile(prev => ({
-      ...prev,
-      addresses: prev.addresses.filter(addr => addr.id !== deleteAddressId),
-    }));
+
+  const handleConfirmDelete = async () => {
+    if (!user || !deleteAddressId) return;
+    const { error } = await supabase
+      .from("addresses")
+      .delete()
+      .eq("id", deleteAddressId)
+      .eq("user_id", user.id);
+
+    if (error) {
+      toast({
+        title: "Error deleting address",
+        description: error.message,
+        variant: "destructive",
+      });
+      setDeleteModalOpen(false);
+      return;
+    }
+    setAddresses(prev => prev.filter(addr => addr.id !== deleteAddressId));
     setDeleteModalOpen(false);
     toast({
       title: "Address deleted",
@@ -299,7 +363,7 @@ const UserProfile = () => {
             </div>
           </div>
 
-          {/* Addresses (DO NOT CHANGE) */}
+          {/* Addresses */}
           <div className="bg-white rounded-lg p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
@@ -313,35 +377,41 @@ const UserProfile = () => {
               </Link>
             </div>
             <div className="space-y-4">
-              {profile.addresses.map((address) => (
-                <div
-                  key={address.id}
-                  className={`border p-4 rounded-lg ${address.default ? 'bg-green-50 border-green-200' : ''}`}
-                >
-                  <div className="flex justify-between">
-                    <div className="flex items-center space-x-2">
-                      <span className="font-medium">{address.type}</span>
-                      {address.default && (
-                        <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded">Default</span>
-                      )}
+              {loadingAddresses ? (
+                <div>Loading addresses...</div>
+              ) : addresses.length === 0 ? (
+                <div className="text-muted-foreground">No addresses found.</div>
+              ) : (
+                addresses.map((address) => (
+                  <div
+                    key={address.id}
+                    className={`border p-4 rounded-lg ${address.is_default ? 'bg-green-50 border-green-200' : ''}`}
+                  >
+                    <div className="flex justify-between">
+                      <div className="flex items-center space-x-2">
+                        <span className="font-medium">{address.type || "Address"}</span>
+                        {address.is_default && (
+                          <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded">Default</span>
+                        )}
+                      </div>
+                      <div className="space-x-2">
+                        <Button variant="ghost" size="sm" onClick={() => handleEditClick(address)}>Edit</Button>
+                        {!address.is_default && (
+                          <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(address.id)}>Delete</Button>
+                        )}
+                      </div>
                     </div>
-                    <div className="space-x-2">
-                      <Button variant="ghost" size="sm" onClick={() => handleEditClick(address)}>Edit</Button>
-                      {!address.default && (
-                        <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(address.id)}>Delete</Button>
-                      )}
+                    <div className="mt-2 text-gray-600">
+                      <p>{address.street}</p>
+                      <p>{address.city}, {address.state} {address.zip_code}</p>
                     </div>
                   </div>
-                  <div className="mt-2 text-gray-600">
-                    <p>{address.address}</p>
-                    <p>{address.city}, {address.state} {address.pincode}</p>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
-          {/* Address Edit & Delete Modals */}
+          {/* Address Edit & Delete Modals (pass single address object) */}
           <EditAddressModal
             isOpen={editModalOpen}
             onClose={() => setEditModalOpen(false)}
