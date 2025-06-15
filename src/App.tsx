@@ -12,7 +12,7 @@ import OrderConfirmation from "./pages/OrderConfirmation";
 import OrderTracking from "./pages/OrderTracking";
 import OrderHistory from "./pages/OrderHistory";
 import UserProfile from "./pages/UserProfile";
-import LoginSignup from "./pages/LoginSignup";
+import AuthHybrid from "./pages/AuthHybrid";
 import DeliveryPartnerAuth from "./pages/DeliveryPartnerAuth";
 import DeliveryDashboard from "./pages/DeliveryDashboard";
 import AdminLogin from "./pages/admin/AdminLogin";
@@ -23,7 +23,6 @@ import ManageUsers from "./pages/admin/ManageUsers";
 import Transactions from "./pages/admin/Transactions";
 import NotFound from "./pages/NotFound";
 import MapLocation from "./pages/MapLocation";
-import AuthHybrid from "./pages/AuthHybrid";
 
 const queryClient = new QueryClient();
 
