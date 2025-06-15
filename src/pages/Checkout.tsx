@@ -1,11 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { ArrowLeft, MapPin, CreditCard, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Checkout = () => {
   const [selectedPayment, setSelectedPayment] = useState('cod');
@@ -18,6 +18,16 @@ const Checkout = () => {
     city: '',
     state: ''
   });
+
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Redirect to login/signup if not authenticated
+    if (!loading && !user) {
+      navigate('/login');
+    }
+  }, [loading, user, navigate]);
 
   const totalAmount = 160;
 
@@ -125,6 +135,18 @@ const Checkout = () => {
     { id: 'bank', label: 'Bank Transfer', icon: '🏦' }
   ];
   
+  if (loading) {
+    // Show loading while checking auth
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto" />
+        <p className="mt-4 text-gray-600">Checking authentication...</p>
+      </div>
+    );
+  }
+
+  if (!user) return null;
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header
