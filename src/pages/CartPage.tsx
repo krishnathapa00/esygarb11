@@ -293,39 +293,44 @@ const CartPage = () => {
           </div>
 
           {/* Order Summary */}
-          <div className="bg-white rounded-lg p-6 shadow-sm h-fit">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h3>
-            
-            <div className="space-y-3 mb-4">
-              <div className="flex justify-between text-sm">
-                <span>Subtotal ({totalItems} items)</span>
-                <span>Rs{totalPrice}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>Delivery Fee</span>
-                <span>Rs{deliveryFee}</span>
-              </div>
-              {deliveryFee === 0 && (
-                <Badge variant="secondary" className="text-xs">
-                  Free delivery on orders above Rs200
-                </Badge>
-              )}
-              <div className="border-t pt-3">
-                <div className="flex justify-between font-semibold text-lg">
-                  <span>Total</span>
-                  <span>Rs{finalTotal}</span>
+          <div className="bg-gradient-to-br from-green-50 via-emerald-50 to-white rounded-2xl p-6 shadow-lg h-fit border border-green-100">
+            <div className="flex items-center gap-3 mb-5">
+              <span className="inline-block bg-green-100 p-2 rounded-full">
+                <Clock className="h-5 w-5 text-green-600" />
+              </span>
+              <h3 className="text-lg font-bold text-gray-900">Order Summary</h3>
+            </div>
+            <div className="mb-6">
+              {/* Breakdown */}
+              <div className="space-y-2 text-base">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-700">Subtotal</span>
+                  <span className="font-medium text-gray-900">Rs{totalPrice}</span>
                 </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-700">Delivery Fee</span>
+                  <span className={deliveryFee === 0 ? "font-medium text-green-600" : "font-medium text-gray-900"}>
+                    Rs{deliveryFee}
+                  </span>
+                </div>
+                {deliveryFee === 0 && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge variant="secondary" className="text-xs px-2 py-1">Free delivery on orders above Rs200</Badge>
+                  </div>
+                )}
               </div>
             </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2 text-sm text-green-600">
-                <Clock className="h-4 w-4" />
+            <div className="flex justify-between items-center py-4 border-t border-dashed border-green-200 mb-3">
+              <span className="font-semibold text-lg text-gray-800">Total</span>
+              <span className="font-extrabold text-2xl text-emerald-600 tracking-tight">Rs{finalTotal}</span>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-green-600 pb-1">
+                <Truck className="h-4 w-4" />
                 <span>Delivery in 10-15 mins</span>
               </div>
-              
               <Link to="/checkout">
-                <Button className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700">
+                <Button className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 py-3 text-lg font-bold rounded-lg shadow-green-100 shadow-md transition-all">
                   Proceed to Checkout
                 </Button>
               </Link>
