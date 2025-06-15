@@ -69,7 +69,7 @@ const Cart = ({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem }: CartPr
                   <div className="flex-1">
                     <h3 className="font-medium text-sm">{item.name}</h3>
                     <p className="text-xs text-gray-500">{item.weight}</p>
-                    <p className="font-semibold text-sm">₹{item.price}</p>
+                    <p className="font-semibold text-sm">Rs{item.price}</p>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Button
@@ -101,20 +101,20 @@ const Cart = ({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem }: CartPr
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span>₹{totalPrice}</span>
+                  <span>Rs{totalPrice}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Delivery Fee</span>
-                  <span>₹{deliveryFee}</span>
+                  <span>Rs{deliveryFee}</span>
                 </div>
                 {deliveryFee === 0 && (
                   <Badge variant="secondary" className="text-xs">
-                    Free delivery on orders above ₹200
+                    Free delivery on orders above Rs200
                   </Badge>
                 )}
                 <div className="flex justify-between font-semibold text-lg border-t pt-2">
                   <span>Total</span>
-                  <span>₹{finalTotal}</span>
+                  <span>Rs{finalTotal}</span>
                 </div>
               </div>
               

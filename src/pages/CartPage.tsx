@@ -212,7 +212,7 @@ const CartPage = () => {
                   <div className="flex-1">
                     <h3 className="font-semibold text-gray-900">{item.name}</h3>
                     <p className="text-sm text-gray-500">{item.weight}</p>
-                    <p className="font-semibold text-green-600">₹{item.price}</p>
+                    <p className="font-semibold text-green-600">Rs{item.price}</p>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Button
@@ -301,21 +301,21 @@ const CartPage = () => {
             <div className="space-y-3 mb-4">
               <div className="flex justify-between text-sm">
                 <span>Subtotal ({totalItems} items)</span>
-                <span>₹{totalPrice}</span>
+                <span>Rs{totalPrice}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span>Delivery Fee</span>
-                <span>₹{deliveryFee}</span>
+                <span>Rs{deliveryFee}</span>
               </div>
               {deliveryFee === 0 && (
                 <Badge variant="secondary" className="text-xs">
-                  Free delivery on orders above ₹200
+                  Free delivery on orders above Rs200
                 </Badge>
               )}
               <div className="border-t pt-3">
                 <div className="flex justify-between font-semibold text-lg">
                   <span>Total</span>
-                  <span>₹{finalTotal}</span>
+                  <span>Rs{finalTotal}</span>
                 </div>
               </div>
             </div>
