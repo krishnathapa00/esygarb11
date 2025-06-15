@@ -20,25 +20,67 @@ const AdminLogin = () => {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    setLoading(false);
     if (error) {
+      setLoading(false);
       toast({
         title: "Login Failed",
         description: error.message || "Please check your credentials.",
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Login successful!",
-        description: "Welcome to the admin panel.",
-      });
-      navigate("/admin-dashboard");
+      return;
     }
+
+    // Fetch user profile after logging in
+    const userId = data?.user?.id;
+    if (!userId) {
+      setLoading(false);
+      toast({
+        title: "Login Error",
+        description: "User not found after login.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Get profile (role)
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", userId)
+      .single();
+
+    setLoading(false);
+
+    if (profileError || !profile) {
+      toast({
+        title: "Profile Not Found",
+        description: "Could not retrieve your profile or role information.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (profile.role !== "admin") {
+      // User is not admin, sign out and show error
+      await supabase.auth.signOut();
+      toast({
+        title: "Access Denied",
+        description: "You are not an admin. Please use a valid admin account to log in.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Login successful!",
+      description: "Welcome to the admin panel.",
+    });
+    navigate("/admin-dashboard");
   };
 
   const handlePasswordReset = async () => {
