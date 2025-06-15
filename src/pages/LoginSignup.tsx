@@ -5,22 +5,19 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
 const LoginSignup = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [fullName, setFullName] = useState('');
   const [otp, setOtp] = useState('');
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('login');
-  
-  const { sendOtp, verifyOtp, signUp } = useAuth();
+
+  const { sendOtp, verifyOtp } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  
+
   const handleSendOtp = async () => {
     if (phoneNumber.length < 10) {
       toast({
@@ -30,33 +27,10 @@ const LoginSignup = () => {
       });
       return;
     }
-    
+
     setLoading(true);
-    
+
     try {
-      if (activeTab === 'signup' && !fullName.trim()) {
-        toast({
-          title: "Name Required",
-          description: "Please enter your full name",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
-      }
-      
-      if (activeTab === 'signup') {
-        const { error: signUpError } = await signUp(phoneNumber, fullName);
-        if (signUpError) {
-          toast({
-            title: "Signup Error",
-            description: signUpError.message,
-            variant: "destructive",
-          });
-          setLoading(false);
-          return;
-        }
-      }
-      
       const { error } = await sendOtp(phoneNumber);
       if (error) {
         toast({
@@ -74,10 +48,10 @@ const LoginSignup = () => {
         variant: "destructive",
       });
     }
-    
+
     setLoading(false);
   };
-  
+
   const handleVerifyOtp = async () => {
     if (otp.length !== 4) {
       toast({
@@ -87,9 +61,9 @@ const LoginSignup = () => {
       });
       return;
     }
-    
+
     setLoading(true);
-    
+
     try {
       const { error } = await verifyOtp(phoneNumber, otp);
       if (error) {
@@ -112,7 +86,7 @@ const LoginSignup = () => {
         variant: "destructive",
       });
     }
-    
+
     setLoading(false);
   };
 
@@ -120,7 +94,6 @@ const LoginSignup = () => {
     setIsOtpSent(false);
     setOtp('');
     setPhoneNumber('');
-    setFullName('');
   };
 
   return (
@@ -133,141 +106,69 @@ const LoginSignup = () => {
           </Button>
         </Link>
       </div>
-      
+
       <div className="flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900">EsyGrab</h1>
-            <p className="text-gray-600 mt-2">Groceries at your doorstep in minutes</p>
+            <p className="text-gray-600 mt-2">
+              Groceries at your doorstep in minutes
+            </p>
           </div>
-          
+
           <div className="bg-white rounded-xl shadow-sm p-8">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="login">
-                <div className="space-y-4">
-                  {!isOtpSent ? (
-                    <>
-                      <div>
-                        <Label htmlFor="phone">Phone Number</Label>
-                        <Input
-                          id="phone"
-                          placeholder="Enter your phone number"
-                          value={phoneNumber}
-                          onChange={(e) => setPhoneNumber(e.target.value)}
-                          type="tel"
-                        />
-                      </div>
-                      <Button 
-                        className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
-                        onClick={handleSendOtp}
-                        disabled={phoneNumber.length < 10 || loading}
-                      >
-                        {loading ? 'Sending...' : 'Send OTP'}
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <div>
-                        <Label htmlFor="otp">
-                          Enter OTP sent to {phoneNumber}
-                        </Label>
-                        <Input
-                          id="otp"
-                          placeholder="Enter 4-digit OTP"
-                          value={otp}
-                          onChange={(e) => setOtp(e.target.value)}
-                          maxLength={4}
-                        />
-                      </div>
-                      <Button 
-                        className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
-                        onClick={handleVerifyOtp}
-                        disabled={otp.length !== 4 || loading}
-                      >
-                        {loading ? 'Verifying...' : 'Verify OTP'}
-                      </Button>
-                      <Button 
-                        variant="link" 
-                        className="w-full text-sm text-gray-600"
-                        onClick={resetForm}
-                      >
-                        Change Phone Number
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="signup">
-                <div className="space-y-4">
-                  {!isOtpSent ? (
-                    <>
-                      <div>
-                        <Label htmlFor="signupName">Full Name</Label>
-                        <Input
-                          id="signupName"
-                          placeholder="Enter your full name"
-                          value={fullName}
-                          onChange={(e) => setFullName(e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="signupPhone">Phone Number</Label>
-                        <Input
-                          id="signupPhone"
-                          placeholder="Enter your phone number"
-                          value={phoneNumber}
-                          onChange={(e) => setPhoneNumber(e.target.value)}
-                          type="tel"
-                        />
-                      </div>
-                      <Button 
-                        className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
-                        onClick={handleSendOtp}
-                        disabled={phoneNumber.length < 10 || !fullName.trim() || loading}
-                      >
-                        {loading ? 'Creating Account...' : 'Create Account'}
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <div>
-                        <Label htmlFor="signupOtp">
-                          Enter OTP sent to {phoneNumber}
-                        </Label>
-                        <Input
-                          id="signupOtp"
-                          placeholder="Enter 4-digit OTP"
-                          value={otp}
-                          onChange={(e) => setOtp(e.target.value)}
-                          maxLength={4}
-                        />
-                      </div>
-                      <Button 
-                        className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
-                        onClick={handleVerifyOtp}
-                        disabled={otp.length !== 4 || loading}
-                      >
-                        {loading ? 'Verifying...' : 'Verify OTP'}
-                      </Button>
-                      <Button 
-                        variant="link" 
-                        className="w-full text-sm text-gray-600"
-                        onClick={resetForm}
-                      >
-                        Change Phone Number
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </TabsContent>
-            </Tabs>
-            
+            <div className="space-y-4">
+              {!isOtpSent ? (
+                <>
+                  <div>
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input
+                      id="phone"
+                      placeholder="Enter your phone number"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      type="tel"
+                    />
+                  </div>
+                  <Button
+                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                    onClick={handleSendOtp}
+                    disabled={phoneNumber.length < 10 || loading}
+                  >
+                    {loading ? 'Sending...' : 'Send OTP'}
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <Label htmlFor="otp">
+                      Enter OTP sent to {phoneNumber}
+                    </Label>
+                    <Input
+                      id="otp"
+                      placeholder="Enter 4-digit OTP"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      maxLength={4}
+                    />
+                  </div>
+                  <Button
+                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                    onClick={handleVerifyOtp}
+                    disabled={otp.length !== 4 || loading}
+                  >
+                    {loading ? 'Verifying...' : 'Verify OTP'}
+                  </Button>
+                  <Button
+                    variant="link"
+                    className="w-full text-sm text-gray-600"
+                    onClick={resetForm}
+                  >
+                    Change Phone Number
+                  </Button>
+                </>
+              )}
+            </div>
             <div className="mt-6 pt-6 border-t border-gray-200 text-center">
               <p className="text-sm text-gray-600">
                 By continuing, you agree to our Terms of Service and Privacy Policy

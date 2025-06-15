@@ -7,8 +7,6 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (phoneNumber: string, fullName: string, role?: string) => Promise<{ error: any }>;
-  signIn: (phoneNumber: string) => Promise<{ error: any }>;
   verifyOtp: (phoneNumber: string, otp: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   sendOtp: (phoneNumber: string) => Promise<{ error: any }>;
@@ -50,17 +48,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Generates a 4-digit OTP
   const generateOtp = () => {
     return Math.floor(1000 + Math.random() * 9000).toString();
   };
 
+  // Unified sendOtp: Create account if new user, otherwise let login flow handle it.
   const sendOtp = async (phoneNumber: string) => {
     try {
       const otpCode = generateOtp();
       const expiresAt = new Date();
-      expiresAt.setMinutes(expiresAt.getMinutes() + 10); // 10 minutes expiry
+      expiresAt.setMinutes(expiresAt.getMinutes() + 10); // 10 mins expiry
 
-      // Store OTP in database
+      // Save OTP for this phone
       const { error } = await supabase
         .from('otp_verifications')
         .insert({
@@ -71,7 +71,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (error) throw error;
 
-      // In a real app, you would send SMS here
+      // No distinction between "signup" and "login"
       console.log(`OTP for ${phoneNumber}: ${otpCode}`);
       toast({
         title: "OTP Sent",
@@ -80,83 +80,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       return { error: null };
     } catch (error) {
-      console.error('Error sending OTP:', error);
       return { error };
     }
   };
 
-  const signUp = async (phoneNumber: string, fullName: string, role: string = 'customer') => {
-    try {
-      // Create a dummy email for Supabase auth (since we're using phone-based auth)
-      const email = `${phoneNumber.replace(/\D/g, '')}@esygrab.app`;
-      const password = Math.random().toString(36).substring(2, 15);
-
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        phone: phoneNumber,
-        options: {
-          data: {
-            full_name: fullName,
-            phone_number: phoneNumber,
-            role: role,
-          }
-        }
-      });
-
-      return { error };
-    } catch (error) {
-      return { error };
-    }
-  };
-
-  const signIn = async (phoneNumber: string) => {
-    try {
-      // For demo purposes, we'll auto-create user if they don't exist
-      const email = `${phoneNumber.replace(/\D/g, '')}@esygrab.app`;
-      const password = Math.random().toString(36).substring(2, 15);
-
-      // Try to sign in first
-      let { error } = await supabase.auth.signInWithPassword({
-        email,
-        password: 'demo-password-123'
-      });
-
-      // If user doesn't exist, create them
-      if (error && error.message.includes('Invalid login credentials')) {
-        const { error: signUpError } = await supabase.auth.signUp({
-          email,
-          password: 'demo-password-123',
-          phone: phoneNumber,
-          options: {
-            data: {
-              full_name: '',
-              phone_number: phoneNumber,
-            }
-          }
-        });
-        
-        if (!signUpError) {
-          // Sign them in after creation
-          const { error: signInError } = await supabase.auth.signInWithPassword({
-            email,
-            password: 'demo-password-123'
-          });
-          error = signInError;
-        } else {
-          error = signUpError;
-        }
-      }
-
-      return { error };
-    } catch (error) {
-      return { error };
-    }
-  };
-
+  // Magic login/signup: If user doesn't exist, create; if exists, just log in.
   const verifyOtp = async (phoneNumber: string, otp: string) => {
     try {
-      // Verify OTP from database
+      // Check OTP validity
       const { data: otpData, error: otpError } = await supabase
         .from('otp_verifications')
         .select('*')
@@ -178,9 +109,43 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .update({ is_verified: true })
         .eq('id', otpData.id);
 
-      // Sign in the user
-      const signInResult = await signIn(phoneNumber);
-      return signInResult;
+      // Try finding email for phone (your magic login model: email made from phone)
+      const email = `${phoneNumber.replace(/\D/g, '')}@esygrab.app`;
+      // Password is always 'demo-password-123'
+      const password = 'demo-password-123';
+
+      // Try to sign in; if fail, create and then sign in.
+      let { error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error && error.message.includes('Invalid login credentials')) {
+        // User not found, create them first ("magic signup")
+        const { error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          phone: phoneNumber,
+          options: {
+            data: {
+              full_name: '',
+              phone_number: phoneNumber,
+            }
+          }
+        });
+        if (!signUpError) {
+          // Retry sign in
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            email,
+            password
+          });
+          error = signInError;
+        } else {
+          error = signUpError;
+        }
+      }
+
+      return { error };
     } catch (error) {
       return { error };
     }
@@ -202,8 +167,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     user,
     session,
     loading,
-    signUp,
-    signIn,
     verifyOtp,
     signOut,
     sendOtp,
