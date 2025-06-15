@@ -1,8 +1,10 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+// Add signUp function to interface
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -10,6 +12,7 @@ interface AuthContextType {
   verifyOtp: (phoneNumber: string, otp: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   sendOtp: (phoneNumber: string) => Promise<{ error: any }>;
+  signUp: (phoneNumber: string, fullName: string, role?: string) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,7 +34,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -151,6 +154,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  // Manual signUp for Delivery Partner (with name/role)
+  const signUp = async (phoneNumber: string, fullName: string, role = 'delivery_partner') => {
+    try {
+      const email = `${phoneNumber.replace(/\D/g, '')}@esygrab.app`;
+      const password = 'demo-password-123';
+
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        phone: phoneNumber,
+        options: {
+          data: {
+            full_name: fullName,
+            phone_number: phoneNumber,
+            role, // Added role info if needed for backend triggers/RLS
+          }
+        }
+      });
+
+      // Ignore "user already exists" errors, as flow will proceed with login/OTP
+      return { error };
+    } catch (error) {
+      return { error };
+    }
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -163,13 +192,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     window.location.href = "/login";
   };
 
-  const value = {
+  const value: AuthContextType = {
     user,
     session,
     loading,
     verifyOtp,
     signOut,
     sendOtp,
+    signUp,
   };
 
   return (
