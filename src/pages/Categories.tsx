@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../components/Header';
@@ -64,16 +65,16 @@ const AllCategories = () => {
               to={`/categories/${category.id}`}
               className="group"
             >
-              <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-200 hover:-translate-y-1">
-                <div className="aspect-square">
+              <div className="bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-lg transition-all duration-200 hover:-translate-y-1">
+                <div className="flex items-center justify-center mb-3">
                   <img
                     src={category.image}
                     alt={category.name}
-                    className="w-full h-full object-cover"
+                    className="w-24 h-24 object-cover rounded-xl"
                   />
                 </div>
                 
-                <div className="p-4 text-center">
+                <div className="text-center">
                   <h3 className="font-medium text-gray-900 text-sm mb-1">
                     {category.name}
                   </h3>
