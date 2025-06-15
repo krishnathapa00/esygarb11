@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
@@ -24,6 +23,7 @@ import ManageUsers from "./pages/admin/ManageUsers";
 import Transactions from "./pages/admin/Transactions";
 import NotFound from "./pages/NotFound";
 import MapLocation from "./pages/MapLocation";
+import AuthHybrid from "./pages/AuthHybrid";
 
 const queryClient = new QueryClient();
 
@@ -34,7 +34,9 @@ function App() {
         <Router>
           <div className="min-h-screen bg-background">
             <Routes>
-              {/* Customer Routes */}
+              {/* Customer & Admin Hybrid Auth Routes */}
+              <Route path="/auth" element={<AuthHybrid />} />
+              <Route path="/login" element={<AuthHybrid />} />
               <Route path="/" element={<Index />} />
               <Route path="/categories" element={<AllCategories />} />
               <Route path="/categories/:categoryId" element={<CategoryProducts />} />
@@ -47,8 +49,6 @@ function App() {
               <Route path="/order-history" element={<OrderHistory />} />
               <Route path="/profile" element={<UserProfile />} />
               <Route path="/my-profile" element={<UserProfile />} />
-              <Route path="/login" element={<LoginSignup />} />
-              {/* Removed duplicate /customer-login route */}
               <Route path="/location" element={<MapLocation />} />
               <Route path="/delivery-location" element={<MapLocation />} />
               <Route path="/map-location" element={<MapLocation />} />
