@@ -5,6 +5,7 @@ import { Search, ShoppingCart, MapPin, Clock, User, Home, Grid3X3, Menu, X } fro
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import LocationDetectionPopup from './LocationDetectionPopup';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface HeaderProps {
   cartItems: number;
@@ -39,6 +40,7 @@ const Header = ({
     return 'Set Location';
   });
   const location = useLocation();
+  const isMobile = useIsMobile();
 
   const handleLocationSet = (location: string) => {
     // Simplify location display - show main area and add "..."
@@ -72,6 +74,9 @@ const Header = ({
       <span className="text-xs font-medium">{label}</span>
     </Link>
   );
+
+  // Show search bar only on homepage or on desktop
+  const shouldShowSearchBar = location.pathname === '/' || !isMobile;
 
   return (
     <>
@@ -143,21 +148,23 @@ const Header = ({
         </div>
       </header>
 
-      {/* Search Bar Section - Below Header */}
-      <div className="sticky top-16 z-40 bg-white border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <Input 
-              type="text" 
-              placeholder="Search for groceries, fruits, vegetables..." 
-              value={searchQuery} 
-              onChange={e => onSearchChange(e.target.value)} 
-              className="pl-12 w-full h-12 text-base rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-green-500 transition-all duration-200" 
-            />
+      {/* Search Bar Section - Below Header - Conditionally shown */}
+      {shouldShowSearchBar && (
+        <div className="sticky top-16 z-40 bg-white border-b border-gray-100">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Input 
+                type="text" 
+                placeholder="Search for groceries, fruits, vegetables..." 
+                value={searchQuery} 
+                onChange={e => onSearchChange(e.target.value)} 
+                className="pl-12 w-full h-12 text-base rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-green-500 transition-all duration-200" 
+              />
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Location Detection Popup */}
       <LocationDetectionPopup
