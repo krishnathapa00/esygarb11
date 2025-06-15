@@ -48,7 +48,7 @@ function App() {
               <Route path="/profile" element={<UserProfile />} />
               <Route path="/my-profile" element={<UserProfile />} />
               <Route path="/login" element={<LoginSignup />} />
-              <Route path="/customer-login" element={<LoginSignup />} />
+              {/* Removed duplicate /customer-login route */}
               <Route path="/location" element={<MapLocation />} />
               <Route path="/delivery-location" element={<MapLocation />} />
               <Route path="/map-location" element={<MapLocation />} />
