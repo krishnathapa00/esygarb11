@@ -1,32 +1,72 @@
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const AdminLogin = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
   const navigate = useNavigate();
-  
-  const handleLogin = (e: React.FormEvent) => {
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
-    // Simulate login
-    setTimeout(() => {
-      setLoading(false);
-      // Hardcoded credentials for demo
-      if (email === 'admin@example.com' && password === 'admin123') {
-        navigate('/admin');
-      } else {
-        alert('Invalid credentials. Please try again.');
-      }
-    }, 1000);
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    setLoading(false);
+    if (error) {
+      toast({
+        title: "Login Failed",
+        description: error.message || "Please check your credentials.",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Login successful!",
+        description: "Welcome to the admin panel.",
+      });
+      navigate("/admin-dashboard");
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    if (!email) {
+      toast({
+        title: "Enter your email address above first.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setLoading(true);
+    const redirectUrl = `${window.location.origin}/admin-login`;
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: redirectUrl,
+    });
+    setLoading(false);
+    if (error) {
+      toast({
+        title: "Password Reset Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Check your email",
+        description: "Password reset link sent.",
+      });
+    }
   };
 
   return (
@@ -36,7 +76,7 @@ const AdminLogin = () => {
           <h1 className="text-3xl font-bold text-gray-900">EsyGrab Admin</h1>
           <p className="text-gray-600 mt-2">Login to access the admin panel</p>
         </div>
-        
+
         <div className="bg-white rounded-xl shadow-sm p-8">
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
@@ -50,13 +90,13 @@ const AdminLogin = () => {
                 required
               />
             </div>
-            
+
             <div>
               <Label htmlFor="password">Password</Label>
               <div className="relative">
                 <Input
                   id="password"
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -66,32 +106,39 @@ const AdminLogin = () => {
                   type="button"
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
                   onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
             </div>
-            
+
             <Button
               type="submit"
               className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
               disabled={loading}
             >
-              {loading ? 'Logging in...' : 'Login to Admin Panel'}
+              {loading ? "Logging in..." : "Login to Admin Panel"}
             </Button>
           </form>
-          
+
           <div className="mt-6 text-center">
-            <a href="#" className="text-sm text-green-600 hover:text-green-700">
+            <button
+              className="text-sm text-green-600 hover:text-green-700"
+              onClick={handlePasswordReset}
+              type="button"
+              disabled={loading || !email}
+            >
               Forgot password?
-            </a>
+            </button>
           </div>
         </div>
-        
+
         <div className="mt-8 text-center text-gray-500 text-sm">
-          <p>Demo credentials:</p>
-          <p>Email: admin@example.com</p>
-          <p>Password: admin123</p>
+          <p>
+            Use your admin email and password.<br />
+            If you haven't signed up, register via the customer or hybrid signup flow first.
+          </p>
         </div>
       </div>
     </div>
