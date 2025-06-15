@@ -23,53 +23,52 @@ interface ProductCardProps {
   onUpdateQuantity: (productId: number, quantity: number) => void;
 }
 
-const ProductCard = ({ product, onAddToCart, cartQuantity, onUpdateQuantity }: ProductCardProps) => {
+const ProductCard = ({
+  product,
+  onAddToCart,
+  cartQuantity,
+  onUpdateQuantity,
+}: ProductCardProps) => {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 w-full group">
-      <Link to={`/product/${product.id}`} className="block">
-        <div className="relative aspect-square overflow-hidden bg-gray-50">
+    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-200 hover:-translate-y-1 w-full group relative">
+      <Link to={`/product/${product.id}`} className="block group">
+        <div className="relative aspect-square bg-gray-50 overflow-hidden">
           <img
             src={product.image}
             alt={product.name}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 rounded-xl shadow-sm"
           />
+          {/* Discount Badge */}
           {product.discount && (
-            <Badge className="absolute top-1 left-1 sm:top-2 sm:left-2 bg-red-500 hover:bg-red-500 text-white text-[10px] sm:text-xs font-medium px-1 sm:px-1.5 py-0.5 rounded">
+            <Badge className="absolute top-2 left-2 bg-gradient-to-r from-red-500 to-orange-400 text-white px-1.5 py-0.5 text-[11px] sm:text-xs font-bold rounded-xl shadow">
               {product.discount}% OFF
             </Badge>
           )}
-          <div className="absolute top-1 right-1 sm:top-2 sm:right-2 bg-white/95 backdrop-blur-sm rounded px-1 sm:px-1.5 py-0.5">
-            <span className="text-[10px] sm:text-xs font-medium text-green-600">{product.deliveryTime}</span>
+          {/* DeliveryTime */}
+          <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm rounded-md px-1.5 py-0.5 shadow-sm border border-gray-100">
+            <span className="text-[10px] sm:text-xs font-bold text-green-600">{product.deliveryTime}</span>
           </div>
         </div>
       </Link>
-      
-      <div className="p-2 sm:p-3 space-y-1 sm:space-y-2">
+
+      {/* Card Content */}
+      <div className="px-3 pt-2 pb-3 flex flex-col justify-between min-h-[130px]">
         <Link to={`/product/${product.id}`}>
-          <h3 className="font-medium text-gray-900 text-xs sm:text-sm leading-tight line-clamp-2 hover:text-green-600 transition-colors min-h-[2rem] sm:min-h-[2.5rem]">
+          <h3 className="font-semibold text-gray-900 text-xs sm:text-base leading-tight line-clamp-2 hover:text-green-600 transition-colors min-h-[2.1rem] sm:min-h-[2.4rem]">
             {product.name}
           </h3>
         </Link>
-        
-        <p className="text-[10px] sm:text-xs text-gray-500">{product.weight}</p>
-        
-        {/* Price and Add Button Row - Enhanced for mobile visibility */}
-        <div className="flex items-center justify-between pt-1 gap-1">
-          {/* Left side - Price - Improved mobile visibility */}
-          <div className="flex flex-col items-start flex-1 min-w-0">
-            <div className="flex items-baseline gap-1 w-full">
-              <span className="font-bold text-gray-900 text-sm sm:text-base leading-none">
-                Rs{product.price}
-              </span>
-              {product.originalPrice && (
-                <span className="text-[10px] sm:text-xs text-gray-400 line-through leading-none">
-                  Rs{product.originalPrice}
-                </span>
-              )}
-            </div>
-          </div>
-          
-          {/* Right side - Add Button */}
+        <div className="flex flex-row items-center gap-2 mt-1 mb-2">
+          <span className="text-[11px] sm:text-xs text-gray-500">{product.weight}</span>
+          {product.originalPrice && (
+            <span className="text-[10px] sm:text-xs text-red-400 line-through">
+              Rs{product.originalPrice}
+            </span>
+          )}
+        </div>
+        <div className="flex items-end justify-between gap-2 mt-auto">
+          <span className="font-extrabold text-green-700 text-base sm:text-lg flex-1">Rs{product.price}</span>
+          {/* Add to Cart Section */}
           <div className="flex-shrink-0">
             {cartQuantity === 0 ? (
               <Button
@@ -77,12 +76,12 @@ const ProductCard = ({ product, onAddToCart, cartQuantity, onUpdateQuantity }: P
                   e.preventDefault();
                   onAddToCart(product);
                 }}
-                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-0 text-xs sm:text-sm font-semibold h-7 sm:h-8 px-3 sm:px-4 rounded-md sm:rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white text-xs sm:text-sm font-bold h-8 sm:h-9 px-4 sm:px-6 rounded-lg shadow transition-all duration-200"
               >
                 ADD
               </Button>
             ) : (
-              <div className="flex items-center justify-between bg-green-600 rounded-md sm:rounded-lg px-1 sm:px-2 py-1">
+              <div className="flex items-center justify-between bg-green-600 rounded-lg px-1.5 py-1 shadow space-x-1">
                 <Button
                   onClick={(e) => {
                     e.preventDefault();
@@ -90,11 +89,12 @@ const ProductCard = ({ product, onAddToCart, cartQuantity, onUpdateQuantity }: P
                   }}
                   variant="ghost"
                   size="sm"
-                  className="w-6 h-6 sm:w-7 sm:h-7 p-0 text-white hover:bg-green-700 rounded text-sm font-medium min-w-[24px] sm:min-w-[28px]"
+                  className="w-7 h-7 sm:w-8 sm:h-8 !bg-transparent text-white hover:bg-green-700 rounded text-base font-bold"
+                  aria-label="Decrease quantity"
                 >
                   −
                 </Button>
-                <span className="font-medium text-white text-xs sm:text-sm px-2 min-w-[16px] text-center">{cartQuantity}</span>
+                <span className="font-bold text-white text-sm sm:text-base px-2">{cartQuantity}</span>
                 <Button
                   onClick={(e) => {
                     e.preventDefault();
@@ -102,7 +102,8 @@ const ProductCard = ({ product, onAddToCart, cartQuantity, onUpdateQuantity }: P
                   }}
                   variant="ghost"
                   size="sm"
-                  className="w-6 h-6 sm:w-7 sm:h-7 p-0 text-white hover:bg-green-700 rounded text-sm font-medium min-w-[24px] sm:min-w-[28px]"
+                  className="w-7 h-7 sm:w-8 sm:h-8 !bg-transparent text-white hover:bg-green-700 rounded text-base font-bold"
+                  aria-label="Increase quantity"
                 >
                   +
                 </Button>
@@ -111,6 +112,8 @@ const ProductCard = ({ product, onAddToCart, cartQuantity, onUpdateQuantity }: P
           </div>
         </div>
       </div>
+      {/* Subtle ring on hover */}
+      <div className="absolute inset-0 rounded-2xl pointer-events-none group-hover:ring-[2.5px] group-hover:ring-green-400 transition-all duration-200" />
     </div>
   );
 };
