@@ -28,6 +28,20 @@ const subCategories = {
     { id: 14, name: 'Chocolates', productCount: 25 },
     { id: 15, name: 'Ice Cream', productCount: 15 },
   ],
+  4: [
+    { id: 16, name: 'Rice', productCount: 30 },
+    { id: 17, name: 'Dal & Pulses', productCount: 25 },
+    { id: 18, name: 'Flour', productCount: 20 },
+    { id: 19, name: 'Spices', productCount: 35 },
+    { id: 20, name: 'Oil & Ghee', productCount: 18 },
+  ],
+  5: [
+    { id: 21, name: 'Body Care', productCount: 40 },
+    { id: 22, name: 'Hair Care', productCount: 35 },
+    { id: 23, name: 'Oral Care', productCount: 25 },
+    { id: 24, name: 'Skin Care', productCount: 30 },
+    { id: 25, name: 'Feminine Care', productCount: 20 },
+  ],
 };
 
 const sampleProducts: Product[] = [
@@ -244,6 +258,8 @@ const CategoryProducts = () => {
     1: 'Fruits & Vegetables',
     2: 'Dairy & Eggs', 
     3: 'Snacks & Beverages',
+    4: 'Staples',
+    5: 'Personal Care',
   };
   
   const categoryName = categoryNames[Number(categoryId) as keyof typeof categoryNames] || 'Category';
@@ -306,35 +322,41 @@ const CategoryProducts = () => {
 
       {/* Main Content */}
       <div className="flex h-[calc(100vh-208px)]">
-        {/* Left Sidebar - Vertical Subcategory Pills */}
-        <div className="w-20 sm:w-24 bg-white border-r border-gray-100 overflow-y-auto">
-          <div className="py-2">
+        {/* Left Sidebar - Enhanced Subcategory Pills */}
+        <div className="w-32 sm:w-36 md:w-40 bg-white border-r border-gray-100 overflow-y-auto">
+          <div className="py-3 px-2">
+            {/* All Products Option */}
             <button
               onClick={() => setSelectedSubCategory(null)}
-              className={`w-full p-2 sm:p-3 text-center transition-colors ${
+              className={`w-full mb-2 p-3 rounded-lg text-center transition-all duration-200 ${
                 selectedSubCategory === null 
-                  ? 'bg-green-50 border-r-2 border-green-500' 
-                  : 'hover:bg-gray-50'
+                  ? 'bg-green-500 text-white shadow-md' 
+                  : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
               }`}
             >
-              <div className="text-xs font-medium text-gray-900 leading-tight">
+              <div className="text-xs font-medium leading-tight">
                 All
               </div>
+              <div className="text-xs opacity-75 mt-1">
+                {filteredProducts.length}
+              </div>
             </button>
+
+            {/* Subcategory Pills */}
             {categorySubCategories.map((subCategory) => (
               <button
                 key={subCategory.id}
                 onClick={() => setSelectedSubCategory(subCategory.id)}
-                className={`w-full p-2 sm:p-3 text-center transition-colors ${
+                className={`w-full mb-2 p-3 rounded-lg text-center transition-all duration-200 ${
                   selectedSubCategory === subCategory.id 
-                    ? 'bg-green-50 border-r-2 border-green-500' 
-                    : 'hover:bg-gray-50'
+                    ? 'bg-green-500 text-white shadow-md' 
+                    : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
                 }`}
               >
-                <div className="text-xs font-medium text-gray-900 leading-tight">
+                <div className="text-xs font-medium leading-tight">
                   {subCategory.name}
                 </div>
-                <div className="text-xs text-gray-500 mt-1">
+                <div className="text-xs opacity-75 mt-1">
                   {subCategory.productCount}
                 </div>
               </button>
@@ -354,7 +376,7 @@ const CategoryProducts = () => {
               </h2>
             </div>
             
-            {/* Products Grid - Zepto/Blinkit style layout */}
+            {/* Products Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
               {filteredProducts.map((product) => (
                 <ProductCard
