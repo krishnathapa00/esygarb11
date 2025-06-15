@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from '@/contexts/AuthContext';
 import EditAddressModal from '../components/EditAddressModal';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
+import AddAddressModal from "../components/AddAddressModal";
 import { toast } from "@/hooks/use-toast";
 import { v4 as uuidv4 } from "uuid";
 
@@ -55,6 +56,7 @@ const UserProfile = () => {
   const [editAddress, setEditAddress] = useState<any>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteAddressId, setDeleteAddressId] = useState<string | null>(null);
+  const [addModalOpen, setAddModalOpen] = useState(false);
 
   // Fetch profile info from Supabase on mount
   useEffect(() => {
@@ -183,10 +185,45 @@ const UserProfile = () => {
     fetchAddresses();
   }, [user]);
 
-  // Add new address (opens map location page as per old logic)
+  // Add new address (now opens modal instead of navigation)
   const handleAddNewAddress = () => {
-    // For now, redirect to /map-location as before.
-    // If you want a modal/form, let me know!
+    setAddModalOpen(true);
+  };
+
+  // Save new address to Supabase
+  const handleSaveNewAddress = async (form: {
+    type: string;
+    street: string;
+    city: string;
+    state: string;
+    zip_code: string;
+  }) => {
+    if (!user) return;
+    // Insert into Supabase
+    const toInsert = {
+      user_id: user.id,
+      type: form.type,
+      street: form.street,
+      city: form.city,
+      state: form.state,
+      zip_code: form.zip_code,
+      is_default: addresses.length === 0, // Make first address default
+    };
+    const { data, error } = await supabase.from("addresses").insert([toInsert]).select().single();
+    if (error) {
+      toast({
+        title: "Failed to add address",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+    setAddresses(prev => [...prev, data]);
+    setAddModalOpen(false);
+    toast({
+      title: "Address added",
+      description: "Your address was added successfully.",
+    });
   };
 
   // Edit Address modal logic
@@ -370,11 +407,9 @@ const UserProfile = () => {
                 <svg className="h-5 w-5 text-green-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 22s8-4.5 8-10V7a8 8 0 10-16 0v5C4 17.5 12 22 12 22z" /><circle cx="12" cy="11" r="3" /></svg>
                 <h3 className="text-lg font-semibold">My Addresses</h3>
               </div>
-              <Link to="/map-location">
-                <Button variant="outline" size="sm">
-                  Add New Address
-                </Button>
-              </Link>
+              <Button variant="outline" size="sm" onClick={handleAddNewAddress}>
+                Add New Address
+              </Button>
             </div>
             <div className="space-y-4">
               {loadingAddresses ? (
@@ -417,6 +452,11 @@ const UserProfile = () => {
             onClose={() => setEditModalOpen(false)}
             onSave={handleSaveAddress}
             address={editAddress}
+          />
+          <AddAddressModal
+            isOpen={addModalOpen}
+            onClose={() => setAddModalOpen(false)}
+            onSave={handleSaveNewAddress}
           />
           <ConfirmDeleteModal
             isOpen={deleteModalOpen}
