@@ -24,7 +24,7 @@ const UserProfile = () => {
     avatar: '',
     addresses: [
       {
-        id: 1,
+        id: "1",
         type: "Home",
         address: "123 Main St, Apartment 4B",
         city: "New York",
@@ -33,7 +33,7 @@ const UserProfile = () => {
         default: true,
       },
       {
-        id: 2,
+        id: "2",
         type: "Work",
         address: "456 Office Blvd, Suite 100",
         city: "New York",
@@ -54,7 +54,7 @@ const UserProfile = () => {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editAddress, setEditAddress] = useState<any>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [deleteAddressId, setDeleteAddressId] = useState<number | null>(null);
+  const [deleteAddressId, setDeleteAddressId] = useState<string | null>(null);
 
   // Fetch profile info from Supabase on mount
   useEffect(() => {
