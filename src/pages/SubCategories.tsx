@@ -307,11 +307,11 @@ const CategoryProducts = () => {
       {/* Main Content */}
       <div className="flex h-[calc(100vh-208px)]">
         {/* Left Sidebar - Vertical Subcategory Pills */}
-        <div className="w-24 bg-white border-r border-gray-100 overflow-y-auto">
+        <div className="w-20 sm:w-24 bg-white border-r border-gray-100 overflow-y-auto">
           <div className="py-2">
             <button
               onClick={() => setSelectedSubCategory(null)}
-              className={`w-full p-3 text-center transition-colors ${
+              className={`w-full p-2 sm:p-3 text-center transition-colors ${
                 selectedSubCategory === null 
                   ? 'bg-green-50 border-r-2 border-green-500' 
                   : 'hover:bg-gray-50'
@@ -325,7 +325,7 @@ const CategoryProducts = () => {
               <button
                 key={subCategory.id}
                 onClick={() => setSelectedSubCategory(subCategory.id)}
-                className={`w-full p-3 text-center transition-colors ${
+                className={`w-full p-2 sm:p-3 text-center transition-colors ${
                   selectedSubCategory === subCategory.id 
                     ? 'bg-green-50 border-r-2 border-green-500' 
                     : 'hover:bg-gray-50'
@@ -344,7 +344,7 @@ const CategoryProducts = () => {
 
         {/* Right Content - Products Grid */}
         <div className="flex-1 overflow-y-auto">
-          <div className="p-3">
+          <div className="p-3 sm:p-4">
             <div className="mb-3">
               <h2 className="text-sm font-medium text-gray-900">
                 {selectedSubCategory 
@@ -354,8 +354,8 @@ const CategoryProducts = () => {
               </h2>
             </div>
             
-            {/* Products Grid - 6 columns for desktop, responsive for mobile */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+            {/* Products Grid - Improved responsive layout */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
               {filteredProducts.map((product) => (
                 <ProductCard
                   key={product.id}
