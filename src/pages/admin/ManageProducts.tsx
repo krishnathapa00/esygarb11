@@ -8,6 +8,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
 
+type ProductRow = {
+  id: number;
+  name: string;
+  price: number;
+  category_id: number | null;
+  discount: number | null;
+  offer: string | null;
+  image_url: string | null;
+  stock_quantity: number | null;
+  weight: string | null;
+  delivery_time: string | null;
+  description: string | null;
+  categories?: { name: string };
+};
+
 const ManageProducts = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddProduct, setShowAddProduct] = useState(false);
@@ -29,17 +44,15 @@ const ManageProducts = () => {
     description: ''
   });
 
-  // Fetch products from supabase
-  const { data: products = [], refetch, isLoading } = useQuery({
+  // Fetch products from supabase, now selecting "offer"
+  const { data: products = [], refetch, isLoading } = useQuery<ProductRow[]>({
     queryKey: ['admin-products'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('products')
         .select(`
-          *,
-          categories:category_id (
-            name
-          )
+          id, name, price, category_id, discount, offer, image_url, stock_quantity, weight, delivery_time, description,
+          categories:category_id ( name )
         `)
         .order('created_at', { ascending: false });
 
@@ -91,7 +104,7 @@ const ManageProducts = () => {
     e.preventDefault();
     setCreating(true);
 
-    // Prepare payload
+    // Prepare payload, now includes persistent offer
     const payload: any = {
       name: productData.name,
       price: Number(productData.price),
@@ -102,9 +115,8 @@ const ManageProducts = () => {
       weight: productData.weight,
       delivery_time: productData.delivery_time,
       description: productData.description,
-      // offer: productData.offer,  // Uncomment if column exists in table!
+      offer: productData.offer ?? null,
     };
-    if (productData.offer) payload.offer = productData.offer;
 
     const { error } = await supabase.from('products').insert([payload]);
     setCreating(false);
@@ -208,7 +220,7 @@ const ManageProducts = () => {
                       {product.discount ? <span className="text-red-600 font-bold">{product.discount}%</span> : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
-                      {/* FIX: Make sure offer is a non-empty string, show dash otherwise */}
+                      {/* Render offer (can be null), show dash otherwise */}
                       {typeof product.offer === "string" && product.offer.trim().length > 0
                         ? <span className="text-orange-600">{product.offer}</span>
                         : '-'}
