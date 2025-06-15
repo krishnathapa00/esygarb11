@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
@@ -35,6 +36,7 @@ function App() {
             <Routes>
               {/* Customer & Admin Hybrid Auth Routes */}
               <Route path="/auth" element={<AuthHybrid />} />
+              {/* Remove the /login route mapping to LoginSignup, now uses AuthHybrid */}
               <Route path="/login" element={<AuthHybrid />} />
               <Route path="/" element={<Index />} />
               <Route path="/categories" element={<AllCategories />} />
@@ -81,3 +83,4 @@ function App() {
 }
 
 export default App;
+
