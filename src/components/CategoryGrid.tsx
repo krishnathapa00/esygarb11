@@ -8,7 +8,7 @@ const categories = [
   { id: 3, name: 'Snacks & Beverages', image: 'https://images.unsplash.com/photo-1560963689-ba5f0c9ca2f8?w=200&h=200&fit=crop&crop=center', color: 'from-orange-400 to-amber-500' },
   { id: 4, name: 'Personal Care', image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=200&h=200&fit=crop&crop=center', color: 'from-pink-400 to-rose-500' },
   { id: 5, name: 'Home & Kitchen', image: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=200&h=200&fit=crop&crop=center', color: 'from-purple-400 to-indigo-500' },
-  { id: 6, name: 'Baby Care', image: 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=200&h=200&fit=crop&crop=center', color: 'from-yellow-400 to-orange-500' },
+  { id: 6, name: 'Baby Care', image: 'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=200&h=200&fit=crop&crop=center', color: 'from-yellow-400 to-orange-500' },
 ];
 
 interface CategoryGridProps {
