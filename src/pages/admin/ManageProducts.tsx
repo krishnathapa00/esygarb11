@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Search, Plus, Edit2, Trash2, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -179,7 +178,8 @@ const ManageProducts = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
-                          <img className="h-10 w-10 rounded-sm object-cover" src={product.image_url || product.image} alt="" />
+                          {/* FIX: Only use product.image_url */}
+                          <img className="h-10 w-10 rounded-sm object-cover" src={product.image_url} alt="" />
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">{product.name}</div>
@@ -208,7 +208,10 @@ const ManageProducts = () => {
                       {product.discount ? <span className="text-red-600 font-bold">{product.discount}%</span> : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
-                      {'offer' in product && product.offer ? <span className="text-orange-600">{product.offer}</span> : '-'}
+                      {/* FIX: Make sure offer is a non-empty string, show dash otherwise */}
+                      {typeof product.offer === "string" && product.offer.trim().length > 0
+                        ? <span className="text-orange-600">{product.offer}</span>
+                        : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <Button variant="ghost" size="sm">
@@ -257,4 +260,3 @@ const ManageProducts = () => {
 };
 
 export default ManageProducts;
-
