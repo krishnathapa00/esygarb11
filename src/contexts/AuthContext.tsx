@@ -56,14 +56,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return Math.floor(1000 + Math.random() * 9000).toString();
   };
 
-  // Unified sendOtp: Create account if new user, otherwise let login flow handle it.
+  // Unified sendOtp: Now uses Twilio edge function to send SMS
   const sendOtp = async (phoneNumber: string) => {
     try {
       const otpCode = generateOtp();
       const expiresAt = new Date();
       expiresAt.setMinutes(expiresAt.getMinutes() + 10); // 10 mins expiry
 
-      // Save OTP for this phone
+      // Save OTP for this phone as before
       const { error } = await supabase
         .from('otp_verifications')
         .insert({
@@ -74,11 +74,35 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (error) throw error;
 
-      // No distinction between "signup" and "login"
-      console.log(`OTP for ${phoneNumber}: ${otpCode}`);
+      // --- NEW: Send SMS using Supabase Edge Function ---
+      const edgeResp = await fetch(
+        "https://itindpyfqqwryfidyuvu.supabase.co/functions/v1/send-otp-twilio",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            phone: phoneNumber,
+            code: otpCode,
+          }),
+        }
+      );
+
+      const result = await edgeResp.json();
+
+      if (!result.success) {
+        toast({
+          title: "OTP Failed",
+          description: "Could not send OTP via SMS. Please try again.",
+          variant: "destructive",
+        });
+        return { error: result.error || "SMS delivery failed" };
+      }
+
       toast({
         title: "OTP Sent",
-        description: `OTP sent to ${phoneNumber}. Check console for demo OTP: ${otpCode}`,
+        description: `OTP sent via SMS to ${phoneNumber}.`,
       });
 
       return { error: null };
