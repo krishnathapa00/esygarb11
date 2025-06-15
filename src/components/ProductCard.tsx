@@ -61,20 +61,21 @@ const ProductCard = ({
         <div className="flex flex-row items-center gap-2 mt-1 mb-2">
           <span className="text-[11px] sm:text-xs text-gray-500">{product.weight}</span>
         </div>
-        {/* Price Block with Original Price Above Discounted Price */}
-        <div className="flex flex-col items-start mb-2">
-          {product.originalPrice && (
-            <span className="text-[11px] sm:text-xs text-red-400 line-through block mb-0.5">
-              Rs{product.originalPrice}
+        {/* Align price and controls in a row */}
+        <div className="flex items-end justify-between gap-2 mt-2">
+          {/* Price Block with Original Price Above Discounted Price */}
+          <div className="flex flex-col items-start">
+            {product.originalPrice && (
+              <span className="text-[11px] sm:text-xs text-red-400 line-through mb-0.5">
+                Rs{product.originalPrice}
+              </span>
+            )}
+            <span className="font-extrabold text-green-700 text-base sm:text-lg">
+              Rs{product.price}
             </span>
-          )}
-          <span className="font-extrabold text-green-700 text-base sm:text-lg">
-            Rs{product.price}
-          </span>
-        </div>
-        <div className="flex items-end justify-between gap-2 mt-auto">
+          </div>
           {/* Add to Cart Section */}
-          <div className="flex-shrink-0 ml-auto">
+          <div className="flex-shrink-0">
             {cartQuantity === 0 ? (
               <Button
                 onClick={(e) => {
