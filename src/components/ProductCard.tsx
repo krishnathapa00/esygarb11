@@ -25,79 +25,84 @@ interface ProductCardProps {
 
 const ProductCard = ({ product, onAddToCart, cartQuantity, onUpdateQuantity }: ProductCardProps) => {
   return (
-    <div className="bg-white rounded-lg border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-200 w-full">
+    <div className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 w-full">
       <Link to={`/product/${product.id}`} className="block">
-        <div className="relative aspect-square overflow-hidden bg-gray-50">
+        <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
           <img
             src={product.image}
             alt={product.name}
-            className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
+            className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
           />
           {product.discount && (
-            <Badge className="absolute top-1.5 left-1.5 bg-red-500 hover:bg-red-500 text-white text-xs px-1.5 py-0.5 rounded">
-              {product.discount}%
+            <Badge className="absolute top-2 left-2 bg-red-500 hover:bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-full shadow-md">
+              {product.discount}% OFF
             </Badge>
           )}
+          <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1">
+            <span className="text-xs font-medium text-green-600">{product.deliveryTime}</span>
+          </div>
         </div>
       </Link>
       
-      <div className="p-2 sm:p-3">
+      <div className="p-3 space-y-2">
         <Link to={`/product/${product.id}`}>
-          <h3 className="font-medium text-gray-900 text-xs sm:text-sm mb-1 line-clamp-2 leading-tight hover:text-green-600 transition-colors">
+          <h3 className="font-medium text-gray-900 text-sm leading-tight line-clamp-2 hover:text-green-600 transition-colors">
             {product.name}
           </h3>
         </Link>
-        <p className="text-gray-500 text-xs mb-2">{product.weight}</p>
         
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-1">
-            <span className="font-semibold text-gray-900 text-sm">₹{product.price}</span>
+        <p className="text-xs text-gray-500 font-medium">{product.weight}</p>
+        
+        <div className="flex items-center justify-between">
+          <div className="flex items-baseline gap-1">
+            <span className="font-bold text-gray-900 text-base">₹{product.price}</span>
             {product.originalPrice && (
-              <span className="text-xs text-gray-400 line-through">
+              <span className="text-xs text-gray-400 line-through font-medium">
                 ₹{product.originalPrice}
               </span>
             )}
           </div>
-          <span className="text-xs text-green-600 font-medium">{product.deliveryTime}</span>
         </div>
         
-        {cartQuantity === 0 ? (
-          <Button
-            onClick={(e) => {
-              e.preventDefault();
-              onAddToCart(product);
-            }}
-            className="w-full bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm h-7 sm:h-8 font-medium rounded transition-colors"
-          >
-            ADD
-          </Button>
-        ) : (
-          <div className="flex items-center justify-between w-full bg-green-50 rounded px-1 py-1">
+        <div className="pt-1">
+          {cartQuantity === 0 ? (
             <Button
               onClick={(e) => {
                 e.preventDefault();
-                onUpdateQuantity(product.id, cartQuantity - 1);
+                onAddToCart(product);
               }}
-              variant="ghost"
-              size="sm"
-              className="w-6 h-6 p-0 text-green-600 hover:bg-green-100 rounded text-sm font-bold"
+              className="w-full bg-white border-2 border-green-600 text-green-600 hover:bg-green-600 hover:text-white text-sm font-semibold h-9 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
             >
-              −
+              ADD
             </Button>
-            <span className="font-semibold text-green-600 text-sm">{cartQuantity}</span>
-            <Button
-              onClick={(e) => {
-                e.preventDefault();
-                onUpdateQuantity(product.id, cartQuantity + 1);
-              }}
-              variant="ghost"
-              size="sm"
-              className="w-6 h-6 p-0 text-green-600 hover:bg-green-100 rounded text-sm font-bold"
-            >
-              +
-            </Button>
-          </div>
-        )}
+          ) : (
+            <div className="flex items-center justify-between w-full bg-green-600 rounded-lg px-3 py-2 shadow-md">
+              <Button
+                onClick={(e) => {
+                  e.preventDefault();
+                  onUpdateQuantity(product.id, cartQuantity - 1);
+                }}
+                variant="ghost"
+                size="sm"
+                className="w-7 h-7 p-0 text-white hover:bg-green-700 rounded-md text-lg font-bold"
+              >
+                −
+              </Button>
+              <span className="font-bold text-white text-sm px-2">{cartQuantity}</span>
+              <Button
+                onClick={(e) => {
+                  e.preventDefault();
+                  onUpdateQuantity(product.id, cartQuantity + 1);
+                }}
+                variant="ghost"
+                size="sm"
+                className="w-7 h-7 p-0 text-white hover:bg-green-700 rounded-md text-lg font-bold"
+              >
+                +
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

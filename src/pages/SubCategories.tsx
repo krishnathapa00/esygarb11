@@ -343,10 +343,10 @@ const CategoryProducts = () => {
         </div>
 
         {/* Right Content - Products Grid */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="p-3 sm:p-4">
-            <div className="mb-3">
-              <h2 className="text-sm font-medium text-gray-900">
+        <div className="flex-1 overflow-y-auto bg-gray-50">
+          <div className="p-4">
+            <div className="mb-4">
+              <h2 className="text-lg font-bold text-gray-900">
                 {selectedSubCategory 
                   ? categorySubCategories.find(sub => sub.id === selectedSubCategory)?.name 
                   : 'All Products'
@@ -354,8 +354,8 @@ const CategoryProducts = () => {
               </h2>
             </div>
             
-            {/* Products Grid - Improved responsive layout */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
+            {/* Products Grid - Zepto/Blinkit style layout */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
               {filteredProducts.map((product) => (
                 <ProductCard
                   key={product.id}
