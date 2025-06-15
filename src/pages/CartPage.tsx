@@ -166,12 +166,8 @@ const CartPage = () => {
 
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-  // Discount logic: 10% discount for orders above Rs200
-  const discount = totalPrice > 200 ? Math.round(totalPrice * 0.1) : 0;
-  const discountedSubtotal = totalPrice - discount;
-  const deliveryFee = discountedSubtotal > 200 ? 0 : 20;
-  const finalTotal = discountedSubtotal + deliveryFee;
+  const deliveryFee = totalPrice > 200 ? 0 : 20;
+  const finalTotal = totalPrice + deliveryFee;
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
@@ -305,21 +301,9 @@ const CartPage = () => {
                 <span>Subtotal ({totalItems} items)</span>
                 <span>Rs{totalPrice}</span>
               </div>
-              {discount > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-green-700 font-medium">Discount (10%)</span>
-                  <span className="text-green-700 font-semibold">-Rs{discount}</span>
-                </div>
-              )}
-              <div className="flex justify-between text-base font-semibold">
-                <span className="text-emerald-700">Discounted Subtotal</span>
-                <span className="text-emerald-700">Rs{discountedSubtotal}</span>
-              </div>
               <div className="flex justify-between text-sm">
                 <span>Delivery Fee</span>
-                <span className={deliveryFee === 0 ? "text-green-700 font-semibold" : "text-red-600 font-semibold"}>
-                  Rs{deliveryFee}
-                </span>
+                <span>Rs{deliveryFee}</span>
               </div>
               {deliveryFee === 0 && (
                 <Badge variant="secondary" className="text-xs">
