@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Header from '../components/Header';
@@ -323,7 +322,7 @@ const CategoryProducts = () => {
       {/* Main Content */}
       <div className="flex h-[calc(100vh-208px)]">
         {/* Left Sidebar - Enhanced Subcategory Pills */}
-        <div className="w-32 sm:w-36 md:w-40 bg-white border-r border-gray-100 overflow-y-auto">
+        <div className="w-28 sm:w-32 md:w-36 bg-white border-r border-gray-100 overflow-y-auto">
           <div className="py-3 px-2">
             {/* All Products Option */}
             <button
