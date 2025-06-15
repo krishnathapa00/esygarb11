@@ -71,7 +71,7 @@ const ProductCard = ({ product, onAddToCart, cartQuantity, onUpdateQuantity }: P
                 e.preventDefault();
                 onAddToCart(product);
               }}
-              className="w-full bg-white border border-green-600 text-green-600 hover:bg-green-50 text-xs font-medium h-8 rounded-lg transition-colors"
+              className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-0 text-xs font-semibold h-8 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
             >
               ADD
             </Button>
