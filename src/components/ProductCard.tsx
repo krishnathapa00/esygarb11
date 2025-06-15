@@ -53,7 +53,9 @@ const ProductCard = ({ product, onAddToCart, cartQuantity, onUpdateQuantity }: P
         
         <p className="text-xs text-gray-500">{product.weight}</p>
         
-        <div className="flex items-center justify-between">
+        {/* Price and Add Button Row */}
+        <div className="flex items-center justify-between pt-1">
+          {/* Left side - Price */}
           <div className="flex items-baseline gap-1">
             <span className="font-bold text-gray-900 text-sm">Rs{product.price}</span>
             {product.originalPrice && (
@@ -62,46 +64,47 @@ const ProductCard = ({ product, onAddToCart, cartQuantity, onUpdateQuantity }: P
               </span>
             )}
           </div>
-        </div>
-        
-        <div className="pt-1">
-          {cartQuantity === 0 ? (
-            <Button
-              onClick={(e) => {
-                e.preventDefault();
-                onAddToCart(product);
-              }}
-              className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-0 text-xs font-semibold h-8 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
-            >
-              ADD
-            </Button>
-          ) : (
-            <div className="flex items-center justify-between w-full bg-green-600 rounded-lg px-2 py-1.5">
+          
+          {/* Right side - Add Button */}
+          <div className="flex-shrink-0">
+            {cartQuantity === 0 ? (
               <Button
                 onClick={(e) => {
                   e.preventDefault();
-                  onUpdateQuantity(product.id, cartQuantity - 1);
+                  onAddToCart(product);
                 }}
-                variant="ghost"
-                size="sm"
-                className="w-6 h-6 p-0 text-white hover:bg-green-700 rounded text-sm font-medium"
+                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-0 text-xs font-semibold h-8 px-4 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
               >
-                −
+                ADD
               </Button>
-              <span className="font-medium text-white text-xs px-2">{cartQuantity}</span>
-              <Button
-                onClick={(e) => {
-                  e.preventDefault();
-                  onUpdateQuantity(product.id, cartQuantity + 1);
-                }}
-                variant="ghost"
-                size="sm"
-                className="w-6 h-6 p-0 text-white hover:bg-green-700 rounded text-sm font-medium"
-              >
-                +
-              </Button>
-            </div>
-          )}
+            ) : (
+              <div className="flex items-center justify-between bg-green-600 rounded-lg px-2 py-1.5">
+                <Button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onUpdateQuantity(product.id, cartQuantity - 1);
+                  }}
+                  variant="ghost"
+                  size="sm"
+                  className="w-6 h-6 p-0 text-white hover:bg-green-700 rounded text-sm font-medium"
+                >
+                  −
+                </Button>
+                <span className="font-medium text-white text-xs px-2">{cartQuantity}</span>
+                <Button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onUpdateQuantity(product.id, cartQuantity + 1);
+                  }}
+                  variant="ghost"
+                  size="sm"
+                  className="w-6 h-6 p-0 text-white hover:bg-green-700 rounded text-sm font-medium"
+                >
+                  +
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
