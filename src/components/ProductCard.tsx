@@ -59,11 +59,11 @@ const ProductCard = ({ product, onAddToCart, cartQuantity, onUpdateQuantity }: P
           <div className="flex flex-col items-start flex-1 min-w-0">
             <div className="flex items-baseline gap-1 w-full">
               <span className="font-bold text-gray-900 text-sm sm:text-base leading-none">
-                ₹{product.price}
+                Rs{product.price}
               </span>
               {product.originalPrice && (
                 <span className="text-[10px] sm:text-xs text-gray-400 line-through leading-none">
-                  ₹{product.originalPrice}
+                  Rs{product.originalPrice}
                 </span>
               )}
             </div>
