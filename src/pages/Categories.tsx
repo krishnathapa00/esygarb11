@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../components/Header';
@@ -85,18 +84,6 @@ const AllCategories = () => {
               </div>
             </Link>
           ))}
-        </div>
-
-        <div className="mt-12 bg-gray-50 rounded-2xl p-6 text-center">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Need help finding something?
-          </h3>
-          <p className="text-gray-600 text-sm mb-4">
-            Our customer support team is here to help
-          </p>
-          <Button className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-xl">
-            Contact Support
-          </Button>
         </div>
       </div>
       
