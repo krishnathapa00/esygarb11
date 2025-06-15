@@ -8,6 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from '@/contexts/AuthContext';
+import EditAddressModal from '../components/EditAddressModal';
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
+import { toast } from "@/hooks/use-toast";
 
 const UserProfile = () => {
   const { user } = useAuth();
@@ -44,6 +47,10 @@ const UserProfile = () => {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editAddress, setEditAddress] = useState<any>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteAddressId, setDeleteAddressId] = useState<number | null>(null);
 
   // Fetch profile info from Supabase on mount
   useEffect(() => {
@@ -145,6 +152,43 @@ const UserProfile = () => {
       alert('Error updating profile.');
     }
     setUpdating(false);
+  };
+
+  // Edit address handler
+  const handleEditClick = (address: any) => {
+    setEditAddress(address);
+    setEditModalOpen(true);
+  };
+
+  // Save updated address (local only)
+  const handleSaveAddress = (updated: any) => {
+    setProfile(prev => ({
+      ...prev,
+      addresses: prev.addresses.map(addr => addr.id === updated.id ? updated : addr),
+    }));
+    setEditModalOpen(false);
+    toast({
+      title: "Address updated",
+      description: "Your address has been updated.",
+    });
+  };
+
+  // Delete address handler (open modal)
+  const handleDeleteClick = (id: number) => {
+    setDeleteAddressId(id);
+    setDeleteModalOpen(true);
+  };
+  // Confirm delete
+  const handleConfirmDelete = () => {
+    setProfile(prev => ({
+      ...prev,
+      addresses: prev.addresses.filter(addr => addr.id !== deleteAddressId),
+    }));
+    setDeleteModalOpen(false);
+    toast({
+      title: "Address deleted",
+      description: "Your address was deleted successfully.",
+    });
   };
 
   return (
@@ -282,8 +326,10 @@ const UserProfile = () => {
                       )}
                     </div>
                     <div className="space-x-2">
-                      <Button variant="ghost" size="sm">Edit</Button>
-                      {!address.default && <Button variant="ghost" size="sm">Delete</Button>}
+                      <Button variant="ghost" size="sm" onClick={() => handleEditClick(address)}>Edit</Button>
+                      {!address.default && (
+                        <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(address.id)}>Delete</Button>
+                      )}
                     </div>
                   </div>
                   <div className="mt-2 text-gray-600">
@@ -294,6 +340,20 @@ const UserProfile = () => {
               ))}
             </div>
           </div>
+
+          {/* Address Edit & Delete Modals */}
+          <EditAddressModal
+            isOpen={editModalOpen}
+            onClose={() => setEditModalOpen(false)}
+            onSave={handleSaveAddress}
+            address={editAddress}
+          />
+          <ConfirmDeleteModal
+            isOpen={deleteModalOpen}
+            onCancel={() => setDeleteModalOpen(false)}
+            onConfirm={handleConfirmDelete}
+            itemName="this address"
+          />
         </div>
       </div>
     </div>
