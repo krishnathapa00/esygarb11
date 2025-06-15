@@ -18,6 +18,9 @@ const Index = () => {
   const { data: products = [], isLoading } = useProducts();
   const { user } = useAuth();
 
+  console.log('Products loaded:', products.length);
+  console.log('Sample products:', products.slice(0, 3));
+
   useEffect(() => {
     // Check if location has been set before
     const hasLocation = localStorage.getItem('esygrab_user_location');
@@ -61,9 +64,13 @@ const Index = () => {
   };
 
   // Group products by category
-  const fruitProducts = products.filter(p => p.category === 'Fruits & Vegetables').slice(0, 8);
-  const dairyProducts = products.filter(p => p.category === 'Dairy & Eggs').slice(0, 8);
-  const snackProducts = products.filter(p => p.category === 'Snacks & Beverages').slice(0, 8);
+  const fruitProducts = products.filter(p => p.category === 'Fruits & Vegetables');
+  const dairyProducts = products.filter(p => p.category === 'Dairy & Eggs');
+  const snackProducts = products.filter(p => p.category === 'Snacks & Beverages');
+
+  console.log('Fruit products:', fruitProducts.length);
+  console.log('Dairy products:', dairyProducts.length);
+  console.log('Snack products:', snackProducts.length);
 
   if (isLoading) {
     return (
@@ -130,10 +137,19 @@ const Index = () => {
             onUpdateQuantity={handleUpdateQuantity}
           />
         )}
+
+        {/* Show message if no products */}
+        {products.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-lg">No products available at the moment.</p>
+          </div>
+        )}
       </main>
 
-      {/* Footer */}
-      <Footer />
+      {/* Footer - Only show on desktop */}
+      <div className="hidden md:block">
+        <Footer />
+      </div>
     </div>
   );
 };

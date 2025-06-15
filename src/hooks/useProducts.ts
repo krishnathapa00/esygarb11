@@ -75,9 +75,42 @@ const sampleProducts: Product[] = [
     deliveryTime: "10 mins",
     category: "Fruits & Vegetables"
   },
-  // Dairy & Eggs
   {
     id: 6,
+    name: "Fresh Onions",
+    price: 25,
+    originalPrice: 30,
+    image: "https://images.unsplash.com/photo-1508747703725-719777637510?w=400&h=400&fit=crop",
+    weight: "1 kg",
+    discount: 17,
+    deliveryTime: "8 mins",
+    category: "Fruits & Vegetables"
+  },
+  {
+    id: 7,
+    name: "Fresh Potatoes",
+    price: 20,
+    originalPrice: 25,
+    image: "https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=400&h=400&fit=crop",
+    weight: "1 kg",
+    discount: 20,
+    deliveryTime: "10 mins",
+    category: "Fruits & Vegetables"
+  },
+  {
+    id: 8,
+    name: "Green Leafy Vegetables",
+    price: 15,
+    originalPrice: 20,
+    image: "https://images.unsplash.com/photo-1515424201866-4cd3094d33cd?w=400&h=400&fit=crop",
+    weight: "250g",
+    discount: 25,
+    deliveryTime: "12 mins",
+    category: "Fruits & Vegetables"
+  },
+  // Dairy & Eggs
+  {
+    id: 9,
     name: "Fresh Milk",
     price: 25,
     originalPrice: 30,
@@ -88,7 +121,7 @@ const sampleProducts: Product[] = [
     category: "Dairy & Eggs"
   },
   {
-    id: 7,
+    id: 10,
     name: "Greek Yogurt",
     price: 45,
     originalPrice: 55,
@@ -99,7 +132,7 @@ const sampleProducts: Product[] = [
     category: "Dairy & Eggs"
   },
   {
-    id: 8,
+    id: 11,
     name: "Farm Fresh Eggs",
     price: 60,
     originalPrice: 70,
@@ -110,7 +143,7 @@ const sampleProducts: Product[] = [
     category: "Dairy & Eggs"
   },
   {
-    id: 9,
+    id: 12,
     name: "Paneer",
     price: 80,
     originalPrice: 95,
@@ -120,9 +153,31 @@ const sampleProducts: Product[] = [
     deliveryTime: "8 mins",
     category: "Dairy & Eggs"
   },
+  {
+    id: 13,
+    name: "Cheese Slices",
+    price: 120,
+    originalPrice: 140,
+    image: "https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?w=400&h=400&fit=crop",
+    weight: "200g",
+    discount: 14,
+    deliveryTime: "10 mins",
+    category: "Dairy & Eggs"
+  },
+  {
+    id: 14,
+    name: "Butter",
+    price: 55,
+    originalPrice: 65,
+    image: "https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?w=400&h=400&fit=crop",
+    weight: "100g",
+    discount: 15,
+    deliveryTime: "8 mins",
+    category: "Dairy & Eggs"
+  },
   // Snacks & Beverages
   {
-    id: 10,
+    id: 15,
     name: "Potato Chips",
     price: 20,
     originalPrice: 25,
@@ -133,7 +188,7 @@ const sampleProducts: Product[] = [
     category: "Snacks & Beverages"
   },
   {
-    id: 11,
+    id: 16,
     name: "Mixed Nuts",
     price: 150,
     originalPrice: 180,
@@ -144,7 +199,7 @@ const sampleProducts: Product[] = [
     category: "Snacks & Beverages"
   },
   {
-    id: 12,
+    id: 17,
     name: "Energy Drink",
     price: 45,
     originalPrice: 50,
@@ -152,6 +207,39 @@ const sampleProducts: Product[] = [
     weight: "250ml",
     discount: 10,
     deliveryTime: "3 mins",
+    category: "Snacks & Beverages"
+  },
+  {
+    id: 18,
+    name: "Cookies",
+    price: 35,
+    originalPrice: 40,
+    image: "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=400&h=400&fit=crop",
+    weight: "200g",
+    discount: 12,
+    deliveryTime: "5 mins",
+    category: "Snacks & Beverages"
+  },
+  {
+    id: 19,
+    name: "Cold Coffee",
+    price: 60,
+    originalPrice: 70,
+    image: "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=400&h=400&fit=crop",
+    weight: "300ml",
+    discount: 14,
+    deliveryTime: "8 mins",
+    category: "Snacks & Beverages"
+  },
+  {
+    id: 20,
+    name: "Namkeen Mix",
+    price: 25,
+    originalPrice: 30,
+    image: "https://images.unsplash.com/photo-1606491956689-2ea866880c84?w=400&h=400&fit=crop",
+    weight: "100g",
+    discount: 17,
+    deliveryTime: "5 mins",
     category: "Snacks & Beverages"
   }
 ];
@@ -174,6 +262,7 @@ export const useProducts = () => {
 
       // If no products in database, return sample products
       if (!data || data.length === 0) {
+        console.log('No products found in database, returning sample products');
         return sampleProducts;
       }
 
