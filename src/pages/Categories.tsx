@@ -64,16 +64,16 @@ const AllCategories = () => {
               to={`/categories/${category.id}`}
               className="group"
             >
-              <div className="bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-lg transition-all duration-200 hover:-translate-y-1">
-                <div className="flex items-center justify-center mb-3">
+              <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-200 hover:-translate-y-1">
+                <div className="aspect-square">
                   <img
                     src={category.image}
                     alt={category.name}
-                    className="w-20 h-20 object-cover rounded-xl"
+                    className="w-full h-full object-cover"
                   />
                 </div>
                 
-                <div className="text-center">
+                <div className="p-4 text-center">
                   <h3 className="font-medium text-gray-900 text-sm mb-1">
                     {category.name}
                   </h3>
