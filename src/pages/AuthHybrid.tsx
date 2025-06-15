@@ -160,14 +160,14 @@ const AuthHybrid = () => {
               className="flex-1"
               onClick={() => setMethod('email')}
             >
-              Email/Password
+              Email
             </Button>
             <Button
               variant={method === 'sms' ? 'default' : 'outline'}
               className="flex-1"
               onClick={() => setMethod('sms')}
             >
-              SMS OTP
+              Phone Number
             </Button>
           </div>
 
