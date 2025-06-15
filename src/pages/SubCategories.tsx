@@ -306,8 +306,8 @@ const CategoryProducts = () => {
         onSearchChange={setSearchQuery}
       />
       
-      {/* Header Section */}
-      <div className="bg-white border-b sticky top-[128px] z-30">
+      {/* Header Section - Fixed mobile spacing and removed sticky on mobile */}
+      <div className="bg-white border-b md:sticky md:top-[128px] z-30">
         <div className="px-4 py-3">
           <div className="flex items-center">
             <Link to="/categories">
@@ -320,24 +320,24 @@ const CategoryProducts = () => {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex h-[calc(100vh-208px)]">
+      {/* Main Content - Adjusted height calculation for mobile */}
+      <div className="flex h-[calc(100vh-180px)] md:h-[calc(100vh-208px)]">
         {/* Left Sidebar - Reduced Width */}
-        <div className="w-20 sm:w-24 md:w-28 bg-white border-r border-gray-100 overflow-y-auto flex-shrink-0">
+        <div className="w-16 sm:w-20 md:w-24 bg-white border-r border-gray-100 overflow-y-auto flex-shrink-0">
           <div className="py-2 px-1">
             {/* All Products Option */}
             <button
               onClick={() => setSelectedSubCategory(null)}
-              className={`w-full mb-1.5 p-2 rounded-lg text-center transition-all duration-200 ${
+              className={`w-full mb-1.5 p-1.5 sm:p-2 rounded-lg text-center transition-all duration-200 ${
                 selectedSubCategory === null 
                   ? 'bg-green-500 text-white shadow-md' 
                   : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
               }`}
             >
-              <div className="text-[10px] sm:text-xs font-medium leading-tight">
+              <div className="text-[9px] sm:text-[10px] md:text-xs font-medium leading-tight">
                 All
               </div>
-              <div className="text-[9px] sm:text-[10px] opacity-75 mt-0.5">
+              <div className="text-[8px] sm:text-[9px] md:text-[10px] opacity-75 mt-0.5">
                 {filteredProducts.length}
               </div>
             </button>
@@ -347,16 +347,16 @@ const CategoryProducts = () => {
               <button
                 key={subCategory.id}
                 onClick={() => setSelectedSubCategory(subCategory.id)}
-                className={`w-full mb-1.5 p-2 rounded-lg text-center transition-all duration-200 ${
+                className={`w-full mb-1.5 p-1.5 sm:p-2 rounded-lg text-center transition-all duration-200 ${
                   selectedSubCategory === subCategory.id 
                     ? 'bg-green-500 text-white shadow-md' 
                     : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
                 }`}
               >
-                <div className="text-[10px] sm:text-xs font-medium leading-tight break-words">
+                <div className="text-[9px] sm:text-[10px] md:text-xs font-medium leading-tight break-words">
                   {subCategory.name}
                 </div>
-                <div className="text-[9px] sm:text-[10px] opacity-75 mt-0.5">
+                <div className="text-[8px] sm:text-[9px] md:text-[10px] opacity-75 mt-0.5">
                   {subCategory.productCount}
                 </div>
               </button>
@@ -376,8 +376,8 @@ const CategoryProducts = () => {
               </h2>
             </div>
             
-            {/* Products Grid - Larger Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+            {/* Products Grid - Bigger Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
               {filteredProducts.map((product) => (
                 <ProductCard
                   key={product.id}
