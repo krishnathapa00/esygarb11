@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import LocationDetectionPopup from './LocationDetectionPopup';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface HeaderProps {
   cartItems: number;
@@ -40,6 +41,7 @@ const Header = ({
   });
   const location = useLocation();
   const isMobile = useIsMobile();
+  const { user, signOut } = useAuth();
 
   const handleLocationSet = (location: string) => {
     // Simplify location display - show main area and add "..."
@@ -114,12 +116,23 @@ const Header = ({
                 <span className="font-medium">10 mins</span>
               </div>
               
-              <Link to="/profile">
-                <Button variant="outline" className="hover:bg-green-50 border-green-200">
-                  <User className="h-4 w-4" />
-                </Button>
-              </Link>
-              
+              {user ? (
+                <>
+                  <Button variant="outline" className="hover:bg-green-50 border-green-200" onClick={signOut}>
+                    <span className="flex items-center space-x-1">
+                      <User className="h-4 w-4" />
+                      <span className="hidden md:inline">Logout</span>
+                    </span>
+                  </Button>
+                </>
+              ) : (
+                <Link to="/login">
+                  <Button variant="outline" className="hover:bg-green-50 border-green-200">
+                    <User className="h-4 w-4" />
+                  </Button>
+                </Link>
+              )}
+
               <Link to="/cart">
                 <Button variant="outline" className="relative hover:bg-green-50 border-green-200">
                   <ShoppingCart className="h-4 w-4" />
