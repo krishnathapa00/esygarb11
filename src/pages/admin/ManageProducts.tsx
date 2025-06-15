@@ -44,7 +44,7 @@ const ManageProducts = () => {
     description: ''
   });
 
-  // Fetch products from supabase, now selecting "offer"
+  // Fetch products from supabase, now selecting new persistent "offer"
   const { data: products = [], refetch, isLoading } = useQuery<ProductRow[]>({
     queryKey: ['admin-products'],
     queryFn: async () => {
@@ -104,7 +104,7 @@ const ManageProducts = () => {
     e.preventDefault();
     setCreating(true);
 
-    // Prepare payload, now includes persistent offer
+    // Prepare payload, includes persistent offer
     const payload: any = {
       name: productData.name,
       price: Number(productData.price),
