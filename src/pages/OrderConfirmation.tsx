@@ -50,7 +50,7 @@ const OrderConfirmation = () => {
             <div className="border-b pb-4">
               <h3 className="font-semibold mb-2">Order Summary</h3>
               <p className="text-gray-600">Items: {orderData.items}</p>
-              <p className="text-gray-600">Total: ₹{orderData.totalAmount}</p>
+              <p className="text-gray-600">Total: Rs{orderData.totalAmount}</p>
             </div>
             
             <div>
