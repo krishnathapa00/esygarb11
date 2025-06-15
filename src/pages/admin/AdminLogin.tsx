@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
@@ -166,7 +165,11 @@ const AdminLogin = () => {
 
           <div className="mt-6 text-center">
             <button
-              className="text-sm text-green-600 hover:text-green-700"
+              className={`text-sm font-medium ${
+                loading || !email
+                  ? "text-gray-400 cursor-not-allowed"
+                  : "text-green-600 hover:text-green-700 cursor-pointer"
+              } transition-colors`}
               onClick={handlePasswordReset}
               type="button"
               disabled={loading || !email}
