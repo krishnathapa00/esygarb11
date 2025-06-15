@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, ChangeEvent } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../components/Header';
@@ -168,27 +167,23 @@ const UserProfile = () => {
         </div>
 
         <div className="space-y-6">
-          {/* Personal Information */}
-          <div className="bg-white rounded-lg p-6 shadow-sm">
-            <div className="flex items-center space-x-2 mb-4">
-              <User className="h-5 w-5 text-green-600" />
-              <h3 className="text-lg font-semibold">Personal Information</h3>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-6 items-center mb-6">
-              {/* Avatar Section */}
-              <div className="flex flex-col items-center">
-                <div className="relative w-24 h-24">
-                  <Avatar className="w-24 h-24">
+          {/* Redesigned Personal Information (Modern Card) */}
+          <div className="bg-white rounded-xl p-0 shadow-sm border">
+            <div className="h-28 w-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-t-xl relative">
+              <div className="absolute left-1/2 -bottom-16 -translate-x-1/2 flex flex-col items-center w-full">
+                <div className="relative w-32 h-32">
+                  <Avatar className="w-32 h-32 border-4 border-white shadow-md ring-4 ring-emerald-100 bg-muted">
                     {avatarPreview ? (
                       <AvatarImage src={avatarPreview} alt={profile.name || "Avatar"} className="object-cover" />
                     ) : (
-                      <AvatarFallback>{profile.name?.slice(0,2).toUpperCase() || "AV"}</AvatarFallback>
+                      <AvatarFallback className="text-3xl">
+                        {profile.name?.slice(0,2).toUpperCase() || "AV"}
+                      </AvatarFallback>
                     )}
                   </Avatar>
                   <label htmlFor="avatar-upload">
-                    <div className="absolute bottom-1 right-1 bg-gray-200 p-2 rounded-full hover:bg-emerald-500 cursor-pointer shadow transition-colors">
-                      <Camera className="w-5 h-5 text-gray-700" />
+                    <div className="absolute bottom-1 right-1 bg-white p-3 rounded-full hover:bg-emerald-500 cursor-pointer shadow-md border border-gray-200 transition-colors">
+                      <Camera className="w-6 h-6 text-emerald-700 hover:text-white" />
                     </div>
                   </label>
                   <input
@@ -199,18 +194,28 @@ const UserProfile = () => {
                     onChange={handleAvatarChange}
                   />
                 </div>
-                <span className="text-xs mt-2 text-muted-foreground">Tap to change</span>
+                <span className="text-xs mt-2 text-muted-foreground">Change photo</span>
               </div>
-
-              {/* Editable Fields */}
-              <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+            </div>
+            <div className="pt-20 pb-8 px-5 md:px-12">
+              <div className="flex flex-col items-center gap-1 mt-2 mb-8">
+                <User className="h-6 w-6 text-green-600" />
+                <h3 className="text-xl font-bold">{profile.name || "Your Name"}</h3>
+                <span className="text-sm text-muted-foreground">{profile.email ? profile.email : "No email"}</span>
+              </div>
+              <form
+                className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto"
+                onSubmit={e => { e.preventDefault(); handleUpdateProfile(); }}
+              >
                 <div>
                   <Label htmlFor="name">Full Name</Label>
                   <Input
                     id="name"
                     name="name"
+                    placeholder="Enter your name"
                     value={profile.name}
                     onChange={handleChange}
+                    className="outline-none border-2 border-emerald-100 focus:border-emerald-400 transition-colors"
                   />
                 </div>
                 <div>
@@ -218,8 +223,10 @@ const UserProfile = () => {
                   <Input
                     id="phone"
                     name="phone"
+                    placeholder="Enter phone number"
                     value={profile.phone}
                     onChange={handleChange}
+                    className="outline-none border-2 border-emerald-100 focus:border-emerald-400 transition-colors"
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -228,21 +235,23 @@ const UserProfile = () => {
                     id="email"
                     name="email"
                     type="email"
+                    placeholder="Enter your email"
                     value={profile.email}
                     onChange={handleChange}
+                    className="outline-none border-2 border-emerald-100 focus:border-emerald-400 transition-colors"
                   />
                 </div>
-              </div>
-            </div>
-
-            <div className="mt-4">
-              <Button
-                onClick={handleUpdateProfile}
-                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
-                disabled={updating}
-              >
-                {updating ? "Updating..." : "Update Profile"}
-              </Button>
+                <div className="md:col-span-2 flex justify-end pt-2">
+                  <Button
+                    onClick={handleUpdateProfile}
+                    className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 px-8 py-2 font-semibold text-lg shadow transition-colors"
+                    disabled={updating}
+                    type="submit"
+                  >
+                    {updating ? "Updating..." : "Update Profile"}
+                  </Button>
+                </div>
+              </form>
             </div>
           </div>
 
@@ -250,7 +259,7 @@ const UserProfile = () => {
           <div className="bg-white rounded-lg p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
-                <MapPin className="h-5 w-5 text-green-600" />
+                <svg className="h-5 w-5 text-green-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 22s8-4.5 8-10V7a8 8 0 10-16 0v5C4 17.5 12 22 12 22z" /><circle cx="12" cy="11" r="3" /></svg>
                 <h3 className="text-lg font-semibold">My Addresses</h3>
               </div>
               <Link to="/map-location">
