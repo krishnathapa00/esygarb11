@@ -53,32 +53,36 @@ const ProductCard = ({ product, onAddToCart, cartQuantity, onUpdateQuantity }: P
         
         <p className="text-[10px] sm:text-xs text-gray-500">{product.weight}</p>
         
-        {/* Price and Add Button Row */}
-        <div className="flex items-center justify-between pt-1">
-          {/* Left side - Price */}
-          <div className="flex items-baseline gap-0.5 sm:gap-1 flex-1 min-w-0">
-            <span className="font-bold text-gray-900 text-xs sm:text-sm truncate">Rs{product.price}</span>
-            {product.originalPrice && (
-              <span className="text-[10px] sm:text-xs text-gray-400 line-through truncate">
-                Rs{product.originalPrice}
+        {/* Price and Add Button Row - Enhanced for mobile visibility */}
+        <div className="flex items-center justify-between pt-1 gap-1">
+          {/* Left side - Price - Improved mobile visibility */}
+          <div className="flex flex-col items-start flex-1 min-w-0">
+            <div className="flex items-baseline gap-1 w-full">
+              <span className="font-bold text-gray-900 text-sm sm:text-base leading-none">
+                ₹{product.price}
               </span>
-            )}
+              {product.originalPrice && (
+                <span className="text-[10px] sm:text-xs text-gray-400 line-through leading-none">
+                  ₹{product.originalPrice}
+                </span>
+              )}
+            </div>
           </div>
           
           {/* Right side - Add Button */}
-          <div className="flex-shrink-0 ml-1 sm:ml-2">
+          <div className="flex-shrink-0">
             {cartQuantity === 0 ? (
               <Button
                 onClick={(e) => {
                   e.preventDefault();
                   onAddToCart(product);
                 }}
-                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-0 text-[10px] sm:text-xs font-semibold h-6 sm:h-8 px-2 sm:px-4 rounded-md sm:rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-0 text-xs sm:text-sm font-semibold h-7 sm:h-8 px-3 sm:px-4 rounded-md sm:rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
               >
                 ADD
               </Button>
             ) : (
-              <div className="flex items-center justify-between bg-green-600 rounded-md sm:rounded-lg px-1 sm:px-2 py-1 sm:py-1.5">
+              <div className="flex items-center justify-between bg-green-600 rounded-md sm:rounded-lg px-1 sm:px-2 py-1">
                 <Button
                   onClick={(e) => {
                     e.preventDefault();
@@ -86,11 +90,11 @@ const ProductCard = ({ product, onAddToCart, cartQuantity, onUpdateQuantity }: P
                   }}
                   variant="ghost"
                   size="sm"
-                  className="w-4 h-4 sm:w-6 sm:h-6 p-0 text-white hover:bg-green-700 rounded text-[10px] sm:text-sm font-medium min-w-[16px] sm:min-w-[24px]"
+                  className="w-6 h-6 sm:w-7 sm:h-7 p-0 text-white hover:bg-green-700 rounded text-sm font-medium min-w-[24px] sm:min-w-[28px]"
                 >
                   −
                 </Button>
-                <span className="font-medium text-white text-[10px] sm:text-xs px-1 sm:px-2 min-w-[12px] sm:min-w-[16px] text-center">{cartQuantity}</span>
+                <span className="font-medium text-white text-xs sm:text-sm px-2 min-w-[16px] text-center">{cartQuantity}</span>
                 <Button
                   onClick={(e) => {
                     e.preventDefault();
@@ -98,7 +102,7 @@ const ProductCard = ({ product, onAddToCart, cartQuantity, onUpdateQuantity }: P
                   }}
                   variant="ghost"
                   size="sm"
-                  className="w-4 h-4 sm:w-6 sm:h-6 p-0 text-white hover:bg-green-700 rounded text-[10px] sm:text-sm font-medium min-w-[16px] sm:min-w-[24px]"
+                  className="w-6 h-6 sm:w-7 sm:h-7 p-0 text-white hover:bg-green-700 rounded text-sm font-medium min-w-[24px] sm:min-w-[28px]"
                 >
                   +
                 </Button>

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Header from '../components/Header';
@@ -321,22 +322,22 @@ const CategoryProducts = () => {
 
       {/* Main Content */}
       <div className="flex h-[calc(100vh-208px)]">
-        {/* Left Sidebar - Enhanced Subcategory Pills */}
-        <div className="w-28 sm:w-32 md:w-36 bg-white border-r border-gray-100 overflow-y-auto">
-          <div className="py-3 px-2">
+        {/* Left Sidebar - Reduced Width */}
+        <div className="w-20 sm:w-24 md:w-28 bg-white border-r border-gray-100 overflow-y-auto flex-shrink-0">
+          <div className="py-2 px-1">
             {/* All Products Option */}
             <button
               onClick={() => setSelectedSubCategory(null)}
-              className={`w-full mb-2 p-3 rounded-lg text-center transition-all duration-200 ${
+              className={`w-full mb-1.5 p-2 rounded-lg text-center transition-all duration-200 ${
                 selectedSubCategory === null 
                   ? 'bg-green-500 text-white shadow-md' 
                   : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
               }`}
             >
-              <div className="text-xs font-medium leading-tight">
+              <div className="text-[10px] sm:text-xs font-medium leading-tight">
                 All
               </div>
-              <div className="text-xs opacity-75 mt-1">
+              <div className="text-[9px] sm:text-[10px] opacity-75 mt-0.5">
                 {filteredProducts.length}
               </div>
             </button>
@@ -346,16 +347,16 @@ const CategoryProducts = () => {
               <button
                 key={subCategory.id}
                 onClick={() => setSelectedSubCategory(subCategory.id)}
-                className={`w-full mb-2 p-3 rounded-lg text-center transition-all duration-200 ${
+                className={`w-full mb-1.5 p-2 rounded-lg text-center transition-all duration-200 ${
                   selectedSubCategory === subCategory.id 
                     ? 'bg-green-500 text-white shadow-md' 
                     : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
                 }`}
               >
-                <div className="text-xs font-medium leading-tight">
+                <div className="text-[10px] sm:text-xs font-medium leading-tight break-words">
                   {subCategory.name}
                 </div>
-                <div className="text-xs opacity-75 mt-1">
+                <div className="text-[9px] sm:text-[10px] opacity-75 mt-0.5">
                   {subCategory.productCount}
                 </div>
               </button>
@@ -363,11 +364,11 @@ const CategoryProducts = () => {
           </div>
         </div>
 
-        {/* Right Content - Products Grid */}
+        {/* Right Content - Products Grid - More Space */}
         <div className="flex-1 overflow-y-auto bg-gray-50">
-          <div className="p-4">
-            <div className="mb-4">
-              <h2 className="text-lg font-bold text-gray-900">
+          <div className="p-3 sm:p-4">
+            <div className="mb-3 sm:mb-4">
+              <h2 className="text-base sm:text-lg font-bold text-gray-900">
                 {selectedSubCategory 
                   ? categorySubCategories.find(sub => sub.id === selectedSubCategory)?.name 
                   : 'All Products'
@@ -375,8 +376,8 @@ const CategoryProducts = () => {
               </h2>
             </div>
             
-            {/* Products Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+            {/* Products Grid - Larger Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
               {filteredProducts.map((product) => (
                 <ProductCard
                   key={product.id}
