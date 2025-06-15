@@ -86,28 +86,6 @@ const sampleProducts: Product[] = [
     deliveryTime: "8 mins",
     category: "Fruits & Vegetables"
   },
-  {
-    id: 7,
-    name: "Fresh Potatoes",
-    price: 20,
-    originalPrice: 25,
-    image: "https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=400&h=400&fit=crop",
-    weight: "1 kg",
-    discount: 20,
-    deliveryTime: "10 mins",
-    category: "Fruits & Vegetables"
-  },
-  {
-    id: 8,
-    name: "Green Leafy Vegetables",
-    price: 15,
-    originalPrice: 20,
-    image: "https://images.unsplash.com/photo-1515424201866-4cd3094d33cd?w=400&h=400&fit=crop",
-    weight: "250g",
-    discount: 25,
-    deliveryTime: "12 mins",
-    category: "Fruits & Vegetables"
-  },
   // Dairy & Eggs
   {
     id: 9,
@@ -150,28 +128,6 @@ const sampleProducts: Product[] = [
     image: "https://images.unsplash.com/photo-1631452180539-96aca7d48617?w=400&h=400&fit=crop",
     weight: "200g",
     discount: 16,
-    deliveryTime: "8 mins",
-    category: "Dairy & Eggs"
-  },
-  {
-    id: 13,
-    name: "Cheese Slices",
-    price: 120,
-    originalPrice: 140,
-    image: "https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?w=400&h=400&fit=crop",
-    weight: "200g",
-    discount: 14,
-    deliveryTime: "10 mins",
-    category: "Dairy & Eggs"
-  },
-  {
-    id: 14,
-    name: "Butter",
-    price: 55,
-    originalPrice: 65,
-    image: "https://images.unsplash.com/photo-1589985270826-4b7bb135bc9d?w=400&h=400&fit=crop",
-    weight: "100g",
-    discount: 15,
     deliveryTime: "8 mins",
     category: "Dairy & Eggs"
   },
@@ -219,28 +175,6 @@ const sampleProducts: Product[] = [
     discount: 12,
     deliveryTime: "5 mins",
     category: "Snacks & Beverages"
-  },
-  {
-    id: 19,
-    name: "Cold Coffee",
-    price: 60,
-    originalPrice: 70,
-    image: "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=400&h=400&fit=crop",
-    weight: "300ml",
-    discount: 14,
-    deliveryTime: "8 mins",
-    category: "Snacks & Beverages"
-  },
-  {
-    id: 20,
-    name: "Namkeen Mix",
-    price: 25,
-    originalPrice: 30,
-    image: "https://images.unsplash.com/photo-1606491956689-2ea866880c84?w=400&h=400&fit=crop",
-    weight: "100g",
-    discount: 17,
-    deliveryTime: "5 mins",
-    category: "Snacks & Beverages"
   }
 ];
 
@@ -248,38 +182,48 @@ export const useProducts = () => {
   return useQuery({
     queryKey: ['products'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('products')
-        .select(`
-          *,
-          categories:category_id (
-            name
-          )
-        `)
-        .eq('is_active', true);
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select(`
+            *,
+            categories:category_id (
+              name
+            )
+          `)
+          .eq('is_active', true);
 
-      if (error) throw error;
+        if (error) {
+          console.log('Database error:', error);
+          console.log('Returning sample products due to database error');
+          return sampleProducts;
+        }
 
-      // If no products in database, return sample products
-      if (!data || data.length === 0) {
-        console.log('No products found in database, returning sample products');
+        // If no products in database, return sample products
+        if (!data || data.length === 0) {
+          console.log('No products found in database, returning sample products');
+          return sampleProducts;
+        }
+
+        return data.map(product => ({
+          id: product.id,
+          name: product.name,
+          description: product.description,
+          price: product.price,
+          originalPrice: product.original_price || undefined,
+          discount: product.discount,
+          image: product.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&h=300&fit=crop',
+          weight: product.weight || '1 unit',
+          deliveryTime: product.delivery_time || '10-15 mins',
+          category: product.categories?.name || 'Unknown',
+          stockQuantity: product.stock_quantity,
+          isActive: product.is_active,
+        })) as Product[];
+      } catch (error) {
+        console.log('Query error:', error);
+        console.log('Returning sample products due to query error');
         return sampleProducts;
       }
-
-      return data.map(product => ({
-        id: product.id,
-        name: product.name,
-        description: product.description,
-        price: product.price,
-        originalPrice: product.original_price || undefined,
-        discount: product.discount,
-        image: product.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&h=300&fit=crop',
-        weight: product.weight || '1 unit',
-        deliveryTime: product.delivery_time || '10-15 mins',
-        category: product.categories?.name || 'Unknown',
-        stockQuantity: product.stock_quantity,
-        isActive: product.is_active,
-      })) as Product[];
     },
   });
 };
@@ -288,21 +232,58 @@ export const useProductsByCategory = (categoryId: number) => {
   return useQuery({
     queryKey: ['products', 'category', categoryId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('products')
-        .select(`
-          *,
-          categories:category_id (
-            name
-          )
-        `)
-        .eq('category_id', categoryId)
-        .eq('is_active', true);
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select(`
+            *,
+            categories:category_id (
+              name
+            )
+          `)
+          .eq('category_id', categoryId)
+          .eq('is_active', true);
 
-      if (error) throw error;
+        if (error) {
+          console.log('Database error for category:', error);
+          // Return filtered sample products
+          const categoryNames = {
+            1: 'Fruits & Vegetables',
+            2: 'Dairy & Eggs',
+            3: 'Snacks & Beverages'
+          };
+          const categoryName = categoryNames[categoryId as keyof typeof categoryNames];
+          return sampleProducts.filter(product => product.category === categoryName);
+        }
 
-      // If no products in database, return filtered sample products
-      if (!data || data.length === 0) {
+        // If no products in database, return filtered sample products
+        if (!data || data.length === 0) {
+          const categoryNames = {
+            1: 'Fruits & Vegetables',
+            2: 'Dairy & Eggs',
+            3: 'Snacks & Beverages'
+          };
+          const categoryName = categoryNames[categoryId as keyof typeof categoryNames];
+          return sampleProducts.filter(product => product.category === categoryName);
+        }
+
+        return data.map(product => ({
+          id: product.id,
+          name: product.name,
+          description: product.description,
+          price: product.price,
+          originalPrice: product.original_price || undefined,
+          discount: product.discount,
+          image: product.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&h=300&fit=crop',
+          weight: product.weight || '1 unit',
+          deliveryTime: product.delivery_time || '10-15 mins',
+          category: product.categories?.name || 'Unknown',
+          stockQuantity: product.stock_quantity,
+          isActive: product.is_active,
+        })) as Product[];
+      } catch (error) {
+        console.log('Query error for category:', error);
+        // Return filtered sample products
         const categoryNames = {
           1: 'Fruits & Vegetables',
           2: 'Dairy & Eggs',
@@ -311,21 +292,6 @@ export const useProductsByCategory = (categoryId: number) => {
         const categoryName = categoryNames[categoryId as keyof typeof categoryNames];
         return sampleProducts.filter(product => product.category === categoryName);
       }
-
-      return data.map(product => ({
-        id: product.id,
-        name: product.name,
-        description: product.description,
-        price: product.price,
-        originalPrice: product.original_price || undefined,
-        discount: product.discount,
-        image: product.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&h=300&fit=crop',
-        weight: product.weight || '1 unit',
-        deliveryTime: product.delivery_time || '10-15 mins',
-        category: product.categories?.name || 'Unknown',
-        stockQuantity: product.stock_quantity,
-        isActive: product.is_active,
-      })) as Product[];
     },
   });
 };
