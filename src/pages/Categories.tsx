@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../components/Header';
@@ -19,7 +18,7 @@ const AllCategories = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
       <Header
         cartItems={cartItems}
         onCartClick={() => {}}
@@ -28,7 +27,6 @@ const AllCategories = () => {
       />
       
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Header Section */}
         <div className="flex items-center mb-6">
           <Link to="/">
             <Button variant="ghost" size="sm" className="mr-3 p-2">
@@ -41,7 +39,6 @@ const AllCategories = () => {
           </div>
         </div>
 
-        {/* Quick Stats */}
         <div className="grid grid-cols-3 gap-4 mb-8">
           <div className="bg-green-50 rounded-2xl p-4 text-center">
             <Package className="h-6 w-6 text-green-600 mx-auto mb-2" />
@@ -60,7 +57,6 @@ const AllCategories = () => {
           </div>
         </div>
 
-        {/* Categories Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {categories.map((category) => (
             <Link
@@ -68,22 +64,20 @@ const AllCategories = () => {
               to={`/categories/${category.id}`}
               className="group"
             >
-              <div className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-lg transition-all duration-200 hover:-translate-y-1">
-                {/* Category Image Container */}
-                <div className={`${category.color} rounded-2xl p-4 mb-4 flex items-center justify-center h-24`}>
+              <div className="bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-lg transition-all duration-200 hover:-translate-y-1">
+                <div className="flex items-center justify-center mb-3">
                   <img
                     src={category.image}
                     alt={category.name}
-                    className="w-16 h-16 object-cover rounded-xl"
+                    className="w-20 h-20 object-cover rounded-xl"
                   />
                 </div>
                 
-                {/* Category Info */}
                 <div className="text-center">
-                  <h3 className="font-semibold text-gray-900 text-base mb-1">
+                  <h3 className="font-medium text-gray-900 text-sm mb-1">
                     {category.name}
                   </h3>
-                  <p className="text-gray-500 text-sm">
+                  <p className="text-gray-500 text-xs">
                     {category.productCount} items
                   </p>
                 </div>
@@ -92,7 +86,6 @@ const AllCategories = () => {
           ))}
         </div>
 
-        {/* Bottom Section */}
         <div className="mt-12 bg-gray-50 rounded-2xl p-6 text-center">
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
             Need help finding something?
@@ -106,7 +99,6 @@ const AllCategories = () => {
         </div>
       </div>
       
-      {/* Mobile Bottom Spacer */}
       <div className="h-20 md:hidden"></div>
     </div>
   );
