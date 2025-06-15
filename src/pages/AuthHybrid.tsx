@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
@@ -7,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client'; // <-- Import the Supabase client
 
 // Hybrid authentication page: email/password or SMS OTP
 const AuthHybrid = () => {
@@ -33,7 +33,7 @@ const AuthHybrid = () => {
 
     if (segment === 'login') {
       // Login
-      const { error } = await window.supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
@@ -51,7 +51,7 @@ const AuthHybrid = () => {
     } else {
       // Signup with Supabase default magic link (also sets up password)
       const redirectUrl = `${window.location.origin}/`;
-      const { error } = await window.supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -231,7 +231,7 @@ const AuthHybrid = () => {
                         }
                         setLoading(true);
                         const redirectUrl = `${window.location.origin}/`;
-                        const { error } = await window.supabase.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl });
+                        const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl });
                         setLoading(false);
                         if (error) {
                           toast({
