@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Search, ShoppingCart, MapPin, Clock, User, Home, Grid3X3, Menu, X } from 'lucide-react';
@@ -75,8 +74,8 @@ const Header = ({
     </Link>
   );
 
-  // Show search bar only on homepage or on desktop
-  const shouldShowSearchBar = location.pathname === '/' || !isMobile;
+  // Show search bar ONLY on homepage
+  const shouldShowSearchBar = location.pathname === '/';
 
   return (
     <>
@@ -148,7 +147,7 @@ const Header = ({
         </div>
       </header>
 
-      {/* Search Bar Section - Below Header - Conditionally shown */}
+      {/* Search Bar Section - ONLY show on homepage */}
       {shouldShowSearchBar && (
         <div className="sticky top-16 z-40 bg-white border-b border-gray-100">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
