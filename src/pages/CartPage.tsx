@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
@@ -189,18 +188,17 @@ const CartPage = () => {
           <h1 className="text-2xl font-bold text-gray-900">My Cart ({totalItems} items)</h1>
         </div>
 
+        {/* Delivery Info moved to just below header */}
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center space-x-2 mb-6">
+          <Truck className="h-4 w-4 text-green-600" />
+          <span className="text-sm font-medium text-green-700">
+            Delivery in 10-15 mins
+          </span>
+        </div>
+
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-4">
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <div className="flex items-center space-x-2">
-                <Truck className="h-4 w-4 text-green-600" />
-                <span className="text-sm font-medium text-green-700">
-                  Delivery in 10-15 mins
-                </span>
-              </div>
-            </div>
-
             {cartItems.map((item) => (
               <div key={item.id} className="bg-white rounded-lg p-4 shadow-sm">
                 <div className="flex items-center space-x-4">
