@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -82,9 +81,10 @@ const ProductCard = ({
                   e.preventDefault();
                   onAddToCart(product);
                 }}
-                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white text-xs sm:text-sm font-bold h-8 sm:h-9 px-4 sm:px-6 rounded-lg shadow transition-all duration-200"
+                className="!h-7 !px-3 text-[13px] font-bold bg-gradient-to-r from-lime-500 to-green-600 hover:from-green-500 hover:to-lime-600 shadow ring-2 ring-lime-100/70 hover:ring-green-300/90 focus:ring-2 focus:ring-green-400 rounded-full transition-all duration-200"
+                style={{ minWidth: 54, letterSpacing: '.06em' }}
               >
-                ADD
+                <span className="flex items-center gap-1">Add</span>
               </Button>
             ) : (
               <div className="flex items-center justify-between bg-green-600 rounded-lg px-1.5 py-1 shadow space-x-1">
@@ -125,4 +125,3 @@ const ProductCard = ({
 };
 
 export default ProductCard;
-
