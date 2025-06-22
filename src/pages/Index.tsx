@@ -1,5 +1,5 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import CategoryGrid from '../components/CategoryGrid';
 import ProductSection from '../components/ProductSection';
@@ -14,15 +14,13 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showLocationPopup, setShowLocationPopup] = useState(false);
   const [cart, setCart] = useState<Record<number, number>>({});
-  
+  const [dropdownVisible, setDropdownVisible] = useState(false);
+
   const { data: products = [], isLoading } = useProducts();
   const { user } = useAuth();
-
-  console.log('Products loaded:', products.length);
-  console.log('Sample products:', products.slice(0, 3));
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if location has been set before
     const hasLocation = localStorage.getItem('esygrab_user_location');
     if (!hasLocation) {
       setShowLocationPopup(true);
@@ -47,13 +45,13 @@ const Index = () => {
       const newCart = { ...prev };
       const currentQty = newCart[productId] || 0;
       const diff = quantity - currentQty;
-      
+
       if (quantity <= 0) {
         delete newCart[productId];
       } else {
         newCart[productId] = quantity;
       }
-      
+
       setCartItems(prevTotal => prevTotal + diff);
       return newCart;
     });
@@ -63,14 +61,18 @@ const Index = () => {
     console.log('Category selected:', categoryId);
   };
 
-  // Group products by category
-  const fruitProducts = products.filter(p => p.category === 'Fruits & Vegetables');
-  const dairyProducts = products.filter(p => p.category === 'Dairy & Eggs');
-  const snackProducts = products.filter(p => p.category === 'Snacks & Beverages');
+  const filteredProducts = useMemo(() => {
+    if (!searchQuery.trim()) return products;
+    return products.filter(p => p.name?.toLowerCase().includes(searchQuery.toLowerCase()));
+  }, [products, searchQuery]);
 
-  console.log('Fruit products:', fruitProducts.length);
-  console.log('Dairy products:', dairyProducts.length);
-  console.log('Snack products:', snackProducts.length);
+  const handleProductSelect = (productId: number) => {
+    navigate(`/product/${productId}`);
+  };
+
+  const fruitProducts = filteredProducts.filter(p => p.category === 'Fruits & Vegetables');
+  const dairyProducts = filteredProducts.filter(p => p.category === 'Dairy & Eggs');
+  const snackProducts = filteredProducts.filter(p => p.category === 'Snacks & Beverages');
 
   if (isLoading) {
     return (
@@ -87,27 +89,41 @@ const Index = () => {
     <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
       <Header
         cartItems={cartItems}
-        onCartClick={() => {}}
+        onCartClick={() => { }}
         searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
+        onSearchChange={(value) => {
+          setSearchQuery(value);
+          setDropdownVisible(!!value);
+        }}
       />
-      
+
+      {dropdownVisible && filteredProducts.length > 0 && (
+        <div className="absolute z-50 top-34 left-1/2 transform -translate-x-1/2 w-full max-w-2xl bg-white shadow-lg border rounded-md overflow-hidden">
+          {filteredProducts.slice(0, 5).map(product => (
+            <div
+              key={product.id}
+              onClick={() => handleProductSelect(product.id)}
+              className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+            >
+              {product.name}
+            </div>
+          ))}
+        </div>
+      )}
+
       <LocationDetectionPopup
         isOpen={showLocationPopup}
         onClose={() => setShowLocationPopup(false)}
         onLocationSet={handleLocationSet}
       />
-      
+
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Hero Banner Section */}
         <BannerCarousel />
 
-        {/* Categories */}
         <section className="mb-8">
           <CategoryGrid onCategorySelect={handleCategorySelect} />
         </section>
 
-        {/* Products by Category */}
         {fruitProducts.length > 0 && (
           <ProductSection
             title="Fresh Fruits & Vegetables"
@@ -138,15 +154,13 @@ const Index = () => {
           />
         )}
 
-        {/* Show message if no products */}
-        {products.length === 0 && (
+        {filteredProducts.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">No products available at the moment.</p>
+            <p className="text-gray-500 text-lg">No matching products found.</p>
           </div>
         )}
       </main>
 
-      {/* Footer - Only show on desktop */}
       <div className="hidden md:block">
         <Footer />
       </div>
