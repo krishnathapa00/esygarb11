@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,25 +6,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client'; // <-- Import the Supabase client
 
-// Hybrid authentication page: email/password or SMS OTP
 const AuthHybrid = () => {
-  const [method, setMethod] = useState<'email' | 'sms'>('email');
-  const [segment, setSegment] = useState<'login' | 'signup'>('login');
-  
-  // SMS OTP fields
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [isOtpSent, setIsOtpSent] = useState(false);
-
   const [loading, setLoading] = useState(false);
 
-  const { sendOtp, verifyOtp, signUp } = useAuth();
+  const { sendOtp, verifyOtp } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // ----- SMS OTP handlers -----
   const handleSendOTP = async () => {
     if (phone.length < 10) {
       toast({
@@ -34,9 +26,11 @@ const AuthHybrid = () => {
       });
       return;
     }
+
     setLoading(true);
     const { error } = await sendOtp(phone);
     setLoading(false);
+
     if (error) {
       toast({
         title: "OTP Error",
@@ -58,9 +52,11 @@ const AuthHybrid = () => {
       });
       return;
     }
+
     setLoading(true);
     const { error } = await verifyOtp(phone, otp);
     setLoading(false);
+
     if (error) {
       toast({
         title: "Verification Failed",
@@ -76,13 +72,13 @@ const AuthHybrid = () => {
     }
   };
 
-  // Reset forms when switching methods
-  React.useEffect(() => {
+  // Reset form when component mounts
+  useEffect(() => {
     setLoading(false);
     setOtp('');
     setPhone('');
     setIsOtpSent(false);
-  }, [method, segment]);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -96,80 +92,66 @@ const AuthHybrid = () => {
       <div className="flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">EsyGrab Login / Signup</h1>
+            <h1 className="text-3xl font-bold text-gray-900">EsyGrab Login</h1>
             <p className="text-gray-600 mt-2">
-              Fast login for Customers & Admins
+              Fast login using your phone number
             </p>
           </div>
-          <div className="flex gap-2 mb-6">
-            <Button
-              variant={method === 'sms' ? 'default' : 'outline'}
-              className="flex-1"
-              onClick={() => setMethod('sms')}
-            >
-              Phone Number
-            </Button>
-          </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-8">
-                  {segment === 'login' && (
+          <div className="bg-white rounded-xl shadow-sm p-8 space-y-4">
+            {!isOtpSent ? (
+              <>
+                <div>
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <Input
+                    type="tel"
+                    id="phone"
+                    placeholder="Enter your phone number"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                  />
+                </div>
+                <Button
+                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                  onClick={handleSendOTP}
+                  disabled={phone.length < 10 || loading}
+                >
+                  {loading ? 'Sending…' : 'Send OTP'}
+                </Button>
+              </>
             ) : (
-              <div className="space-y-4">
-                {!isOtpSent ? (
-                  <>
-                    <div>
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input
-                        type="tel"
-                        id="phone"
-                        placeholder="Enter your phone number"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                      />
-                    </div>
-                    <Button
-                      className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
-                      onClick={handleSendOTP}
-                      disabled={phone.length < 10 || loading}
-                    >
-                      {loading ? 'Sending…' : 'Send OTP'}
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <div>
-                      <Label htmlFor="otp">
-                        Enter OTP sent to {phone}
-                      </Label>
-                      <Input
-                        id="otp"
-                        placeholder="Enter 4-digit OTP"
-                        value={otp}
-                        onChange={(e) => setOtp(e.target.value)}
-                        maxLength={4}
-                      />
-                    </div>
-                    <Button
-                      className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
-                      onClick={handleVerifyOTP}
-                      disabled={otp.length !== 4 || loading}
-                    >
-                      {loading ? 'Verifying…' : 'Verify OTP'}
-                    </Button>
-                    <Button
-                      variant="link"
-                      className="w-full text-sm text-gray-600"
-                      onClick={() => {
-                        setIsOtpSent(false);
-                        setOtp('');
-                        setPhone('');
-                      }}
-                    >
-                      Change Phone Number
-                    </Button>
-                  </>
-                )}
-              </div>
+              <>
+                <div>
+                  <Label htmlFor="otp">
+                    Enter OTP sent to {phone}
+                  </Label>
+                  <Input
+                    id="otp"
+                    placeholder="Enter 4-digit OTP"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    maxLength={4}
+                  />
+                </div>
+                <Button
+                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                  onClick={handleVerifyOTP}
+                  disabled={otp.length !== 4 || loading}
+                >
+                  {loading ? 'Verifying…' : 'Verify OTP'}
+                </Button>
+                <Button
+                  variant="link"
+                  className="w-full text-sm text-gray-600"
+                  onClick={() => {
+                    setIsOtpSent(false);
+                    setOtp('');
+                    setPhone('');
+                  }}
+                >
+                  Change Phone Number
+                </Button>
+              </>
             )}
             <div className="mt-6 pt-6 border-t border-gray-200 text-center">
               <p className="text-sm text-gray-600">
