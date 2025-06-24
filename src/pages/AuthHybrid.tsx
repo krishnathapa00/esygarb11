@@ -12,9 +12,7 @@ import { supabase } from '@/integrations/supabase/client'; // <-- Import the Sup
 const AuthHybrid = () => {
   const [method, setMethod] = useState<'email' | 'sms'>('email');
   const [segment, setSegment] = useState<'login' | 'signup'>('login');
-  // Email/password fields
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  
   // SMS OTP fields
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
@@ -25,55 +23,6 @@ const AuthHybrid = () => {
   const { sendOtp, verifyOtp, signUp } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  // ----- Email/password handlers -----
-  const handleEmailAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    if (segment === 'login') {
-      // Login
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      setLoading(false);
-      if (error) {
-        toast({
-          title: 'Login Failed',
-          description: error.message || 'Check your credentials.',
-          variant: 'destructive'
-        });
-      } else {
-        toast({ title: 'Login successful!' });
-        navigate('/');
-      }
-    } else {
-      // Signup with Supabase default magic link (also sets up password)
-      const redirectUrl = `${window.location.origin}/`;
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectUrl
-        }
-      });
-      setLoading(false);
-      if (error) {
-        toast({
-          title: 'Signup Failed',
-          description: error.message,
-          variant: 'destructive'
-        });
-      } else {
-        toast({
-          title: 'Signup successful!',
-          description: 'A confirmation link has been sent to your email.'
-        });
-        setSegment('login');
-      }
-    }
-  };
 
   // ----- SMS OTP handlers -----
   const handleSendOTP = async () => {
@@ -133,8 +82,6 @@ const AuthHybrid = () => {
     setOtp('');
     setPhone('');
     setIsOtpSent(false);
-    setEmail('');
-    setPassword('');
   }, [method, segment]);
 
   return (
@@ -156,13 +103,6 @@ const AuthHybrid = () => {
           </div>
           <div className="flex gap-2 mb-6">
             <Button
-              variant={method === 'email' ? 'default' : 'outline'}
-              className="flex-1"
-              onClick={() => setMethod('email')}
-            >
-              Email
-            </Button>
-            <Button
               variant={method === 'sms' ? 'default' : 'outline'}
               className="flex-1"
               onClick={() => setMethod('sms')}
@@ -172,90 +112,7 @@ const AuthHybrid = () => {
           </div>
 
           <div className="bg-white rounded-xl shadow-sm p-8">
-            {method === 'email' ? (
-              <form onSubmit={handleEmailAuth} className="space-y-6">
-                <div>
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
-                  disabled={loading}
-                >
-                  {loading
-                    ? (segment === 'login' ? 'Logging in...' : 'Signing up...')
-                    : (segment === 'login' ? 'Login' : 'Sign up')}
-                </Button>
-                <div className="flex items-center justify-between">
-                  <Button
-                    type="button"
-                    variant="link"
-                    className="text-green-600"
-                    onClick={() => setSegment(segment === 'login' ? 'signup' : 'login')}
-                  >
-                    {segment === 'login'
-                      ? "Don't have an account? Sign Up"
-                      : "Already have an account? Login"}
-                  </Button>
                   {segment === 'login' && (
-                    <Button
-                      type="button"
-                      variant="link"
-                      className="text-green-600"
-                      onClick={async () => {
-                        if (!email) {
-                          toast({
-                            title: "Enter your email address above first.",
-                            variant: "destructive"
-                          });
-                          return;
-                        }
-                        setLoading(true);
-                        const redirectUrl = `${window.location.origin}/`;
-                        const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl });
-                        setLoading(false);
-                        if (error) {
-                          toast({
-                            title: "Password Reset Failed",
-                            description: error.message,
-                            variant: "destructive"
-                          });
-                        } else {
-                          toast({
-                            title: "Check your email",
-                            description: "Password reset link sent."
-                          });
-                        }
-                      }}
-                    >
-                      Forgot password?
-                    </Button>
-                  )}
-                </div>
-                <div className="mt-2 text-sm text-gray-500 text-center">
-                  <div>Admin login: use your admin email + password.</div>
-                  <div>Customer login: sign up with email or use SMS OTP tab.</div>
-                </div>
-              </form>
             ) : (
               <div className="space-y-4">
                 {!isOtpSent ? (
