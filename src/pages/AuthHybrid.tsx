@@ -92,7 +92,7 @@ const AuthHybrid = () => {
       <div className="flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">EsyGrab Login</h1>
+            <h1 className="text-3xl font-bold text-gray-900">EsyGrab Login / Signup</h1>
             <p className="text-gray-600 mt-2">
               Fast login using your phone number
             </p>
