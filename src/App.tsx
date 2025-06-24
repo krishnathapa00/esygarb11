@@ -43,16 +43,13 @@ function App() {
               <Route path="/categories/:categoryId" element={<CategoryProducts />} />
               <Route path="/product/:id" element={<ProductDetails />} />
               <Route path="/cart" element={<CartPage />} />
-              <Route path="/shopping-cart" element={<CartPage />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/order-confirmation" element={<OrderConfirmation />} />
               <Route path="/track-order/:id" element={<OrderTracking />} />
               <Route path="/order-history" element={<OrderHistory />} />
               <Route path="/profile" element={<UserProfile />} />
-              <Route path="/my-profile" element={<UserProfile />} />
               <Route path="/location" element={<MapLocation />} />
-              <Route path="/delivery-location" element={<MapLocation />} />
-              <Route path="/map-location" element={<MapLocation />} />
+              
               
               {/* Delivery Partner Routes */}
               <Route path="/delivery-partner" element={<DeliveryPartnerAuth />} />
@@ -60,17 +57,11 @@ function App() {
               
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminLogin />} />
-              <Route path="/admin-login" element={<AdminLogin />} />
-              <Route path="/admin-dashboard" element={<AdminDashboard />} />
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/admin/products" element={<ManageProducts />} />
-              <Route path="/admin-products" element={<ManageProducts />} />
               <Route path="/admin/orders" element={<ManageOrders />} />
-              <Route path="/admin-orders" element={<ManageOrders />} />
               <Route path="/admin/users" element={<ManageUsers />} />
-              <Route path="/admin-users" element={<ManageUsers />} />
               <Route path="/admin/transactions" element={<Transactions />} />
-              <Route path="/admin-transactions" element={<Transactions />} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>
