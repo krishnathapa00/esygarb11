@@ -7,6 +7,7 @@ export default {
 		"./components/**/*.{ts,tsx}",
 		"./app/**/*.{ts,tsx}",
 		"./src/**/*.{ts,tsx}",
+		"./node_modules/@radix-ui/themes/**/*.{js,ts,jsx,tsx}",
 	],
 	prefix: "",
 	theme: {
