@@ -1,234 +1,131 @@
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createClient } from '@supabase/supabase-js';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+// Define environment variables for security
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL!;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY!;
 
-// Add signUp function to interface
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+interface User {
+  id: string;
+  phone: string;
+  isVerified: boolean;
+}
+
 interface AuthContextType {
   user: User | null;
-  session: Session | null;
-  loading: boolean;
-  verifyOtp: (phoneNumber: string, otp: string) => Promise<{ error: any }>;
-  signOut: () => Promise<void>;
-  sendOtp: (phoneNumber: string) => Promise<{ error: any }>;
-  signUp: (phoneNumber: string, fullName: string, role?: string) => Promise<{ error: any }>;
+  isAuthenticated: boolean;
+  sendOtp: (phone: string) => Promise<{ error?: { message: string } }>;
+  verifyOtp: (phone: string, otp: string) => Promise<{ error?: { message: string } }>;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
+  // Send OTP via Supabase
+  const sendOtp = useCallback(async (phone: string) => {
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        phone,
+        options: {
+          shouldCreateUser: true,
+        },
+      });
+
+      if (error) {
+        console.error('Error sending OTP:', error.message);
+        return { error: { message: error.message } };
       }
-    );
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+      console.log(`OTP sent to ${phone}`);
+      return {};
+    } catch (err: any) {
+      console.error('Unexpected error sending OTP:', err.message);
+      return { error: { message: 'Unexpected error occurred while sending OTP.' } };
+    }
   }, []);
 
-  // Generates a 4-digit OTP
-  const generateOtp = () => {
-    return Math.floor(1000 + Math.random() * 9000).toString();
-  };
-
-  // Unified sendOtp: Now uses Twilio edge function to send SMS
-  const sendOtp = async (phoneNumber: string) => {
+  // Verify OTP and sign in
+  const verifyOtp = useCallback(async (phone: string, otp: string) => {
     try {
-      const otpCode = generateOtp();
-      const expiresAt = new Date();
-      expiresAt.setMinutes(expiresAt.getMinutes() + 10); // 10 mins expiry
-
-      // Save OTP for this phone as before
-      const { error } = await supabase
-        .from('otp_verifications')
-        .insert({
-          phone_number: phoneNumber,
-          otp_code: otpCode,
-          expires_at: expiresAt.toISOString(),
-        });
-
-      if (error) throw error;
-
-      // --- NEW: Send SMS using Supabase Edge Function ---
-      const edgeResp = await fetch(
-        "https://itindpyfqqwryfidyuvu.supabase.co/functions/v1/send-otp-twilio",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            phone: phoneNumber,
-            code: otpCode,
-          }),
-        }
-      );
-
-      const result = await edgeResp.json();
-
-      if (!result.success) {
-        toast({
-          title: "OTP Failed",
-          description: "Could not send OTP via SMS. Please try again.",
-          variant: "destructive",
-        });
-        return { error: result.error || "SMS delivery failed" };
-      }
-
-      toast({
-        title: "OTP Sent",
-        description: `OTP sent via SMS to ${phoneNumber}.`,
+      const { data, error } = await supabase.auth.verifyOtp({
+        phone,
+        token: otp,
+        type: 'sms',
       });
 
-      return { error: null };
-    } catch (error) {
-      return { error };
-    }
-  };
-
-  // Magic login/signup: If user doesn't exist, create; if exists, just log in.
-  const verifyOtp = async (phoneNumber: string, otp: string) => {
-    try {
-      // Check OTP validity
-      const { data: otpData, error: otpError } = await supabase
-        .from('otp_verifications')
-        .select('*')
-        .eq('phone_number', phoneNumber)
-        .eq('otp_code', otp)
-        .gt('expires_at', new Date().toISOString())
-        .eq('is_verified', false)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (otpError || !otpData) {
-        return { error: { message: 'Invalid or expired OTP' } };
+      if (error || !data.session || !data.user) {
+        console.error('OTP verification failed:', error?.message);
+        return { error: { message: error?.message || 'OTP verification failed.' } };
       }
 
-      // Mark OTP as verified
-      await supabase
-        .from('otp_verifications')
-        .update({ is_verified: true })
-        .eq('id', otpData.id);
+      const newUser: User = {
+        id: data.user.id,
+        phone: phone,
+        isVerified: true,
+      };
 
-      // Try finding email for phone (your magic login model: email made from phone)
-      const email = `${phoneNumber.replace(/\D/g, '')}@esygrab.app`;
-      // Password is always 'demo-password-123'
-      const password = 'demo-password-123';
+      setUser(newUser);
+      setIsAuthenticated(true);
+      localStorage.setItem('user', JSON.stringify(newUser));
 
-      // Try to sign in; if fail, create and then sign in.
-      let { error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (error && error.message.includes('Invalid login credentials')) {
-        // User not found, create them first ("magic signup")
-        const { error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          phone: phoneNumber,
-          options: {
-            data: {
-              full_name: '',
-              phone_number: phoneNumber,
-            }
-          }
-        });
-        if (!signUpError) {
-          // Retry sign in
-          const { error: signInError } = await supabase.auth.signInWithPassword({
-            email,
-            password
-          });
-          error = signInError;
-        } else {
-          error = signUpError;
-        }
-      }
-
-      return { error };
-    } catch (error) {
-      return { error };
+      return {};
+    } catch (err: any) {
+      console.error('Unexpected error verifying OTP:', err.message);
+      return { error: { message: 'Unexpected error occurred while verifying OTP.' } };
     }
-  };
+  }, []);
 
-  // Manual signUp for Delivery Partner (with name/role)
-  const signUp = async (phoneNumber: string, fullName: string, role = 'delivery_partner') => {
-    try {
-      const email = `${phoneNumber.replace(/\D/g, '')}@esygrab.app`;
-      const password = 'demo-password-123';
-
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        phone: phoneNumber,
-        options: {
-          data: {
-            full_name: fullName,
-            phone_number: phoneNumber,
-            role, // Added role info if needed for backend triggers/RLS
-          }
-        }
-      });
-
-      // Ignore "user already exists" errors, as flow will proceed with login/OTP
-      return { error };
-    } catch (error) {
-      return { error };
-    }
-  };
-
-  const signOut = async () => {
+  const logout = useCallback(async () => {
     await supabase.auth.signOut();
     setUser(null);
-    setSession(null);
-    toast({
-      title: "Logged Out",
-      description: "You have been logged out successfully.",
-    });
-    // Optionally, redirect to login page
-    window.location.href = "/login";
-  };
+    setIsAuthenticated(false);
+    localStorage.removeItem('user');
+  }, []);
+
+  // On app load, check existing session
+  useEffect(() => {
+    const initAuth = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      if (error || !data.session || !data.session.user) {
+        localStorage.removeItem('user');
+        return;
+      }
+
+      const user: User = {
+        id: data.session.user.id,
+        phone: data.session.user.phone || '',
+        isVerified: true,
+      };
+
+      setUser(user);
+      setIsAuthenticated(true);
+      localStorage.setItem('user', JSON.stringify(user));
+    };
+
+    initAuth();
+  }, []);
 
   const value: AuthContextType = {
     user,
-    session,
-    loading,
-    verifyOtp,
-    signOut,
+    isAuthenticated,
     sendOtp,
-    signUp,
+    verifyOtp,
+    logout,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
