@@ -2,23 +2,29 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import OTPVerificationModal from '@/components/OTPVerificationModal';
+import PhoneNumberInput from '@/components/PhoneNumberInput';
 
 const AuthHybrid = () => {
   const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
-  const [isOtpSent, setIsOtpSent] = useState(false);
+  const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const { sendOtp, verifyOtp } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  const formatPhoneForDisplay = (phoneNumber: string) => {
+    if (!phoneNumber) return '';
+    // Format as +977 98 XXX XXX XX
+    const formatted = phoneNumber.replace(/(\d{2})(\d{3})(\d{3})(\d{2})/, '$1 $2 $3 $4');
+    return `+977 ${formatted}`;
+  };
+
   const handleSendOTP = async () => {
-    if (phone.length < 10) {
+    if (phone.length !== 10) {
       toast({
         title: "Invalid Phone Number",
         description: "Please enter a valid 10-digit phone number",
@@ -27,8 +33,19 @@ const AuthHybrid = () => {
       return;
     }
 
+    // Validate Nepal mobile number format (should start with 98)
+    if (!phone.startsWith('98')) {
+      toast({
+        title: "Invalid Phone Number",
+        description: "Please enter a valid Nepal mobile number starting with 98",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
-    const { error } = await sendOtp(phone);
+    const fullPhoneNumber = `+977${phone}`;
+    const { error } = await sendOtp(fullPhoneNumber);
     setLoading(false);
 
     if (error) {
@@ -38,129 +55,165 @@ const AuthHybrid = () => {
         variant: "destructive"
       });
     } else {
-      setIsOtpSent(true);
-      toast({ title: 'OTP sent. Please check your phone.' });
+      setIsOtpModalOpen(true);
+      toast({ 
+        title: 'OTP Sent Successfully', 
+        description: 'Please check your phone for the verification code.'
+      });
     }
   };
 
-  const handleVerifyOTP = async () => {
+  const handleVerifyOTP = async (otp: string) => {
     if (otp.length !== 4) {
       toast({
         title: "Invalid OTP",
-        description: "Please enter the 4-digit OTP",
+        description: "Please enter the complete 4-digit OTP",
         variant: "destructive"
       });
       return;
     }
 
     setLoading(true);
-    const { error } = await verifyOtp(phone, otp);
+    const fullPhoneNumber = `+977${phone}`;
+    const { error } = await verifyOtp(fullPhoneNumber, otp);
     setLoading(false);
 
     if (error) {
       toast({
         title: "Verification Failed",
-        description: error.message || "Invalid OTP.",
+        description: error.message || "Invalid OTP. Please try again.",
         variant: "destructive"
       });
     } else {
       toast({
-        title: "Phone Verified",
-        description: "Login successful!"
+        title: "Phone Verified Successfully",
+        description: "Welcome to EasyGrab!"
       });
+      setIsOtpModalOpen(false);
       navigate('/');
     }
+  };
+
+  const handleResendOTP = async () => {
+    setLoading(true);
+    const fullPhoneNumber = `+977${phone}`;
+    const { error } = await sendOtp(fullPhoneNumber);
+    setLoading(false);
+
+    if (error) {
+      toast({
+        title: "Resend Failed",
+        description: error.message || "Could not resend OTP",
+        variant: "destructive"
+      });
+    } else {
+      toast({ 
+        title: 'OTP Resent', 
+        description: 'A new verification code has been sent to your phone.'
+      });
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsOtpModalOpen(false);
   };
 
   // Reset form when component mounts
   useEffect(() => {
     setLoading(false);
-    setOtp('');
     setPhone('');
-    setIsOtpSent(false);
+    setIsOtpModalOpen(false);
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-50">
+      {/* Header */}
       <div className="px-4 py-4">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => navigate('/')}
+          className="hover:bg-white/50 rounded-xl"
+        >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Home
         </Button>
       </div>
 
+      {/* Main Content */}
       <div className="flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-md">
+          {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">EsyGrab Login / Signup</h1>
-            <p className="text-gray-600 mt-2">
-              Fast login using your phone number
+            <div className="mb-4">
+              <div className="w-16 h-16 bg-gradient-to-r from-emerald-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl font-bold text-white">EG</span>
+              </div>
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Welcome to EasyGrab
+            </h1>
+            <p className="text-gray-600">
+              Quick & secure login with your phone number
             </p>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-8 space-y-4">
-            {!isOtpSent ? (
-              <>
-                <div>
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    type="tel"
-                    id="phone"
-                    placeholder="Enter your phone number"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                  />
+          {/* Login Form */}
+          <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6 border border-gray-100">
+            <PhoneNumberInput
+              value={phone}
+              onChange={setPhone}
+              disabled={loading}
+            />
+
+            <Button
+              className="w-full h-12 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={handleSendOTP}
+              disabled={phone.length !== 10 || loading || !phone.startsWith('98')}
+            >
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Sending OTP...
                 </div>
-                <Button
-                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
-                  onClick={handleSendOTP}
-                  disabled={phone.length < 10 || loading}
-                >
-                  {loading ? 'Sending…' : 'Send OTP'}
-                </Button>
-              </>
-            ) : (
-              <>
-                <div>
-                  <Label htmlFor="otp">
-                    Enter OTP sent to {phone}
-                  </Label>
-                  <Input
-                    id="otp"
-                    placeholder="Enter 4-digit OTP"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    maxLength={4}
-                  />
-                </div>
-                <Button
-                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
-                  onClick={handleVerifyOTP}
-                  disabled={otp.length !== 4 || loading}
-                >
-                  {loading ? 'Verifying…' : 'Verify OTP'}
-                </Button>
-                <Button
-                  variant="link"
-                  className="w-full text-sm text-gray-600"
-                  onClick={() => {
-                    setIsOtpSent(false);
-                    setOtp('');
-                    setPhone('');
-                  }}
-                >
-                  Change Phone Number
-                </Button>
-              </>
-            )}
-            <div className="mt-6 pt-6 border-t border-gray-200 text-center">
-              <p className="text-sm text-gray-600">
-                By continuing, you agree to our Terms of Service and Privacy Policy
+              ) : (
+                'Send OTP'
+              )}
+            </Button>
+
+            {/* Terms */}
+            <div className="pt-4 border-t border-gray-100">
+              <p className="text-xs text-gray-500 text-center leading-relaxed">
+                By continuing, you agree to our{' '}
+                <span className="text-emerald-600 hover:underline cursor-pointer">
+                  Terms of Service
+                </span>{' '}
+                and{' '}
+                <span className="text-emerald-600 hover:underline cursor-pointer">
+                  Privacy Policy
+                </span>
               </p>
             </div>
           </div>
+
+          {/* Additional Info */}
+          <div className="text-center mt-6">
+            <p className="text-sm text-gray-500">
+              Your information is secure and encrypted
+            </p>
+          </div>
         </div>
       </div>
+
+      {/* OTP Verification Modal */}
+      <OTPVerificationModal
+        isOpen={isOtpModalOpen}
+        onClose={handleCloseModal}
+        phoneNumber={formatPhoneForDisplay(phone)}
+        onVerifyOTP={handleVerifyOTP}
+        onResendOTP={handleResendOTP}
+        loading={loading}
+      />
     </div>
   );
 };
