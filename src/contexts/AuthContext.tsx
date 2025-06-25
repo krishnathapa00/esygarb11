@@ -93,26 +93,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // On app load, check existing session
   useEffect(() => {
-    const initAuth = async () => {
-      const { data, error } = await supabase.auth.getSession();
-      if (error || !data.session || !data.session.user) {
-        localStorage.removeItem('user');
-        return;
-      }
-
+  const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+    if (session?.user) {
       const user: User = {
-        id: data.session.user.id,
-        phone: data.session.user.phone || '',
+        id: session.user.id,
+        phone: session.user.phone || '',
         isVerified: true,
       };
-
       setUser(user);
       setIsAuthenticated(true);
       localStorage.setItem('user', JSON.stringify(user));
-    };
+    } else {
+      setUser(null);
+      setIsAuthenticated(false);
+      localStorage.removeItem('user');
+    }
+  });
 
-    initAuth();
-  }, []);
+  // Cleanup on unmount
+  return () => {
+    authListener?.subscription.unsubscribe();
+  };
+}, []);
+
 
   const value: AuthContextType = {
     user,
