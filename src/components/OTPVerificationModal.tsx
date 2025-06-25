@@ -84,7 +84,7 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={() => {}}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="sm:max-w-md mx-4 rounded-2xl p-0 overflow-hidden border-0 shadow-2xl">
         <div className="bg-white">
           {/* Header */}
