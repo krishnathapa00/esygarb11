@@ -1,25 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
-import OTPVerificationModal from '@/components/OTPVerificationModal';
-import PhoneNumberInput from '@/components/PhoneNumberInput';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import OTPVerificationModal from "@/components/OTPVerificationModal";
+import PhoneNumberInput from "@/components/PhoneNumberInput";
 
 const AuthHybrid = () => {
-  const [phone, setPhone] = useState('');
+  const [phone, setPhone] = useState("");
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [cooldown, setCooldown] = useState(0); // <-- cooldown timer
 
-  const { sendOtp, verifyOtp } = useAuth();
+  const { sendOtp, verifyOtp, resendOtp } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const formatPhoneForDisplay = (phoneNumber: string) => {
-    if (!phoneNumber) return '';
-    // Format as +977 98 XXX XXX XX
-    const formatted = phoneNumber.replace(/(\d{2})(\d{3})(\d{3})(\d{2})/, '$1 $2 $3 $4');
+    if (!phoneNumber) return "";
+    const formatted = phoneNumber.replace(
+      /(\d{2})(\d{3})(\d{3})(\d{2})/,
+      "$1 $2 $3 $4"
+    );
     return `+977 ${formatted}`;
   };
 
@@ -28,17 +31,17 @@ const AuthHybrid = () => {
       toast({
         title: "Invalid Phone Number",
         description: "Please enter a valid 10-digit phone number",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
-    // Validate Nepal mobile number format (should start with 98)
-    if (!phone.startsWith('98')) {
+    if (!phone.startsWith("98")) {
       toast({
         title: "Invalid Phone Number",
-        description: "Please enter a valid Nepal mobile number starting with 98",
-        variant: "destructive"
+        description:
+          "Please enter a valid Nepal mobile number starting with 98",
+        variant: "destructive",
       });
       return;
     }
@@ -52,13 +55,14 @@ const AuthHybrid = () => {
       toast({
         title: "OTP Error",
         description: error.message || "Could not send OTP",
-        variant: "destructive"
+        variant: "destructive",
       });
     } else {
       setIsOtpModalOpen(true);
-      toast({ 
-        title: 'OTP Sent Successfully', 
-        description: 'Please check your phone for the verification code.'
+      setCooldown(30); // start cooldown
+      toast({
+        title: "OTP Sent Successfully",
+        description: "Please check your phone for the verification code.",
       });
     }
   };
@@ -68,7 +72,7 @@ const AuthHybrid = () => {
       toast({
         title: "Invalid OTP",
         description: "Please enter the complete 4-digit OTP",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -82,37 +86,49 @@ const AuthHybrid = () => {
       toast({
         title: "Verification Failed",
         description: error.message || "Invalid OTP. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
     } else {
       toast({
         title: "Phone Verified Successfully",
-        description: "Welcome to EasyGrab!"
+        description: "Welcome to EasyGrab!",
       });
       setIsOtpModalOpen(false);
-      navigate('/');
+      navigate("/");
     }
   };
 
   const handleResendOTP = async () => {
+    if (cooldown > 0) return;
+
     setLoading(true);
     const fullPhoneNumber = `+977${phone}`;
-    const { error } = await sendOtp(fullPhoneNumber);
+    const { error } = await resendOtp(fullPhoneNumber);
     setLoading(false);
 
     if (error) {
       toast({
         title: "Resend Failed",
         description: error.message || "Could not resend OTP",
-        variant: "destructive"
+        variant: "destructive",
       });
     } else {
-      toast({ 
-        title: 'OTP Resent', 
-        description: 'A new verification code has been sent to your phone.'
+      setCooldown(30);
+      toast({
+        title: "OTP Resent",
+        description: "A new verification code has been sent to your phone.",
       });
     }
   };
+
+  // Handle countdown timer for resend cooldown
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (cooldown > 0) {
+      timer = setTimeout(() => setCooldown((prev) => prev - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [cooldown]);
 
   const handleCloseModal = () => {
     setIsOtpModalOpen(false);
@@ -121,7 +137,7 @@ const AuthHybrid = () => {
   // Reset form when component mounts
   useEffect(() => {
     setLoading(false);
-    setPhone('');
+    setPhone("");
     setIsOtpModalOpen(false);
   }, []);
 
@@ -129,10 +145,10 @@ const AuthHybrid = () => {
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-50">
       {/* Header */}
       <div className="px-4 py-4">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => navigate('/')}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate("/")}
           className="hover:bg-white/50 rounded-xl"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -169,7 +185,9 @@ const AuthHybrid = () => {
             <Button
               className="w-full h-12 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={handleSendOTP}
-              disabled={phone.length !== 10 || loading || !phone.startsWith('98')}
+              disabled={
+                phone.length !== 10 || loading || !phone.startsWith("98")
+              }
             >
               {loading ? (
                 <div className="flex items-center gap-2">
@@ -177,18 +195,18 @@ const AuthHybrid = () => {
                   Sending OTP...
                 </div>
               ) : (
-                'Send OTP'
+                "Send OTP"
               )}
             </Button>
 
             {/* Terms */}
             <div className="pt-4 border-t border-gray-100">
               <p className="text-xs text-gray-500 text-center leading-relaxed">
-                By continuing, you agree to our{' '}
+                By continuing, you agree to our{" "}
                 <span className="text-emerald-600 hover:underline cursor-pointer">
                   Terms of Service
-                </span>{' '}
-                and{' '}
+                </span>{" "}
+                and{" "}
                 <span className="text-emerald-600 hover:underline cursor-pointer">
                   Privacy Policy
                 </span>
@@ -213,6 +231,7 @@ const AuthHybrid = () => {
         onVerifyOTP={handleVerifyOTP}
         onResendOTP={handleResendOTP}
         loading={loading}
+        cooldown={cooldown}
       />
     </div>
   );
