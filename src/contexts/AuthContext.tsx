@@ -9,19 +9,19 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface User {
   id: string;
-  phone: string;
+  email: string;
   isVerified: boolean;
 }
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  sendOtp: (phone: string) => Promise<{ error?: { message: string } }>;
+  sendOtp: (email: string) => Promise<{ error?: { message: string } }>;
   verifyOtp: (
-    phone: string,
+    email: string,
     otp: string
   ) => Promise<{ error?: { message: string } }>;
-  resendOtp: (phone: string) => Promise<{ error?: { message: string } }>;
+  resendOtp: (email: string) => Promise<{ error?: { message: string } }>;
   logout: () => void;
 }
 
@@ -41,11 +41,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Send OTP via Supabase
-  const sendOtp = useCallback(async (phone: string) => {
+  const sendOtp = useCallback(async (email: string) => {
     try {
       const { error } = await supabase.auth.signInWithOtp({
-        phone,
+        email,
         options: {
           shouldCreateUser: true,
         },
@@ -56,7 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         return { error: { message: error.message } };
       }
 
-      console.log(`OTP sent to ${phone}`);
+      console.log(`OTP sent to ${email}`);
       return {};
     } catch (err: any) {
       console.error("Unexpected error sending OTP:", err.message);
@@ -67,20 +66,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const resendOtp = useCallback(
-    async (phone: string) => {
-      console.log(`Resending OTP to ${phone}`);
-      return await sendOtp(phone);
+    async (email: string) => {
+      console.log(`Resending OTP to ${email}`);
+      return await sendOtp(email);
     },
     [sendOtp]
   );
 
-  // Verify OTP and sign in
-  const verifyOtp = useCallback(async (phone: string, otp: string) => {
+  const verifyOtp = useCallback(async (email: string, otp: string) => {
     try {
       const { data, error } = await supabase.auth.verifyOtp({
-        phone,
+        email,
         token: otp,
-        type: "sms",
+        type: "email",
       });
 
       if (error || !data.session || !data.user) {
@@ -92,7 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       const newUser: User = {
         id: data.user.id,
-        phone: phone,
+        email: email,
         isVerified: true,
       };
 
@@ -116,14 +114,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     localStorage.removeItem("user");
   }, []);
 
-  // On app load, check existing session
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (session?.user) {
           const user: User = {
             id: session.user.id,
-            phone: session.user.phone || "",
+            email: session.user.email || "",
             isVerified: true,
           };
           setUser(user);
@@ -137,7 +134,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     );
 
-    // Cleanup on unmount
     return () => {
       authListener?.subscription.unsubscribe();
     };
