@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 interface OTPVerificationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  identifier: string; // now email
+  identifier: string;
   onVerifyOTP: (otp: string) => void;
   onResendOTP: () => void;
   loading: boolean;
@@ -27,14 +27,31 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
   loading,
   cooldown,
 }) => {
-  const [otp, setOtp] = useState("");
+  const inputsRef = useRef<HTMLInputElement[]>([]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, "").slice(0, 6);
-    setOtp(value);
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    idx: number
+  ) => {
+    const val = e.target.value.replace(/\D/g, "");
+    if (val && idx < 5) {
+      inputsRef.current[idx + 1]?.focus();
+    }
+    inputsRef.current[idx].value = val;
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pasteData = e.clipboardData.getData("Text").slice(0, 6).split("");
+    pasteData.forEach((char, i) => {
+      if (inputsRef.current[i]) {
+        inputsRef.current[i].value = char;
+      }
+    });
   };
 
   const handleVerify = () => {
+    const otp = inputsRef.current.map((input) => input.value).join("");
     if (otp.length === 6) {
       onVerifyOTP(otp);
     }
@@ -54,20 +71,26 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
           <span className="font-medium">{identifier}</span>
         </div>
 
-        <Input
-          type="text"
-          value={otp}
-          onChange={handleChange}
-          maxLength={6}
-          disabled={loading}
-          className="text-center text-xl tracking-widest font-mono"
-          placeholder="______"
-        />
+        <div className="flex justify-center gap-2 mb-4">
+          {[...Array(6)].map((_, i) => (
+            <Input
+              key={i}
+              type="text"
+              inputMode="numeric"
+              maxLength={1}
+              className="w-10 h-12 text-center text-xl font-mono tracking-wider"
+              ref={(el) => (inputsRef.current[i] = el!)}
+              onChange={(e) => handleChange(e, i)}
+              onPaste={handlePaste}
+              disabled={loading}
+            />
+          ))}
+        </div>
 
         <Button
           onClick={handleVerify}
-          disabled={otp.length !== 6 || loading}
-          className="w-full mt-4"
+          disabled={loading}
+          className="w-full mt-2"
         >
           {loading ? "Verifying..." : "Verify OTP"}
         </Button>
