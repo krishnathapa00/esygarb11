@@ -4,21 +4,65 @@ import { Link } from 'react-router-dom';
 import { BarChart3, ShoppingBag, Users, TrendingUp, Package, UserCheck, Clock, RotateCcw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import AdminLayout from './components/AdminLayout';
 
 const AdminDashboard = () => {
-  // Mock dashboard data with Rs currency
-  const dashboardData = {
-    totalOrders: 128,
-    ordersToday: 24,
-    totalRevenue: 124800,
-    revenueToday: 24000,
-    totalUsers: 350,
-    newUsersToday: 8,
-    pendingOrders: 12,
-    lowStockItems: 5,
-    refundsProcessed: 8,
-    refundAmount: 15600,
+  // Fetch real dashboard data from Supabase
+  const { data: dashboardStats } = useQuery({
+    queryKey: ['admin-dashboard-stats'],
+    queryFn: async () => {
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Get total orders
+      const { data: allOrders } = await supabase.from('orders').select('id, total_amount, created_at');
+      const totalOrders = allOrders?.length || 0;
+      const totalRevenue = allOrders?.reduce((sum, order) => sum + Number(order.total_amount), 0) || 0;
+      
+      // Get today's orders
+      const { data: todayOrders } = await supabase.from('orders').select('id, total_amount').gte('created_at', today);
+      const ordersToday = todayOrders?.length || 0;
+      const revenueToday = todayOrders?.reduce((sum, order) => sum + Number(order.total_amount), 0) || 0;
+      
+      // Get total users
+      const { data: allUsers } = await supabase.from('profiles').select('id, created_at').eq('role', 'customer');
+      const totalUsers = allUsers?.length || 0;
+      
+      // Get today's new users
+      const { data: todayUsers } = await supabase.from('profiles').select('id').eq('role', 'customer').gte('created_at', today);
+      const newUsersToday = todayUsers?.length || 0;
+      
+      // Get pending orders
+      const { data: pending } = await supabase.from('orders').select('id').eq('status', 'pending');
+      const pendingOrders = pending?.length || 0;
+      
+      return {
+        totalOrders,
+        ordersToday,
+        totalRevenue,
+        revenueToday,
+        totalUsers,
+        newUsersToday,
+        pendingOrders,
+        lowStockItems: 5, // Mock for now
+        refundsProcessed: 8, // Mock for now
+        refundAmount: 15600, // Mock for now
+      };
+    }
+  });
+
+  const dashboardData = dashboardStats || {
+    totalOrders: 0,
+    ordersToday: 0,
+    totalRevenue: 0,
+    revenueToday: 0,
+    totalUsers: 0,
+    newUsersToday: 0,
+    pendingOrders: 0,
+    lowStockItems: 0,
+    refundsProcessed: 0,
+    refundAmount: 0,
   };
 
   const handleRefund = (orderId: string) => {
