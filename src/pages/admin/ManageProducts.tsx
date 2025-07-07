@@ -26,7 +26,10 @@ type ProductRow = {
 const ManageProducts = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddProduct, setShowAddProduct] = useState(false);
+<<<<<<< HEAD
   const [editingProduct, setEditingProduct] = useState<ProductRow | null>(null);
+=======
+>>>>>>> 398f62f (code pushed by undead)
   const [creating, setCreating] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -74,6 +77,7 @@ const ManageProducts = () => {
     product.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+<<<<<<< HEAD
   // Handle add/edit product modal show/hide
   const handleAddProduct = () => {
     setEditingProduct(null);
@@ -100,6 +104,12 @@ const ManageProducts = () => {
   const handleCloseModal = () => {
     setShowAddProduct(false);
     setEditingProduct(null);
+=======
+  // Handle add product modal show/hide
+  const handleAddProduct = () => setShowAddProduct(true);
+  const handleCloseModal = () => {
+    setShowAddProduct(false);
+>>>>>>> 398f62f (code pushed by undead)
     setProductData({
       name: '',
       price: '',
@@ -114,6 +124,7 @@ const ManageProducts = () => {
     });
   };
 
+<<<<<<< HEAD
   const handleDeleteProduct = async (productId: number) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
     
@@ -135,6 +146,8 @@ const ManageProducts = () => {
     }
   };
 
+=======
+>>>>>>> 398f62f (code pushed by undead)
   // Handle product field change
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setProductData({
@@ -143,12 +156,20 @@ const ManageProducts = () => {
     });
   };
 
+<<<<<<< HEAD
   // Handle submit to Supabase (create or update)
+=======
+  // Handle submit to Supabase
+>>>>>>> 398f62f (code pushed by undead)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setCreating(true);
 
+<<<<<<< HEAD
     // Prepare payload
+=======
+    // Prepare payload, includes persistent offer
+>>>>>>> 398f62f (code pushed by undead)
     const payload: any = {
       name: productData.name,
       price: Number(productData.price),
@@ -162,6 +183,7 @@ const ManageProducts = () => {
       offer: productData.offer ?? null,
     };
 
+<<<<<<< HEAD
     let error;
     if (editingProduct) {
       // Update existing product
@@ -173,18 +195,30 @@ const ManageProducts = () => {
       error = result.error;
     }
     
+=======
+    const { error } = await supabase.from('products').insert([payload]);
+>>>>>>> 398f62f (code pushed by undead)
     setCreating(false);
 
     if (error) {
       toast({
+<<<<<<< HEAD
         title: editingProduct ? "Product update failed" : "Product creation failed",
+=======
+        title: "Product creation failed",
+>>>>>>> 398f62f (code pushed by undead)
         description: error.message,
         variant: "destructive",
       });
     } else {
       toast({
+<<<<<<< HEAD
         title: editingProduct ? "Product updated!" : "Product added!",
         description: editingProduct ? "Successfully updated the product." : "Successfully created a new product.",
+=======
+        title: "Product added!",
+        description: "Successfully created a new product.",
+>>>>>>> 398f62f (code pushed by undead)
       });
       handleCloseModal();
       refetch();
@@ -280,6 +314,7 @@ const ManageProducts = () => {
                         : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+<<<<<<< HEAD
                       <Button 
                         variant="ghost" 
                         size="sm"
@@ -294,6 +329,13 @@ const ManageProducts = () => {
                         className="text-red-600 hover:text-red-900 hover:bg-red-50"
                         onClick={() => handleDeleteProduct(product.id)}
                       >
+=======
+                      <Button variant="ghost" size="sm">
+                        <Edit2 className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                      <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-900 hover:bg-red-50">
+>>>>>>> 398f62f (code pushed by undead)
                         <Trash2 className="h-4 w-4 mr-1" />
                         Delete
                       </Button>
@@ -310,7 +352,11 @@ const ManageProducts = () => {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
             <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-8 relative">
               <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-800" onClick={handleCloseModal}>&#10005;</button>
+<<<<<<< HEAD
               <h2 className="text-xl font-bold mb-4">{editingProduct ? 'Edit Product' : 'Add New Product'}</h2>
+=======
+              <h2 className="text-xl font-bold mb-4">Add New Product</h2>
+>>>>>>> 398f62f (code pushed by undead)
               <form className="space-y-3" onSubmit={handleSubmit}>
                 <Input name="name" placeholder="Product Name" value={productData.name} onChange={handleChange} required />
                 <Input name="price" type="number" placeholder="Price" value={productData.price} onChange={handleChange} required min={0} />
@@ -323,7 +369,11 @@ const ManageProducts = () => {
                 <Input name="image_url" placeholder="Product Image URL" value={productData.image_url} onChange={handleChange} />
                 <textarea name="description" placeholder="Description" value={productData.description} onChange={handleChange} className="w-full border rounded-lg px-3 py-2 min-h-[60px]" />
                 <Button className="w-full" type="submit" disabled={creating}>
+<<<<<<< HEAD
                   {creating ? (editingProduct ? "Updating..." : "Adding...") : (editingProduct ? "Update Product" : "Add Product")}
+=======
+                  {creating ? "Adding..." : "Add Product"}
+>>>>>>> 398f62f (code pushed by undead)
                 </Button>
               </form>
             </div>

@@ -5,24 +5,24 @@ import { ArrowLeft, Star, Truck, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useProducts } from "@/hooks/useProducts";
+import { useCart } from "@/contexts/CartContext";
 
 const ProductDetails = () => {
   const { id } = useParams();
-  const { data: products, isLoading, isError } = useProducts();
+  const { addToCart, cart } = useCart();
+
+  const { data: products } = useProducts();
 
   const product = products?.find((p) => p.id.toString() === id);
 
   const [quantity, setQuantity] = useState(1);
 
+  const totalCartQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
+
   if (!product) {
     return (
       <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center">
-        <Header
-          cartItems={0}
-          onCartClick={() => {}}
-          searchQuery=""
-          onSearchChange={() => {}}
-        />
+        <Header />
         <h2 className="text-2xl font-semibold text-red-600">
           Product not found.
         </h2>
@@ -35,12 +35,7 @@ const ProductDetails = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header
-        cartItems={0}
-        onCartClick={() => {}}
-        searchQuery=""
-        onSearchChange={() => {}}
-      />
+      <Header />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex items-center mb-6">
@@ -100,11 +95,11 @@ const ProductDetails = () => {
 
               <div className="flex items-center space-x-4">
                 <span className="text-3xl font-bold text-gray-900">
-                  ₹{product.price}
+                  Rs.{product.price}
                 </span>
                 {product.originalPrice && (
                   <span className="text-xl text-gray-400 line-through">
-                    ₹{product.originalPrice}
+                    Rs.{product.originalPrice}
                   </span>
                 )}
               </div>
@@ -166,8 +161,18 @@ const ProductDetails = () => {
                 <Button
                   className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-3"
                   size="lg"
+                  onClick={() =>
+                    addToCart({
+                      id: product.id,
+                      name: product.name,
+                      price: product.price,
+                      image: product.image,
+                      weight: product.weight,
+                      quantity,
+                    })
+                  }
                 >
-                  Add {quantity} to Cart - ₹{product.price * quantity}
+                  Add {quantity} to Cart - Rs.{product.price * quantity}
                 </Button>
               </div>
             </div>

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { BarChart3, ShoppingBag, Users, TrendingUp, Package, UserCheck, Clock, RotateCcw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+<<<<<<< HEAD
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import AdminLayout from './components/AdminLayout';
@@ -63,6 +64,23 @@ const AdminDashboard = () => {
     lowStockItems: 0,
     refundsProcessed: 0,
     refundAmount: 0,
+=======
+import AdminLayout from './components/AdminLayout';
+
+const AdminDashboard = () => {
+  // Mock dashboard data with Rs currency
+  const dashboardData = {
+    totalOrders: 128,
+    ordersToday: 24,
+    totalRevenue: 124800,
+    revenueToday: 24000,
+    totalUsers: 350,
+    newUsersToday: 8,
+    pendingOrders: 12,
+    lowStockItems: 5,
+    refundsProcessed: 8,
+    refundAmount: 15600,
+>>>>>>> 398f62f (code pushed by undead)
   };
 
   const handleRefund = (orderId: string) => {

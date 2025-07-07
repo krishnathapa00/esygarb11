@@ -10,21 +10,18 @@ import { supabase } from "@/integrations/supabase/client";
 interface User {
   id: string;
   email: string;
-  phone?: string;
   isVerified: boolean;
 }
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  loading: boolean;
   sendOtp: (email: string) => Promise<{ error?: { message: string } }>;
   verifyOtp: (
     email: string,
     otp: string
   ) => Promise<{ error?: { message: string } }>;
   resendOtp: (email: string) => Promise<{ error?: { message: string } }>;
-  signUp: (phone: string, fullName: string, role: string) => Promise<{ error?: { message: string } }>;
   logout: () => void;
 }
 
@@ -43,7 +40,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   const sendOtp = useCallback(async (email: string) => {
     try {
@@ -111,16 +107,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
-  const signUp = useCallback(async (phone: string, fullName: string, role: string) => {
-    try {
-      // Mock implementation for signup
-      console.log('Signing up:', { phone, fullName, role });
-      return {};
-    } catch (err: any) {
-      return { error: { message: err.message } };
-    }
-  }, []);
-
   const logout = useCallback(async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -129,7 +115,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   useEffect(() => {
-    setLoading(true);
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (session?.user) {
@@ -146,7 +131,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           setIsAuthenticated(false);
           localStorage.removeItem("user");
         }
-        setLoading(false);
       }
     );
 
@@ -158,11 +142,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const value: AuthContextType = {
     user,
     isAuthenticated,
-    loading,
     sendOtp,
     verifyOtp,
     resendOtp,
-    signUp,
     logout,
   };
 

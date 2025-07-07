@@ -1,18 +1,26 @@
 
 import React, { useState } from 'react';
+<<<<<<< HEAD
 import { useParams, Link, useNavigate } from 'react-router-dom';
+=======
+import { useParams, Link } from 'react-router-dom';
+>>>>>>> 398f62f (code pushed by undead)
 import { ArrowLeft, Search, MapPin, Package, User } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+<<<<<<< HEAD
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+=======
+>>>>>>> 398f62f (code pushed by undead)
 import AdminLayout from './components/AdminLayout';
 
 const AssignOrder = () => {
   const { orderId } = useParams();
   const [searchTerm, setSearchTerm] = useState('');
+<<<<<<< HEAD
   const [selectedDeliveryPerson, setSelectedDeliveryPerson] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -107,6 +115,37 @@ const AssignOrder = () => {
       });
       queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
       navigate('/admin/orders');
+=======
+  const [selectedDeliveryPerson, setSelectedDeliveryPerson] = useState<number | null>(null);
+  
+  // Mock order data
+  const order = {
+    id: orderId,
+    customer: "John Doe",
+    phone: "+91 98765 43210",
+    date: "June 6, 2025",
+    amount: 160,
+    status: "Confirmed",
+    items: [
+      { id: 1, name: "Fresh Bananas", quantity: 2, price: 40 },
+      { id: 2, name: "Fresh Milk", quantity: 1, price: 60 },
+      { id: 3, name: "Bread", quantity: 1, price: 40 }
+    ],
+    address: "123 Main St, Apartment 4B, New York, NY 10001"
+  };
+  
+  // Mock delivery persons
+  const deliveryPersons = [
+    { id: 1, name: 'Amit Kumar', phone: '+91 98765 43210', status: 'Available', activeOrders: 0, rating: 4.8, distance: "1.2 km", image: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=48&h=48&fit=crop' },
+    { id: 2, name: 'Priya Sharma', phone: '+91 87654 32109', status: 'Available', activeOrders: 0, rating: 4.5, distance: "2.5 km", image: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=48&h=48&fit=crop' },
+    { id: 3, name: 'Raj Singh', phone: '+91 76543 21098', status: 'Available', activeOrders: 0, rating: 4.9, distance: "3.0 km", image: 'https://images.unsplash.com/photo-1532074205216-d0e1f4b87368?w=48&h=48&fit=crop' },
+  ];
+  
+  const handleAssign = () => {
+    if (selectedDeliveryPerson) {
+      alert(`Order ${orderId} has been assigned to ${deliveryPersons.find(p => p.id === selectedDeliveryPerson)?.name}`);
+      // In a real app, you would dispatch some action here
+>>>>>>> 398f62f (code pushed by undead)
     }
   };
   
@@ -146,19 +185,33 @@ const AssignOrder = () => {
                 <div className="flex justify-between">
                   <span className="text-gray-600">Status</span>
                   <Badge className="bg-blue-100 text-blue-800">
+<<<<<<< HEAD
                     {order?.status}
+=======
+                    {order.status}
+>>>>>>> 398f62f (code pushed by undead)
                   </Badge>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Total Amount</span>
+<<<<<<< HEAD
                   <span className="font-medium">₹{order?.amount}</span>
+=======
+                  <span className="font-medium">₹{order.amount}</span>
+>>>>>>> 398f62f (code pushed by undead)
                 </div>
               </div>
               
               <div className="mt-4 pt-4 border-t">
+<<<<<<< HEAD
                 <h4 className="font-medium mb-2">Items ({order?.items?.length || 0})</h4>
                 <div className="space-y-2">
                   {order?.items?.map((item) => (
+=======
+                <h4 className="font-medium mb-2">Items ({order.items.length})</h4>
+                <div className="space-y-2">
+                  {order.items.map((item) => (
+>>>>>>> 398f62f (code pushed by undead)
                     <div key={item.id} className="flex justify-between">
                       <span>{item.name} x{item.quantity}</span>
                       <span>₹{item.price * item.quantity}</span>
@@ -177,11 +230,19 @@ const AssignOrder = () => {
               <div className="space-y-4">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Name</span>
+<<<<<<< HEAD
                   <span>{order?.customer}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Phone</span>
                   <span>{order?.phone}</span>
+=======
+                  <span>{order.customer}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Phone</span>
+                  <span>{order.phone}</span>
+>>>>>>> 398f62f (code pushed by undead)
                 </div>
               </div>
             </div>
@@ -192,7 +253,11 @@ const AssignOrder = () => {
                 <h3 className="text-lg font-semibold">Delivery Address</h3>
               </div>
               
+<<<<<<< HEAD
               <p className="text-gray-600">{order?.address}</p>
+=======
+              <p className="text-gray-600">{order.address}</p>
+>>>>>>> 398f62f (code pushed by undead)
               
               <div className="mt-4 h-40 bg-gray-200 rounded-lg flex items-center justify-center">
                 <span className="text-gray-500">Map location would appear here</span>
@@ -216,7 +281,11 @@ const AssignOrder = () => {
               </div>
               
               <div className="space-y-4 mt-6">
+<<<<<<< HEAD
                 {(searchTerm ? filteredDeliveryPersons : deliveryPersons).map((person) => (
+=======
+                {deliveryPersons.map((person) => (
+>>>>>>> 398f62f (code pushed by undead)
                   <div 
                     key={person.id} 
                     className={`border rounded-lg p-4 cursor-pointer transition-colors ${

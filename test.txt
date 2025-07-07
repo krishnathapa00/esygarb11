@@ -1,18 +1,43 @@
 import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ShoppingCart, MapPin, Clock, User, Home, Grid3X3 } from "lucide-react";
+import {
+  ShoppingCart,
+  MapPin,
+  Clock,
+  User,
+  Home,
+  Grid3X3,
+  Menu,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LocationDetectionPopup from "./LocationDetectionPopup";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
 import SearchBar from "./SearchBar";
-import { useCart } from "@/contexts/CartContext";
 
 interface HeaderProps {
+  cartItems: number;
+  onCartClick: () => void;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
   showSearchBar?: boolean;
 }
 
-const Header = () => {
+const Header = ({ cartItems, searchQuery, onSearchChange }: HeaderProps) => {
+  const mockProductNames = [
+    "Fresh Bananas",
+    "Fresh Tomatoes",
+    "Fresh Spinach",
+    "Fresh Milk",
+    "Almond Milk",
+    "Organic Mangoes",
+    "Brown Bread",
+    "Peanut Butter",
+    "Farm Eggs",
+    "Greek Yogurt",
+  ];
+
   const [showLocationPopup, setShowLocationPopup] = useState(false);
   const [userLocation, setUserLocation] = useState(() => {
     try {
@@ -32,13 +57,31 @@ const Header = () => {
     }
     return "Set Location";
   });
-
   const location = useLocation();
   const isMobile = useIsMobile();
   const { user, logout } = useAuth();
-  const { cart } = useCart();
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const navigate = useNavigate();
 
-  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const handleSearchInput = (query: string) => {
+    onSearchChange(query);
+    if (query.trim() === "") {
+      setSuggestions([]);
+      return;
+    }
+
+    const filtered = mockProductNames
+      .filter((item) => item.toLowerCase().includes(query.toLowerCase()))
+      .slice(0, 5);
+    setSuggestions(filtered);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      navigate(`/search?query=${searchQuery}`);
+      setSuggestions([]);
+    }
+  };
 
   const handleLocationSet = (location: string) => {
     let simplifiedLocation = location;
@@ -162,9 +205,9 @@ const Header = () => {
                   className="relative hover:bg-green-50 border-green-200"
                 >
                   <ShoppingCart className="h-4 w-4" />
-                  {totalItems > 0 && (
+                  {cartItems > 0 && (
                     <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                      {totalItems}
+                      {cartItems}
                     </span>
                   )}
                 </Button>
@@ -224,9 +267,9 @@ const Header = () => {
               label="Cart"
               isActive={location.pathname === "/cart"}
             />
-            {totalItems > 0 && (
-              <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                {totalItems}
+            {cartItems > 0 && (
+              <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                {cartItems}
               </span>
             )}
           </Link>
@@ -250,3 +293,5 @@ const Package = ({ className }: { className?: string }) => (
 );
 
 export default Header;
+
+why we are using mockdata

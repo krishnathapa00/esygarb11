@@ -8,7 +8,6 @@ import { Product } from "@/hooks/useProducts";
 const SearchResults = () => {
   const [searchParams] = useSearchParams();
   const query = searchParams.get("query")?.toLowerCase() || "";
-
   const { data: products = [], isLoading, isError } = useProducts();
   const [searchQuery, setSearchQuery] = useState(query);
 

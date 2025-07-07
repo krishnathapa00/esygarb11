@@ -4,13 +4,17 @@ import { Search, Filter, MoreVertical } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+<<<<<<< HEAD
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+=======
+>>>>>>> 398f62f (code pushed by undead)
 import AdminLayout from './components/AdminLayout';
 
 const ManageUsers = () => {
   const [searchTerm, setSearchTerm] = useState('');
   
+<<<<<<< HEAD
   // Fetch real users from Supabase
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['admin-users'],
@@ -42,6 +46,16 @@ const ManageUsers = () => {
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.phone.includes(searchTerm)
   );
+=======
+  // Mock user data
+  const users = [
+    { id: 1, name: 'John Doe', phone: '+91 98765 43210', email: 'john@example.com', orders: 12, status: 'Active', joinedOn: 'May 10, 2025', image: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=48&h=48&fit=crop' },
+    { id: 2, name: 'Jane Smith', phone: '+91 87654 32109', email: 'jane@example.com', orders: 8, status: 'Active', joinedOn: 'May 15, 2025', image: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=48&h=48&fit=crop' },
+    { id: 3, name: 'Robert Johnson', phone: '+91 76543 21098', email: 'robert@example.com', orders: 5, status: 'Inactive', joinedOn: 'May 20, 2025', image: 'https://images.unsplash.com/photo-1532074205216-d0e1f4b87368?w=48&h=48&fit=crop' },
+    { id: 4, name: 'Emily Wilson', phone: '+91 65432 10987', email: 'emily@example.com', orders: 15, status: 'Active', joinedOn: 'May 22, 2025', image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=48&h=48&fit=crop' },
+    { id: 5, name: 'Michael Brown', phone: '+91 54321 09876', email: 'michael@example.com', orders: 3, status: 'Blocked', joinedOn: 'May 25, 2025', image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=48&h=48&fit=crop' },
+  ];
+>>>>>>> 398f62f (code pushed by undead)
   
   const getStatusColor = (status: string) => {
     switch(status) {
@@ -101,7 +115,11 @@ const ManageUsers = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
+<<<<<<< HEAD
                 {(searchTerm ? filteredUsers : users).map((user) => (
+=======
+                {users.map((user) => (
+>>>>>>> 398f62f (code pushed by undead)
                   <tr key={user.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">

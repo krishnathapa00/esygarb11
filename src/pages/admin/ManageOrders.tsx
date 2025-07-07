@@ -11,15 +11,19 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
+<<<<<<< HEAD
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
+=======
+>>>>>>> 398f62f (code pushed by undead)
 import AdminLayout from './components/AdminLayout';
 
 const ManageOrders = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+<<<<<<< HEAD
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -56,6 +60,17 @@ const ManageOrders = () => {
     const matchesStatus = statusFilter === 'all' || order.status.toLowerCase() === statusFilter;
     return matchesSearch && matchesStatus;
   });
+=======
+  
+  // Mock order data
+  const [orders, setOrders] = useState([
+    { id: 'ORD1234567', customer: 'John Doe', date: 'June 6, 2025', amount: 160, status: 'Pending', items: 3 },
+    { id: 'ORD1234566', customer: 'Jane Smith', date: 'June 6, 2025', amount: 210, status: 'Confirmed', items: 4 },
+    { id: 'ORD1234565', customer: 'Robert Johnson', date: 'June 6, 2025', amount: 180, status: 'Dispatched', items: 2 },
+    { id: 'ORD1234564', customer: 'Emily Wilson', date: 'June 5, 2025', amount: 95, status: 'Delivered', items: 1 },
+    { id: 'ORD1234563', customer: 'Michael Brown', date: 'June 5, 2025', amount: 320, status: 'Cancelled', items: 5 },
+  ]);
+>>>>>>> 398f62f (code pushed by undead)
   
   const getStatusColor = (status: string) => {
     switch(status) {
@@ -68,6 +83,7 @@ const ManageOrders = () => {
     }
   };
 
+<<<<<<< HEAD
   const handleStatusChange = async (orderNumber: string, newStatus: string) => {
     const order = orders.find(o => o.id === orderNumber);
     if (!order) return;
@@ -90,6 +106,12 @@ const ManageOrders = () => {
       });
       queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
     }
+=======
+  const handleStatusChange = (orderId: string, newStatus: string) => {
+    setOrders(orders.map(order => 
+      order.id === orderId ? { ...order, status: newStatus } : order
+    ));
+>>>>>>> 398f62f (code pushed by undead)
   };
 
   return (
@@ -150,7 +172,11 @@ const ManageOrders = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
+<<<<<<< HEAD
                 {(searchTerm || statusFilter !== 'all' ? filteredOrders : orders).map((order) => (
+=======
+                {orders.map((order) => (
+>>>>>>> 398f62f (code pushed by undead)
                   <tr key={order.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{order.id}</div>
@@ -187,12 +213,19 @@ const ManageOrders = () => {
                         View
                       </Button>
                       {(order.status === 'Confirmed' || order.status === 'Pending') && (
+<<<<<<< HEAD
                         <Link to={`/admin/orders/assign/${order.orderId}`}>
                           <Button variant="ghost" size="sm" className="text-green-600 hover:text-green-800 hover:bg-green-50">
                             <Truck className="h-4 w-4 mr-1" />
                             Assign
                           </Button>
                         </Link>
+=======
+                        <Button variant="ghost" size="sm" className="text-green-600 hover:text-green-800 hover:bg-green-50">
+                          <Truck className="h-4 w-4 mr-1" />
+                          Assign
+                        </Button>
+>>>>>>> 398f62f (code pushed by undead)
                       )}
                     </td>
                   </tr>

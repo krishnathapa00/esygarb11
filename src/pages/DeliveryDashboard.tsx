@@ -1,120 +1,38 @@
-
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Package, Clock, MapPin, Phone, DollarSign, User } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import React from "react";
+import { Link } from "react-router-dom";
+import { Package, Clock, MapPin, Phone, DollarSign, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const DeliveryDashboard = () => {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  // Get current user ID
-  const getCurrentUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    return user?.id;
+  // Mock data with Rs currency
+  const stats = {
+    todayDeliveries: 12,
+    totalEarnings: 18500,
+    pendingOrders: 3,
+    completedOrders: 156,
   };
 
-  // Fetch delivery stats
-  const { data: stats } = useQuery({
-    queryKey: ['delivery-stats'],
-    queryFn: async () => {
-      const userId = await getCurrentUser();
-      if (!userId) return { todayDeliveries: 0, totalEarnings: 0, pendingOrders: 0, completedOrders: 0 };
-      
-      const today = new Date().toISOString().split('T')[0];
-      
-      // Get today's deliveries
-      const { data: todayOrders } = await supabase
-        .from('orders')
-        .select('id, total_amount')
-        .eq('delivery_partner_id', userId)
-        .eq('status', 'delivered')
-        .gte('created_at', today);
-      
-      // Get all completed orders
-      const { data: allCompleted } = await supabase
-        .from('orders')
-        .select('id, total_amount')
-        .eq('delivery_partner_id', userId)
-        .eq('status', 'delivered');
-        
-      // Get pending orders
-      const { data: pending } = await supabase
-        .from('orders')
-        .select('id')
-        .eq('delivery_partner_id', userId)
-        .in('status', ['dispatched', 'out_for_delivery']);
-      
-      return {
-        todayDeliveries: todayOrders?.length || 0,
-        totalEarnings: allCompleted?.reduce((sum, order) => sum + Number(order.total_amount), 0) || 0,
-        pendingOrders: pending?.length || 0,
-        completedOrders: allCompleted?.length || 0
-      };
-    }
-  });
-
-  // Fetch active orders assigned to this delivery partner
-  const { data: activeOrders = [] } = useQuery({
-    queryKey: ['delivery-active-orders'],
-    queryFn: async () => {
-      const userId = await getCurrentUser();
-      if (!userId) return [];
-      
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          id, order_number, total_amount, delivery_address, estimated_delivery,
-          profiles!orders_user_id_fkey (full_name, phone_number),
-          order_items (quantity)
-        `)
-        .eq('delivery_partner_id', userId)
-        .in('status', ['dispatched', 'out_for_delivery'])
-        .order('created_at', { ascending: true });
-      
-      if (error) throw error;
-      
-      return data?.map(order => ({
-        id: order.order_number,
-        customerName: order.profiles?.full_name || 'Unknown Customer',
-        address: order.delivery_address,
-        phone: order.profiles?.phone_number || 'N/A',
-        items: order.order_items?.reduce((sum, item) => sum + item.quantity, 0) || 0,
-        amount: Number(order.total_amount),
-        estimatedTime: order.estimated_delivery || '10-15 mins',
-        orderId: order.id
-      })) || [];
-    }
-  });
-
-  const handleMarkDelivered = async (orderId: string) => {
-    const order = activeOrders.find(o => o.id === orderId);
-    if (!order) return;
-    
-    const { error } = await supabase
-      .from('orders')
-      .update({ status: 'delivered' })
-      .eq('id', order.orderId);
-    
-    if (error) {
-      toast({
-        title: "Failed to update order",
-        description: error.message,
-        variant: "destructive"
-      });
-    } else {
-      toast({
-        title: "Order marked as delivered",
-        description: `Order ${orderId} has been successfully delivered`,
-      });
-      queryClient.invalidateQueries({ queryKey: ['delivery-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['delivery-active-orders'] });
-    }
-  };
+  const activeOrders = [
+    {
+      id: "ORD001",
+      customerName: "John Doe",
+      address: "Thamel, Kathmandu",
+      phone: "+977 9876543210",
+      items: 5,
+      amount: 8500,
+      estimatedTime: "15 mins",
+    },
+    {
+      id: "ORD002",
+      customerName: "Jane Smith",
+      address: "New Road, Kathmandu",
+      phone: "+977 9876543211",
+      items: 3,
+      amount: 6500,
+      estimatedTime: "20 mins",
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -150,44 +68,54 @@ const DeliveryDashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Today's Deliveries</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Today's Deliveries
+              </CardTitle>
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats?.todayDeliveries || 0}</div>
+              <div className="text-2xl font-bold">{stats.todayDeliveries}</div>
               <p className="text-xs text-muted-foreground">+2 from yesterday</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Today's Earnings</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Today's Earnings
+              </CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">Rs {stats?.totalEarnings || 0}</div>
-              <p className="text-xs text-muted-foreground">+15% from yesterday</p>
+              <div className="text-2xl font-bold">Rs {stats.totalEarnings}</div>
+              <p className="text-xs text-muted-foreground">
+                +15% from yesterday
+              </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Pending Orders
+              </CardTitle>
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats?.pendingOrders || 0}</div>
+              <div className="text-2xl font-bold">{stats.pendingOrders}</div>
               <p className="text-xs text-muted-foreground">Ready for pickup</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Completed</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Total Completed
+              </CardTitle>
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats?.completedOrders || 0}</div>
+              <div className="text-2xl font-bold">{stats.completedOrders}</div>
               <p className="text-xs text-muted-foreground">All time</p>
             </CardContent>
           </Card>
@@ -205,14 +133,20 @@ const DeliveryDashboard = () => {
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <h3 className="font-semibold">Order #{order.id}</h3>
-                      <p className="text-sm text-gray-600">{order.customerName}</p>
+                      <p className="text-sm text-gray-600">
+                        {order.customerName}
+                      </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-green-600">Rs {order.amount}</p>
-                      <p className="text-sm text-gray-500">{order.items} items</p>
+                      <p className="font-semibold text-green-600">
+                        Rs {order.amount}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {order.items} items
+                      </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
                     <div className="flex items-center space-x-1">
                       <MapPin className="h-4 w-4" />
@@ -227,15 +161,14 @@ const DeliveryDashboard = () => {
                       <span>ETA: {order.estimatedTime}</span>
                     </div>
                   </div>
-                  
+
                   <div className="flex space-x-2">
                     <Button size="sm" variant="outline">
                       View Details
                     </Button>
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       className="bg-green-600 hover:bg-green-700"
-                      onClick={() => handleMarkDelivered(order.id)}
                     >
                       Mark Delivered
                     </Button>
@@ -245,7 +178,7 @@ const DeliveryDashboard = () => {
                   </div>
                 </div>
               ))}
-              
+
               {activeOrders.length === 0 && (
                 <div className="text-center py-8 text-gray-500">
                   <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />

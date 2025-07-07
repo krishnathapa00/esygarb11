@@ -95,7 +95,7 @@ const ProductCard = ({
                 <span className="flex items-center gap-1">Add</span>
               </Button>
             ) : (
-              <div className="flex items-center justify-between bg-green-600 rounded-lg px-1.5 py-1 shadow space-x-1">
+              <div className="flex items-center justify-between bg-green-600 rounded-lg px-1 shadow space-x-1">
                 <Button
                   onClick={(e) => {
                     e.preventDefault();
