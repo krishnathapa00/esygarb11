@@ -1,17 +1,21 @@
-
-import React from 'react';
-import ProductCard, { Product } from './ProductCard';
-import { ChevronRight } from 'lucide-react';
+import ProductCard, { Product } from "./ProductCard";
+import { ChevronRight } from "lucide-react";
 
 interface ProductSectionProps {
   title: string;
   products: Product[];
   onAddToCart: (product: Product) => void;
-  cart: Record<number, number>;
-  onUpdateQuantity: (productId: number, quantity: number) => void;
+  cart: Record<string, number>;
+  onUpdateQuantity: (productId: string, quantity: number) => void;
 }
 
-const ProductSection = ({ title, products, onAddToCart, cart, onUpdateQuantity }: ProductSectionProps) => {
+const ProductSection = ({
+  title,
+  products,
+  onAddToCart,
+  cart,
+  onUpdateQuantity,
+}: ProductSectionProps) => {
   return (
     <section className="mb-8">
       <div className="flex items-center justify-between mb-4">
