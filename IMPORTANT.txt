@@ -1,3 +1,0 @@
-for future: make supabase call from backend but here using direct supabase through frontend in file AuthContext.
-
-but for now, call supabase direct on frontend
