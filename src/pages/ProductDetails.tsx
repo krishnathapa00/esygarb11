@@ -1,32 +1,37 @@
-
-import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import Header from '../components/Header';
-import { ArrowLeft, Star, Truck, Shield } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import React, { useState } from "react";
+import { useParams, Link } from "react-router-dom";
+import Header from "../components/Header";
+import { ArrowLeft, Star, Truck, Shield } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useProducts } from "@/hooks/useProducts";
 
 const ProductDetails = () => {
-  const { productId } = useParams();
+  const { id } = useParams();
+  const { data: products, isLoading, isError } = useProducts();
+
+  const product = products?.find((p) => p.id.toString() === id);
+
   const [quantity, setQuantity] = useState(1);
-  
-  // Mock product data
-  const product = {
-    id: Number(productId),
-    name: "Fresh Bananas",
-    price: 40,
-    originalPrice: 50,
-    image: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=600&h=600&fit=crop",
-    weight: "1 kg",
-    discount: 20,
-    deliveryTime: "8 mins",
-    category: "Fruits & Vegetables",
-    description: "Fresh, sweet bananas directly sourced from farms. Rich in potassium and natural sugars, perfect for a healthy snack or breakfast.",
-    rating: 4.5,
-    reviews: 128,
-    inStock: true,
-    benefits: ["Rich in Potassium", "Natural Energy", "Heart Healthy", "Digestive Health"]
-  };
+
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center">
+        <Header
+          cartItems={0}
+          onCartClick={() => {}}
+          searchQuery=""
+          onSearchChange={() => {}}
+        />
+        <h2 className="text-2xl font-semibold text-red-600">
+          Product not found.
+        </h2>
+        <Link to="/" className="mt-4 text-green-600 underline">
+          Back to Home
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -36,7 +41,7 @@ const ProductDetails = () => {
         searchQuery=""
         onSearchChange={() => {}}
       />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex items-center mb-6">
           <Link to="/">
@@ -69,26 +74,34 @@ const ProductDetails = () => {
             {/* Product Info */}
             <div className="space-y-6">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                  {product.name}
+                </h1>
                 <p className="text-gray-600">{product.weight}</p>
-                
+
                 <div className="flex items-center space-x-2 mt-2">
                   <div className="flex items-center">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <Star
                         key={star}
                         className={`h-4 w-4 ${
-                          star <= product.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                          star <= Math.floor(product.rating)
+                            ? "text-yellow-400 fill-current"
+                            : "text-gray-300"
                         }`}
                       />
                     ))}
                   </div>
-                  <span className="text-sm text-gray-600">({product.reviews} reviews)</span>
+                  <span className="text-sm text-gray-600">
+                    ({product.reviews} reviews)
+                  </span>
                 </div>
               </div>
 
               <div className="flex items-center space-x-4">
-                <span className="text-3xl font-bold text-gray-900">₹{product.price}</span>
+                <span className="text-3xl font-bold text-gray-900">
+                  ₹{product.price}
+                </span>
                 {product.originalPrice && (
                   <span className="text-xl text-gray-400 line-through">
                     ₹{product.originalPrice}
@@ -96,13 +109,19 @@ const ProductDetails = () => {
                 )}
               </div>
 
-              <p className="text-gray-600 leading-relaxed">{product.description}</p>
+              <p className="text-gray-600 leading-relaxed">
+                {product.description}
+              </p>
 
               <div>
                 <h3 className="font-semibold text-gray-900 mb-2">Benefits</h3>
                 <div className="flex flex-wrap gap-2">
                   {product.benefits.map((benefit, index) => (
-                    <Badge key={index} variant="secondary" className="bg-green-100 text-green-700">
+                    <Badge
+                      key={index}
+                      variant="secondary"
+                      className="bg-green-100 text-green-700"
+                    >
                       {benefit}
                     </Badge>
                   ))}
