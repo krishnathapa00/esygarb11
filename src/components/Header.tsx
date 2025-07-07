@@ -1,7 +1,6 @@
 import React, { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  Search,
   ShoppingCart,
   MapPin,
   Clock,
@@ -12,24 +11,33 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import LocationDetectionPopup from "./LocationDetectionPopup";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
+import SearchBar from "./SearchBar";
 
 interface HeaderProps {
   cartItems: number;
   onCartClick: () => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  showSearchBar?: boolean;
 }
 
-const Header = ({
-  cartItems,
-  onCartClick,
-  searchQuery,
-  onSearchChange,
-}: HeaderProps) => {
+const Header = ({ cartItems, searchQuery, onSearchChange }: HeaderProps) => {
+  const mockProductNames = [
+    "Fresh Bananas",
+    "Fresh Tomatoes",
+    "Fresh Spinach",
+    "Fresh Milk",
+    "Almond Milk",
+    "Organic Mangoes",
+    "Brown Bread",
+    "Peanut Butter",
+    "Farm Eggs",
+    "Greek Yogurt",
+  ];
+
   const [showLocationPopup, setShowLocationPopup] = useState(false);
   const [userLocation, setUserLocation] = useState(() => {
     try {
@@ -52,9 +60,30 @@ const Header = ({
   const location = useLocation();
   const isMobile = useIsMobile();
   const { user, logout } = useAuth();
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const navigate = useNavigate();
+
+  const handleSearchInput = (query: string) => {
+    onSearchChange(query);
+    if (query.trim() === "") {
+      setSuggestions([]);
+      return;
+    }
+
+    const filtered = mockProductNames
+      .filter((item) => item.toLowerCase().includes(query.toLowerCase()))
+      .slice(0, 5);
+    setSuggestions(filtered);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      navigate(`/search?query=${searchQuery}`);
+      setSuggestions([]);
+    }
+  };
 
   const handleLocationSet = (location: string) => {
-    // Simplify location display - show main area and add "..."
     let simplifiedLocation = location;
     if (location.length > 25) {
       const parts = location.split(",");
@@ -102,7 +131,8 @@ const Header = ({
   );
 
   // Show search bar ONLY on homepage
-  const shouldShowSearchBar = location.pathname === "/";
+  const shouldShowSearchBar =
+    location.pathname === "/" || location.pathname.startsWith("/search");
 
   return (
     <>
@@ -203,16 +233,7 @@ const Header = ({
       {shouldShowSearchBar && (
         <div className="sticky top-16 z-40 bg-white border-b border-gray-100">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <Input
-                type="text"
-                placeholder="Search for groceries, fruits, vegetables..."
-                value={searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
-                className="pl-12 w-full h-12 text-base rounded-full border-gray-200 bg-gray-50 focus:bg-white focus:border-green-500 transition-all duration-200"
-              />
-            </div>
+            <SearchBar />
           </div>
         </div>
       )}
