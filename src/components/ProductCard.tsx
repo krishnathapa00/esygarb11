@@ -1,7 +1,6 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 export interface Product {
   id: number;
@@ -13,6 +12,11 @@ export interface Product {
   discount?: number;
   deliveryTime: string;
   category: string;
+  description?: string;
+  rating?: number;
+  reviews?: number;
+  inStock?: boolean;
+  benefits?: string[];
 }
 
 interface ProductCardProps {
@@ -45,7 +49,9 @@ const ProductCard = ({
           )}
           {/* DeliveryTime */}
           <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm rounded-md px-1.5 py-0.5 shadow-sm border border-gray-100">
-            <span className="text-[10px] sm:text-xs font-bold text-green-600">{product.deliveryTime}</span>
+            <span className="text-[10px] sm:text-xs font-bold text-green-600">
+              {product.deliveryTime}
+            </span>
           </div>
         </div>
       </Link>
@@ -58,7 +64,9 @@ const ProductCard = ({
           </h3>
         </Link>
         <div className="flex flex-row items-center gap-2 mt-1 mb-2">
-          <span className="text-[11px] sm:text-xs text-gray-500">{product.weight}</span>
+          <span className="text-[11px] sm:text-xs text-gray-500">
+            {product.weight}
+          </span>
         </div>
         {/* Align price and controls in a row */}
         <div className="flex items-end justify-between gap-2 mt-2">
@@ -82,7 +90,7 @@ const ProductCard = ({
                   onAddToCart(product);
                 }}
                 className="!h-7 !px-3 text-[13px] font-bold bg-gradient-to-r from-lime-500 to-green-600 hover:from-green-500 hover:to-lime-600 shadow ring-2 ring-lime-100/70 hover:ring-green-300/90 focus:ring-2 focus:ring-green-400 rounded-full transition-all duration-200"
-                style={{ minWidth: 54, letterSpacing: '.06em' }}
+                style={{ minWidth: 54, letterSpacing: ".06em" }}
               >
                 <span className="flex items-center gap-1">Add</span>
               </Button>
@@ -100,7 +108,9 @@ const ProductCard = ({
                 >
                   −
                 </Button>
-                <span className="font-bold text-white text-sm sm:text-base px-2">{cartQuantity}</span>
+                <span className="font-bold text-white text-sm sm:text-base px-2">
+                  {cartQuantity}
+                </span>
                 <Button
                   onClick={(e) => {
                     e.preventDefault();
@@ -118,7 +128,6 @@ const ProductCard = ({
           </div>
         </div>
       </div>
-      {/* Subtle ring on hover */}
       <div className="absolute inset-0 rounded-2xl pointer-events-none group-hover:ring-[2.5px] group-hover:ring-green-400 transition-all duration-200" />
     </div>
   );
