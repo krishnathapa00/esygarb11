@@ -1,78 +1,60 @@
 import { useSearchParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Header from "@/components/Header";
-import ProductCard from "@/components/ProductCard"; // adjust path
+import ProductCard from "@/components/ProductCard";
+import { useProducts } from "@/hooks/useProducts";
+import { Product } from "@/hooks/useProducts";
 
 const SearchResults = () => {
   const [searchParams] = useSearchParams();
   const query = searchParams.get("query")?.toLowerCase() || "";
-  const [results, setResults] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  const { data: products = [], isLoading, isError } = useProducts();
+  const [searchQuery, setSearchQuery] = useState(query);
 
   useEffect(() => {
-    const mockProducts = [
-      {
-        id: 1,
-        name: "Fresh Bananas",
-        price: 40,
-        originalPrice: 50,
-        discount: 20,
-        weight: "1 kg",
-        deliveryTime: "10 mins",
-        category: "Fruits",
-        image:
-          "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=600",
-      },
-      {
-        id: 2,
-        name: "Fresh Tomatoes",
-        price: 25,
-        originalPrice: 30,
-        discount: 15,
-        weight: "500 gm",
-        deliveryTime: "15 mins",
-        category: "Vegetables",
-        image:
-          "https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?w=600",
-      },
-    ];
-
-    const fetchResults = () => {
-      setLoading(true);
-      const filtered = mockProducts.filter((product) =>
-        product.name.toLowerCase().includes(query)
-      );
-      setResults(filtered);
-      setLoading(false);
-    };
-
-    fetchResults();
+    setSearchQuery(query);
   }, [query]);
+
+  const filteredProducts = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    return products.filter((product: Product) =>
+      product.name.toLowerCase().includes(searchQuery)
+    );
+  }, [products, searchQuery]);
 
   return (
     <>
       <Header
         cartItems={0}
         onCartClick={() => {}}
-        searchQuery={query}
+        searchQuery={searchQuery}
         onSearchChange={() => {}}
       />
 
       <div className="p-4 max-w-7xl mx-auto">
-        {loading ? (
-          <p>Loading...</p>
-        ) : results.length === 0 ? (
-          <p>No products found.</p>
+        {isLoading ? (
+          <div className="text-center py-12 text-gray-600">
+            Loading products...
+          </div>
+        ) : isError ? (
+          <div className="text-center py-12 text-red-500">
+            Failed to load products.
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">
+            No products found for "{searchQuery}"
+          </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {results.map((product) => (
+            {filteredProducts.map((product) => (
               <ProductCard
                 key={product.id}
                 product={product}
                 onAddToCart={() => console.log("Add to cart", product)}
                 cartQuantity={0}
-                onUpdateQuantity={(productId, qty) =>
-                  console.log("Update qty", productId, qty)
+                onUpdateQuantity={(id, qty) =>
+                  console.log("Update quantity", id, qty)
                 }
               />
             ))}
