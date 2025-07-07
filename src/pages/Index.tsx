@@ -1,17 +1,17 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Header from '../components/Header';
-import CategoryGrid from '../components/CategoryGrid';
-import ProductSection from '../components/ProductSection';
-import LocationDetectionPopup from '../components/LocationDetectionPopup';
-import BannerCarousel from '../components/BannerCarousel';
-import Footer from '../components/Footer';
-import { useProducts } from '../hooks/useProducts';
-import { useAuth } from '../contexts/AuthContext';
+import React, { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import Header from "../components/Header";
+import CategoryGrid from "../components/CategoryGrid";
+import ProductSection from "../components/ProductSection";
+import LocationDetectionPopup from "../components/LocationDetectionPopup";
+import BannerCarousel from "../components/BannerCarousel";
+import Footer from "../components/Footer";
+import { useProducts } from "../hooks/useProducts";
+import { useAuth } from "../contexts/AuthContext";
 
 const Index = () => {
   const [cartItems, setCartItems] = useState(0);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [showLocationPopup, setShowLocationPopup] = useState(false);
   const [cart, setCart] = useState<Record<number, number>>({});
   const [dropdownVisible, setDropdownVisible] = useState(false);
@@ -21,27 +21,30 @@ const Index = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const hasLocation = localStorage.getItem('esygrab_user_location');
+    const hasLocation = localStorage.getItem("esygrab_user_location");
     if (!hasLocation) {
       setShowLocationPopup(true);
     }
   }, []);
 
   const handleLocationSet = (location: string) => {
-    localStorage.setItem('esygrab_user_location', JSON.stringify({ address: location }));
+    localStorage.setItem(
+      "esygrab_user_location",
+      JSON.stringify({ address: location })
+    );
     setShowLocationPopup(false);
   };
 
   const handleAddToCart = (product: any) => {
-    setCart(prev => ({
+    setCart((prev) => ({
       ...prev,
-      [product.id]: (prev[product.id] || 0) + 1
+      [product.id]: (prev[product.id] || 0) + 1,
     }));
-    setCartItems(prev => prev + 1);
+    setCartItems((prev) => prev + 1);
   };
 
-  const handleUpdateQuantity = (productId: number, quantity: number) => {
-    setCart(prev => {
+  const handleUpdateQuantity = (productId: string, quantity: number) => {
+    setCart((prev) => {
       const newCart = { ...prev };
       const currentQty = newCart[productId] || 0;
       const diff = quantity - currentQty;
@@ -52,27 +55,35 @@ const Index = () => {
         newCart[productId] = quantity;
       }
 
-      setCartItems(prevTotal => prevTotal + diff);
+      setCartItems((prevTotal) => prevTotal + diff);
       return newCart;
     });
   };
 
   const handleCategorySelect = (categoryId: number) => {
-    console.log('Category selected:', categoryId);
+    console.log("Category selected:", categoryId);
   };
 
   const filteredProducts = useMemo(() => {
     if (!searchQuery.trim()) return products;
-    return products.filter(p => p.name?.toLowerCase().includes(searchQuery.toLowerCase()));
+    return products.filter((p) =>
+      p.name?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
   }, [products, searchQuery]);
 
   const handleProductSelect = (productId: number) => {
     navigate(`/product/${productId}`);
   };
 
-  const fruitProducts = filteredProducts.filter(p => p.category === 'Fruits & Vegetables');
-  const dairyProducts = filteredProducts.filter(p => p.category === 'Dairy & Eggs');
-  const snackProducts = filteredProducts.filter(p => p.category === 'Snacks & Beverages');
+  const fruitProducts = filteredProducts.filter(
+    (p) => p.category === "Fruits & Vegetables"
+  );
+  const dairyProducts = filteredProducts.filter(
+    (p) => p.category === "Dairy & Eggs"
+  );
+  const snackProducts = filteredProducts.filter(
+    (p) => p.category === "Snacks & Beverages"
+  );
 
   if (isLoading) {
     return (
@@ -89,7 +100,7 @@ const Index = () => {
     <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
       <Header
         cartItems={cartItems}
-        onCartClick={() => { }}
+        onCartClick={() => {}}
         searchQuery={searchQuery}
         onSearchChange={(value) => {
           setSearchQuery(value);
@@ -99,7 +110,7 @@ const Index = () => {
 
       {dropdownVisible && filteredProducts.length > 0 && (
         <div className="absolute z-50 top-34 left-1/2 transform -translate-x-1/2 w-full max-w-2xl bg-white shadow-lg border rounded-md overflow-hidden">
-          {filteredProducts.slice(0, 5).map(product => (
+          {filteredProducts.slice(0, 5).map((product) => (
             <div
               key={product.id}
               onClick={() => handleProductSelect(product.id)}
