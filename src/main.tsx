@@ -1,10 +1,3 @@
-<<<<<<< HEAD
-import { createRoot } from 'react-dom/client'
-import App from './App.tsx'
-import './index.css'
-
-createRoot(document.getElementById("root")!).render(<App />);
-=======
 import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
@@ -18,4 +11,3 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     </CartProvider>
   </React.StrictMode>
 );
->>>>>>> 398f62f (code pushed by undead)
