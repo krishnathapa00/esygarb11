@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
@@ -24,6 +23,7 @@ import ManageUsers from "./pages/admin/ManageUsers";
 import Transactions from "./pages/admin/Transactions";
 import NotFound from "./pages/NotFound";
 import MapLocation from "./pages/MapLocation";
+import SearchResults from "./pages/SearchResults";
 
 const queryClient = new QueryClient();
 
@@ -40,21 +40,33 @@ function App() {
               <Route path="/login" element={<AuthHybrid />} />
               <Route path="/" element={<Index />} />
               <Route path="/categories" element={<AllCategories />} />
-              <Route path="/categories/:categoryId" element={<CategoryProducts />} />
+              <Route
+                path="/categories/:categoryId"
+                element={<CategoryProducts />}
+              />
               <Route path="/product/:id" element={<ProductDetails />} />
+              <Route path="/search" element={<SearchResults />} />
               <Route path="/cart" element={<CartPage />} />
               <Route path="/checkout" element={<Checkout />} />
-              <Route path="/order-confirmation" element={<OrderConfirmation />} />
+              <Route
+                path="/order-confirmation"
+                element={<OrderConfirmation />}
+              />
               <Route path="/track-order/:id" element={<OrderTracking />} />
               <Route path="/order-history" element={<OrderHistory />} />
               <Route path="/profile" element={<UserProfile />} />
               <Route path="/location" element={<MapLocation />} />
-              
-              
+
               {/* Delivery Partner Routes */}
-              <Route path="/delivery-partner" element={<DeliveryPartnerAuth />} />
-              <Route path="/delivery-dashboard" element={<DeliveryDashboard />} />
-              
+              <Route
+                path="/delivery-partner"
+                element={<DeliveryPartnerAuth />}
+              />
+              <Route
+                path="/delivery-dashboard"
+                element={<DeliveryDashboard />}
+              />
+
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminLogin />} />
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
@@ -62,7 +74,7 @@ function App() {
               <Route path="/admin/orders" element={<ManageOrders />} />
               <Route path="/admin/users" element={<ManageUsers />} />
               <Route path="/admin/transactions" element={<Transactions />} />
-              
+
               <Route path="*" element={<NotFound />} />
             </Routes>
             <Toaster />
@@ -74,4 +86,3 @@ function App() {
 }
 
 export default App;
-
