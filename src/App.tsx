@@ -2,11 +2,8 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/contexts/AuthContext";
-<<<<<<< HEAD
 import { CartProvider } from "@/contexts/CartContext";
 import { RoleProtectedRoute } from "@/components/RoleProtectedRoute";
-=======
->>>>>>> 398f62f (code pushed by undead)
 import Index from "./pages/Index";
 import AllCategories from "./pages/Categories";
 import CategoryProducts from "./pages/SubCategories";
@@ -26,10 +23,7 @@ import ManageProducts from "./pages/admin/ManageProducts";
 import ManageOrders from "./pages/admin/ManageOrders";
 import ManageUsers from "./pages/admin/ManageUsers";
 import Transactions from "./pages/admin/Transactions";
-<<<<<<< HEAD
 import AssignOrder from "./pages/admin/AssignOrder";
-=======
->>>>>>> 398f62f (code pushed by undead)
 import NotFound from "./pages/NotFound";
 import MapLocation from "./pages/MapLocation";
 import SearchResults from "./pages/SearchResults";
@@ -40,7 +34,6 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-<<<<<<< HEAD
         <CartProvider>
           <Router>
             <div className="min-h-screen bg-background">
@@ -138,7 +131,6 @@ function App() {
             </div>
           </Router>
         </CartProvider>
-=======
         <Router>
           <div className="min-h-screen bg-background">
             <Routes>
@@ -188,14 +180,10 @@ function App() {
             <Toaster />
           </div>
         </Router>
->>>>>>> 398f62f (code pushed by undead)
       </AuthProvider>
     </QueryClientProvider>
   );
 }
 
-<<<<<<< HEAD
 export default App;
-=======
-export default App;
->>>>>>> 398f62f (code pushed by undead)
+
