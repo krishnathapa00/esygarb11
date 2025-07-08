@@ -293,7 +293,7 @@ const CartPage = () => {
               </div>
               {deliveryFee === 0 && (
                 <Badge variant="secondary" className="text-xs px-2 py-1 mt-1">
-                  Free delivery on orders above Rs200
+                  Free delivery on orders above Rs.200
                 </Badge>
               )}
             </div>

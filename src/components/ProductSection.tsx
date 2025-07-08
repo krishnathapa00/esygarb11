@@ -5,16 +5,16 @@ interface ProductSectionProps {
   title: string;
   products: Product[];
   onAddToCart: (product: Product) => void;
-  cart: Record<string, number>;
-  onUpdateQuantity: (productId: string, quantity: number) => void;
+  onUpdateQuantity: (productId: number, quantity: number) => void;
+  cartQuantityGetter: (productId: number) => number;
 }
 
 const ProductSection = ({
   title,
   products,
   onAddToCart,
-  cart,
   onUpdateQuantity,
+  cartQuantityGetter,
 }: ProductSectionProps) => {
   return (
     <section className="mb-8">
@@ -31,7 +31,7 @@ const ProductSection = ({
             key={product.id}
             product={product}
             onAddToCart={onAddToCart}
-            cartQuantity={cart[product.id] || 0}
+            cartQuantity={cartQuantityGetter(product.id)}
             onUpdateQuantity={onUpdateQuantity}
           />
         ))}

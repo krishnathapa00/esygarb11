@@ -68,7 +68,7 @@ function App() {
                 <Route
                   path="/delivery-dashboard"
                   element={
-                    <RoleProtectedRoute allowedRoles={['delivery_partner']}>
+                    <RoleProtectedRoute allowedRoles={["delivery_partner"]}>
                       <DeliveryDashboard />
                     </RoleProtectedRoute>
                   }
@@ -76,53 +76,53 @@ function App() {
 
                 {/* Admin Routes */}
                 <Route path="/admin" element={<AdminLogin />} />
-                <Route 
-                  path="/admin/dashboard" 
+                <Route
+                  path="/admin/dashboard"
                   element={
-                    <RoleProtectedRoute allowedRoles={['admin']}>
+                    <RoleProtectedRoute allowedRoles={["admin"]}>
                       <AdminDashboard />
                     </RoleProtectedRoute>
-                  } 
+                  }
                 />
-                <Route 
-                  path="/admin/products" 
+                <Route
+                  path="/admin/products"
                   element={
-                    <RoleProtectedRoute allowedRoles={['admin']}>
+                    <RoleProtectedRoute allowedRoles={["admin"]}>
                       <ManageProducts />
                     </RoleProtectedRoute>
-                  } 
+                  }
                 />
-                <Route 
-                  path="/admin/orders" 
+                <Route
+                  path="/admin/orders"
                   element={
-                    <RoleProtectedRoute allowedRoles={['admin']}>
+                    <RoleProtectedRoute allowedRoles={["admin"]}>
                       <ManageOrders />
                     </RoleProtectedRoute>
-                  } 
+                  }
                 />
-                <Route 
-                  path="/admin/orders/assign/:orderId" 
+                <Route
+                  path="/admin/orders/assign/:orderId"
                   element={
-                    <RoleProtectedRoute allowedRoles={['admin']}>
+                    <RoleProtectedRoute allowedRoles={["admin"]}>
                       <AssignOrder />
                     </RoleProtectedRoute>
-                  } 
+                  }
                 />
-                <Route 
-                  path="/admin/users" 
+                <Route
+                  path="/admin/users"
                   element={
-                    <RoleProtectedRoute allowedRoles={['admin']}>
+                    <RoleProtectedRoute allowedRoles={["admin"]}>
                       <ManageUsers />
                     </RoleProtectedRoute>
-                  } 
+                  }
                 />
-                <Route 
-                  path="/admin/transactions" 
+                <Route
+                  path="/admin/transactions"
                   element={
-                    <RoleProtectedRoute allowedRoles={['admin']}>
+                    <RoleProtectedRoute allowedRoles={["admin"]}>
                       <Transactions />
                     </RoleProtectedRoute>
-                  } 
+                  }
                 />
 
                 <Route path="*" element={<NotFound />} />
@@ -131,59 +131,9 @@ function App() {
             </div>
           </Router>
         </CartProvider>
-        <Router>
-          <div className="min-h-screen bg-background">
-            <Routes>
-              {/* Customer & Admin Hybrid Auth Routes */}
-              <Route path="/auth" element={<AuthHybrid />} />
-              {/* Remove the /login route mapping to LoginSignup, now uses AuthHybrid */}
-              <Route path="/login" element={<AuthHybrid />} />
-              <Route path="/" element={<Index />} />
-              <Route path="/categories" element={<AllCategories />} />
-              <Route
-                path="/categories/:categoryId"
-                element={<CategoryProducts />}
-              />
-              <Route path="/product/:id" element={<ProductDetails />} />
-              <Route path="/search" element={<SearchResults />} />
-              <Route path="/cart" element={<CartPage />} />
-              <Route path="/checkout" element={<Checkout />} />
-              <Route
-                path="/order-confirmation"
-                element={<OrderConfirmation />}
-              />
-              <Route path="/track-order/:id" element={<OrderTracking />} />
-              <Route path="/order-history" element={<OrderHistory />} />
-              <Route path="/profile" element={<UserProfile />} />
-              <Route path="/location" element={<MapLocation />} />
-
-              {/* Delivery Partner Routes */}
-              <Route
-                path="/delivery-partner"
-                element={<DeliveryPartnerAuth />}
-              />
-              <Route
-                path="/delivery-dashboard"
-                element={<DeliveryDashboard />}
-              />
-
-              {/* Admin Routes */}
-              <Route path="/admin" element={<AdminLogin />} />
-              <Route path="/admin/dashboard" element={<AdminDashboard />} />
-              <Route path="/admin/products" element={<ManageProducts />} />
-              <Route path="/admin/orders" element={<ManageOrders />} />
-              <Route path="/admin/users" element={<ManageUsers />} />
-              <Route path="/admin/transactions" element={<Transactions />} />
-
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <Toaster />
-          </div>
-        </Router>
       </AuthProvider>
     </QueryClientProvider>
   );
 }
 
 export default App;
-

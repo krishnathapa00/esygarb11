@@ -8,17 +8,18 @@ import BannerCarousel from "../components/BannerCarousel";
 import Footer from "../components/Footer";
 import { useProducts } from "../hooks/useProducts";
 import { useAuth } from "../contexts/AuthContext";
+import { useCart } from "../contexts/CartContext";
 
 const Index = () => {
-  const [cartItems, setCartItems] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [showLocationPopup, setShowLocationPopup] = useState(false);
-  const [cart, setCart] = useState<Record<number, number>>({});
   const [dropdownVisible, setDropdownVisible] = useState(false);
 
   const { data: products = [], isLoading } = useProducts();
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  const { cart, addToCart, updateQuantity } = useCart();
 
   useEffect(() => {
     const hasLocation = localStorage.getItem("esygrab_user_location");
@@ -36,28 +37,23 @@ const Index = () => {
   };
 
   const handleAddToCart = (product: any) => {
-    setCart((prev) => ({
-      ...prev,
-      [product.id]: (prev[product.id] || 0) + 1,
-    }));
-    setCartItems((prev) => prev + 1);
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      weight: product.weight,
+      quantity: 1,
+    });
   };
 
-  const handleUpdateQuantity = (productId: string, quantity: number) => {
-    setCart((prev) => {
-      const newCart = { ...prev };
-      const currentQty = newCart[productId] || 0;
-      const diff = quantity - currentQty;
+  const handleUpdateQuantity = (productId: number, quantity: number) => {
+    if (quantity <= 0) return;
+    updateQuantity(productId, quantity);
+  };
 
-      if (quantity <= 0) {
-        delete newCart[productId];
-      } else {
-        newCart[productId] = quantity;
-      }
-
-      setCartItems((prevTotal) => prevTotal + diff);
-      return newCart;
-    });
+  const getCartQuantity = (productId: number) => {
+    return cart.find((item) => item.id === productId)?.quantity || 0;
   };
 
   const handleCategorySelect = (categoryId: number) => {
@@ -98,15 +94,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
-      <Header
-        cartItems={cartItems}
-        onCartClick={() => {}}
-        searchQuery={searchQuery}
-        onSearchChange={(value) => {
-          setSearchQuery(value);
-          setDropdownVisible(!!value);
-        }}
-      />
+      <Header />
 
       {dropdownVisible && filteredProducts.length > 0 && (
         <div className="absolute z-50 top-34 left-1/2 transform -translate-x-1/2 w-full max-w-2xl bg-white shadow-lg border rounded-md overflow-hidden">
@@ -140,8 +128,8 @@ const Index = () => {
             title="Fresh Fruits & Vegetables"
             products={fruitProducts}
             onAddToCart={handleAddToCart}
-            cart={cart}
             onUpdateQuantity={handleUpdateQuantity}
+            cartQuantityGetter={getCartQuantity}
           />
         )}
 
@@ -150,8 +138,8 @@ const Index = () => {
             title="Dairy & Eggs"
             products={dairyProducts}
             onAddToCart={handleAddToCart}
-            cart={cart}
             onUpdateQuantity={handleUpdateQuantity}
+            cartQuantityGetter={getCartQuantity}
           />
         )}
 
@@ -160,8 +148,8 @@ const Index = () => {
             title="Snacks & Beverages"
             products={snackProducts}
             onAddToCart={handleAddToCart}
-            cart={cart}
             onUpdateQuantity={handleUpdateQuantity}
+            cartQuantityGetter={getCartQuantity}
           />
         )}
 

@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { ShoppingCart, MapPin, Clock, User, Home, Grid3X3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LocationDetectionPopup from "./LocationDetectionPopup";
@@ -8,30 +8,28 @@ import { useAuth } from "@/contexts/AuthContext";
 import SearchBar from "./SearchBar";
 import { useCart } from "@/contexts/CartContext";
 
-interface HeaderProps {
-  showSearchBar?: boolean;
-}
-
 const Header = () => {
-  const [showLocationPopup, setShowLocationPopup] = useState(false);
-  const [userLocation, setUserLocation] = useState(() => {
+  // Read user location from localStorage or default
+  const [userLocation, setUserLocation] = useState<string>(() => {
     try {
       const saved = localStorage.getItem("esygrab_user_location");
       if (saved && saved !== "null" && saved !== "undefined") {
         const parsed = JSON.parse(saved);
         if (parsed && typeof parsed === "object" && parsed.address) {
-          return parsed.address.length > 25
-            ? parsed.address.split(",")[0].trim() + "..."
-            : parsed.address;
+          const address = parsed.address as string;
+          return address.length > 25
+            ? address.split(",")[0].trim() + "..."
+            : address;
         }
       }
     } catch (error) {
       console.error("Error parsing location data:", error);
-      // Clear corrupted data
       localStorage.removeItem("esygrab_user_location");
     }
-    return "Set Location";
+    return "";
   });
+
+  const [showLocationPopup, setShowLocationPopup] = useState(false);
 
   const location = useLocation();
   const isMobile = useIsMobile();
@@ -39,6 +37,17 @@ const Header = () => {
   const { cart } = useCart();
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  // Show popup only if no location set and popup not dismissed this session
+  useEffect(() => {
+    const hasLocation = !!userLocation;
+    const dismissedThisSession = sessionStorage.getItem(
+      "locationPopupDismissed"
+    );
+    if (!hasLocation && !dismissedThisSession) {
+      setShowLocationPopup(true);
+    }
+  }, [userLocation]);
 
   const handleLocationSet = (location: string) => {
     let simplifiedLocation = location;
@@ -61,6 +70,12 @@ const Header = () => {
       console.error("Error saving location:", error);
     }
     setShowLocationPopup(false);
+  };
+
+  // Dismiss popup but don’t show it again this session
+  const handleDismissPopup = () => {
+    setShowLocationPopup(false);
+    sessionStorage.setItem("locationPopupDismissed", "true");
   };
 
   const MobileNavButton = ({
@@ -87,7 +102,6 @@ const Header = () => {
     </Link>
   );
 
-  // Show search bar ONLY on homepage
   const shouldShowSearchBar =
     location.pathname === "/" || location.pathname.startsWith("/search");
 
@@ -119,13 +133,13 @@ const Header = () => {
                     Deliver to
                   </span>
                   <span className="font-medium text-gray-900 text-sm">
-                    {userLocation}
+                    {userLocation || "Set Location"}
                   </span>
                 </div>
               </Button>
             </div>
 
-            {/* Right side actions - Desktop only */}
+            {/* Right side actions - Desktop */}
             <div className="hidden md:flex items-center space-x-4">
               <div className="flex items-center space-x-1 text-sm text-green-600">
                 <Clock className="h-4 w-4" />
@@ -133,18 +147,16 @@ const Header = () => {
               </div>
 
               {user ? (
-                <>
-                  <Button
-                    variant="outline"
-                    className="hover:bg-green-50 border-green-200"
-                    onClick={logout}
-                  >
-                    <span className="flex items-center space-x-1">
-                      <User className="h-4 w-4" />
-                      <span className="hidden md:inline">Logout</span>
-                    </span>
-                  </Button>
-                </>
+                <Button
+                  variant="outline"
+                  className="hover:bg-green-50 border-green-200"
+                  onClick={logout}
+                >
+                  <span className="flex items-center space-x-1">
+                    <User className="h-4 w-4" />
+                    <span className="hidden md:inline">Logout</span>
+                  </span>
+                </Button>
               ) : (
                 <Link to="/login">
                   <Button
@@ -198,11 +210,11 @@ const Header = () => {
       {/* Location Detection Popup */}
       <LocationDetectionPopup
         isOpen={showLocationPopup}
-        onClose={() => setShowLocationPopup(false)}
+        onClose={handleDismissPopup}
         onLocationSet={handleLocationSet}
       />
 
-      {/* Mobile Bottom Navigation - Always visible on mobile */}
+      {/* Mobile Bottom Navigation */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t shadow-lg">
         <div className="flex justify-around items-center py-2 px-4">
           <MobileNavButton
@@ -242,7 +254,6 @@ const Header = () => {
   );
 };
 
-// Fix missing import
 const Package = ({ className }: { className?: string }) => (
   <svg className={className} fill="currentColor" viewBox="0 0 20 20">
     <path d="M10 2L3 7v10l7 5 7-5V7l-7-5z" />

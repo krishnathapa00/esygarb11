@@ -4,51 +4,11 @@ import { Search, Filter, Calendar } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-<<<<<<< HEAD
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-=======
->>>>>>> 398f62f (code pushed by undead)
 import AdminLayout from './components/AdminLayout';
 
 const Transactions = () => {
   const [searchTerm, setSearchTerm] = useState('');
   
-<<<<<<< HEAD
-  // Fetch real transaction data from Supabase
-  const { data: transactions = [], isLoading } = useQuery({
-    queryKey: ['admin-transactions'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          id, order_number, total_amount, payment_status, created_at,
-          profiles!orders_user_id_fkey (full_name)
-        `)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      
-      return data?.map(order => ({
-        id: `TXN${order.id.slice(-8)}`,
-        orderId: order.order_number,
-        customer: order.profiles?.full_name || 'Unknown Customer',
-        date: new Date(order.created_at).toLocaleDateString(),
-        amount: Number(order.total_amount),
-        status: order.payment_status === 'completed' ? 'Success' : 
-                order.payment_status === 'failed' ? 'Failed' :
-                order.payment_status === 'refunded' ? 'Refunded' : 'Pending',
-        payment: 'Cash on Delivery'
-      })) || [];
-    }
-  });
-
-  const filteredTransactions = transactions.filter(transaction =>
-    transaction.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    transaction.orderId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    transaction.customer.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-=======
   // Mock transaction data
   const transactions = [
     { id: 'TXN12345678', orderId: 'ORD1234567', customer: 'John Doe', date: 'June 6, 2025', amount: 160, status: 'Success', payment: 'Cash on Delivery' },
@@ -57,7 +17,6 @@ const Transactions = () => {
     { id: 'TXN12345675', orderId: 'ORD1234564', customer: 'Emily Wilson', date: 'June 5, 2025', amount: 95, status: 'Failed', payment: 'Cash on Delivery' },
     { id: 'TXN12345674', orderId: 'ORD1234563', customer: 'Michael Brown', date: 'June 4, 2025', amount: 320, status: 'Refunded', payment: 'Cash on Delivery' },
   ];
->>>>>>> 398f62f (code pushed by undead)
   
   const getStatusColor = (status: string) => {
     switch(status) {
@@ -125,11 +84,7 @@ const Transactions = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-<<<<<<< HEAD
-                {(searchTerm ? filteredTransactions : transactions).map((transaction) => (
-=======
                 {transactions.map((transaction) => (
->>>>>>> 398f62f (code pushed by undead)
                   <tr key={transaction.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{transaction.id}</div>
