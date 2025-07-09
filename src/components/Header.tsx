@@ -9,7 +9,6 @@ import SearchBar from "./SearchBar";
 import { useCart } from "@/contexts/CartContext";
 
 const Header = () => {
-  // Read user location from localStorage or default
   const [userLocation, setUserLocation] = useState<string>(() => {
     try {
       const saved = localStorage.getItem("esygrab_user_location");
@@ -41,13 +40,13 @@ const Header = () => {
   // Show popup only if no location set and popup not dismissed this session
   useEffect(() => {
     const hasLocation = !!userLocation;
-    const dismissedThisSession = sessionStorage.getItem(
-      "locationPopupDismissed"
-    );
-    if (!hasLocation && !dismissedThisSession) {
+    const alreadyHandled = sessionStorage.getItem("locationPopupHandled");
+
+    if (!hasLocation && !alreadyHandled) {
       setShowLocationPopup(true);
+      sessionStorage.setItem("locationPopupHandled", "true");
     }
-  }, [userLocation]);
+  }, []);
 
   const handleLocationSet = (location: string) => {
     let simplifiedLocation = location;

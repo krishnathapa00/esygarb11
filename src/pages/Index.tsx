@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import CategoryGrid from "../components/CategoryGrid";
 import ProductSection from "../components/ProductSection";
-import LocationDetectionPopup from "../components/LocationDetectionPopup";
 import BannerCarousel from "../components/BannerCarousel";
 import Footer from "../components/Footer";
 import { useProducts } from "../hooks/useProducts";
@@ -12,7 +11,6 @@ import { useCart } from "../contexts/CartContext";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [showLocationPopup, setShowLocationPopup] = useState(false);
   const [dropdownVisible, setDropdownVisible] = useState(false);
 
   const { data: products = [], isLoading } = useProducts();
@@ -20,21 +18,6 @@ const Index = () => {
   const navigate = useNavigate();
 
   const { cart, addToCart, updateQuantity } = useCart();
-
-  useEffect(() => {
-    const hasLocation = localStorage.getItem("esygrab_user_location");
-    if (!hasLocation) {
-      setShowLocationPopup(true);
-    }
-  }, []);
-
-  const handleLocationSet = (location: string) => {
-    localStorage.setItem(
-      "esygrab_user_location",
-      JSON.stringify({ address: location })
-    );
-    setShowLocationPopup(false);
-  };
 
   const handleAddToCart = (product: any) => {
     addToCart({
@@ -109,12 +92,6 @@ const Index = () => {
           ))}
         </div>
       )}
-
-      <LocationDetectionPopup
-        isOpen={showLocationPopup}
-        onClose={() => setShowLocationPopup(false)}
-        onLocationSet={handleLocationSet}
-      />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <BannerCarousel />
