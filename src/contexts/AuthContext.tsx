@@ -11,6 +11,11 @@ interface User {
   id: string;
   email: string;
   isVerified: boolean;
+  fullName?: string;
+  phone?: string;
+  address?: string;
+  location?: string;
+  avatarUrl?: string;
 }
 
 interface AuthContextType {
