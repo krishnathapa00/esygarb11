@@ -79,7 +79,7 @@ const AdminLogin = () => {
       title: "Login successful!",
       description: "Welcome to the admin panel.",
     });
-    navigate("/admin-dashboard");
+    navigate("/admin/dashboard");
   };
 
   const handlePasswordReset = async () => {

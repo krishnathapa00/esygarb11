@@ -19,12 +19,7 @@ const AllCategories = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header
-        cartItems={cartItems}
-        onCartClick={() => {}}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-      />
+      <Header />
       
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex items-center mb-6">

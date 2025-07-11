@@ -28,6 +28,7 @@ interface AuthContextType {
     otp: string
   ) => Promise<{ error?: { message: string } }>;
   resendOtp: (email: string) => Promise<{ error?: { message: string } }>;
+  signUp: (phone: string, fullName: string, role: string) => Promise<{ error?: { message: string } }>;
   logout: () => void;
 }
 
@@ -154,6 +155,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
+  const signUp = useCallback(async (phone: string, fullName: string, role: string) => {
+    try {
+      // For delivery partners, we'll just return success since the actual signup
+      // will happen during OTP verification
+      return {};
+    } catch (err: any) {
+      console.error("Unexpected error during signup:", err.message);
+      return {
+        error: { message: "Unexpected error occurred during signup." },
+      };
+    }
+  }, []);
+
   const logout = useCallback(async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -193,6 +207,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     sendOtp,
     verifyOtp,
     resendOtp,
+    signUp,
     logout,
   };
 

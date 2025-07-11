@@ -24,12 +24,7 @@ const SearchResults = () => {
 
   return (
     <>
-      <Header
-        cartItems={0}
-        onCartClick={() => {}}
-        searchQuery={searchQuery}
-        onSearchChange={() => {}}
-      />
+      <Header />
 
       <div className="p-4 max-w-7xl mx-auto">
         {isLoading ? (

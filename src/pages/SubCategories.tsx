@@ -299,12 +299,7 @@ const CategoryProducts = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header
-        cartItems={cartItems}
-        onCartClick={() => {}}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-      />
+      <Header />
       
       {/* Header Section - Fixed mobile spacing and removed sticky on mobile */}
       <div className="bg-white border-b md:sticky md:top-[128px] z-30">
