@@ -12,36 +12,83 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import AdminLayout from './components/AdminLayout';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useToast } from "@/hooks/use-toast";
+import { Link } from 'react-router-dom';
 
 const ManageOrders = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  
-  // Mock order data
-  const [orders, setOrders] = useState([
-    { id: 'ORD1234567', customer: 'John Doe', date: 'June 6, 2025', amount: 160, status: 'Pending', items: 3 },
-    { id: 'ORD1234566', customer: 'Jane Smith', date: 'June 6, 2025', amount: 210, status: 'Confirmed', items: 4 },
-    { id: 'ORD1234565', customer: 'Robert Johnson', date: 'June 6, 2025', amount: 180, status: 'Dispatched', items: 2 },
-    { id: 'ORD1234564', customer: 'Emily Wilson', date: 'June 5, 2025', amount: 95, status: 'Delivered', items: 1 },
-    { id: 'ORD1234563', customer: 'Michael Brown', date: 'June 5, 2025', amount: 320, status: 'Cancelled', items: 5 },
-  ]);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch orders from Supabase
+  const { data: orders = [], refetch } = useQuery({
+    queryKey: ['admin-orders'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          profiles!orders_user_id_fkey ( full_name ),
+          order_items ( quantity )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        toast({
+          title: "Failed to load orders",
+          description: error.message,
+          variant: "destructive"
+        });
+        return [];
+      }
+      return data || [];
+    }
+  });
   
   const getStatusColor = (status: string) => {
     switch(status) {
-      case 'Pending': return 'bg-yellow-100 text-yellow-800';
-      case 'Confirmed': return 'bg-blue-100 text-blue-800';
-      case 'Dispatched': return 'bg-indigo-100 text-indigo-800';
-      case 'Delivered': return 'bg-green-100 text-green-800';
-      case 'Cancelled': return 'bg-red-100 text-red-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'confirmed': return 'bg-blue-100 text-blue-800';
+      case 'dispatched': return 'bg-indigo-100 text-indigo-800';
+      case 'out_for_delivery': return 'bg-purple-100 text-purple-800';
+      case 'delivered': return 'bg-green-100 text-green-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const handleStatusChange = (orderId: string, newStatus: string) => {
-    setOrders(orders.map(order => 
-      order.id === orderId ? { ...order, status: newStatus } : order
-    ));
+  const handleStatusChange = async (orderId: string, newStatus: string) => {
+    const { error } = await supabase
+      .from('orders')
+      .update({ status: newStatus as any })
+      .eq('id', orderId);
+
+    if (error) {
+      toast({
+        title: "Failed to update order",
+        description: error.message,
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Order updated",
+        description: "Order status has been updated successfully."
+      });
+      refetch();
+      queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
+    }
   };
+
+  // Filter orders based on search and status
+  const filteredOrders = orders.filter(order => {
+    const matchesSearch = order.order_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         order.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <AdminLayout>
@@ -68,6 +115,7 @@ const ManageOrders = () => {
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="confirmed">Confirmed</SelectItem>
                 <SelectItem value="dispatched">Dispatched</SelectItem>
+                <SelectItem value="out_for_delivery">Out for Delivery</SelectItem>
                 <SelectItem value="delivered">Delivered</SelectItem>
                 <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
@@ -101,34 +149,35 @@ const ManageOrders = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {orders.map((order) => (
+                {filteredOrders.map((order) => (
                   <tr key={order.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{order.id}</div>
-                      <div className="text-xs text-gray-500">{order.items} items</div>
+                      <div className="text-sm font-medium text-gray-900">{order.order_number}</div>
+                      <div className="text-xs text-gray-500">{order.order_items?.length || 0} items</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{order.customer}</div>
+                      <div className="text-sm text-gray-900">{order.profiles?.full_name || 'N/A'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{order.date}</div>
+                      <div className="text-sm text-gray-900">{new Date(order.created_at).toLocaleDateString()}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">Rs {order.amount}</div>
+                      <div className="text-sm font-medium text-gray-900">Rs {order.total_amount}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <Select value={order.status} onValueChange={(value) => handleStatusChange(order.id, value)}>
-                        <SelectTrigger className="w-[120px]">
+                        <SelectTrigger className="w-[140px]">
                           <Badge className={getStatusColor(order.status)}>
-                            {order.status}
+                            {order.status?.replace('_', ' ')}
                           </Badge>
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Pending">Pending</SelectItem>
-                          <SelectItem value="Confirmed">Confirmed</SelectItem>
-                          <SelectItem value="Dispatched">Dispatched</SelectItem>
-                          <SelectItem value="Delivered">Delivered</SelectItem>
-                          <SelectItem value="Cancelled">Cancelled</SelectItem>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="confirmed">Confirmed</SelectItem>
+                          <SelectItem value="dispatched">Dispatched</SelectItem>
+                          <SelectItem value="out_for_delivery">Out for Delivery</SelectItem>
+                          <SelectItem value="delivered">Delivered</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
                         </SelectContent>
                       </Select>
                     </td>
@@ -137,11 +186,13 @@ const ManageOrders = () => {
                         <Eye className="h-4 w-4 mr-1" />
                         View
                       </Button>
-                      {(order.status === 'Confirmed' || order.status === 'Pending') && (
-                        <Button variant="ghost" size="sm" className="text-green-600 hover:text-green-800 hover:bg-green-50">
-                          <Truck className="h-4 w-4 mr-1" />
-                          Assign
-                        </Button>
+                      {(order.status === 'confirmed' || order.status === 'pending') && (
+                        <Link to={`/admin/assign-order/${order.id}`}>
+                          <Button variant="ghost" size="sm" className="text-green-600 hover:text-green-800 hover:bg-green-50">
+                            <Truck className="h-4 w-4 mr-1" />
+                            Assign
+                          </Button>
+                        </Link>
                       )}
                     </td>
                   </tr>

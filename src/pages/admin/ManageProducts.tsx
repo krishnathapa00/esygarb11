@@ -26,6 +26,7 @@ type ProductRow = {
 const ManageProducts = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddProduct, setShowAddProduct] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<ProductRow | null>(null);
   const [creating, setCreating] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -77,6 +78,7 @@ const ManageProducts = () => {
   const handleAddProduct = () => setShowAddProduct(true);
   const handleCloseModal = () => {
     setShowAddProduct(false);
+    setEditingProduct(null);
     setProductData({
       name: '',
       price: '',
@@ -118,21 +120,71 @@ const ManageProducts = () => {
       offer: productData.offer ?? null,
     };
 
-    const { error } = await supabase.from('products').insert([payload]);
+    let error;
+    if (editingProduct) {
+      // Update existing product
+      const result = await supabase.from('products').update(payload).eq('id', editingProduct.id);
+      error = result.error;
+    } else {
+      // Create new product
+      const result = await supabase.from('products').insert([payload]);
+      error = result.error;
+    }
+
     setCreating(false);
 
     if (error) {
       toast({
-        title: "Product creation failed",
+        title: editingProduct ? "Product update failed" : "Product creation failed",
         description: error.message,
         variant: "destructive",
       });
     } else {
       toast({
-        title: "Product added!",
-        description: "Successfully created a new product.",
+        title: editingProduct ? "Product updated!" : "Product added!",
+        description: editingProduct ? "Successfully updated the product." : "Successfully created a new product.",
       });
       handleCloseModal();
+      refetch();
+      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+    }
+  };
+
+  // Handle edit product
+  const handleEditProduct = (product: ProductRow) => {
+    setEditingProduct(product);
+    setProductData({
+      name: product.name,
+      price: product.price.toString(),
+      category_id: product.category_id?.toString() || '',
+      discount: product.discount?.toString() || '',
+      offer: product.offer || '',
+      image_url: product.image_url || '',
+      stock_quantity: product.stock_quantity?.toString() || '',
+      weight: product.weight || '',
+      delivery_time: product.delivery_time || '',
+      description: product.description || ''
+    });
+    setShowAddProduct(true);
+  };
+
+  // Handle delete product
+  const handleDeleteProduct = async (productId: number) => {
+    if (!confirm('Are you sure you want to delete this product?')) return;
+
+    const { error } = await supabase.from('products').delete().eq('id', productId);
+
+    if (error) {
+      toast({
+        title: "Delete failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Product deleted!",
+        description: "Successfully deleted the product.",
+      });
       refetch();
       queryClient.invalidateQueries({ queryKey: ['admin-products'] });
     }
@@ -226,11 +278,11 @@ const ManageProducts = () => {
                         : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <Button variant="ghost" size="sm">
+                       <Button variant="ghost" size="sm" onClick={() => handleEditProduct(product)}>
                         <Edit2 className="h-4 w-4 mr-1" />
                         Edit
                       </Button>
-                      <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-900 hover:bg-red-50">
+                      <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-900 hover:bg-red-50" onClick={() => handleDeleteProduct(product.id)}>
                         <Trash2 className="h-4 w-4 mr-1" />
                         Delete
                       </Button>
@@ -247,7 +299,7 @@ const ManageProducts = () => {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
             <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-8 relative">
               <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-800" onClick={handleCloseModal}>&#10005;</button>
-              <h2 className="text-xl font-bold mb-4">Add New Product</h2>
+              <h2 className="text-xl font-bold mb-4">{editingProduct ? 'Edit Product' : 'Add New Product'}</h2>
               <form className="space-y-3" onSubmit={handleSubmit}>
                 <Input name="name" placeholder="Product Name" value={productData.name} onChange={handleChange} required />
                 <Input name="price" type="number" placeholder="Price" value={productData.price} onChange={handleChange} required min={0} />
@@ -260,7 +312,7 @@ const ManageProducts = () => {
                 <Input name="image_url" placeholder="Product Image URL" value={productData.image_url} onChange={handleChange} />
                 <textarea name="description" placeholder="Description" value={productData.description} onChange={handleChange} className="w-full border rounded-lg px-3 py-2 min-h-[60px]" />
                 <Button className="w-full" type="submit" disabled={creating}>
-                  {creating ? "Adding..." : "Add Product"}
+                  {creating ? (editingProduct ? "Updating..." : "Adding...") : (editingProduct ? "Update Product" : "Add Product")}
                 </Button>
               </form>
             </div>

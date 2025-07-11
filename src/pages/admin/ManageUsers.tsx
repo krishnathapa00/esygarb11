@@ -5,24 +5,50 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import AdminLayout from './components/AdminLayout';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+import { useToast } from "@/hooks/use-toast";
 
 const ManageUsers = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const { toast } = useToast();
+
+  // Fetch users from Supabase
+  const { data: users = [] } = useQuery({
+    queryKey: ['admin-users'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select(`
+          *,
+          orders:orders(count)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        toast({
+          title: "Failed to load users",
+          description: error.message,
+          variant: "destructive"
+        });
+        return [];
+      }
+      return data || [];
+    }
+  });
+
+  // Filter users based on search
+  const filteredUsers = users.filter(user => 
+    user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.role?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
   
-  // Mock user data
-  const users = [
-    { id: 1, name: 'John Doe', phone: '+91 98765 43210', email: 'john@example.com', orders: 12, status: 'Active', joinedOn: 'May 10, 2025', image: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=48&h=48&fit=crop' },
-    { id: 2, name: 'Jane Smith', phone: '+91 87654 32109', email: 'jane@example.com', orders: 8, status: 'Active', joinedOn: 'May 15, 2025', image: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=48&h=48&fit=crop' },
-    { id: 3, name: 'Robert Johnson', phone: '+91 76543 21098', email: 'robert@example.com', orders: 5, status: 'Inactive', joinedOn: 'May 20, 2025', image: 'https://images.unsplash.com/photo-1532074205216-d0e1f4b87368?w=48&h=48&fit=crop' },
-    { id: 4, name: 'Emily Wilson', phone: '+91 65432 10987', email: 'emily@example.com', orders: 15, status: 'Active', joinedOn: 'May 22, 2025', image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=48&h=48&fit=crop' },
-    { id: 5, name: 'Michael Brown', phone: '+91 54321 09876', email: 'michael@example.com', orders: 3, status: 'Blocked', joinedOn: 'May 25, 2025', image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=48&h=48&fit=crop' },
-  ];
-  
-  const getStatusColor = (status: string) => {
-    switch(status) {
-      case 'Active': return 'bg-green-100 text-green-800';
-      case 'Inactive': return 'bg-yellow-100 text-yellow-800';
-      case 'Blocked': return 'bg-red-100 text-red-800';
+  const getStatusColor = (role: string) => {
+    switch(role) {
+      case 'customer': return 'bg-blue-100 text-blue-800';
+      case 'admin': return 'bg-purple-100 text-purple-800';
+      case 'delivery_partner': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -76,33 +102,37 @@ const ManageUsers = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {users.map((user) => (
+                {filteredUsers.map((user) => (
                   <tr key={user.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
-                          <img className="h-10 w-10 rounded-full" src={user.image} alt="" />
+                          <div className="h-10 w-10 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 flex items-center justify-center">
+                            <span className="text-white font-semibold text-sm">
+                              {user.full_name?.charAt(0).toUpperCase() || 'U'}
+                            </span>
+                          </div>
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                          <div className="text-xs text-gray-500">ID: {user.id}</div>
+                          <div className="text-sm font-medium text-gray-900">{user.full_name || 'N/A'}</div>
+                          <div className="text-xs text-gray-500">ID: {user.id.slice(0, 8)}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{user.phone}</div>
-                      <div className="text-sm text-gray-500">{user.email}</div>
+                      <div className="text-sm text-gray-900">{user.phone_number || user.phone || 'N/A'}</div>
+                      <div className="text-sm text-gray-500">{user.role || 'customer'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{user.orders}</div>
+                      <div className="text-sm font-medium text-gray-900">{user.orders?.[0]?.count || 0}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge className={getStatusColor(user.status)}>
-                        {user.status}
+                      <Badge className={getStatusColor(user.role || 'customer')}>
+                        {user.role?.replace('_', ' ') || 'customer'}
                       </Badge>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{user.joinedOn}</div>
+                      <div className="text-sm text-gray-900">{new Date(user.created_at).toLocaleDateString()}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <Button variant="ghost" size="sm">

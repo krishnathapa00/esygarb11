@@ -5,25 +5,50 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import AdminLayout from './components/AdminLayout';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+import { useToast } from "@/hooks/use-toast";
 
 const Transactions = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const { toast } = useToast();
+
+  // Fetch transactions from Supabase (using orders as transactions)
+  const { data: transactions = [] } = useQuery({
+    queryKey: ['admin-transactions'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          profiles!orders_user_id_fkey ( full_name )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        toast({
+          title: "Failed to load transactions",
+          description: error.message,
+          variant: "destructive"
+        });
+        return [];
+      }
+      return data || [];
+    }
+  });
+
+  // Filter transactions based on search
+  const filteredTransactions = transactions.filter(transaction => 
+    transaction.order_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    transaction.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
   
-  // Mock transaction data
-  const transactions = [
-    { id: 'TXN12345678', orderId: 'ORD1234567', customer: 'John Doe', date: 'June 6, 2025', amount: 160, status: 'Success', payment: 'Cash on Delivery' },
-    { id: 'TXN12345677', orderId: 'ORD1234566', customer: 'Jane Smith', date: 'June 6, 2025', amount: 210, status: 'Success', payment: 'Cash on Delivery' },
-    { id: 'TXN12345676', orderId: 'ORD1234565', customer: 'Robert Johnson', date: 'June 5, 2025', amount: 180, status: 'Success', payment: 'Cash on Delivery' },
-    { id: 'TXN12345675', orderId: 'ORD1234564', customer: 'Emily Wilson', date: 'June 5, 2025', amount: 95, status: 'Failed', payment: 'Cash on Delivery' },
-    { id: 'TXN12345674', orderId: 'ORD1234563', customer: 'Michael Brown', date: 'June 4, 2025', amount: 320, status: 'Refunded', payment: 'Cash on Delivery' },
-  ];
-  
-  const getStatusColor = (status: string) => {
-    switch(status) {
-      case 'Success': return 'bg-green-100 text-green-800';
-      case 'Failed': return 'bg-red-100 text-red-800';
-      case 'Pending': return 'bg-yellow-100 text-yellow-800';
-      case 'Refunded': return 'bg-blue-100 text-blue-800';
+  const getStatusColor = (paymentStatus: string) => {
+    switch(paymentStatus) {
+      case 'completed': return 'bg-green-100 text-green-800';
+      case 'failed': return 'bg-red-100 text-red-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'refunded': return 'bg-blue-100 text-blue-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -84,29 +109,29 @@ const Transactions = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {transactions.map((transaction) => (
+                {filteredTransactions.map((transaction) => (
                   <tr key={transaction.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{transaction.id}</div>
+                      <div className="text-sm text-gray-900">TXN{transaction.id.slice(0, 8)}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{transaction.orderId}</div>
+                      <div className="text-sm text-gray-900">{transaction.order_number}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{transaction.customer}</div>
+                      <div className="text-sm text-gray-900">{transaction.profiles?.full_name || 'N/A'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{transaction.date}</div>
+                      <div className="text-sm text-gray-900">{new Date(transaction.created_at).toLocaleDateString()}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">₹{transaction.amount}</div>
+                      <div className="text-sm font-medium text-gray-900">₹{transaction.total_amount}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{transaction.payment}</div>
+                      <div className="text-sm text-gray-900">Cash on Delivery</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge className={getStatusColor(transaction.status)}>
-                        {transaction.status}
+                      <Badge className={getStatusColor(transaction.payment_status || 'pending')}>
+                        {transaction.payment_status || 'pending'}
                       </Badge>
                     </td>
                   </tr>

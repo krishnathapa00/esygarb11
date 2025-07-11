@@ -5,18 +5,44 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import AdminLayout from './components/AdminLayout';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+import { useToast } from "@/hooks/use-toast";
 
 const AssignDelivery = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  
-  // Mock deliverer data
-  const deliveryPersons = [
-    { id: 1, name: 'Amit Kumar', phone: '+91 98765 43210', status: 'Available', activeOrders: 0, rating: 4.8, image: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=48&h=48&fit=crop' },
-    { id: 2, name: 'Priya Sharma', phone: '+91 87654 32109', status: 'Busy', activeOrders: 2, rating: 4.5, image: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=48&h=48&fit=crop' },
-    { id: 3, name: 'Raj Singh', phone: '+91 76543 21098', status: 'Available', activeOrders: 0, rating: 4.9, image: 'https://images.unsplash.com/photo-1532074205216-d0e1f4b87368?w=48&h=48&fit=crop' },
-    { id: 4, name: 'Ananya Patel', phone: '+91 65432 10987', status: 'Offline', activeOrders: 0, rating: 4.2, image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=48&h=48&fit=crop' },
-    { id: 5, name: 'Vikram Malhotra', phone: '+91 54321 09876', status: 'Busy', activeOrders: 1, rating: 4.7, image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=48&h=48&fit=crop' },
-  ];
+  const { toast } = useToast();
+
+  // Fetch delivery partners from Supabase
+  const { data: deliveryPersons = [] } = useQuery({
+    queryKey: ['assign-delivery-partners'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select(`
+          *,
+          assigned_orders:orders!delivery_partner_id(count)
+        `)
+        .eq('role', 'delivery_partner')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        toast({
+          title: "Failed to load delivery partners",
+          description: error.message,
+          variant: "destructive"
+        });
+        return [];
+      }
+      return data || [];
+    }
+  });
+
+  // Filter delivery partners based on search
+  const filteredDeliveryPersons = deliveryPersons.filter(person => 
+    person.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    person.phone_number?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
   
   const getStatusColor = (status: string) => {
     switch(status) {
@@ -70,33 +96,37 @@ const AssignDelivery = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {deliveryPersons.map((person) => (
+                {filteredDeliveryPersons.map((person) => (
                   <tr key={person.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
-                          <img className="h-10 w-10 rounded-full" src={person.image} alt="" />
+                          <div className="h-10 w-10 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 flex items-center justify-center">
+                            <span className="text-white font-semibold text-sm">
+                              {person.full_name?.charAt(0).toUpperCase() || 'D'}
+                            </span>
+                          </div>
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{person.name}</div>
-                          <div className="text-xs text-gray-500">ID: {person.id}</div>
+                          <div className="text-sm font-medium text-gray-900">{person.full_name || 'N/A'}</div>
+                          <div className="text-xs text-gray-500">ID: {person.id.slice(0, 8)}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{person.phone}</div>
+                      <div className="text-sm text-gray-900">{person.phone_number || person.phone || 'N/A'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge className={getStatusColor(person.status)}>
-                        {person.status}
+                      <Badge className="bg-green-100 text-green-800">
+                        Available
                       </Badge>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{person.activeOrders} active</div>
+                      <div className="text-sm text-gray-900">{person.assigned_orders?.[0]?.count || 0} active</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <span className="text-sm text-gray-900 mr-1">{person.rating}</span>
+                        <span className="text-sm text-gray-900 mr-1">4.5</span>
                         <svg className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
                           <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
                         </svg>
@@ -105,8 +135,7 @@ const AssignDelivery = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <Button 
                         variant="outline"
-                        size="sm" 
-                        disabled={person.status !== 'Available'}
+                        size="sm"
                       >
                         Assign Orders
                       </Button>

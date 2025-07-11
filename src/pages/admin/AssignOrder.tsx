@@ -6,39 +6,93 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import AdminLayout from './components/AdminLayout';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useToast } from "@/hooks/use-toast";
 
 const AssignOrder = () => {
   const { orderId } = useParams();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedDeliveryPerson, setSelectedDeliveryPerson] = useState<number | null>(null);
+  const [selectedDeliveryPerson, setSelectedDeliveryPerson] = useState<string | null>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch order data
+  const { data: order } = useQuery({
+    queryKey: ['order', orderId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          profiles!orders_user_id_fkey ( full_name, phone_number ),
+          order_items ( *, products:product_id ( name, price ) )
+        `)
+        .eq('id', orderId)
+        .single();
+
+      if (error) {
+        toast({
+          title: "Failed to load order",
+          description: error.message,
+          variant: "destructive"
+        });
+        return null;
+      }
+      return data;
+    }
+  });
+
+  // Fetch delivery partners
+  const { data: deliveryPersons = [] } = useQuery({
+    queryKey: ['available-delivery-partners'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select(`
+          *,
+          assigned_orders:orders!delivery_partner_id(count)
+        `)
+        .eq('role', 'delivery_partner')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        toast({
+          title: "Failed to load delivery partners",
+          description: error.message,
+          variant: "destructive"
+        });
+        return [];
+      }
+      return data || [];
+    }
+  });
   
-  // Mock order data
-  const order = {
-    id: orderId,
-    customer: "John Doe",
-    phone: "+91 98765 43210",
-    date: "June 6, 2025",
-    amount: 160,
-    status: "Confirmed",
-    items: [
-      { id: 1, name: "Fresh Bananas", quantity: 2, price: 40 },
-      { id: 2, name: "Fresh Milk", quantity: 1, price: 60 },
-      { id: 3, name: "Bread", quantity: 1, price: 40 }
-    ],
-    address: "123 Main St, Apartment 4B, New York, NY 10001"
-  };
-  
-  // Mock delivery persons
-  const deliveryPersons = [
-    { id: 1, name: 'Amit Kumar', phone: '+91 98765 43210', status: 'Available', activeOrders: 0, rating: 4.8, distance: "1.2 km", image: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=48&h=48&fit=crop' },
-    { id: 2, name: 'Priya Sharma', phone: '+91 87654 32109', status: 'Available', activeOrders: 0, rating: 4.5, distance: "2.5 km", image: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=48&h=48&fit=crop' },
-    { id: 3, name: 'Raj Singh', phone: '+91 76543 21098', status: 'Available', activeOrders: 0, rating: 4.9, distance: "3.0 km", image: 'https://images.unsplash.com/photo-1532074205216-d0e1f4b87368?w=48&h=48&fit=crop' },
-  ];
-  
-  const handleAssign = () => {
-    if (selectedDeliveryPerson) {
-      alert(`Order ${orderId} has been assigned to ${deliveryPersons.find(p => p.id === selectedDeliveryPerson)?.name}`);
-      // In a real app, you would dispatch some action here
+  const handleAssign = async () => {
+    if (selectedDeliveryPerson && orderId) {
+      const { error } = await supabase
+        .from('orders')
+        .update({ 
+          delivery_partner_id: selectedDeliveryPerson,
+          status: 'dispatched'
+        })
+        .eq('id', orderId);
+
+      if (error) {
+        toast({
+          title: "Failed to assign order",
+          description: error.message,
+          variant: "destructive"
+        });
+      } else {
+        const deliveryPerson = deliveryPersons.find(p => p.id === selectedDeliveryPerson);
+        toast({
+          title: "Order assigned successfully",
+          description: `Order has been assigned to ${deliveryPerson?.full_name}`,
+        });
+        queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
+        queryClient.invalidateQueries({ queryKey: ['order', orderId] });
+      }
     }
   };
   
@@ -69,31 +123,31 @@ const AssignOrder = () => {
               <div className="space-y-4">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Order ID</span>
-                  <span className="font-medium">{order.id}</span>
+                  <span className="font-medium">{order?.order_number}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Date</span>
-                  <span>{order.date}</span>
+                  <span>{order ? new Date(order.created_at).toLocaleDateString() : 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Status</span>
                   <Badge className="bg-blue-100 text-blue-800">
-                    {order.status}
+                    {order?.status?.replace('_', ' ') || 'N/A'}
                   </Badge>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Total Amount</span>
-                  <span className="font-medium">₹{order.amount}</span>
+                  <span className="font-medium">₹{order?.total_amount}</span>
                 </div>
               </div>
               
               <div className="mt-4 pt-4 border-t">
-                <h4 className="font-medium mb-2">Items ({order.items.length})</h4>
+                <h4 className="font-medium mb-2">Items ({order?.order_items?.length || 0})</h4>
                 <div className="space-y-2">
-                  {order.items.map((item) => (
+                  {order?.order_items?.map((item) => (
                     <div key={item.id} className="flex justify-between">
-                      <span>{item.name} x{item.quantity}</span>
-                      <span>₹{item.price * item.quantity}</span>
+                      <span>{item.products?.name} x{item.quantity}</span>
+                      <span>₹{item.price}</span>
                     </div>
                   ))}
                 </div>
@@ -109,11 +163,11 @@ const AssignOrder = () => {
               <div className="space-y-4">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Name</span>
-                  <span>{order.customer}</span>
+                  <span>{order?.profiles?.full_name || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Phone</span>
-                  <span>{order.phone}</span>
+                  <span>{order?.profiles?.phone_number || 'N/A'}</span>
                 </div>
               </div>
             </div>
@@ -124,7 +178,7 @@ const AssignOrder = () => {
                 <h3 className="text-lg font-semibold">Delivery Address</h3>
               </div>
               
-              <p className="text-gray-600">{order.address}</p>
+              <p className="text-gray-600">{order?.delivery_address || 'N/A'}</p>
               
               <div className="mt-4 h-40 bg-gray-200 rounded-lg flex items-center justify-center">
                 <span className="text-gray-500">Map location would appear here</span>
@@ -160,33 +214,33 @@ const AssignOrder = () => {
                   >
                     <div className="flex items-center">
                       <div className="flex-shrink-0">
-                        <img
-                          className="h-12 w-12 rounded-full object-cover"
-                          src={person.image}
-                          alt={person.name}
-                        />
+                        <div className="h-12 w-12 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 flex items-center justify-center">
+                          <span className="text-white font-semibold">
+                            {person.full_name?.charAt(0).toUpperCase() || 'D'}
+                          </span>
+                        </div>
                       </div>
                       <div className="ml-4 flex-1">
                         <div className="flex items-center justify-between">
                           <div>
-                            <h4 className="font-medium">{person.name}</h4>
-                            <p className="text-sm text-gray-500">{person.phone}</p>
+                            <h4 className="font-medium">{person.full_name || 'N/A'}</h4>
+                            <p className="text-sm text-gray-500">{person.phone_number || person.phone || 'N/A'}</p>
                           </div>
                           <div className="text-right">
                             <div className="flex items-center text-yellow-500">
-                              <span className="mr-1">{person.rating}</span>
+                              <span className="mr-1">4.5</span>
                               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
                               </svg>
                             </div>
                             <p className="text-sm text-gray-500">
-                              {person.activeOrders} active orders
+                              {person.assigned_orders?.[0]?.count || 0} active orders
                             </p>
                           </div>
                         </div>
                         <div className="mt-2">
                           <Badge variant="secondary" className="text-xs">
-                            {person.distance} away
+                            Available
                           </Badge>
                         </div>
                       </div>
