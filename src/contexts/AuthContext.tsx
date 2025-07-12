@@ -25,7 +25,8 @@ interface AuthContextType {
   sendOtp: (email: string) => Promise<{ error?: { message: string } }>;
   verifyOtp: (
     email: string,
-    otp: string
+    otp: string,
+    navigate?: (path: string) => void
   ) => Promise<{ error?: { message: string } }>;
   resendOtp: (email: string) => Promise<{ error?: { message: string } }>;
   signUp: (phone: string, fullName: string, role: string) => Promise<{ error?: { message: string } }>;
@@ -121,7 +122,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     [sendOtp]
   );
 
-  const verifyOtp = useCallback(async (email: string, otp: string) => {
+  const verifyOtp = useCallback(async (email: string, otp: string, navigate?: (path: string) => void) => {
     try {
       const { data, error } = await supabase.auth.verifyOtp({
         email,
@@ -145,6 +146,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setUser(newUser);
       setIsAuthenticated(true);
       localStorage.setItem("user", JSON.stringify(newUser));
+
+      // Redirect to payment page after successful verification for new users
+      if (navigate) {
+        navigate("/payment");
+      }
 
       return {};
     } catch (err: any) {

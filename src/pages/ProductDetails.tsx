@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import Header from "../components/Header";
-import { ArrowLeft, Star, Truck, Shield } from "lucide-react";
+import { ArrowLeft, Star, Truck, Shield, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useProducts } from "@/hooks/useProducts";
 import { useCart } from "@/contexts/CartContext";
+import ProductCard from "../components/ProductCard";
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -18,6 +19,11 @@ const ProductDetails = () => {
   const [quantity, setQuantity] = useState(1);
 
   const totalCartQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  // Get related products (same category, excluding current product)
+  const relatedProducts = products?.filter(
+    (p) => p.category === product?.category && p.id !== product?.id
+  ).slice(0, 4) || [];
 
   if (!product) {
     return (
@@ -47,7 +53,8 @@ const ProductDetails = () => {
           <span className="text-gray-500">Back to products</span>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        {/* Product Details */}
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-8">
           <div className="grid md:grid-cols-2 gap-8 p-6">
             {/* Product Image */}
             <div className="relative">
@@ -103,10 +110,6 @@ const ProductDetails = () => {
                   </span>
                 )}
               </div>
-
-              <p className="text-gray-600 leading-relaxed">
-                {product.description}
-              </p>
 
               <div>
                 <h3 className="font-semibold text-gray-900 mb-2">Benefits</h3>
@@ -178,6 +181,119 @@ const ProductDetails = () => {
             </div>
           </div>
         </div>
+
+        {/* Product Description & More Info */}
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-8">
+          <div className="p-6">
+            <div className="flex items-center space-x-2 mb-4">
+              <Info className="h-5 w-5 text-green-600" />
+              <h2 className="text-xl font-bold text-gray-900">Product Description & More Info</h2>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-2">Description</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  {product.description || "This is a high-quality product sourced directly from trusted suppliers. Fresh, nutritious, and perfect for your daily needs. We ensure the best quality and freshness in every product we deliver."}
+                </p>
+              </div>
+              
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Product Details</h3>
+                  <div className="space-y-1 text-sm text-gray-600">
+                    <div className="flex justify-between">
+                      <span>Weight:</span>
+                      <span>{product.weight}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Category:</span>
+                      <span>{product.category}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Delivery Time:</span>
+                      <span>{product.deliveryTime}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Stock:</span>
+                      <span className={product.inStock ? "text-green-600" : "text-red-600"}>
+                        {product.inStock ? "In Stock" : "Out of Stock"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Health Benefits</h3>
+                  <ul className="space-y-1 text-sm text-gray-600">
+                    {product.benefits.map((benefit, index) => (
+                      <li key={index} className="flex items-center space-x-2">
+                        <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                        <span>{benefit}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-2">Storage Instructions</h3>
+                <p className="text-sm text-gray-600">
+                  Store in a cool, dry place. For fresh products, refrigerate immediately after delivery. 
+                  Best consumed within recommended time for optimal freshness and nutrition.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Related Products */}
+        {relatedProducts.length > 0 && (
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div className="p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-6">Recommended Products</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {relatedProducts.map((relatedProduct) => {
+                  const cartItem = cart.find(item => item.id === relatedProduct.id);
+                  const cartQuantity = cartItem?.quantity || 0;
+                  
+                  return (
+                    <ProductCard
+                      key={relatedProduct.id}
+                      product={relatedProduct}
+                      cartQuantity={cartQuantity}
+                      onAddToCart={() => 
+                        addToCart({
+                          id: relatedProduct.id,
+                          name: relatedProduct.name,
+                          price: relatedProduct.price,
+                          image: relatedProduct.image,
+                          weight: relatedProduct.weight,
+                          quantity: 1,
+                        })
+                      }
+                      onUpdateQuantity={(productId: number, quantity: number) => {
+                        if (quantity <= 0) {
+                          // Remove from cart if quantity is 0 or less
+                          return;
+                        }
+                        // Update cart quantity
+                        addToCart({
+                          id: relatedProduct.id,
+                          name: relatedProduct.name,
+                          price: relatedProduct.price,
+                          image: relatedProduct.image,
+                          weight: relatedProduct.weight,
+                          quantity: 1,
+                        });
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

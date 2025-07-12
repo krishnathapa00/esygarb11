@@ -294,27 +294,177 @@ const ManageProducts = () => {
           </div>
         </div>
 
-        {/* Add Product Modal */}
+        {/* Add Product Modal - Horizontal Design */}
         {showAddProduct && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-8 relative">
-              <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-800" onClick={handleCloseModal}>&#10005;</button>
-              <h2 className="text-xl font-bold mb-4">{editingProduct ? 'Edit Product' : 'Add New Product'}</h2>
-              <form className="space-y-3" onSubmit={handleSubmit}>
-                <Input name="name" placeholder="Product Name" value={productData.name} onChange={handleChange} required />
-                <Input name="price" type="number" placeholder="Price" value={productData.price} onChange={handleChange} required min={0} />
-                <Input name="discount" type="number" placeholder="Discount %" value={productData.discount} onChange={handleChange} min={0} max={99} />
-                <Input name="offer" placeholder="Offer Description (optional)" value={productData.offer} onChange={handleChange} />
-                <Input name="category_id" type="number" placeholder="Category id" value={productData.category_id} onChange={handleChange} required />
-                <Input name="stock_quantity" type="number" placeholder="Stock Quantity" value={productData.stock_quantity} onChange={handleChange} min={0} />
-                <Input name="weight" placeholder="Weight (e.g., 500g, 1kg)" value={productData.weight} onChange={handleChange} />
-                <Input name="delivery_time" placeholder="Delivery Time" value={productData.delivery_time} onChange={handleChange} />
-                <Input name="image_url" placeholder="Product Image URL" value={productData.image_url} onChange={handleChange} />
-                <textarea name="description" placeholder="Description" value={productData.description} onChange={handleChange} className="w-full border rounded-lg px-3 py-2 min-h-[60px]" />
-                <Button className="w-full" type="submit" disabled={creating}>
-                  {creating ? (editingProduct ? "Updating..." : "Adding...") : (editingProduct ? "Update Product" : "Add Product")}
-                </Button>
-              </form>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto relative">
+              <button 
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-800 text-2xl font-bold z-10" 
+                onClick={handleCloseModal}
+              >
+                &#10005;
+              </button>
+              
+              <div className="p-6">
+                <h2 className="text-2xl font-bold mb-6 text-center">
+                  {editingProduct ? 'Edit Product' : 'Add New Product'}
+                </h2>
+                
+                <form onSubmit={handleSubmit}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Left Column */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">Basic Information</h3>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
+                        <Input 
+                          name="name" 
+                          placeholder="Enter product name" 
+                          value={productData.name} 
+                          onChange={handleChange} 
+                          required 
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Price (Rs) *</label>
+                          <Input 
+                            name="price" 
+                            type="number" 
+                            placeholder="0" 
+                            value={productData.price} 
+                            onChange={handleChange} 
+                            required 
+                            min={0} 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Discount (%)</label>
+                          <Input 
+                            name="discount" 
+                            type="number" 
+                            placeholder="0" 
+                            value={productData.discount} 
+                            onChange={handleChange} 
+                            min={0} 
+                            max={99} 
+                          />
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Special Offer</label>
+                        <Input 
+                          name="offer" 
+                          placeholder="e.g., Buy 2 Get 1 Free" 
+                          value={productData.offer} 
+                          onChange={handleChange} 
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Category ID *</label>
+                          <Input 
+                            name="category_id" 
+                            type="number" 
+                            placeholder="1" 
+                            value={productData.category_id} 
+                            onChange={handleChange} 
+                            required 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Stock Quantity</label>
+                          <Input 
+                            name="stock_quantity" 
+                            type="number" 
+                            placeholder="0" 
+                            value={productData.stock_quantity} 
+                            onChange={handleChange} 
+                            min={0} 
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Right Column */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">Product Details</h3>
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Weight/Size</label>
+                          <Input 
+                            name="weight" 
+                            placeholder="e.g., 500g, 1kg" 
+                            value={productData.weight} 
+                            onChange={handleChange} 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Time</label>
+                          <Input 
+                            name="delivery_time" 
+                            placeholder="e.g., 10-15 mins" 
+                            value={productData.delivery_time} 
+                            onChange={handleChange} 
+                          />
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Product Image URL</label>
+                        <Input 
+                          name="image_url" 
+                          placeholder="https://example.com/image.jpg" 
+                          value={productData.image_url} 
+                          onChange={handleChange} 
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <textarea 
+                          name="description" 
+                          placeholder="Enter detailed product description..." 
+                          value={productData.description} 
+                          onChange={handleChange} 
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 min-h-[100px] focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none" 
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Form Actions */}
+                  <div className="flex justify-end space-x-3 mt-8 pt-6 border-t">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={handleCloseModal}
+                      disabled={creating}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      disabled={creating}
+                      className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                    >
+                      {creating ? (
+                        <div className="flex items-center space-x-2">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                          <span>{editingProduct ? "Updating..." : "Adding..."}</span>
+                        </div>
+                      ) : (
+                        editingProduct ? "Update Product" : "Add Product"
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
         )}

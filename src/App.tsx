@@ -10,6 +10,7 @@ import CategoryProducts from "./pages/SubCategories";
 import ProductDetails from "./pages/ProductDetails";
 import CartPage from "./pages/CartPage";
 import Checkout from "./pages/Checkout";
+import PaymentPage from "./pages/PaymentPage";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import OrderTracking from "./pages/OrderTracking";
 import OrderHistory from "./pages/OrderHistory";
@@ -53,6 +54,7 @@ function App() {
                 <Route path="/search" element={<SearchResults />} />
                 <Route path="/cart" element={<CartPage />} />
                 <Route path="/checkout" element={<Checkout />} />
+                <Route path="/payment" element={<PaymentPage />} />
                 <Route
                   path="/order-confirmation"
                   element={<OrderConfirmation />}

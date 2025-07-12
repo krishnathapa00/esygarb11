@@ -62,7 +62,7 @@ const CategoryGrid = ({ onCategorySelect }: CategoryGridProps) => {
           View All
         </Link>
       </div>
-      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
         {categories.map((category) => (
           <Link
             key={category.id}
@@ -71,16 +71,16 @@ const CategoryGrid = ({ onCategorySelect }: CategoryGridProps) => {
             className="group cursor-pointer transform transition-all duration-300 hover:scale-105"
           >
             <div
-              className={`bg-gradient-to-br ${category.color} rounded-xl p-3 md:p-4 text-center shadow-md hover:shadow-lg transition-all duration-300`}
+              className={`bg-gradient-to-br ${category.color} rounded-xl p-3 md:p-4 text-center shadow-md hover:shadow-lg transition-all duration-300 aspect-square flex flex-col justify-center items-center min-h-[100px]`}
             >
-              <div className="w-10 h-10 md:w-12 md:h-12 mx-auto mb-2 rounded-full overflow-hidden bg-white/20 backdrop-blur-sm">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 mx-auto mb-2 rounded-full overflow-hidden bg-white/20 backdrop-blur-sm">
                 <img
                   src={category.image}
                   alt={category.name}
                   className="w-full h-full object-cover"
                 />
               </div>
-              <h3 className="text-white font-medium text-xs md:text-sm leading-tight">
+              <h3 className="text-white font-medium text-xs sm:text-sm leading-tight text-center">
                 {category.name}
               </h3>
             </div>
