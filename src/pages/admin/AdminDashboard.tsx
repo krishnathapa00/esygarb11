@@ -1,38 +1,173 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BarChart3, ShoppingBag, Users, TrendingUp, Package, UserCheck, Clock, RotateCcw } from 'lucide-react';
+import { BarChart3, ShoppingBag, Users, TrendingUp, Package, UserCheck, Clock, RotateCcw, RefreshCw, Calendar } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AdminLayout from './components/AdminLayout';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+import { useToast } from "@/hooks/use-toast";
 
 const AdminDashboard = () => {
-  // Mock dashboard data with Rs currency
-  const dashboardData = {
-    totalOrders: 128,
-    ordersToday: 24,
-    totalRevenue: 124800,
-    revenueToday: 24000,
-    totalUsers: 350,
-    newUsersToday: 8,
-    pendingOrders: 12,
-    lowStockItems: 5,
-    refundsProcessed: 8,
-    refundAmount: 15600,
+  const [dateFilter, setDateFilter] = useState('today');
+  const { toast } = useToast();
+
+  // Fetch real dashboard data from Supabase
+  const { data: dashboardData, refetch, isLoading } = useQuery({
+    queryKey: ['admin-dashboard', dateFilter],
+    queryFn: async () => {
+      const now = new Date();
+      let startDate = new Date();
+      
+      switch (dateFilter) {
+        case 'today':
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        case 'week':
+          startDate.setDate(now.getDate() - 7);
+          break;
+        case 'month':
+          startDate.setMonth(now.getMonth() - 1);
+          break;
+        case 'year':
+          startDate.setFullYear(now.getFullYear() - 1);
+          break;
+      }
+
+      // Fetch orders data
+      const { data: orders, error: ordersError } = await supabase
+        .from('orders')
+        .select('*')
+        .gte('created_at', startDate.toISOString());
+
+      // Fetch orders for today specifically
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const { data: todayOrders, error: todayOrdersError } = await supabase
+        .from('orders')
+        .select('*')
+        .gte('created_at', todayStart.toISOString());
+
+      // Fetch users
+      const { data: users, error: usersError } = await supabase
+        .from('profiles')
+        .select('*');
+
+      // Fetch users registered today
+      const { data: todayUsers, error: todayUsersError } = await supabase
+        .from('profiles')
+        .select('*')
+        .gte('created_at', todayStart.toISOString());
+
+      // Fetch products for inventory
+      const { data: products, error: productsError } = await supabase
+        .from('products')
+        .select('*')
+        .lt('stock_quantity', 10);
+
+      if (ordersError || usersError || productsError) {
+        console.error('Dashboard fetch error:', ordersError || usersError || productsError);
+        return {
+          totalOrders: 0,
+          ordersToday: 0,
+          totalRevenue: 0,
+          revenueToday: 0,
+          totalUsers: 0,
+          newUsersToday: 0,
+          pendingOrders: 0,
+          lowStockItems: 0,
+          refundsProcessed: 0,
+          refundAmount: 0,
+          recentOrders: [],
+          lowStockProducts: []
+        };
+      }
+
+      const totalOrders = orders?.length || 0;
+      const ordersToday = todayOrders?.length || 0;
+      const totalRevenue = orders?.reduce((sum, order) => sum + Number(order.total_amount), 0) || 0;
+      const revenueToday = todayOrders?.reduce((sum, order) => sum + Number(order.total_amount), 0) || 0;
+      const totalUsers = users?.length || 0;
+      const newUsersToday = todayUsers?.length || 0;
+      const pendingOrders = orders?.filter(order => order.status === 'pending')?.length || 0;
+      const lowStockItems = products?.length || 0;
+      const refundsProcessed = orders?.filter(order => order.payment_status === 'refunded')?.length || 0;
+      const refundAmount = orders?.filter(order => order.payment_status === 'refunded')
+        ?.reduce((sum, order) => sum + Number(order.total_amount), 0) || 0;
+
+      return {
+        totalOrders,
+        ordersToday,
+        totalRevenue,
+        revenueToday,
+        totalUsers,
+        newUsersToday,
+        pendingOrders,
+        lowStockItems,
+        refundsProcessed,
+        refundAmount,
+        recentOrders: orders?.slice(0, 5) || [],
+        lowStockProducts: products?.slice(0, 5) || []
+      };
+    }
+  });
+
+  const handleRefund = async (orderId: string) => {
+    const { error } = await supabase
+      .from('orders')
+      .update({ payment_status: 'refunded' })
+      .eq('id', orderId);
+    
+    if (error) {
+      toast({
+        title: "Refund failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Refund processed",
+        description: `Order ${orderId} has been refunded.`
+      });
+      refetch();
+    }
   };
 
-  const handleRefund = (orderId: string) => {
-    // Refund logic would go here
-    console.log(`Processing refund for order: ${orderId}`);
-    alert(`Refund processed for order ${orderId}`);
+  const handleRefresh = () => {
+    refetch();
+    toast({
+      title: "Data refreshed",
+      description: "Dashboard data has been updated."
+    });
   };
 
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold mb-2">Dashboard Overview</h1>
-          <p className="text-gray-500">Welcome back, Admin</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold mb-2">Dashboard Overview</h1>
+            <p className="text-gray-500">Welcome back, Admin</p>
+          </div>
+          <div className="flex gap-2">
+            <Select value={dateFilter} onValueChange={setDateFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="today">Today</SelectItem>
+                <SelectItem value="week">This Week</SelectItem>
+                <SelectItem value="month">This Month</SelectItem>
+                <SelectItem value="year">This Year</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button onClick={handleRefresh} variant="outline" size="sm">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
@@ -43,8 +178,8 @@ const AdminDashboard = () => {
             <CardContent>
               <div className="flex justify-between items-center">
                 <div>
-                  <div className="text-2xl font-bold">{dashboardData.totalOrders}</div>
-                  <p className="text-xs text-green-600">+{dashboardData.ordersToday} today</p>
+                  <div className="text-2xl font-bold">{dashboardData?.totalOrders || 0}</div>
+                  <p className="text-xs text-green-600">+{dashboardData?.ordersToday || 0} today</p>
                 </div>
                 <ShoppingBag className="h-8 w-8 text-green-600 opacity-80" />
               </div>
@@ -58,8 +193,8 @@ const AdminDashboard = () => {
             <CardContent>
               <div className="flex justify-between items-center">
                 <div>
-                  <div className="text-2xl font-bold">Rs {dashboardData.totalRevenue.toLocaleString()}</div>
-                  <p className="text-xs text-green-600">+Rs {dashboardData.revenueToday.toLocaleString()} today</p>
+                  <div className="text-2xl font-bold">Rs {(dashboardData?.totalRevenue || 0).toLocaleString()}</div>
+                  <p className="text-xs text-green-600">+Rs {(dashboardData?.revenueToday || 0).toLocaleString()} today</p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-green-600 opacity-80" />
               </div>
@@ -73,8 +208,8 @@ const AdminDashboard = () => {
             <CardContent>
               <div className="flex justify-between items-center">
                 <div>
-                  <div className="text-2xl font-bold">{dashboardData.totalUsers}</div>
-                  <p className="text-xs text-green-600">+{dashboardData.newUsersToday} today</p>
+                  <div className="text-2xl font-bold">{dashboardData?.totalUsers || 0}</div>
+                  <p className="text-xs text-green-600">+{dashboardData?.newUsersToday || 0} today</p>
                 </div>
                 <Users className="h-8 w-8 text-green-600 opacity-80" />
               </div>
@@ -88,7 +223,7 @@ const AdminDashboard = () => {
             <CardContent>
               <div className="flex justify-between items-center">
                 <div>
-                  <div className="text-2xl font-bold">{dashboardData.pendingOrders}</div>
+                  <div className="text-2xl font-bold">{dashboardData?.pendingOrders || 0}</div>
                   <p className="text-xs text-amber-600">Needs attention</p>
                 </div>
                 <Clock className="h-8 w-8 text-amber-600 opacity-80" />
@@ -106,8 +241,8 @@ const AdminDashboard = () => {
             <CardContent>
               <div className="flex justify-between items-center">
                 <div>
-                  <div className="text-2xl font-bold">{dashboardData.refundsProcessed}</div>
-                  <p className="text-xs text-blue-600">Rs {dashboardData.refundAmount.toLocaleString()} total</p>
+                  <div className="text-2xl font-bold">{dashboardData?.refundsProcessed || 0}</div>
+                  <p className="text-xs text-blue-600">Rs {(dashboardData?.refundAmount || 0).toLocaleString()} total</p>
                 </div>
                 <RotateCcw className="h-8 w-8 text-blue-600 opacity-80" />
               </div>
@@ -123,25 +258,27 @@ const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {[1, 2, 3, 4, 5].map((index) => (
-                  <div key={index} className="flex justify-between items-center border-b pb-2">
+                {dashboardData?.recentOrders?.length > 0 ? dashboardData.recentOrders.map((order: any) => (
+                  <div key={order.id} className="flex justify-between items-center border-b pb-2">
                     <div>
-                      <p className="font-medium">Order #ORD123456{index}</p>
-                      <p className="text-xs text-gray-500">June {6-index}, 2025 • Rs {(Math.floor(Math.random() * 5000) + 1000).toLocaleString()}</p>
+                      <p className="font-medium">{order.order_number}</p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(order.created_at).toLocaleDateString()} • Rs {Number(order.total_amount).toLocaleString()}
+                      </p>
                     </div>
                     <div className="flex items-center space-x-2">
                       <span className={`px-2 py-1 rounded-full text-xs ${
-                        index % 3 === 0 ? 'bg-amber-100 text-amber-700' :
-                        index % 3 === 1 ? 'bg-green-100 text-green-700' :
+                        order.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                        order.status === 'delivered' ? 'bg-green-100 text-green-700' :
                         'bg-blue-100 text-blue-700'
                       }`}>
-                        {index % 3 === 0 ? 'Pending' : index % 3 === 1 ? 'Delivered' : 'Dispatched'}
+                        {order.status || 'pending'}
                       </span>
-                      {index % 3 === 1 && (
+                      {order.status === 'delivered' && order.payment_status !== 'refunded' && (
                         <Button 
                           size="sm" 
                           variant="outline"
-                          onClick={() => handleRefund(`ORD123456${index}`)}
+                          onClick={() => handleRefund(order.id)}
                           className="text-xs"
                         >
                           <RotateCcw className="h-3 w-3 mr-1" />
@@ -150,7 +287,9 @@ const AdminDashboard = () => {
                       )}
                     </div>
                   </div>
-                ))}
+                )) : (
+                  <p className="text-gray-500 text-center py-4">No recent orders found</p>
+                )}
               </div>
               
               <div className="mt-4">
@@ -170,20 +309,26 @@ const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {[1, 2, 3, 4, 5].map((index) => (
-                  <div key={index} className="flex justify-between items-center border-b pb-2">
+                {dashboardData?.lowStockProducts?.length > 0 ? dashboardData.lowStockProducts.map((product: any) => (
+                  <div key={product.id} className="flex justify-between items-center border-b pb-2">
                     <div className="flex items-center">
-                      <div className="w-10 h-10 bg-gray-100 rounded-md mr-3"></div>
+                      <div className="w-10 h-10 bg-gray-100 rounded-md mr-3 overflow-hidden">
+                        {product.image_url && (
+                          <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                        )}
+                      </div>
                       <div>
-                        <p className="font-medium">Product Name {index}</p>
-                        <p className="text-xs text-gray-500">SKU: PRD123{index}</p>
+                        <p className="font-medium">{product.name}</p>
+                        <p className="text-xs text-gray-500">ID: {product.id}</p>
                       </div>
                     </div>
                     <span className="text-red-600 font-medium">
-                      {index * 2} left
+                      {product.stock_quantity || 0} left
                     </span>
                   </div>
-                ))}
+                )) : (
+                  <p className="text-gray-500 text-center py-4">No low stock items</p>
+                )}
               </div>
               
               <div className="mt-4">

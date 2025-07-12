@@ -299,7 +299,15 @@ const DeliveryPartnerAuth = () => {
               </TabsContent>
             </Tabs>
             
-            <div className="mt-6 pt-6 border-t border-gray-200 text-center">
+            <div className="mt-6 pt-6 border-t border-gray-200 text-center space-y-2">
+              <p className="text-sm text-gray-600">
+                <a 
+                  href="/auth/reset"
+                  className="text-green-600 hover:text-green-700"
+                >
+                  Forgot your password?
+                </a>
+              </p>
               <p className="text-sm text-gray-600">
                 Questions about becoming a partner? <br />
                 Contact us at +977 9865053325

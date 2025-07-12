@@ -185,9 +185,17 @@ const AuthHybrid = () => {
             </div>
           </div>
 
-          <div className="text-center mt-6">
+          <div className="text-center mt-6 space-y-2">
             <p className="text-sm text-gray-500">
               Your information is secure and encrypted
+            </p>
+            <p className="text-sm text-gray-600">
+              <span
+                className="text-green-600 hover:text-green-700 cursor-pointer"
+                onClick={() => navigate('/auth/reset')}
+              >
+                Forgot your password?
+              </span>
             </p>
           </div>
         </div>

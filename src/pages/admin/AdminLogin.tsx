@@ -91,7 +91,7 @@ const AdminLogin = () => {
       return;
     }
     setLoading(true);
-    const redirectUrl = `${window.location.origin}/admin-login`;
+    const redirectUrl = `${window.location.protocol}//${window.location.host}/admin-login`;
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: redirectUrl,
     });
@@ -105,7 +105,7 @@ const AdminLogin = () => {
     } else {
       toast({
         title: "Check your email",
-        description: "Password reset link sent.",
+        description: "Password reset link sent to your email.",
       });
     }
   };

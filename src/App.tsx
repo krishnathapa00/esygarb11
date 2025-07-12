@@ -15,6 +15,7 @@ import OrderTracking from "./pages/OrderTracking";
 import OrderHistory from "./pages/OrderHistory";
 import UserProfile from "./pages/UserProfile";
 import AuthHybrid from "./pages/AuthHybrid";
+import AuthPasswordReset from "./pages/AuthPasswordReset";
 import DeliveryPartnerAuth from "./pages/DeliveryPartnerAuth";
 import DeliveryDashboard from "./pages/DeliveryDashboard";
 import AdminLogin from "./pages/admin/AdminLogin";
@@ -40,6 +41,7 @@ function App() {
               <Routes>
                 {/* Customer & Admin Hybrid Auth Routes */}
                 <Route path="/auth" element={<AuthHybrid />} />
+                <Route path="/auth/reset" element={<AuthPasswordReset />} />
                 <Route path="/login" element={<AuthHybrid />} />
                 <Route path="/" element={<Index />} />
                 <Route path="/categories" element={<AllCategories />} />
