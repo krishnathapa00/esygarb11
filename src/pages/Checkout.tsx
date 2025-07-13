@@ -367,7 +367,7 @@ const Checkout = () => {
 
             <Button
               onClick={handlePlaceOrder}
-              className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 py-3"
+              className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 py-3 text-base font-medium"
             >
               {selectedPayment === "cod"
                 ? "Place Order"

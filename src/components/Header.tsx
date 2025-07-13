@@ -146,16 +146,17 @@ const Header = () => {
               </div>
 
               {user ? (
-                <Button
-                  variant="outline"
-                  className="hover:bg-green-50 border-green-200"
-                  onClick={logout}
-                >
-                  <span className="flex items-center space-x-1">
-                    <User className="h-4 w-4" />
-                    <span className="hidden md:inline">Logout</span>
-                  </span>
-                </Button>
+                <Link to="/profile">
+                  <Button
+                    variant="outline"
+                    className="hover:bg-green-50 border-green-200"
+                  >
+                    <span className="flex items-center space-x-1">
+                      <User className="h-4 w-4" />
+                      <span className="hidden md:inline">Profile</span>
+                    </span>
+                  </Button>
+                </Link>
               ) : (
                 <Link to="/login">
                   <Button
@@ -241,12 +242,21 @@ const Header = () => {
               </span>
             )}
           </Link>
-          <MobileNavButton
-            to="/profile"
-            icon={User}
-            label="Account"
-            isActive={location.pathname === "/profile"}
-          />
+          {user ? (
+            <MobileNavButton
+              to="/profile"
+              icon={User}
+              label="Account"
+              isActive={location.pathname === "/profile"}
+            />
+          ) : (
+            <MobileNavButton
+              to="/login"
+              icon={User}
+              label="Login"
+              isActive={location.pathname === "/login"}
+            />
+          )}
         </div>
       </div>
     </>

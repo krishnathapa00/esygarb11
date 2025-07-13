@@ -56,13 +56,35 @@ const ProductDetails = () => {
         {/* Product Details */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-8">
           <div className="grid md:grid-cols-2 gap-8 p-6">
-            {/* Product Image */}
+            {/* Product Images - Slidable */}
             <div className="relative">
-              <img
-                src={product.image}
-                alt={product.name}
-                className="w-full h-96 object-cover rounded-lg"
-              />
+              {/* Main image container */}
+              <div className="relative overflow-hidden rounded-lg">
+                <div className="flex transition-transform duration-300 ease-in-out">
+                  <img
+                    src={product.image}
+                    alt={`${product.name} - Main`}
+                    className="w-full h-96 object-cover flex-shrink-0"
+                  />
+                  <img
+                    src={product.image}
+                    alt={`${product.name} - Side`}
+                    className="w-full h-96 object-cover flex-shrink-0"
+                  />
+                  <img
+                    src={product.image}
+                    alt={`${product.name} - Detail`}
+                    className="w-full h-96 object-cover flex-shrink-0"
+                  />
+                </div>
+                {/* Navigation dots */}
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                  <div className="w-2 h-2 bg-white rounded-full opacity-80"></div>
+                  <div className="w-2 h-2 bg-white/50 rounded-full"></div>
+                  <div className="w-2 h-2 bg-white/50 rounded-full"></div>
+                </div>
+              </div>
+              
               {product.discount && (
                 <Badge className="absolute top-4 left-4 bg-red-500 hover:bg-red-500">
                   {product.discount}% OFF
@@ -252,44 +274,82 @@ const ProductDetails = () => {
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-6">Recommended Products</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {relatedProducts.map((relatedProduct) => {
-                  const cartItem = cart.find(item => item.id === relatedProduct.id);
-                  const cartQuantity = cartItem?.quantity || 0;
-                  
-                  return (
-                    <ProductCard
-                      key={relatedProduct.id}
-                      product={relatedProduct}
-                      cartQuantity={cartQuantity}
-                      onAddToCart={() => 
-                        addToCart({
-                          id: relatedProduct.id,
-                          name: relatedProduct.name,
-                          price: relatedProduct.price,
-                          image: relatedProduct.image,
-                          weight: relatedProduct.weight,
-                          quantity: 1,
-                        })
-                      }
-                      onUpdateQuantity={(productId: number, quantity: number) => {
-                        if (quantity <= 0) {
-                          // Remove from cart if quantity is 0 or less
-                          return;
+              <div className="md:hidden">
+                {/* Mobile - Horizontal scroll with 3 items */}
+                <div className="flex overflow-x-auto space-x-4 pb-4 scrollbar-hide">
+                  {relatedProducts.slice(0, 3).map((relatedProduct) => {
+                    const cartItem = cart.find(item => item.id === relatedProduct.id);
+                    const cartQuantity = cartItem?.quantity || 0;
+                    
+                    return (
+                      <ProductCard
+                        key={relatedProduct.id}
+                        product={relatedProduct}
+                        cartQuantity={cartQuantity}
+                        className="flex-shrink-0 w-40"
+                        onAddToCart={() => 
+                          addToCart({
+                            id: relatedProduct.id,
+                            name: relatedProduct.name,
+                            price: relatedProduct.price,
+                            image: relatedProduct.image,
+                            weight: relatedProduct.weight,
+                            quantity: 1,
+                          })
                         }
-                        // Update cart quantity
-                        addToCart({
-                          id: relatedProduct.id,
-                          name: relatedProduct.name,
-                          price: relatedProduct.price,
-                          image: relatedProduct.image,
-                          weight: relatedProduct.weight,
-                          quantity: 1,
-                        });
-                      }}
-                    />
-                  );
-                })}
+                        onUpdateQuantity={(productId: number, quantity: number) => {
+                          if (quantity <= 0) return;
+                          addToCart({
+                            id: relatedProduct.id,
+                            name: relatedProduct.name,
+                            price: relatedProduct.price,
+                            image: relatedProduct.image,
+                            weight: relatedProduct.weight,
+                            quantity: 1,
+                          });
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="hidden md:block">
+                {/* Desktop - Grid view */}
+                <div className="grid grid-cols-4 gap-4">
+                  {relatedProducts.map((relatedProduct) => {
+                    const cartItem = cart.find(item => item.id === relatedProduct.id);
+                    const cartQuantity = cartItem?.quantity || 0;
+                    
+                    return (
+                      <ProductCard
+                        key={relatedProduct.id}
+                        product={relatedProduct}
+                        cartQuantity={cartQuantity}
+                        onAddToCart={() => 
+                          addToCart({
+                            id: relatedProduct.id,
+                            name: relatedProduct.name,
+                            price: relatedProduct.price,
+                            image: relatedProduct.image,
+                            weight: relatedProduct.weight,
+                            quantity: 1,
+                          })
+                        }
+                        onUpdateQuantity={(productId: number, quantity: number) => {
+                          if (quantity <= 0) return;
+                          addToCart({
+                            id: relatedProduct.id,
+                            name: relatedProduct.name,
+                            price: relatedProduct.price,
+                            image: relatedProduct.image,
+                            weight: relatedProduct.weight,
+                            quantity: 1,
+                          });
+                        }}
+                      />
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>

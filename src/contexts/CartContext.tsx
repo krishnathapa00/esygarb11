@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "./AuthContext";
 
 export interface CartItem {
   id: number;
@@ -62,6 +64,9 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
 const CartProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  
   const [cart, dispatch] = useReducer(cartReducer, [], () => {
     try {
       const stored = localStorage.getItem("cart");
@@ -75,8 +80,14 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({
     localStorage.setItem("cart", JSON.stringify(cart));
   }, [cart]);
 
-  const addToCart = (item: CartItem) =>
+  const addToCart = (item: CartItem) => {
+    // Check if user is logged in
+    if (!user) {
+      navigate("/login?redirect=/cart");
+      return;
+    }
     dispatch({ type: "ADD_ITEM", payload: item });
+  };
   const updateQuantity = (id: number, quantity: number) =>
     dispatch({ type: "UPDATE_QUANTITY", payload: { id, quantity } });
   const removeItem = (id: number) =>

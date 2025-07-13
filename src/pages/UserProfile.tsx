@@ -1,226 +1,297 @@
-import React, { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import Header from "../components/Header";
+import { ArrowLeft, User, Mail, Phone, Edit3, Save, X, LogOut, Package, RotateCcw, CreditCard, HelpCircle, AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
-import Header from "@/components/Header";
-import InputField from "@/components/InputField";
-import TextAreaField from "@/components/TextAreaField";
-import {
-  fetchUserProfile,
-  updateUserProfile,
-  ProfileFormValues,
-} from "@/services/profileService";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-const UserProfile: React.FC = () => {
+const UserProfile = () => {
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
-
-  const [profile, setProfile] = useState<ProfileFormValues | null>(null);
-  const [loadingProfile, setLoadingProfile] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+  
   const [isEditing, setIsEditing] = useState(false);
-  const [updating, setUpdating] = useState(false);
-  const [updateError, setUpdateError] = useState<string | null>(null);
-
-  const { register, handleSubmit, reset, watch } = useForm<ProfileFormValues>({
-    defaultValues: {
-      full_name: "",
-      phone: "",
-      address: "",
-      avatar_url: "",
-    },
-    mode: "onBlur",
+  const [loading, setLoading] = useState(false);
+  const [profileData, setProfileData] = useState({
+    full_name: "",
+    phone_number: "",
+    email: "",
+    address: ""
   });
 
   useEffect(() => {
-    if (!user) return;
-    setLoadingProfile(true);
-    setError(null);
-
-    fetchUserProfile()
-      .then((data) => {
-        setProfile(data);
-        reset(data);
-      })
-      .catch((err) => {
-        setError(err.message || "Failed to load profile");
-      })
-      .finally(() => {
-        setLoadingProfile(false);
-      });
-  }, [user, reset]);
-
-  useEffect(() => {
-    if (!authLoading && !user) {
+    if (!user) {
       navigate("/login");
-    }
-  }, [authLoading, user, navigate]);
-
-  const avatarUrl = watch("avatar_url");
-
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!user) return;
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const fileExt = file.name.split(".").pop();
-    const filePath = `avatars/${user.id}/avatar.${fileExt}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("user-avatars")
-      .upload(filePath, file, { upsert: true });
-
-    if (uploadError) {
-      console.error("Avatar upload error:", uploadError.message);
       return;
     }
+    
+    // Fetch user profile data
+    const fetchProfile = async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+        
+      if (data) {
+        setProfileData({
+          full_name: data.full_name || "",
+          phone_number: data.phone_number || "",
+          email: user.email || "",
+          address: data.address || ""
+        });
+      }
+    };
+    
+    fetchProfile();
+  }, [user, navigate]);
 
-    const { data: publicUrlData } = supabase.storage
-      .from("user-avatars")
-      .getPublicUrl(filePath);
-
-    if (publicUrlData?.publicUrl) {
-      reset({ ...watch(), avatar_url: publicUrlData.publicUrl });
-    }
+  const handleInputChange = (field: string, value: string) => {
+    setProfileData(prev => ({ ...prev, [field]: value }));
   };
 
-  const onSubmit = async (data: ProfileFormValues) => {
-    setUpdating(true);
-    setUpdateError(null);
-
+  const handleSave = async () => {
+    setLoading(true);
     try {
-      const updatedProfile = await updateUserProfile(data);
-      setProfile(updatedProfile);
-      reset(updatedProfile);
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: profileData.full_name,
+          phone_number: profileData.phone_number,
+          address: profileData.address
+        })
+        .eq('id', user?.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been updated successfully."
+      });
       setIsEditing(false);
-    } catch (err: any) {
-      setUpdateError(err.message || "Failed to update profile");
+    } catch (error: any) {
+      toast({
+        title: "Update failed",
+        description: error.message,
+        variant: "destructive"
+      });
     } finally {
-      setUpdating(false);
+      setLoading(false);
     }
   };
 
-  if (authLoading || loadingProfile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin h-12 w-12 rounded-full border-b-2 border-green-600 mx-auto" />
-          <p className="mt-4 text-gray-600">Loading profile...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return <p className="text-red-600">Error loading profile: {error}</p>;
-  }
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
 
   if (!user) return null;
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <main className="max-w-4xl mx-auto px-4 py-10">
-        <h1 className="text-3xl font-semibold mb-6">My Account</h1>
-        <div className="bg-white shadow-sm rounded-lg p-6 md:flex gap-10">
-          <aside className="w-full md:w-1/3 text-center mb-6 md:mb-0">
-            <img
-              src={avatarUrl || "https://via.placeholder.com/150"}
-              alt="Avatar"
-              className="w-24 h-24 rounded-full border mx-auto"
-            />
-            <h2 className="mt-4 text-lg font-medium">{watch("full_name")}</h2>
-            <p className="text-sm text-gray-500">{user.email}</p>
-          </aside>
-          <section className="flex-1">
-            {!isEditing ? (
-              <div className="space-y-4 text-sm text-gray-700">
-                <div>
-                  <p className="font-medium">Full Name</p>
-                  <p>{profile?.full_name || "-"}</p>
-                </div>
-                <div>
-                  <p className="font-medium">Phone</p>
-                  <p>{profile?.phone || "-"}</p>
-                </div>
-                <div>
-                  <p className="font-medium">Address</p>
-                  <p>{profile?.address || "-"}</p>
-                </div>
-                <button
-                  className="mt-4 bg-green-600 text-white px-5 py-2 rounded hover:bg-green-700"
-                  onClick={() => setIsEditing(true)}
-                >
-                  Edit Profile
-                </button>
-              </div>
-            ) : (
-              <form
-                onSubmit={handleSubmit(onSubmit)}
-                className="space-y-5"
-                noValidate
-              >
-                <InputField
-                  label="Full Name"
-                  name="full_name"
-                  register={register}
-                  required
-                />
-                <InputField
-                  label="Phone Number"
-                  name="phone"
-                  register={register}
-                  required
-                  pattern={{
-                    value: /^\+?[0-9\s\-]{7,15}$/,
-                    message: "Invalid phone number",
-                  }}
-                />
-                <TextAreaField
-                  label="Address"
-                  name="address"
-                  register={register}
-                  rows={3}
-                />
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Profile Photo
-                  </label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarUpload}
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
-                  />
-                </div>
-                <div className="flex gap-4">
-                  <button
-                    type="submit"
-                    disabled={updating}
-                    className="bg-green-600 text-white px-5 py-2 rounded hover:bg-green-700 disabled:opacity-60"
-                  >
-                    {updating ? "Saving..." : "Save"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      reset(profile || {});
-                      setIsEditing(false);
-                    }}
-                    className="text-gray-600 hover:underline"
-                  >
-                    Cancel
-                  </button>
-                </div>
-                {updateError && (
-                  <p className="text-red-600 mt-2">{updateError}</p>
-                )}
-              </form>
-            )}
-          </section>
+      
+      <div className="max-w-4xl mx-auto px-4 py-6">
+        {/* Header */}
+        <div className="flex items-center mb-6">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/")}
+            className="mr-3 p-2"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
         </div>
-      </main>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Profile Card */}
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-lg font-semibold">Profile Information</CardTitle>
+                {!isEditing ? (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setIsEditing(true)}
+                  >
+                    <Edit3 className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
+                ) : (
+                  <div className="flex space-x-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setIsEditing(false)}
+                    >
+                      <X className="h-4 w-4 mr-2" />
+                      Cancel
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      onClick={handleSave} 
+                      disabled={loading}
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      Save
+                    </Button>
+                  </div>
+                )}
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="full_name">Full Name</Label>
+                    <Input
+                      id="full_name"
+                      value={profileData.full_name}
+                      onChange={(e) => handleInputChange("full_name", e.target.value)}
+                      disabled={!isEditing}
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="email">Email Address</Label>
+                    <Input
+                      id="email"
+                      value={profileData.email}
+                      disabled
+                      className="mt-1 bg-gray-50"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="phone_number">Phone Number</Label>
+                    <Input
+                      id="phone_number"
+                      value={profileData.phone_number}
+                      onChange={(e) => handleInputChange("phone_number", e.target.value)}
+                      disabled={!isEditing}
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="address">Address</Label>
+                    <Input
+                      id="address"
+                      value={profileData.address}
+                      onChange={(e) => handleInputChange("address", e.target.value)}
+                      disabled={!isEditing}
+                      className="mt-1"
+                      placeholder="Enter your address"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Quick Actions & More Options */}
+          <div className="space-y-6">
+            {/* Orders Summary */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold">Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => navigate("/orders")}
+                >
+                  <Package className="h-4 w-4 mr-3" />
+                  Order History
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => navigate("/cart")}
+                >
+                  <Package className="h-4 w-4 mr-3" />
+                  View Cart
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* More Options */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold">More Options</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start text-gray-600"
+                  onClick={() => toast({ title: "Feature coming soon", description: "Cancelled orders feature will be available soon." })}
+                >
+                  <X className="h-4 w-4 mr-3" />
+                  Cancelled Orders
+                </Button>
+                
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start text-gray-600"
+                  onClick={() => toast({ title: "Feature coming soon", description: "Returns feature will be available soon." })}
+                >
+                  <RotateCcw className="h-4 w-4 mr-3" />
+                  Returns
+                </Button>
+                
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start text-gray-600"
+                  onClick={() => toast({ title: "Feature coming soon", description: "Refunds feature will be available soon." })}
+                >
+                  <CreditCard className="h-4 w-4 mr-3" />
+                  Refunds
+                </Button>
+                
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start text-gray-600"
+                  onClick={() => toast({ title: "Feature coming soon", description: "Payment support will be available soon." })}
+                >
+                  <CreditCard className="h-4 w-4 mr-3" />
+                  Payment Support
+                </Button>
+                
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start text-gray-600"
+                  onClick={() => toast({ title: "Support", description: "For support, please contact us at support@esygrab.com" })}
+                >
+                  <HelpCircle className="h-4 w-4 mr-3" />
+                  Report Problem
+                </Button>
+
+                <Separator className="my-4" />
+                
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start text-red-600 border-red-200 hover:bg-red-50"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="h-4 w-4 mr-3" />
+                  Sign Out
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

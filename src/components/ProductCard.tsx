@@ -24,6 +24,7 @@ interface ProductCardProps {
   onAddToCart: (product: Product) => void;
   cartQuantity: number;
   onUpdateQuantity: (productId: number, quantity: number) => void;
+  className?: string;
 }
 
 const ProductCard = ({
@@ -31,6 +32,7 @@ const ProductCard = ({
   onAddToCart,
   cartQuantity,
   onUpdateQuantity,
+  className = "",
 }: ProductCardProps) => {
   const {
     id,
@@ -62,7 +64,7 @@ const ProductCard = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-200 hover:-translate-y-1 w-full group relative">
+    <div className={`bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-200 hover:-translate-y-1 w-full group relative ${className}`}>
       <Link to={`/product/${id}`} className="block group">
         <div className="relative aspect-square bg-gray-50 overflow-hidden">
           <img
