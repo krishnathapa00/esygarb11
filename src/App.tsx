@@ -29,6 +29,7 @@ import AssignOrder from "./pages/admin/AssignOrder";
 import NotFound from "./pages/NotFound";
 import MapLocation from "./pages/MapLocation";
 import SearchResults from "./pages/SearchResults";
+import { Unauthorized } from "./pages/Unauthorized";
 
 const queryClient = new QueryClient();
 
@@ -121,6 +122,7 @@ function App() {
                 }
               />
 
+              <Route path="/unauthorized" element={<Unauthorized />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <Toaster />

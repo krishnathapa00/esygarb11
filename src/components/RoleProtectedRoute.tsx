@@ -70,7 +70,8 @@ export const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
   }
 
   if (!allowedRoles.includes(userRole)) {
-    return <Navigate to="/" replace />;
+    // Redirect to a safe page that doesn't have role protection
+    return <Navigate to="/unauthorized" replace />;
   }
 
   return <>{children}</>;
