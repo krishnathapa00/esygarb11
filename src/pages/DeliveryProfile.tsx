@@ -40,12 +40,13 @@ const DeliveryProfile = () => {
       
       // Set form data when profile is loaded
       if (data) {
+        const profileData = data as any; // Type assertion for new fields
         setFormData({
-          full_name: data.full_name || '',
-          phone_number: data.phone_number || '',
-          vehicle_type: data.vehicle_type || '',
-          license_number: data.license_number || '',
-          location: data.location || ''
+          full_name: profileData.full_name || '',
+          phone_number: profileData.phone_number || '',
+          vehicle_type: profileData.vehicle_type || '',
+          license_number: profileData.license_number || '',
+          location: profileData.location || ''
         });
       }
       
@@ -140,18 +141,19 @@ const DeliveryProfile = () => {
                   variant={isEditing ? "outline" : "default"}
                   size="sm"
                   onClick={() => {
-                    if (isEditing) {
-                      // Reset form data to original values
-                      if (profile) {
-                        setFormData({
-                          full_name: profile.full_name || '',
-                          phone_number: profile.phone_number || '',
-                          vehicle_type: profile.vehicle_type || '',
-                          license_number: profile.license_number || '',
-                          location: profile.location || ''
-                        });
-                      }
-                    }
+                     if (isEditing) {
+                       // Reset form data to original values
+                       if (profile) {
+                         const profileData = profile as any; // Type assertion for new fields
+                         setFormData({
+                           full_name: profileData.full_name || '',
+                           phone_number: profileData.phone_number || '',
+                           vehicle_type: profileData.vehicle_type || '',
+                           license_number: profileData.license_number || '',
+                           location: profileData.location || ''
+                         });
+                       }
+                     }
                     setIsEditing(!isEditing);
                   }}
                 >
@@ -225,19 +227,19 @@ const DeliveryProfile = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <Label>Vehicle Type</Label>
-                  <div className="mt-1 p-3 bg-gray-50 rounded-md">
-                    {profile?.vehicle_type || 'Not specified'}
-                  </div>
-                </div>
+                 <div>
+                   <Label>Vehicle Type</Label>
+                   <div className="mt-1 p-3 bg-gray-50 rounded-md">
+                     {(profile as any)?.vehicle_type || 'Not specified'}
+                   </div>
+                 </div>
 
-                <div>
-                  <Label>License Number</Label>
-                  <div className="mt-1 p-3 bg-gray-50 rounded-md">
-                    {profile?.license_number || 'Not specified'}
-                  </div>
-                </div>
+                 <div>
+                   <Label>License Number</Label>
+                   <div className="mt-1 p-3 bg-gray-50 rounded-md">
+                     {(profile as any)?.license_number || 'Not specified'}
+                   </div>
+                 </div>
 
                 <div className="text-xs text-gray-500 mt-4">
                   Vehicle information cannot be changed. Contact support if you need to update these details.
