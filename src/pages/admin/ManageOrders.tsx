@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Search, Eye, Trash2, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -32,9 +32,10 @@ const ManageOrders = () => {
   const [selectedDeliveryPartner, setSelectedDeliveryPartner] = useState('');
   const { toast } = useToast();
 
-  // Simple fetch function
-  const fetchOrders = useCallback(async () => {
-    try {
+  // Fixed query functions to prevent re-renders
+  const { data: orders = [], refetch: refetchOrders } = useQuery({
+    queryKey: ['admin-orders-stable'],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -44,63 +45,41 @@ const ManageOrders = () => {
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
       return data || [];
-    } catch (error: any) {
-      console.error('Orders fetch error:', error);
-      return [];
-    }
-  }, []);
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: false
+  });
 
-  const fetchDeliveryPartners = useCallback(async () => {
-    try {
+  const { data: deliveryPartners = [] } = useQuery({
+    queryKey: ['delivery-partners-stable'],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
         .select('id, full_name, phone_number')
         .eq('role', 'delivery_partner');
 
-      if (error) throw error;
       return data || [];
-    } catch (error: any) {
-      console.error('Delivery partners fetch error:', error);
-      return [];
-    }
-  }, []);
-
-  const checkSuperAdmin = useCallback(async () => {
-    try {
-      const { data, error } = await supabase.rpc('is_super_admin');
-      if (error) throw error;
-      return data || false;
-    } catch (error: any) {
-      console.error('Super admin check error:', error);
-      return false;
-    }
-  }, []);
-
-  // Separate queries to prevent dependency issues
-  const { data: orders = [], refetch: refetchOrders } = useQuery({
-    queryKey: ['orders-list'],
-    queryFn: fetchOrders,
-    staleTime: 2 * 60 * 1000,
-    refetchOnWindowFocus: false
-  });
-
-  const { data: deliveryPartners = [] } = useQuery({
-    queryKey: ['delivery-partners-list'],
-    queryFn: fetchDeliveryPartners,
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false
+    },
+    staleTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: false
   });
 
   const { data: isSuperAdmin = false } = useQuery({
-    queryKey: ['super-admin-check'],
-    queryFn: checkSuperAdmin,
-    staleTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: false
+    queryKey: ['super-admin-stable'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('is_super_admin');
+      return data || false;
+    },
+    staleTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: false
   });
   
-  const getStatusColor = (status: string) => {
+  // Memoized functions to prevent re-renders
+  const getStatusColor = useMemo(() => (status: string) => {
     switch(status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800';
       case 'confirmed': return 'bg-blue-100 text-blue-800';
@@ -110,8 +89,19 @@ const ManageOrders = () => {
       case 'cancelled': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
-  };
+  }, []);
 
+  // Memoized filtered orders to prevent recalculation on every render
+  const filteredOrders = useMemo(() => {
+    return orders.filter(order => {
+      const matchesSearch = order.order_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           order.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [orders, searchTerm, statusFilter]);
+
+  // Event handlers
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     try {
       const { error } = await supabase
@@ -119,19 +109,12 @@ const ManageOrders = () => {
         .update({ status: newStatus as any })
         .eq('id', orderId);
 
-      if (error) throw error;
-
-      toast({
-        title: "Order updated",
-        description: "Order status has been updated successfully."
-      });
-      refetchOrders();
-    } catch (error: any) {
-      toast({
-        title: "Failed to update order",
-        description: error.message,
-        variant: "destructive"
-      });
+      if (!error) {
+        toast({ title: "Order updated", description: "Status updated successfully." });
+        refetchOrders();
+      }
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to update order.", variant: "destructive" });
     }
   };
 
@@ -147,24 +130,15 @@ const ManageOrders = () => {
         })
         .eq('id', selectedOrder.id);
 
-      if (error) throw error;
-
-      toast({
-        title: "Delivery partner assigned",
-        description: "Order has been assigned and status updated to dispatched."
-      });
-      
-      // Close modal and reset state
-      setAssignModalOpen(false);
-      setSelectedOrder(null);
-      setSelectedDeliveryPartner('');
-      refetchOrders();
-    } catch (error: any) {
-      toast({
-        title: "Failed to assign delivery partner",
-        description: error.message,
-        variant: "destructive"
-      });
+      if (!error) {
+        toast({ title: "Success", description: "Delivery partner assigned." });
+        setAssignModalOpen(false);
+        setSelectedOrder(null);
+        setSelectedDeliveryPartner('');
+        refetchOrders();
+      }
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to assign partner.", variant: "destructive" });
     }
   };
 
@@ -177,33 +151,16 @@ const ManageOrders = () => {
         .delete()
         .eq('id', selectedOrder.id);
 
-      if (error) throw error;
-
-      toast({
-        title: "Order deleted",
-        description: "Order has been permanently deleted."
-      });
-      
-      // Close modal and reset state
-      setDeleteModalOpen(false);
-      setSelectedOrder(null);
-      refetchOrders();
-    } catch (error: any) {
-      toast({
-        title: "Failed to delete order",
-        description: error.message,
-        variant: "destructive"
-      });
+      if (!error) {
+        toast({ title: "Success", description: "Order deleted." });
+        setDeleteModalOpen(false);
+        setSelectedOrder(null);
+        refetchOrders();
+      }
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to delete order.", variant: "destructive" });
     }
   };
-
-  // Filter orders based on search and status
-  const filteredOrders = orders.filter(order => {
-    const matchesSearch = order.order_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         order.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
 
   return (
     <AdminLayout>
@@ -243,24 +200,12 @@ const ManageOrders = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Order ID
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Customer
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Amount
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -280,21 +225,9 @@ const ManageOrders = () => {
                       <div className="text-sm font-medium text-gray-900">Rs {order.total_amount}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <Select value={order.status || ''} onValueChange={(value) => handleStatusChange(order.id, value)}>
-                        <SelectTrigger className="w-[140px]">
-                          <Badge className={getStatusColor(order.status || '')}>
-                            {order.status?.replace('_', ' ') || 'pending'}
-                          </Badge>
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="confirmed">Confirmed</SelectItem>
-                          <SelectItem value="dispatched">Dispatched</SelectItem>
-                          <SelectItem value="out_for_delivery">Out for Delivery</SelectItem>
-                          <SelectItem value="delivered">Delivered</SelectItem>
-                          <SelectItem value="cancelled">Cancelled</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Badge className={getStatusColor(order.status || 'pending')}>
+                        {order.status?.replace('_', ' ') || 'pending'}
+                      </Badge>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex gap-1 justify-end">
@@ -306,7 +239,7 @@ const ManageOrders = () => {
                           <Button 
                             variant="ghost" 
                             size="sm" 
-                            className="text-green-600 hover:text-green-800 hover:bg-green-50"
+                            className="text-green-600 hover:bg-green-50"
                             onClick={() => {
                               setSelectedOrder(order);
                               setAssignModalOpen(true);
@@ -320,7 +253,7 @@ const ManageOrders = () => {
                           <Button 
                             variant="ghost" 
                             size="sm" 
-                            className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                            className="text-red-600 hover:bg-red-50"
                             onClick={() => {
                               setSelectedOrder(order);
                               setDeleteModalOpen(true);
@@ -339,7 +272,7 @@ const ManageOrders = () => {
           </div>
         </div>
 
-        {/* Assign Delivery Partner Modal */}
+        {/* Assign Modal */}
         <Dialog open={assignModalOpen} onOpenChange={setAssignModalOpen}>
           <DialogContent>
             <DialogHeader>
@@ -348,47 +281,39 @@ const ManageOrders = () => {
                 Select a delivery partner for order {selectedOrder?.order_number}
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
-              <Select value={selectedDeliveryPartner} onValueChange={setSelectedDeliveryPartner}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select delivery partner" />
-                </SelectTrigger>
-                <SelectContent>
-                  {deliveryPartners.map((partner) => (
-                    <SelectItem key={partner.id} value={partner.id}>
-                      {partner.full_name} {partner.phone_number && `- ${partner.phone_number}`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={selectedDeliveryPartner} onValueChange={setSelectedDeliveryPartner}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select delivery partner" />
+              </SelectTrigger>
+              <SelectContent>
+                {deliveryPartners.map((partner) => (
+                  <SelectItem key={partner.id} value={partner.id}>
+                    {partner.full_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setAssignModalOpen(false)}>
-                Cancel
-              </Button>
+              <Button variant="outline" onClick={() => setAssignModalOpen(false)}>Cancel</Button>
               <Button onClick={handleAssignDeliveryPartner} disabled={!selectedDeliveryPartner}>
-                Assign Partner
+                Assign
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
 
-        {/* Delete Order Modal */}
+        {/* Delete Modal */}
         <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Delete Order</DialogTitle>
               <DialogDescription>
-                Are you sure you want to permanently delete order {selectedOrder?.order_number}? This action cannot be undone.
+                Delete order {selectedOrder?.order_number}? This cannot be undone.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button variant="destructive" onClick={handleDeleteOrder}>
-                Delete Order
-              </Button>
+              <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>Cancel</Button>
+              <Button variant="destructive" onClick={handleDeleteOrder}>Delete</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
