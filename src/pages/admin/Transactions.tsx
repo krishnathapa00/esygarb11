@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Filter, RefreshCw } from 'lucide-react';
+import { Search, Filter, RefreshCw, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +10,14 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import AdminLayout from './components/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -18,7 +26,18 @@ import { useToast } from "@/hooks/use-toast";
 const Transactions = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
   const { toast } = useToast();
+
+  // Check if current user is super admin
+  const { data: isSuperAdmin = false } = useQuery({
+    queryKey: ['is-super-admin'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('is_super_admin');
+      return data || false;
+    }
+  });
 
   // Fetch transactions (orders) from Supabase
   const { data: transactions = [], refetch } = useQuery({
@@ -60,6 +79,19 @@ const Transactions = () => {
       title: "Data refreshed",
       description: "Transaction data has been updated."
     });
+  };
+
+  const handleDeleteTransaction = async () => {
+    if (!selectedTransaction) return;
+    const { error } = await supabase.from('orders').delete().eq('id', selectedTransaction.id);
+    if (error) {
+      toast({ title: "Failed to delete transaction", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Transaction deleted", description: "Transaction has been permanently deleted." });
+      setDeleteModalOpen(false);
+      setSelectedTransaction(null);
+      refetch();
+    }
   };
 
   // Filter transactions based on search and status
@@ -130,6 +162,9 @@ const Transactions = () => {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Order Status
                   </th>
+                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -163,6 +198,22 @@ const Transactions = () => {
                         {transaction.status || 'pending'}
                       </Badge>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      {isSuperAdmin && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                          onClick={() => {
+                            setSelectedTransaction(transaction);
+                            setDeleteModalOpen(true);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Delete
+                        </Button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -175,6 +226,22 @@ const Transactions = () => {
             </div>
           )}
         </div>
+
+        {/* Delete Transaction Modal */}
+        <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Transaction</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to permanently delete transaction {selectedTransaction?.order_number}? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>Cancel</Button>
+              <Button variant="destructive" onClick={handleDeleteTransaction}>Delete Transaction</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );

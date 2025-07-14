@@ -1,9 +1,17 @@
 
 import React, { useState } from 'react';
-import { Search, Filter, MoreVertical, RefreshCw } from 'lucide-react';
+import { Search, Filter, MoreVertical, RefreshCw, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import AdminLayout from './components/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -11,6 +19,8 @@ import { useToast } from "@/hooks/use-toast";
 
 const ManageUsers = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
   const { toast } = useToast();
 
   const handleRefresh = () => {
@@ -20,6 +30,44 @@ const ManageUsers = () => {
       description: "User list has been updated."
     });
   };
+
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return;
+
+    const { error } = await supabase
+      .from('profiles')
+      .delete()
+      .eq('id', selectedUser.id);
+
+    if (error) {
+      toast({
+        title: "Failed to delete user",
+        description: error.message,
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "User deleted",
+        description: "User has been permanently deleted."
+      });
+      setDeleteModalOpen(false);
+      setSelectedUser(null);
+      refetch();
+    }
+  };
+
+  // Check if current user is super admin
+  const { data: isSuperAdmin = false } = useQuery({
+    queryKey: ['is-super-admin'],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('is_super_admin');
+      if (error) {
+        console.error('Failed to check super admin status:', error);
+        return false;
+      }
+      return data || false;
+    }
+  });
 
   // Fetch users from Supabase
   const { data: users = [], refetch } = useQuery({
@@ -150,9 +198,25 @@ const ManageUsers = () => {
                       <div className="text-sm text-gray-900">{new Date(user.created_at).toLocaleDateString()}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <Button variant="ghost" size="sm">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
+                      <div className="flex gap-1 justify-end">
+                        <Button variant="ghost" size="sm">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                        {isSuperAdmin && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setDeleteModalOpen(true);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Delete
+                          </Button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -161,6 +225,26 @@ const ManageUsers = () => {
           </div>
         </div>
       </div>
+
+      {/* Delete User Modal */}
+      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete User</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to permanently delete user {selectedUser?.full_name || 'Unknown'}? This action cannot be undone and will remove all associated data.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteUser}>
+              Delete User
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };

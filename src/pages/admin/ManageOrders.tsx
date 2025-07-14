@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { Search, Filter, Eye, Truck, Edit, Trash2, UserCheck } from 'lucide-react';
+import { Search, Eye, Trash2, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,7 +22,6 @@ import AdminLayout from './components/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
-import { Link } from 'react-router-dom';
 
 const ManageOrders = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -64,9 +62,13 @@ const ManageOrders = () => {
   const { data: deliveryPartners = [] } = useQuery({
     queryKey: ['delivery-partners'],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_delivery_partners');
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, phone_number')
+        .eq('role', 'delivery_partner');
+
       if (error) {
-        console.error('Failed to fetch delivery partners:', error);
+        console.error('Failed to load delivery partners:', error);
         return [];
       }
       return data || [];
@@ -140,7 +142,7 @@ const ManageOrders = () => {
     } else {
       toast({
         title: "Delivery partner assigned",
-        description: "Order has been assigned to delivery partner."
+        description: "Order has been assigned and status updated to dispatched."
       });
       setAssignModalOpen(false);
       setSelectedOrder(null);
@@ -289,7 +291,7 @@ const ManageOrders = () => {
                               setAssignModalOpen(true);
                             }}
                           >
-                            <UserCheck className="h-4 w-4 mr-1" />
+                            <Users className="h-4 w-4 mr-1" />
                             Assign
                           </Button>
                         )}
@@ -333,7 +335,7 @@ const ManageOrders = () => {
                 <SelectContent>
                   {deliveryPartners.map((partner: any) => (
                     <SelectItem key={partner.id} value={partner.id}>
-                      {partner.full_name} - {partner.phone_number}
+                      {partner.full_name} {partner.phone_number && `- ${partner.phone_number}`}
                     </SelectItem>
                   ))}
                 </SelectContent>
