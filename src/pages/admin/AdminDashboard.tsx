@@ -9,10 +9,12 @@ import AdminLayout from './components/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from '@tanstack/react-query';
 
 const AdminDashboard = () => {
   const [dateFilter, setDateFilter] = useState('today');
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Fetch real dashboard data from Supabase
   const { data: dashboardData, refetch, isLoading } = useQuery({
@@ -137,6 +139,9 @@ const AdminDashboard = () => {
 
   const handleRefresh = () => {
     refetch();
+    // Force reload all queries
+    queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+    queryClient.refetchQueries({ queryKey: ['admin-dashboard'] });
     toast({
       title: "Data refreshed",
       description: "Dashboard data has been updated."

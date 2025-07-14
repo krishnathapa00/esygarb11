@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Search, Filter, MoreVertical } from 'lucide-react';
+import { Search, Filter, MoreVertical, RefreshCw } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,8 +13,16 @@ const ManageUsers = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
 
+  const handleRefresh = () => {
+    refetch();
+    toast({
+      title: "Users data refreshed",
+      description: "User list has been updated."
+    });
+  };
+
   // Fetch users from Supabase
-  const { data: users = [] } = useQuery({
+  const { data: users = [], refetch } = useQuery({
     queryKey: ['admin-users'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -26,6 +34,7 @@ const ManageUsers = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
+        console.error('Users fetch error:', error);
         toast({
           title: "Failed to load users",
           description: error.message,
@@ -56,7 +65,13 @@ const ManageUsers = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Manage Users</h1>
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">Manage Users</h1>
+          <Button onClick={handleRefresh} variant="outline" size="sm">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
         
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
           <div className="relative flex-1">

@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import AdminLayout from './components/AdminLayout';
+import SingleImageUpload from '@/components/SingleImageUpload';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
@@ -415,15 +416,14 @@ const ManageProducts = () => {
                         </div>
                       </div>
                       
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Product Image URL</label>
-                        <Input 
-                          name="image_url" 
-                          placeholder="https://example.com/image.jpg" 
-                          value={productData.image_url} 
-                          onChange={handleChange} 
-                        />
-                      </div>
+                       <div>
+                         <label className="block text-sm font-medium text-gray-700 mb-1">Product Image</label>
+                         <SingleImageUpload
+                           onImageUpload={(url) => setProductData(prev => ({ ...prev, image_url: url }))}
+                           currentImage={productData.image_url}
+                           folder="products"
+                         />
+                       </div>
                       
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
