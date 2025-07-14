@@ -3,7 +3,7 @@ import React, { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Package, ShoppingBag, Users, Wallet, 
-  LogOut, Menu, X
+  LogOut, Menu, X, Truck
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -18,6 +18,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     { name: 'Dashboard', icon: LayoutDashboard, href: '/admin/dashboard' },
     { name: 'Products', icon: Package, href: '/admin/products' },
     { name: 'Orders', icon: ShoppingBag, href: '/admin/orders' },
+    { name: 'Delivery Partners', icon: Truck, href: '/admin/delivery-partners' },
     { name: 'Users', icon: Users, href: '/admin/users' },
     { name: 'Transactions', icon: Wallet, href: '/admin/transactions' },
   ];

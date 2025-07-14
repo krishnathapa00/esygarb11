@@ -27,9 +27,12 @@ import ManageOrders from "./pages/admin/ManageOrders";
 import ManageUsers from "./pages/admin/ManageUsers";
 import Transactions from "./pages/admin/Transactions";
 import AssignOrder from "./pages/admin/AssignOrder";
+import AssignDelivery from "./pages/admin/AssignDelivery";
+import DeliveryList from "./pages/admin/DeliveryList";
 import NotFound from "./pages/NotFound";
 import MapLocation from "./pages/MapLocation";
 import SearchResults from "./pages/SearchResults";
+import SupportPage from "./pages/SupportPage";
 import { Unauthorized } from "./pages/Unauthorized";
 
 const queryClient = new QueryClient();
@@ -83,6 +86,15 @@ function App() {
                   </RoleProtectedRoute>
                 }
               />
+              <Route
+                path="/order-history"
+                element={
+                  <RoleProtectedRoute allowedRoles={["delivery_partner", "customer"]}>
+                    <OrderHistory />
+                  </RoleProtectedRoute>
+                }
+              />
+              <Route path="/support" element={<SupportPage />} />
 
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminLogin />} />
@@ -131,6 +143,22 @@ function App() {
                 element={
                   <RoleProtectedRoute allowedRoles={["admin"]}>
                     <Transactions />
+                  </RoleProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/delivery-partners"
+                element={
+                  <RoleProtectedRoute allowedRoles={["admin"]}>
+                    <DeliveryList />
+                  </RoleProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/assign-delivery"
+                element={
+                  <RoleProtectedRoute allowedRoles={["admin"]}>
+                    <AssignDelivery />
                   </RoleProtectedRoute>
                 }
               />
