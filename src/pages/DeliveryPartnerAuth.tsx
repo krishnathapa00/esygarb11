@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Truck } from 'lucide-react';
@@ -6,28 +5,35 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const DeliveryPartnerAuth = () => {
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [vehicleType, setVehicleType] = useState('');
   const [licenseNumber, setLicenseNumber] = useState('');
-  const [otp, setOtp] = useState('');
-  const [isOtpSent, setIsOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('signup');
   
-  const { sendOtp, verifyOtp, signUp } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  const handleSendOtp = async () => {
-    if (!email || !email.includes('@')) {
+  const handleSignUp = async () => {
+    if (!email || !password || !fullName || !vehicleType || !licenseNumber) {
       toast({
-        title: "Invalid Email",
-        description: "Please enter a valid email address",
+        title: "Missing Information",
+        description: "Please fill all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (password.length < 6) {
+      toast({
+        title: "Password Too Short",
+        description: "Password must be at least 6 characters long",
         variant: "destructive",
       });
       return;
@@ -36,44 +42,38 @@ const DeliveryPartnerAuth = () => {
     setLoading(true);
     
     try {
-      if (activeTab === 'signup' && (!fullName.trim() || !vehicleType.trim() || !licenseNumber.trim())) {
-        toast({
-          title: "Missing Information",
-          description: "Please fill all required fields",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
-      }
-      
-      if (activeTab === 'signup') {
-        const { error: signUpError } = await signUp(email, fullName, 'delivery_partner');
-        if (signUpError) {
-          toast({
-            title: "Signup Error",
-            description: signUpError.message,
-            variant: "destructive",
-          });
-          setLoading(false);
-          return;
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+            role: 'delivery_partner',
+            vehicle_type: vehicleType,
+            license_number: licenseNumber,
+          }
         }
-      }
+      });
       
-      const { error } = await sendOtp(email);
       if (error) {
         toast({
-          title: "Error",
-          description: "Failed to send OTP. Please try again.",
+          title: "Signup Error",
+          description: error.message,
           variant: "destructive",
         });
       } else {
-        setIsOtpSent(true);
         toast({
-          title: "OTP Sent",
-          description: "Please check your email for the verification code.",
+          title: "Account Created Successfully!",
+          description: "Please check your email to verify your account, then login below.",
         });
+        setActiveTab('login');
+        setEmail('');
+        setPassword('');
+        setFullName('');
+        setVehicleType('');
+        setLicenseNumber('');
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",
@@ -84,11 +84,11 @@ const DeliveryPartnerAuth = () => {
     setLoading(false);
   };
   
-  const handleVerifyOtp = async () => {
-    if (otp.length !== 6) {
+  const handleLogin = async () => {
+    if (!email || !password) {
       toast({
-        title: "Invalid OTP",
-        description: "Please enter a valid 6-digit OTP",
+        title: "Missing Information",
+        description: "Please enter both email and password",
         variant: "destructive",
       });
       return;
@@ -97,21 +97,41 @@ const DeliveryPartnerAuth = () => {
     setLoading(true);
     
     try {
-      const { error } = await verifyOtp(email, otp);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
       if (error) {
         toast({
-          title: "Verification Failed",
-          description: error.message || "Invalid OTP. Please try again.",
+          title: "Login Error",
+          description: error.message,
           variant: "destructive",
         });
       } else {
-        toast({
-          title: "Welcome to EsyGrab!",
-          description: "Your delivery partner account has been verified successfully.",
-        });
-        navigate('/delivery-dashboard');
+        // Check if user is delivery partner
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.user.id)
+          .single();
+        
+        if (profile?.role === 'delivery_partner') {
+          toast({
+            title: "Welcome Back!",
+            description: "You have successfully logged in to your delivery partner account.",
+          });
+          navigate('/delivery-dashboard');
+        } else {
+          toast({
+            title: "Access Denied",
+            description: "This account is not registered as a delivery partner.",
+            variant: "destructive",
+          });
+          await supabase.auth.signOut();
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",
@@ -123,9 +143,8 @@ const DeliveryPartnerAuth = () => {
   };
 
   const resetForm = () => {
-    setIsOtpSent(false);
-    setOtp('');
     setEmail('');
+    setPassword('');
     setFullName('');
     setVehicleType('');
     setLicenseNumber('');
@@ -163,138 +182,92 @@ const DeliveryPartnerAuth = () => {
               
               <TabsContent value="signup">
                 <div className="space-y-4">
-                  {!isOtpSent ? (
-                    <>
-                      <div>
-                        <Label htmlFor="signupName">Full Name</Label>
-                        <Input
-                          id="signupName"
-                          placeholder="Enter your full name"
-                          value={fullName}
-                          onChange={(e) => setFullName(e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="signupEmail">Email Address</Label>
-                        <Input
-                          id="signupEmail"
-                          placeholder="Enter your email address"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          type="email"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="vehicleType">Vehicle Type</Label>
-                        <Input
-                          id="vehicleType"
-                          placeholder="e.g., Motorcycle, Bicycle, Scooter"
-                          value={vehicleType}
-                          onChange={(e) => setVehicleType(e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="licenseNumber">License/Vehicle Number</Label>
-                        <Input
-                          id="licenseNumber"
-                          placeholder="Enter license or vehicle number"
-                          value={licenseNumber}
-                          onChange={(e) => setLicenseNumber(e.target.value)}
-                        />
-                      </div>
-                      <Button 
-                        className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
-                        onClick={handleSendOtp}
-                        disabled={!email || !fullName || !vehicleType || !licenseNumber || loading}
-                      >
-                        {loading ? 'Creating Account...' : 'Join as Partner'}
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <div>
-                        <Label htmlFor="signupOtp">
-                          Enter OTP sent to {email}
-                        </Label>
-                        <Input
-                          id="signupOtp"
-                          placeholder="Enter 6-digit OTP"
-                          value={otp}
-                          onChange={(e) => setOtp(e.target.value)}
-                          maxLength={6}
-                        />
-                      </div>
-                      <Button 
-                        className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
-                        onClick={handleVerifyOtp}
-                        disabled={otp.length !== 6 || loading}
-                      >
-                        {loading ? 'Verifying...' : 'Verify & Start Earning'}
-                      </Button>
-                      <Button 
-                        variant="link" 
-                        className="w-full text-sm text-gray-600"
-                        onClick={resetForm}
-                      >
-                        Change Email Address
-                      </Button>
-                    </>
-                  )}
+                  <div>
+                    <Label htmlFor="signupName">Full Name</Label>
+                    <Input
+                      id="signupName"
+                      placeholder="Enter your full name"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="signupEmail">Email Address</Label>
+                    <Input
+                      id="signupEmail"
+                      placeholder="Enter your email address"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      type="email"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="signupPassword">Password</Label>
+                    <Input
+                      id="signupPassword"
+                      placeholder="Enter your password (min. 6 characters)"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      type="password"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="vehicleType">Vehicle Type</Label>
+                    <Input
+                      id="vehicleType"
+                      placeholder="e.g., Motorcycle, Bicycle, Scooter"
+                      value={vehicleType}
+                      onChange={(e) => setVehicleType(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="licenseNumber">License/Vehicle Number</Label>
+                    <Input
+                      id="licenseNumber"
+                      placeholder="Enter license or vehicle number"
+                      value={licenseNumber}
+                      onChange={(e) => setLicenseNumber(e.target.value)}
+                    />
+                  </div>
+                  <Button 
+                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                    onClick={handleSignUp}
+                    disabled={!email || !password || !fullName || !vehicleType || !licenseNumber || loading}
+                  >
+                    {loading ? 'Creating Account...' : 'Create Partner Account'}
+                  </Button>
                 </div>
               </TabsContent>
               
               <TabsContent value="login">
                 <div className="space-y-4">
-                  {!isOtpSent ? (
-                    <>
-                      <div>
-                        <Label htmlFor="email">Email Address</Label>
-                        <Input
-                          id="email"
-                          placeholder="Enter your registered email address"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          type="email"
-                        />
-                      </div>
-                      <Button 
-                        className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
-                        onClick={handleSendOtp}
-                        disabled={!email || !email.includes('@') || loading}
-                      >
-                        {loading ? 'Sending...' : 'Send OTP'}
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <div>
-                        <Label htmlFor="otp">
-                          Enter OTP sent to {email}
-                        </Label>
-                        <Input
-                          id="otp"
-                          placeholder="Enter 6-digit OTP"
-                          value={otp}
-                          onChange={(e) => setOtp(e.target.value)}
-                          maxLength={6}
-                        />
-                      </div>
-                      <Button 
-                        className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
-                        onClick={handleVerifyOtp}
-                        disabled={otp.length !== 6 || loading}
-                      >
-                        {loading ? 'Verifying...' : 'Login to Dashboard'}
-                      </Button>
-                      <Button 
-                        variant="link" 
-                        className="w-full text-sm text-gray-600"
-                        onClick={resetForm}
-                      >
-                        Change Email Address
-                      </Button>
-                    </>
-                  )}
+                  <div>
+                    <Label htmlFor="loginEmail">Email Address</Label>
+                    <Input
+                      id="loginEmail"
+                      placeholder="Enter your registered email address"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      type="email"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="loginPassword">Password</Label>
+                    <Input
+                      id="loginPassword"
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      type="password"
+                    />
+                  </div>
+                  <Button 
+                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                    onClick={handleLogin}
+                    disabled={!email || !password || loading}
+                  >
+                    {loading ? 'Logging in...' : 'Login to Dashboard'}
+                  </Button>
                 </div>
               </TabsContent>
             </Tabs>
@@ -310,7 +283,7 @@ const DeliveryPartnerAuth = () => {
               </p>
               <p className="text-sm text-gray-600">
                 Questions about becoming a partner? <br />
-                Contact us at +977 9865053325
+                Contact us at support@esygrab.com
               </p>
             </div>
           </div>
