@@ -128,22 +128,32 @@ const Checkout = () => {
 
   const handlePlaceOrder = async () => {
     try {
+      console.log("Starting order placement...");
+      console.log("User ID:", user?.id);
+      console.log("Cart:", cart);
+      console.log("Form Data:", formData);
+      
       if (!user?.id) {
+        console.log("No user ID found");
         alert("Please log in to place an order.");
         navigate("/login");
         return;
       }
 
       if (cart.length === 0) {
+        console.log("Cart is empty");
         alert("Your cart is empty.");
         return;
       }
 
       // More flexible address validation - check if we have at least an address
       if (!formData.address || formData.address.trim() === "") {
+        console.log("Address validation failed:", formData.address);
         alert("Please provide delivery address details.");
         return;
       }
+      
+      console.log("Validation passed, creating order...");
 
       // Create order in database
       const orderData = {
