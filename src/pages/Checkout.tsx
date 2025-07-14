@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Header from "../components/Header";
+import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, MapPin, CreditCard, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -121,19 +122,49 @@ const Checkout = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handlePlaceOrder = () => {
-    if (selectedPayment === "cod") {
+  const handlePlaceOrder = async () => {
+    try {
+      // Create order in database
+      const orderData = {
+        order_number: `ORD${Date.now()}`,
+        user_id: user.id,
+        total_amount: totalAmount,
+        delivery_address: `${formData.address}, ${formData.city}, ${formData.state} ${formData.pincode}`,
+        estimated_delivery: "10-15 mins",
+        status: "pending" as const,
+        payment_status: (selectedPayment === "cod" ? "pending" : "completed") as "pending" | "completed"
+      };
+
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert(orderData)
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // Create order items
+      const orderItems = cart.map(item => ({
+        order_id: order.id,
+        product_id: item.id,
+        quantity: item.quantity,
+        price: item.price
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
+
+      // Save order ID to localStorage for order confirmation page
+      localStorage.setItem('latest_order_id', order.id);
+      
       resetCart();
-      // Direct to order confirmation for COD
-      window.location.href = "/order-confirmation";
-    } else {
-      // For now, simulate payment success for other methods
-      // In production, integrate with actual payment gateways
-      console.log(`Processing ${selectedPayment} payment...`);
-      setTimeout(() => {
-        resetCart();
-        window.location.href = "/order-confirmation";
-      }, 2000);
+      navigate("/order-confirmation");
+    } catch (error) {
+      console.error("Order placement failed:", error);
+      alert("Failed to place order. Please try again.");
     }
   };
 
