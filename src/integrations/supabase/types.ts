@@ -354,11 +354,13 @@ export type Database = {
           created_at: string | null
           full_name: string | null
           id: string
+          license_number: string | null
           location: string | null
           phone: string | null
           phone_number: string | null
           role: Database["public"]["Enums"]["user_role"] | null
           updated_at: string | null
+          vehicle_type: string | null
         }
         Insert: {
           address?: string | null
@@ -366,11 +368,13 @@ export type Database = {
           created_at?: string | null
           full_name?: string | null
           id: string
+          license_number?: string | null
           location?: string | null
           phone?: string | null
           phone_number?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
           updated_at?: string | null
+          vehicle_type?: string | null
         }
         Update: {
           address?: string | null
@@ -378,11 +382,13 @@ export type Database = {
           created_at?: string | null
           full_name?: string | null
           id?: string
+          license_number?: string | null
           location?: string | null
           phone?: string | null
           phone_number?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
           updated_at?: string | null
+          vehicle_type?: string | null
         }
         Relationships: []
       }
