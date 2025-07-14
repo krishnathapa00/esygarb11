@@ -218,24 +218,27 @@ const DeliveryDashboard = () => {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-card/80 backdrop-blur-lg shadow-lg border-b border-border/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                <Package className="h-5 w-5 text-white" />
+              <div className="w-10 h-10 bg-gradient-to-r from-primary to-accent rounded-xl flex items-center justify-center shadow-lg">
+                <Package className="h-6 w-6 text-primary-foreground" />
               </div>
-              <h1 className="text-xl font-bold">Delivery Partner Dashboard</h1>
+              <div>
+                <h1 className="text-xl font-bold text-foreground">डिलिभरी पार्टनर</h1>
+                <p className="text-xs text-muted-foreground">Delivery Partner</p>
+              </div>
             </div>
             
             <div className="flex items-center space-x-4">
               {/* Availability Toggle */}
-              <div className="flex items-center space-x-3 bg-gray-100 px-4 py-2 rounded-lg">
-                <Power className={`h-4 w-4 ${isOnline ? 'text-green-600' : 'text-gray-400'}`} />
-                <span className="text-sm font-medium">
-                  {isOnline ? 'Online' : 'Offline'}
+              <div className="flex items-center space-x-3 bg-muted/50 px-4 py-2 rounded-xl border border-border/50 backdrop-blur-sm">
+                <Power className={`h-4 w-4 ${isOnline ? 'text-green-600' : 'text-muted-foreground'}`} />
+                <span className="text-sm font-medium text-foreground">
+                  {isOnline ? 'अनलाइन' : 'अफलाइन'}
                 </span>
                 <Switch
                   checked={isOnline}
@@ -286,67 +289,93 @@ const DeliveryDashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">Today's Deliveries</CardTitle>
+          <Card className="bg-card/60 backdrop-blur-sm border-border/50 shadow-lg hover:shadow-xl transition-all duration-300">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <CheckCircle className="h-4 w-4" />
+                आजका डिलिभरी
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats?.todayDeliveries || 0}</div>
+              <div className="text-3xl font-bold text-foreground">{stats?.todayDeliveries || 0}</div>
+              <p className="text-xs text-muted-foreground mt-1">Today's deliveries</p>
             </CardContent>
           </Card>
           
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">Today's Earnings</CardTitle>
+          <Card className="bg-card/60 backdrop-blur-sm border-border/50 shadow-lg hover:shadow-xl transition-all duration-300">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                आजको आम्दानी
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">₹{(stats?.todayEarnings || 0).toFixed(2)}</div>
+              <div className="text-3xl font-bold text-green-600">रू{(stats?.todayEarnings || 0).toFixed(2)}</div>
+              <p className="text-xs text-muted-foreground mt-1">Today's earnings</p>
             </CardContent>
           </Card>
           
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">Status</CardTitle>
+          <Card className="bg-card/60 backdrop-blur-sm border-border/50 shadow-lg hover:shadow-xl transition-all duration-300">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <Power className="h-4 w-4" />
+                स्थिति
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <Badge className={isOnline ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}>
-                {isOnline ? 'Online' : 'Offline'}
+              <Badge className={`${isOnline ? 'bg-green-100 text-green-700 border-green-200' : 'bg-gray-100 text-gray-700 border-gray-200'} text-sm px-3 py-1`}>
+                {isOnline ? 'अनलाइन' : 'अफलाइन'}
               </Badge>
+              <p className="text-xs text-muted-foreground mt-1">{isOnline ? 'Online' : 'Offline'}</p>
             </CardContent>
           </Card>
           
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">Profile Status</CardTitle>
+          <Card className="bg-card/60 backdrop-blur-sm border-border/50 shadow-lg hover:shadow-xl transition-all duration-300">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <User className="h-4 w-4" />
+                प्रोफाइल
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <Badge className="bg-green-100 text-green-700">
+              <Badge className="bg-green-100 text-green-700 border-green-200 text-sm px-3 py-1">
+                {profile?.role === 'delivery_partner' ? 'स्वीकृत' : 'पेंडिंग'}
+              </Badge>
+              <p className="text-xs text-muted-foreground mt-1">
                 {profile?.role === 'delivery_partner' ? 'Approved' : 'Pending'}
-              </Badge>
+              </p>
             </CardContent>
           </Card>
         </div>
 
         {!isOnline ? (
           /* Offline Status */
-          <Card>
+          <Card className="bg-card/60 backdrop-blur-sm border-border/50 shadow-lg">
             <CardContent className="pt-6">
               <div className="text-center py-12">
-                <Power className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">You're Offline</h3>
-                <p className="text-gray-600 mb-4">Turn on availability to start receiving orders</p>
-                <Button onClick={toggleAvailability} className="bg-green-600 hover:bg-green-700">
-                  <Power className="h-4 w-4 mr-2" />
-                  Go Online
+                <div className="w-20 h-20 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Power className="h-10 w-10 text-muted-foreground" />
+                </div>
+                <h3 className="text-2xl font-bold mb-2 text-foreground">तपाईं अफलाइन हुनुहुन्छ</h3>
+                <p className="text-muted-foreground mb-6 text-lg">अर्डर प्राप्त गर्न उपलब्धता खोल्नुहोस्</p>
+                <Button 
+                  onClick={toggleAvailability} 
+                  className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg hover:shadow-xl transition-all duration-300 px-8 py-3 text-lg"
+                >
+                  <Power className="h-5 w-5 mr-2" />
+                  अनलाइन जानुहोस्
                 </Button>
               </div>
             </CardContent>
           </Card>
         ) : currentOrder ? (
           /* Active Order Management */
-          <Card>
-            <CardHeader>
-              <CardTitle>Active Order</CardTitle>
+          <Card className="bg-card/60 backdrop-blur-sm border-border/50 shadow-lg">
+            <CardHeader className="border-b border-border/50">
+              <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2">
+                <Package className="h-5 w-5 text-primary" />
+                सक्रिय अर्डर
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -357,12 +386,12 @@ const DeliveryDashboard = () => {
                       <p className="text-sm text-gray-600">
                         Customer: {currentOrder.profiles?.full_name || 'N/A'}
                       </p>
-                      <p className="text-sm text-gray-600">
-                        Amount: ₹{Number(currentOrder.total_amount).toFixed(2)}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        Estimated Payout: ₹{getEstimatedPayout(Number(currentOrder.total_amount))}
-                      </p>
+                       <p className="text-sm text-gray-600">
+                         Amount: रू{Number(currentOrder.total_amount).toFixed(2)}
+                       </p>
+                       <p className="text-sm text-gray-600">
+                         Estimated Payout: रू{getEstimatedPayout(Number(currentOrder.total_amount))}
+                       </p>
                     </div>
                     <Badge className={
                       currentOrder.status === 'confirmed' ? 'bg-yellow-100 text-yellow-700' :
@@ -453,10 +482,13 @@ const DeliveryDashboard = () => {
           </Card>
         ) : (
           /* Order Assignment */
-          <Card>
-            <CardHeader>
-              <CardTitle>Available Orders</CardTitle>
-              <p className="text-sm text-gray-600">New order requests in your area</p>
+          <Card className="bg-card/60 backdrop-blur-sm border-border/50 shadow-lg">
+            <CardHeader className="border-b border-border/50">
+              <CardTitle className="text-xl font-bold text-foreground flex items-center gap-2">
+                <MapPin className="h-5 w-5 text-primary" />
+                उपलब्ध अर्डरहरू
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">तपाईंको क्षेत्रमा नयाँ अर्डर अनुरोधहरू</p>
             </CardHeader>
             <CardContent>
               {availableOrders && availableOrders.length > 0 ? (
@@ -469,12 +501,12 @@ const DeliveryDashboard = () => {
                           <p className="text-sm text-gray-600">
                             Customer: {order.profiles?.full_name || 'N/A'}
                           </p>
-                          <p className="text-sm text-gray-600">
-                            Order Value: ₹{Number(order.total_amount).toFixed(2)}
-                          </p>
-                          <p className="text-sm font-medium text-green-700">
-                            Estimated Payout: ₹{getEstimatedPayout(Number(order.total_amount))}
-                          </p>
+                           <p className="text-sm text-gray-600">
+                             Order Value: रू{Number(order.total_amount).toFixed(2)}
+                           </p>
+                           <p className="text-sm font-medium text-green-700">
+                             Estimated Payout: रू{getEstimatedPayout(Number(order.total_amount))}
+                           </p>
                         </div>
                         <Badge className="bg-yellow-100 text-yellow-700">
                           NEW ORDER
