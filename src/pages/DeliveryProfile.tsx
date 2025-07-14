@@ -12,9 +12,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import KYCUpload from '@/components/KYCUpload';
+import EarningsTransfer from '@/components/EarningsTransfer';
 import { 
   ArrowLeft, User, Phone, Mail, Truck, Building, 
-  MapPin, Star, CheckCircle, Calendar, Save, FileText, Shield
+  MapPin, Star, CheckCircle, Calendar, Save, FileText, Shield, Wallet
 } from 'lucide-react';
 
 const DeliveryProfile = () => {
@@ -298,7 +299,7 @@ const DeliveryProfile = () => {
 
           {/* Main Content Tabs */}
           <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="profile" className="flex items-center gap-2">
                 <User className="h-4 w-4" />
                 Profile
@@ -309,6 +310,10 @@ const DeliveryProfile = () => {
                 {kycStatus?.verification_status === 'approved' && (
                   <CheckCircle className="h-3 w-3 text-green-600" />
                 )}
+              </TabsTrigger>
+              <TabsTrigger value="earnings" className="flex items-center gap-2">
+                <Wallet className="h-4 w-4" />
+                Earnings
               </TabsTrigger>
               <TabsTrigger value="account" className="flex items-center gap-2">
                 <Shield className="h-4 w-4" />
@@ -431,27 +436,23 @@ const DeliveryProfile = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="darkstore">Assigned Darkstore</Label>
-                  {isEditing ? (
-                    <Select value={darkstoreId} onValueChange={setDarkstoreId}>
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Select a darkstore" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">No Darkstore</SelectItem>
-                        {darkstores?.map((darkstore) => (
-                          <SelectItem key={darkstore.id} value={darkstore.id.toString()}>
-                            {darkstore.name} - {darkstore.city}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <div className="mt-1 flex items-center gap-2">
-                      <Building className="h-4 w-4 text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground">{getDarkstoreName()}</p>
-                    </div>
-                  )}
+                  <Label htmlFor="darkstore">Preferred Darkstore</Label>
+                  <Select value={darkstoreId} onValueChange={setDarkstoreId}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Choose your preferred darkstore" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">No Preference</SelectItem>
+                      {darkstores?.map((darkstore) => (
+                        <SelectItem key={darkstore.id} value={darkstore.id.toString()}>
+                          {darkstore.name} - {darkstore.city}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    You can choose which darkstore you'd like to work from. Admin approval may be required.
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -529,6 +530,14 @@ const DeliveryProfile = () => {
             {/* KYC Tab */}
             <TabsContent value="kyc" className="mt-6">
               <KYCUpload />
+            </TabsContent>
+
+            {/* Earnings Tab */}
+            <TabsContent value="earnings" className="mt-6">
+              <EarningsTransfer 
+                totalEarnings={stats?.totalEarnings || 0}
+                availableEarnings={stats?.totalEarnings || 0}
+              />
             </TabsContent>
 
             {/* Account Tab */}
