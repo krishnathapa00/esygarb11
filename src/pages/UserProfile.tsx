@@ -58,20 +58,83 @@ const UserProfile = () => {
     
     // Fetch user profile data
     const fetchProfile = async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+      try {
+        console.log("Fetching profile for user:", user.id);
         
-      if (data) {
-        setProfileData({
-          full_name: data.full_name || "",
-          phone_number: data.phone_number || "",
-          email: user.email || "",
-          address: data.address || "",
-          avatar_url: data.avatar_url || ""
-        });
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle();
+          
+        if (error) {
+          console.error("Error fetching profile:", error);
+          // If profile doesn't exist, create one
+          if (error.code === 'PGRST116') {
+            console.log("Profile doesn't exist, creating one...");
+            const { error: createError } = await supabase
+              .from('profiles')
+              .insert({
+                id: user.id,
+                full_name: "",
+                phone_number: user.phone || "",
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              });
+            
+            if (createError) {
+              console.error("Error creating profile:", createError);
+            } else {
+              console.log("Profile created successfully");
+              // Set default empty data
+              setProfileData({
+                full_name: "",
+                phone_number: user.phone || "",
+                email: user.email || "",
+                address: "",
+                avatar_url: ""
+              });
+            }
+          }
+          return;
+        }
+        
+        if (data) {
+          console.log("Profile data found:", data);
+          setProfileData({
+            full_name: data.full_name || "",
+            phone_number: data.phone_number || data.phone || "",
+            email: user.email || "",
+            address: data.address || "",
+            avatar_url: data.avatar_url || ""
+          });
+        } else {
+          console.log("No profile data found, creating profile...");
+          // Create profile if it doesn't exist
+          const { error: createError } = await supabase
+            .from('profiles')
+            .insert({
+              id: user.id,
+              full_name: "",
+              phone_number: user.phone || "",
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+          
+          if (createError) {
+            console.error("Error creating profile:", createError);
+          } else {
+            setProfileData({
+              full_name: "",
+              phone_number: user.phone || "",
+              email: user.email || "",
+              address: "",
+              avatar_url: ""
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error in fetchProfile:", error);
       }
     };
     
