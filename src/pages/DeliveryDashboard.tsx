@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Home, LogOut, Package, MapPin, Phone, Timer, Clock, CheckCircle } from 'lucide-react';
+import { Home, LogOut, Package, MapPin, Phone, Timer, Clock, CheckCircle, User } from 'lucide-react';
 
 const DeliveryDashboard = () => {
   const { user, logout } = useAuth();

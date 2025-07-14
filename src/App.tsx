@@ -16,6 +16,7 @@ import OrderTracking from "./pages/OrderTracking";
 import OrderHistory from "./pages/OrderHistory";
 import UserProfile from "./pages/UserProfile";
 import DeliveryDashboard from "./pages/DeliveryDashboard";
+import DeliveryProfile from "./pages/DeliveryProfile";
 import AuthHybrid from "./pages/AuthHybrid";
 import AuthPasswordReset from "./pages/AuthPasswordReset";
 import DeliveryPartnerAuth from "./pages/DeliveryPartnerAuth";
@@ -63,10 +64,22 @@ function App() {
                 element={<DeliveryPartnerAuth />}
               />
               <Route
+                path="/delivery-auth"
+                element={<DeliveryPartnerAuth />}
+              />
+              <Route
                 path="/delivery-dashboard"
                 element={
                   <RoleProtectedRoute allowedRoles={["delivery_partner"]}>
                     <DeliveryDashboard />
+                  </RoleProtectedRoute>
+                }
+              />
+              <Route
+                path="/delivery-profile"
+                element={
+                  <RoleProtectedRoute allowedRoles={["delivery_partner"]}>
+                    <DeliveryProfile />
                   </RoleProtectedRoute>
                 }
               />
