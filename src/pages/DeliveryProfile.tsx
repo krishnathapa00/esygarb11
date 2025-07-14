@@ -139,17 +139,17 @@ export default function DeliveryProfile() {
   const kycStatus = getKYCStatus();
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="max-w-2xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background p-3 md:p-4">
+      <div className="max-w-2xl mx-auto space-y-4 md:space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Button variant="outline" onClick={() => navigate('/delivery-dashboard')}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Dashboard
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 md:gap-4">
+          <Button variant="outline" onClick={() => navigate('/delivery-dashboard')} size="sm" className="w-fit">
+            <ArrowLeft className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
+            <span className="text-xs md:text-sm">Back to Dashboard</span>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">Delivery Partner Profile</h1>
-            <p className="text-muted-foreground">Manage your profile and KYC information</p>
+            <h1 className="text-xl md:text-2xl font-bold">Delivery Partner Profile</h1>
+            <p className="text-muted-foreground text-sm md:text-base">Manage your profile and KYC information</p>
           </div>
         </div>
 
@@ -202,46 +202,50 @@ export default function DeliveryProfile() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
               <div className="space-y-2">
-                <Label htmlFor="full_name">Full Name *</Label>
+                <Label htmlFor="full_name" className="text-sm">Full Name *</Label>
                 <Input
                   id="full_name"
                   value={formData.full_name}
                   onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
                   placeholder="Enter your full name"
+                  className="text-sm"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone_number">Phone Number *</Label>
+                <Label htmlFor="phone_number" className="text-sm">Phone Number *</Label>
                 <Input
                   id="phone_number"
                   value={formData.phone_number}
                   onChange={(e) => setFormData(prev => ({ ...prev, phone_number: e.target.value }))}
                   placeholder="Enter your phone number"
+                  className="text-sm"
                 />
               </div>
             </div>
 
             <Separator />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
               <div className="space-y-2">
-                <Label htmlFor="vehicle_type">Vehicle Type *</Label>
+                <Label htmlFor="vehicle_type" className="text-sm">Vehicle Type *</Label>
                 <Input
                   id="vehicle_type"
                   value={formData.vehicle_type}
                   onChange={(e) => setFormData(prev => ({ ...prev, vehicle_type: e.target.value }))}
                   placeholder="e.g., Motorcycle, Bicycle, Car"
+                  className="text-sm"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="license_number">License Number *</Label>
+                <Label htmlFor="license_number" className="text-sm">License Number *</Label>
                 <Input
                   id="license_number"
                   value={formData.license_number}
                   onChange={(e) => setFormData(prev => ({ ...prev, license_number: e.target.value }))}
                   placeholder="Enter your license number"
+                  className="text-sm"
                 />
               </div>
             </div>
@@ -250,6 +254,7 @@ export default function DeliveryProfile() {
               onClick={handleUpdateProfile} 
               disabled={updating}
               className="w-full"
+              size="sm"
             >
               {updating ? "Updating..." : "Update Profile"}
             </Button>
@@ -265,24 +270,24 @@ export default function DeliveryProfile() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 text-sm">
               <div>
-                <Label className="text-muted-foreground">Partner ID</Label>
-                <p className="font-medium">{profile.id.slice(0, 8)}</p>
+                <Label className="text-muted-foreground text-xs md:text-sm">Partner ID</Label>
+                <p className="font-medium text-sm md:text-base">{profile.id.slice(0, 8)}</p>
               </div>
               <div>
-                <Label className="text-muted-foreground">Account Type</Label>
-                <p className="font-medium capitalize">{profile.role.replace('_', ' ')}</p>
+                <Label className="text-muted-foreground text-xs md:text-sm">Account Type</Label>
+                <p className="font-medium capitalize text-sm md:text-base">{profile.role.replace('_', ' ')}</p>
               </div>
               <div>
-                <Label className="text-muted-foreground">Member Since</Label>
-                <p className="font-medium">
+                <Label className="text-muted-foreground text-xs md:text-sm">Member Since</Label>
+                <p className="font-medium text-sm md:text-base">
                   {new Date(profile.created_at).toLocaleDateString()}
                 </p>
               </div>
               <div>
-                <Label className="text-muted-foreground">Status</Label>
-                <Badge variant="outline" className="text-green-600 border-green-600">
+                <Label className="text-muted-foreground text-xs md:text-sm">Status</Label>
+                <Badge variant="outline" className="text-green-600 border-green-600 text-xs">
                   Active
                 </Badge>
               </div>
@@ -303,13 +308,13 @@ export default function DeliveryProfile() {
               <div className="flex items-center gap-3">
                 <Phone className="w-4 h-4 text-muted-foreground" />
                 <div>
-                  <p className="font-medium">Support Hotline</p>
-                  <p className="text-sm text-muted-foreground">+91 98765 43210</p>
+                  <p className="font-medium text-sm md:text-base">Support Hotline</p>
+                  <p className="text-xs md:text-sm text-muted-foreground">+977 98765 43210</p>
                 </div>
               </div>
-              <Button variant="outline" className="w-full">
-                <Phone className="w-4 h-4 mr-2" />
-                Contact Support
+              <Button variant="outline" className="w-full" size="sm">
+                <Phone className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
+                <span className="text-xs md:text-sm">Contact Support</span>
               </Button>
             </div>
           </CardContent>

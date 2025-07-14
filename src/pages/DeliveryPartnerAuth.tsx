@@ -191,85 +191,90 @@ const DeliveryPartnerAuth = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <div className="px-4 py-4">
+      <div className="px-3 md:px-4 py-3 md:py-4">
         <Link to="/">
           <Button variant="ghost" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Home
+            <ArrowLeft className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+            <span className="text-xs md:text-sm">Back to Home</span>
           </Button>
         </Link>
       </div>
       
-      <div className="flex-1 flex items-center justify-center px-4 py-8">
+      <div className="flex-1 flex items-center justify-center px-3 md:px-4 py-6 md:py-8">
         <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <div className="flex items-center justify-center mb-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
-                <Truck className="h-6 w-6 text-white" />
+          <div className="text-center mb-6 md:mb-8">
+            <div className="flex items-center justify-center mb-3 md:mb-4">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
+                <Truck className="h-5 w-5 md:h-6 md:w-6 text-white" />
               </div>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">Delivery Partner Portal</h1>
-            <p className="text-gray-600 mt-2">Join EsyGrab's delivery network</p>
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900">Delivery Partner Portal</h1>
+            <p className="text-gray-600 mt-1 md:mt-2 text-sm md:text-base">Join EsyGrab's delivery network</p>
           </div>
           
-          <div className="bg-white rounded-xl shadow-sm p-8">
+          <div className="bg-white rounded-xl shadow-sm p-4 md:p-8">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="signup">Join Us</TabsTrigger>
-                <TabsTrigger value="login">Partner Login</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 mb-4 md:mb-6">
+                <TabsTrigger value="signup" className="text-xs md:text-sm">Join Us</TabsTrigger>
+                <TabsTrigger value="login" className="text-xs md:text-sm">Partner Login</TabsTrigger>
               </TabsList>
               
               <TabsContent value="signup">
-                <div className="space-y-4">
+                <div className="space-y-3 md:space-y-4">
                   <div>
-                    <Label htmlFor="signupName">Full Name</Label>
+                    <Label htmlFor="signupName" className="text-sm">Full Name</Label>
                     <Input
                       id="signupName"
                       placeholder="Enter your full name"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
+                      className="text-sm"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="signupEmail">Email Address</Label>
+                    <Label htmlFor="signupEmail" className="text-sm">Email Address</Label>
                     <Input
                       id="signupEmail"
                       placeholder="Enter your email address"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       type="email"
+                      className="text-sm"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="signupPassword">Password</Label>
+                    <Label htmlFor="signupPassword" className="text-sm">Password</Label>
                     <Input
                       id="signupPassword"
                       placeholder="Enter your password (min. 6 characters)"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       type="password"
+                      className="text-sm"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="vehicleType">Vehicle Type</Label>
+                    <Label htmlFor="vehicleType" className="text-sm">Vehicle Type</Label>
                     <Input
                       id="vehicleType"
                       placeholder="e.g., Motorcycle, Bicycle, Scooter"
                       value={vehicleType}
                       onChange={(e) => setVehicleType(e.target.value)}
+                      className="text-sm"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="licenseNumber">License/Vehicle Number</Label>
+                    <Label htmlFor="licenseNumber" className="text-sm">License/Vehicle Number</Label>
                     <Input
                       id="licenseNumber"
                       placeholder="Enter license or vehicle number"
                       value={licenseNumber}
                       onChange={(e) => setLicenseNumber(e.target.value)}
+                      className="text-sm"
                     />
                   </div>
                   <Button 
-                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-sm"
                     onClick={handleSignUp}
                     disabled={!email || !password || !fullName || !vehicleType || !licenseNumber || loading}
                   >
@@ -279,29 +284,31 @@ const DeliveryPartnerAuth = () => {
               </TabsContent>
               
               <TabsContent value="login">
-                <div className="space-y-4">
+                <div className="space-y-3 md:space-y-4">
                   <div>
-                    <Label htmlFor="loginEmail">Email Address</Label>
+                    <Label htmlFor="loginEmail" className="text-sm">Email Address</Label>
                     <Input
                       id="loginEmail"
                       placeholder="Enter your registered email address"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       type="email"
+                      className="text-sm"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="loginPassword">Password</Label>
+                    <Label htmlFor="loginPassword" className="text-sm">Password</Label>
                     <Input
                       id="loginPassword"
                       placeholder="Enter your password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       type="password"
+                      className="text-sm"
                     />
                   </div>
                   <Button 
-                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-sm"
                     onClick={() => {
                       console.log('Login button clicked!');
                       handleLogin();
@@ -314,8 +321,8 @@ const DeliveryPartnerAuth = () => {
               </TabsContent>
             </Tabs>
             
-            <div className="mt-6 pt-6 border-t border-gray-200 text-center space-y-2">
-              <p className="text-sm text-gray-600">
+            <div className="mt-4 md:mt-6 pt-4 md:pt-6 border-t border-gray-200 text-center space-y-2">
+              <p className="text-xs md:text-sm text-gray-600">
                 <a 
                   href="/auth/reset"
                   className="text-green-600 hover:text-green-700"
@@ -323,7 +330,7 @@ const DeliveryPartnerAuth = () => {
                   Forgot your password?
                 </a>
               </p>
-              <p className="text-sm text-gray-600">
+              <p className="text-xs md:text-sm text-gray-600">
                 Questions about becoming a partner? <br />
                 Contact us at support@esygrab.com
               </p>
