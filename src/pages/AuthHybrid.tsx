@@ -70,7 +70,7 @@ const AuthHybrid = () => {
     } else {
       toast({
         title: "Email Verified Successfully",
-        description: "Welcome to EasyGrab!",
+        description: "Welcome to Esygrab!",
       });
       setIsOtpModalOpen(false);
       navigate("/");
@@ -140,7 +140,7 @@ const AuthHybrid = () => {
               </div>
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Welcome to EasyGrab
+              Welcome to Esygrab
             </h1>
             <p className="text-gray-600">
               Quick & secure login with your email
