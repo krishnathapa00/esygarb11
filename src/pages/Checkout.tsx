@@ -204,8 +204,8 @@ const Checkout = () => {
           </h1>
         </div>
 
-        {/* Simplified layout */}
-        <div className="space-y-6 lg:grid lg:grid-cols-2 lg:gap-8 lg:space-y-0">
+        {/* Responsive layout with proper spacing */}
+        <div className="space-y-6 lg:grid lg:grid-cols-2 lg:gap-8 lg:space-y-0 pb-20 md:pb-0">
           {/* Payment Method */}
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
             <div className="flex items-center space-x-2 mb-6">
@@ -278,7 +278,7 @@ const Checkout = () => {
 
             <Button
               onClick={handlePlaceOrder}
-              className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 py-3 text-base font-medium fixed bottom-4 left-4 right-4 md:relative md:bottom-auto md:left-auto md:right-auto z-50"
+              className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 py-3 text-base font-medium"
             >
               {selectedPayment === "cod"
                 ? "Place Order"
@@ -288,6 +288,20 @@ const Checkout = () => {
             </Button>
           </div>
         </div>
+      </div>
+
+      {/* Mobile Place Order Button - Only visible on mobile for checkout page */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t shadow-lg p-4">
+        <Button
+          onClick={handlePlaceOrder}
+          className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 py-3 text-base font-medium"
+        >
+          {selectedPayment === "cod"
+            ? "Place Order"
+            : `Pay with ${
+                paymentOptions.find((p) => p.id === selectedPayment)?.label
+              }`}
+        </Button>
       </div>
     </div>
   );
