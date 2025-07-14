@@ -236,7 +236,7 @@ const DeliveryDashboard = () => {
             <div className="flex items-center space-x-1 md:space-x-4">
               {/* Availability Toggle */}
               <div className="flex items-center space-x-2 md:space-x-3 bg-muted/50 px-2 md:px-4 py-1 md:py-2 rounded-xl border border-border/50 backdrop-blur-sm">
-                <Power className={`h-3 w-3 md:h-4 md:w-4 ${isOnline ? 'text-green-600' : 'text-muted-foreground'}`} />
+                <Power className={`h-3 w-3 md:h-4 md:w-4 ${isOnline ? 'text-success' : 'text-muted-foreground'}`} />
                 <span className="text-xs md:text-sm font-medium text-foreground hidden sm:block">
                   {isOnline ? 'Online' : 'Offline'}
                 </span>
@@ -315,7 +315,7 @@ const DeliveryDashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-xl md:text-3xl font-bold text-green-600">Rs {(stats?.todayEarnings || 0).toFixed(2)}</div>
+              <div className="text-xl md:text-3xl font-bold text-success">Rs {(stats?.todayEarnings || 0).toFixed(2)}</div>
               <p className="text-xs text-muted-foreground mt-1">Today</p>
             </CardContent>
           </Card>
@@ -328,7 +328,7 @@ const DeliveryDashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Badge className={`${isOnline ? 'bg-green-100 text-green-700 border-green-200' : 'bg-gray-100 text-gray-700 border-gray-200'} text-xs md:text-sm px-2 md:px-3 py-1`}>
+               <Badge className={`${isOnline ? 'bg-success/10 text-success border-success/20' : 'bg-muted text-muted-foreground border-border'} text-xs md:text-sm px-2 md:px-3 py-1`}>
                 {isOnline ? 'Online' : 'Offline'}
               </Badge>
             </CardContent>
@@ -342,7 +342,7 @@ const DeliveryDashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Badge className="bg-green-100 text-green-700 border-green-200 text-xs md:text-sm px-2 md:px-3 py-1">
+              <Badge className="bg-success/10 text-success border-success/20 text-xs md:text-sm px-2 md:px-3 py-1">
                 {profile?.role === 'delivery_partner' ? 'Approved' : 'Pending'}
               </Badge>
             </CardContent>
@@ -361,7 +361,7 @@ const DeliveryDashboard = () => {
                 <p className="text-muted-foreground mb-4 md:mb-6 text-sm md:text-lg">Turn on availability to receive orders</p>
                 <Button 
                   onClick={toggleAvailability} 
-                  className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-lg hover:shadow-xl transition-all duration-300 px-6 md:px-8 py-2 md:py-3 text-sm md:text-lg"
+                  className="bg-success hover:bg-success/90 text-success-foreground shadow-lg hover:shadow-xl transition-all duration-300 px-6 md:px-8 py-2 md:py-3 text-sm md:text-lg"
                 >
                   <Power className="h-4 w-4 md:h-5 md:w-5 mr-2" />
                   Go Online
@@ -380,7 +380,7 @@ const DeliveryDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-3 md:space-y-4">
-                <div className="border rounded-lg p-3 md:p-4 bg-blue-50">
+                <div className="border rounded-lg p-3 md:p-4 bg-primary/5">
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 gap-2">
                     <div className="flex-1">
                       <h3 className="font-semibold text-base md:text-lg">Order #{currentOrder.order_number}</h3>
@@ -394,19 +394,19 @@ const DeliveryDashboard = () => {
                          Estimated Payout: Rs {getEstimatedPayout(Number(currentOrder.total_amount))}
                        </p>
                     </div>
-                    <Badge className={
-                      currentOrder.status === 'confirmed' ? 'bg-yellow-100 text-yellow-700' :
-                      currentOrder.status === 'dispatched' ? 'bg-blue-100 text-blue-700' :
-                      currentOrder.status === 'out_for_delivery' ? 'bg-orange-100 text-orange-700' :
-                      'bg-gray-100 text-gray-700'
+                     <Badge className={
+                      currentOrder.status === 'confirmed' ? 'bg-warning/10 text-warning' :
+                      currentOrder.status === 'dispatched' ? 'bg-primary/10 text-primary' :
+                      currentOrder.status === 'out_for_delivery' ? 'bg-info/10 text-info' :
+                      'bg-muted text-muted-foreground'
                     }>
                       {currentOrder.status?.replace('_', ' ').toUpperCase()}
                     </Badge>
                   </div>
                   
                   <div className="space-y-2 md:space-y-3">
-                    <div className="flex items-start space-x-2 text-xs md:text-sm">
-                      <MapPin className="h-3 w-3 md:h-4 md:w-4 text-blue-600 mt-0.5" />
+                       <div className="flex items-start space-x-2 text-xs md:text-sm">
+                      <MapPin className="h-3 w-3 md:h-4 md:w-4 text-primary mt-0.5" />
                       <div>
                         <span className="font-medium">Delivery Address:</span>
                         <span className="ml-1">{currentOrder.delivery_address}</span>
@@ -414,8 +414,8 @@ const DeliveryDashboard = () => {
                     </div>
                     
                     {currentOrder.profiles?.phone_number && (
-                      <div className="flex items-center space-x-2 text-xs md:text-sm">
-                        <Phone className="h-3 w-3 md:h-4 md:w-4 text-green-600" />
+                       <div className="flex items-center space-x-2 text-xs md:text-sm">
+                        <Phone className="h-3 w-3 md:h-4 md:w-4 text-success" />
                         <span className="font-medium">Customer Phone:</span>
                         <span>{currentOrder.profiles.phone_number}</span>
                       </div>
@@ -427,7 +427,7 @@ const DeliveryDashboard = () => {
                       <Button 
                         onClick={() => handleStatusUpdate(currentOrder.id, 'dispatched')}
                         disabled={updateOrderStatus.isPending}
-                        className="bg-blue-600 hover:bg-blue-700 text-xs md:text-sm flex-1 sm:flex-none"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs md:text-sm flex-1 sm:flex-none"
                         size="sm"
                       >
                         <Package className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
@@ -439,7 +439,7 @@ const DeliveryDashboard = () => {
                       <Button 
                         onClick={() => handleStatusUpdate(currentOrder.id, 'out_for_delivery')}
                         disabled={updateOrderStatus.isPending}
-                        className="bg-orange-600 hover:bg-orange-700 text-xs md:text-sm flex-1 sm:flex-none"
+                        className="bg-warning hover:bg-warning/90 text-warning-foreground text-xs md:text-sm flex-1 sm:flex-none"
                         size="sm"
                       >
                         <CheckCircle className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
@@ -451,7 +451,7 @@ const DeliveryDashboard = () => {
                       <Button 
                         onClick={() => handleStatusUpdate(currentOrder.id, 'delivered')}
                         disabled={updateOrderStatus.isPending}
-                        className="bg-green-600 hover:bg-green-700 text-xs md:text-sm flex-1 sm:flex-none"
+                        className="bg-success hover:bg-success/90 text-success-foreground text-xs md:text-sm flex-1 sm:flex-none"
                         size="sm"
                       >
                         <CheckCircle className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
@@ -503,8 +503,8 @@ const DeliveryDashboard = () => {
             <CardContent>
               {availableOrders && availableOrders.length > 0 ? (
                 <div className="space-y-3 md:space-y-4">
-                  {availableOrders.map((order: any) => (
-                    <div key={order.id} className="border rounded-lg p-3 md:p-4 bg-green-50">
+                     {availableOrders.map((order: any) => (
+                    <div key={order.id} className="border rounded-lg p-3 md:p-4 bg-success/5">
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 gap-2">
                         <div className="flex-1">
                           <h3 className="font-semibold text-sm md:text-base">Order #{order.order_number}</h3>
@@ -514,11 +514,11 @@ const DeliveryDashboard = () => {
                            <p className="text-xs md:text-sm text-gray-600">
                              Order Value: Rs {Number(order.total_amount).toFixed(2)}
                            </p>
-                           <p className="text-xs md:text-sm font-medium text-green-700">
-                             Estimated Payout: Rs {getEstimatedPayout(Number(order.total_amount))}
+                            <p className="text-xs md:text-sm font-medium text-success">
+                              Estimated Payout: Rs {getEstimatedPayout(Number(order.total_amount))}
                            </p>
                         </div>
-                        <Badge className="bg-yellow-100 text-yellow-700 text-xs self-start">
+                        <Badge className="bg-warning/10 text-warning text-xs self-start">
                           NEW ORDER
                         </Badge>
                       </div>
@@ -532,7 +532,7 @@ const DeliveryDashboard = () => {
                         <Button 
                           onClick={() => handleAcceptOrder(order.id)}
                           disabled={acceptOrderMutation.isPending}
-                          className="bg-green-600 hover:bg-green-700 text-xs md:text-sm flex-1 sm:flex-none"
+                          className="bg-success hover:bg-success/90 text-success-foreground text-xs md:text-sm flex-1 sm:flex-none"
                           size="sm"
                         >
                           <CheckCircle className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
@@ -558,9 +558,9 @@ const DeliveryDashboard = () => {
                 </div>
               ) : (
                 <div className="text-center py-6 md:py-8">
-                  <Package className="h-10 w-10 md:h-12 md:w-12 text-gray-400 mx-auto mb-3 md:mb-4" />
-                  <p className="text-gray-500 text-sm md:text-base">No new orders available at the moment</p>
-                  <p className="text-xs md:text-sm text-gray-400 mt-2">Stay online to receive new orders</p>
+                  <Package className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground mx-auto mb-3 md:mb-4" />
+                  <p className="text-muted-foreground text-sm md:text-base">No new orders available at the moment</p>
+                  <p className="text-xs md:text-sm text-muted-foreground mt-2">Stay online to receive new orders</p>
                 </div>
               )}
             </CardContent>

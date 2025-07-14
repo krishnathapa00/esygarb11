@@ -197,7 +197,7 @@ export default function OrderHistory() {
               <CardTitle className="text-sm font-medium text-muted-foreground">Today's Earnings</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">₹{earnings.todayEarnings.toFixed(2)}</div>
+              <div className="text-2xl font-bold">Rs {earnings.todayEarnings.toFixed(2)}</div>
             </CardContent>
           </Card>
           
@@ -206,7 +206,7 @@ export default function OrderHistory() {
               <CardTitle className="text-sm font-medium text-muted-foreground">Weekly Earnings</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">₹{earnings.weeklyEarnings.toFixed(2)}</div>
+              <div className="text-2xl font-bold">Rs {earnings.weeklyEarnings.toFixed(2)}</div>
             </CardContent>
           </Card>
           
@@ -215,7 +215,7 @@ export default function OrderHistory() {
               <CardTitle className="text-sm font-medium text-muted-foreground">Monthly Earnings</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">₹{earnings.monthlyEarnings.toFixed(2)}</div>
+              <div className="text-2xl font-bold">Rs {earnings.monthlyEarnings.toFixed(2)}</div>
             </CardContent>
           </Card>
         </div>
@@ -231,15 +231,15 @@ export default function OrderHistory() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">₹{earnings.totalEarnings.toFixed(2)}</div>
+                <div className="text-2xl font-bold text-success">Rs {earnings.totalEarnings.toFixed(2)}</div>
                 <p className="text-sm text-muted-foreground">Total Earnings</p>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{earnings.totalDeliveries}</div>
+                <div className="text-2xl font-bold text-primary">{earnings.totalDeliveries}</div>
                 <p className="text-sm text-muted-foreground">Total Deliveries</p>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">₹{earnings.avgOrderValue.toFixed(2)}</div>
+                <div className="text-2xl font-bold text-accent">Rs {earnings.avgOrderValue.toFixed(2)}</div>
                 <p className="text-sm text-muted-foreground">Avg Order Value</p>
               </div>
             </div>
@@ -290,7 +290,7 @@ export default function OrderHistory() {
                           </div>
                           <div className="flex items-center gap-2">
                             <DollarSign className="w-4 h-4 text-muted-foreground" />
-                            <span>₹{Number(order.total_amount).toFixed(2)}</span>
+                            <span>Rs {Number(order.total_amount).toFixed(2)}</span>
                           </div>
                           {order.profiles && (
                             <div className="flex items-center gap-2">
@@ -308,8 +308,8 @@ export default function OrderHistory() {
                           <div className="mt-3 pt-3 border-t">
                             <div className="flex justify-between items-center text-sm">
                               <span className="text-muted-foreground">Your Earnings:</span>
-                              <span className="font-medium text-green-600">
-                                ₹{(Number(order.total_amount) * 0.15).toFixed(2)}
+                               <span className="font-medium text-success">
+                                Rs {(Number(order.total_amount) * 0.15).toFixed(2)}
                               </span>
                             </div>
                           </div>
@@ -339,9 +339,9 @@ export default function OrderHistory() {
                     </div>
                     <div className="text-sm space-y-2">
                       <p><MapPin className="w-4 h-4 inline mr-2" />{order.delivery_address}</p>
-                      <p><DollarSign className="w-4 h-4 inline mr-2" />₹{Number(order.total_amount).toFixed(2)}</p>
-                      <p className="font-medium text-green-600">
-                        Earned: ₹{(Number(order.total_amount) * 0.15).toFixed(2)}
+                      <p><DollarSign className="w-4 h-4 inline mr-2" />Rs {Number(order.total_amount).toFixed(2)}</p>
+                      <p className="font-medium text-success">
+                        Earned: Rs {(Number(order.total_amount) * 0.15).toFixed(2)}
                       </p>
                     </div>
                   </div>
@@ -362,7 +362,7 @@ export default function OrderHistory() {
                     </div>
                     <div className="text-sm">
                       <p><MapPin className="w-4 h-4 inline mr-2" />{order.delivery_address}</p>
-                      <p><DollarSign className="w-4 h-4 inline mr-2" />₹{Number(order.total_amount).toFixed(2)}</p>
+                      <p><DollarSign className="w-4 h-4 inline mr-2" />Rs {Number(order.total_amount).toFixed(2)}</p>
                     </div>
                   </div>
                 ))}
@@ -384,7 +384,7 @@ export default function OrderHistory() {
                     </div>
                     <div className="text-sm">
                       <p><MapPin className="w-4 h-4 inline mr-2" />{order.delivery_address}</p>
-                      <p><DollarSign className="w-4 h-4 inline mr-2" />₹{Number(order.total_amount).toFixed(2)}</p>
+                      <p><DollarSign className="w-4 h-4 inline mr-2" />Rs {Number(order.total_amount).toFixed(2)}</p>
                     </div>
                   </div>
                 ))}
