@@ -1,34 +1,49 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, User, Phone, Truck, Save, Edit } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { ArrowLeft, User, Phone, Car, FileText, CheckCircle, Clock, X } from "lucide-react";
 
-const DeliveryProfile = () => {
-  const { user } = useAuth();
+interface Profile {
+  id: string;
+  full_name: string;
+  phone_number: string;
+  vehicle_type: string;
+  license_number: string;
+  role: string;
+  created_at: string;
+}
+
+export default function DeliveryProfile() {
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
+  const [formData, setFormData] = useState({
+    full_name: "",
+    phone_number: "",
+    vehicle_type: "",
+    license_number: ""
+  });
   const navigate = useNavigate();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    full_name: '',
-    phone_number: '',
-    vehicle_type: '',
-    license_number: '',
-    location: ''
-  });
 
-  // Fetch delivery partner profile
-  const { data: profile, isLoading } = useQuery({
-    queryKey: ['delivery-profile', user?.id],
-    queryFn: async () => {
-      if (!user) return null;
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/delivery-auth');
+        return;
+      }
 
       const { data, error } = await supabase
         .from('profiles')
@@ -37,247 +52,269 @@ const DeliveryProfile = () => {
         .single();
 
       if (error) throw error;
-      
-      // Set form data when profile is loaded
-      if (data) {
-        const profileData = data as any; // Type assertion for new fields
-        setFormData({
-          full_name: profileData.full_name || '',
-          phone_number: profileData.phone_number || '',
-          vehicle_type: profileData.vehicle_type || '',
-          license_number: profileData.license_number || '',
-          location: profileData.location || ''
-        });
-      }
-      
-      return data;
-    },
-    enabled: !!user
-  });
 
-  // Update profile mutation
-  const updateProfile = useMutation({
-    mutationFn: async (profileData: typeof formData) => {
-      if (!user) throw new Error('No user found');
+      setProfile(data);
+      setFormData({
+        full_name: data.full_name || "",
+        phone_number: data.phone_number || "",
+        vehicle_type: data.vehicle_type || "",
+        license_number: data.license_number || ""
+      });
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load profile",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  const handleUpdateProfile = async () => {
+    if (!profile) return;
+    
+    setUpdating(true);
+    try {
       const { error } = await supabase
         .from('profiles')
         .update({
-          full_name: profileData.full_name,
-          phone_number: profileData.phone_number,
-          location: profileData.location,
+          full_name: formData.full_name,
+          phone_number: formData.phone_number,
+          vehicle_type: formData.vehicle_type,
+          license_number: formData.license_number,
           updated_at: new Date().toISOString()
         })
-        .eq('id', user.id);
+        .eq('id', profile.id);
 
       if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['delivery-profile'] });
-      setIsEditing(false);
+
       toast({
-        title: "Profile updated",
-        description: "Your profile has been updated successfully."
+        title: "Profile Updated",
+        description: "Your profile has been updated successfully",
       });
-    },
-    onError: (error: any) => {
+
+      fetchProfile();
+    } catch (error) {
+      console.error('Error updating profile:', error);
       toast({
-        title: "Update failed",
-        description: error.message,
+        title: "Error",
+        description: "Failed to update profile",
         variant: "destructive"
       });
+    } finally {
+      setUpdating(false);
     }
-  });
-
-  const handleSave = () => {
-    updateProfile.mutate(formData);
   };
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const getKYCStatus = () => {
+    // Simple logic: if all required fields are filled, consider as approved
+    const hasAllDetails = profile?.full_name && profile?.phone_number && profile?.vehicle_type && profile?.license_number;
+    
+    if (!hasAllDetails) {
+      return { status: 'pending', label: 'Incomplete', color: 'bg-yellow-500' };
+    }
+    
+    // For MVP, we'll consider complete profiles as approved
+    return { status: 'approved', label: 'Approved', color: 'bg-green-500' };
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">Loading profile...</div>
       </div>
     );
   }
 
+  if (!profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">Profile not found</div>
+      </div>
+    );
+  }
+
+  const kycStatus = getKYCStatus();
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/delivery-dashboard')}
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Dashboard
+    <div className="min-h-screen bg-background p-4">
+      <div className="max-w-2xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center gap-4">
+          <Button variant="outline" onClick={() => navigate('/delivery-dashboard')}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Dashboard
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">Delivery Partner Profile</h1>
+            <p className="text-muted-foreground">Manage your profile and KYC information</p>
+          </div>
+        </div>
+
+        {/* KYC Status */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              KYC Status
+            </CardTitle>
+            <CardDescription>
+              Your document verification status
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                {kycStatus.status === 'approved' ? (
+                  <CheckCircle className="w-5 h-5 text-green-500" />
+                ) : kycStatus.status === 'pending' ? (
+                  <Clock className="w-5 h-5 text-yellow-500" />
+                ) : (
+                  <X className="w-5 h-5 text-red-500" />
+                )}
+                <div>
+                  <p className="font-medium">Document Status</p>
+                  <p className="text-sm text-muted-foreground">
+                    {kycStatus.status === 'approved' && "All documents verified"}
+                    {kycStatus.status === 'pending' && "Please complete all required fields"}
+                    {kycStatus.status === 'rejected' && "Documents need revision"}
+                  </p>
+                </div>
+              </div>
+              <Badge className={`${kycStatus.color} text-white`}>
+                {kycStatus.label}
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Profile Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="w-5 h-5" />
+              Personal Information
+            </CardTitle>
+            <CardDescription>
+              Update your personal details
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="full_name">Full Name *</Label>
+                <Input
+                  id="full_name"
+                  value={formData.full_name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
+                  placeholder="Enter your full name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone_number">Phone Number *</Label>
+                <Input
+                  id="phone_number"
+                  value={formData.phone_number}
+                  onChange={(e) => setFormData(prev => ({ ...prev, phone_number: e.target.value }))}
+                  placeholder="Enter your phone number"
+                />
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="vehicle_type">Vehicle Type *</Label>
+                <Input
+                  id="vehicle_type"
+                  value={formData.vehicle_type}
+                  onChange={(e) => setFormData(prev => ({ ...prev, vehicle_type: e.target.value }))}
+                  placeholder="e.g., Motorcycle, Bicycle, Car"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="license_number">License Number *</Label>
+                <Input
+                  id="license_number"
+                  value={formData.license_number}
+                  onChange={(e) => setFormData(prev => ({ ...prev, license_number: e.target.value }))}
+                  placeholder="Enter your license number"
+                />
+              </div>
+            </div>
+
+            <Button 
+              onClick={handleUpdateProfile} 
+              disabled={updating}
+              className="w-full"
+            >
+              {updating ? "Updating..." : "Update Profile"}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Account Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Account Information</CardTitle>
+            <CardDescription>
+              Your account details
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <Label className="text-muted-foreground">Partner ID</Label>
+                <p className="font-medium">{profile.id.slice(0, 8)}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Account Type</Label>
+                <p className="font-medium capitalize">{profile.role.replace('_', ' ')}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Member Since</Label>
+                <p className="font-medium">
+                  {new Date(profile.created_at).toLocaleDateString()}
+                </p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Status</Label>
+                <Badge variant="outline" className="text-green-600 border-green-600">
+                  Active
+                </Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Help Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Need Help?</CardTitle>
+            <CardDescription>
+              Contact support if you need assistance
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <Phone className="w-4 h-4 text-muted-foreground" />
+                <div>
+                  <p className="font-medium">Support Hotline</p>
+                  <p className="text-sm text-muted-foreground">+91 98765 43210</p>
+                </div>
+              </div>
+              <Button variant="outline" className="w-full">
+                <Phone className="w-4 h-4 mr-2" />
+                Contact Support
               </Button>
             </div>
-            <h1 className="text-xl font-bold">My Profile</h1>
-            <div></div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Profile Information */}
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="flex items-center space-x-2">
-                  <User className="h-5 w-5" />
-                  <span>Personal Information</span>
-                </CardTitle>
-                <Button
-                  variant={isEditing ? "outline" : "default"}
-                  size="sm"
-                  onClick={() => {
-                     if (isEditing) {
-                       // Reset form data to original values
-                       if (profile) {
-                         const profileData = profile as any; // Type assertion for new fields
-                         setFormData({
-                           full_name: profileData.full_name || '',
-                           phone_number: profileData.phone_number || '',
-                           vehicle_type: profileData.vehicle_type || '',
-                           license_number: profileData.license_number || '',
-                           location: profileData.location || ''
-                         });
-                       }
-                     }
-                    setIsEditing(!isEditing);
-                  }}
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  {isEditing ? 'Cancel' : 'Edit'}
-                </Button>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="fullName">Full Name</Label>
-                  <Input
-                    id="fullName"
-                    value={formData.full_name}
-                    onChange={(e) => handleInputChange('full_name', e.target.value)}
-                    disabled={!isEditing}
-                    className={!isEditing ? "bg-gray-50" : ""}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="phoneNumber">Phone Number</Label>
-                  <Input
-                    id="phoneNumber"
-                    value={formData.phone_number}
-                    onChange={(e) => handleInputChange('phone_number', e.target.value)}
-                    disabled={!isEditing}
-                    className={!isEditing ? "bg-gray-50" : ""}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="location">Location/Area</Label>
-                  <Input
-                    id="location"
-                    value={formData.location}
-                    onChange={(e) => handleInputChange('location', e.target.value)}
-                    disabled={!isEditing}
-                    placeholder="Your working area or location"
-                    className={!isEditing ? "bg-gray-50" : ""}
-                  />
-                </div>
-
-                {isEditing && (
-                  <div className="flex justify-end space-x-2 pt-4">
-                    <Button
-                      variant="outline"
-                      onClick={() => setIsEditing(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={handleSave}
-                      disabled={updateProfile.isPending}
-                    >
-                      <Save className="h-4 w-4 mr-2" />
-                      {updateProfile.isPending ? 'Saving...' : 'Save Changes'}
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Vehicle Information */}
-          <div>
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Truck className="h-5 w-5" />
-                  <span>Vehicle Info</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                 <div>
-                   <Label>Vehicle Type</Label>
-                   <div className="mt-1 p-3 bg-gray-50 rounded-md">
-                     {(profile as any)?.vehicle_type || 'Not specified'}
-                   </div>
-                 </div>
-
-                 <div>
-                   <Label>License Number</Label>
-                   <div className="mt-1 p-3 bg-gray-50 rounded-md">
-                     {(profile as any)?.license_number || 'Not specified'}
-                   </div>
-                 </div>
-
-                <div className="text-xs text-gray-500 mt-4">
-                  Vehicle information cannot be changed. Contact support if you need to update these details.
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Account Status */}
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle>Account Status</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Status</span>
-                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                      Active
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Role</span>
-                    <span className="text-sm font-medium">Delivery Partner</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Joined</span>
-                    <span className="text-sm">
-                      {profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : 'N/A'}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
-};
-
-export default DeliveryProfile;
+}
