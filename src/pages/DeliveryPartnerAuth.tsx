@@ -111,9 +111,15 @@ const DeliveryPartnerAuth = () => {
       
       if (error) {
         console.error('Login error:', error);
+        
+        let errorMessage = error.message;
+        if (error.message.includes('Email not confirmed')) {
+          errorMessage = 'Please check your email and click the confirmation link before logging in. Or ask the admin to disable email confirmation in Supabase settings.';
+        }
+        
         toast({
           title: "Login Error",
-          description: error.message,
+          description: errorMessage,
           variant: "destructive",
         });
       } else if (data?.user) {
