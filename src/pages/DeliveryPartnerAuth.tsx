@@ -96,6 +96,7 @@ const DeliveryPartnerAuth = () => {
     }
     
     setLoading(true);
+    console.log('Starting login process...', { email });
     
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -103,27 +104,47 @@ const DeliveryPartnerAuth = () => {
         password,
       });
       
+      console.log('Auth result:', { data: !!data, error: error?.message });
+      
       if (error) {
+        console.error('Login error:', error);
         toast({
           title: "Login Error",
           description: error.message,
           variant: "destructive",
         });
-      } else {
+      } else if (data?.user) {
+        console.log('Login successful, checking profile...');
+        
         // Check if user is delivery partner
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('role')
           .eq('id', data.user.id)
           .single();
         
-        if (profile?.role === 'delivery_partner') {
+        console.log('Profile check:', { profile, profileError });
+        
+        if (profileError) {
+          console.error('Profile fetch error:', profileError);
+          toast({
+            title: "Profile Error",
+            description: "Could not fetch profile information",
+            variant: "destructive",
+          });
+        } else if (profile?.role === 'delivery_partner') {
+          console.log('Access granted, navigating to dashboard...');
           toast({
             title: "Welcome Back!",
             description: "You have successfully logged in to your delivery partner account.",
           });
-          navigate('/delivery-dashboard');
+          
+          // Add a small delay to ensure toast is shown
+          setTimeout(() => {
+            navigate('/delivery-dashboard');
+          }, 1000);
         } else {
+          console.log('Access denied - not a delivery partner');
           toast({
             title: "Access Denied",
             description: "This account is not registered as a delivery partner.",
@@ -131,8 +152,16 @@ const DeliveryPartnerAuth = () => {
           });
           await supabase.auth.signOut();
         }
+      } else {
+        console.error('No user data received');
+        toast({
+          title: "Login Error",
+          description: "No user data received",
+          variant: "destructive",
+        });
       }
     } catch (error: any) {
+      console.error('Unexpected login error:', error);
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",
