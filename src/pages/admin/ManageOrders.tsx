@@ -249,20 +249,18 @@ const ManageOrders = () => {
                             Assign
                           </Button>
                         )}
-                        {isSuperAdmin && (
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="text-red-600 hover:bg-red-50"
-                            onClick={() => {
-                              setSelectedOrder(order);
-                              setDeleteModalOpen(true);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4 mr-1" />
-                            Delete
-                          </Button>
-                        )}
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-red-600 hover:bg-red-50"
+                          onClick={() => {
+                            setSelectedOrder(order);
+                            setDeleteModalOpen(true);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Delete
+                        </Button>
                       </div>
                     </td>
                   </tr>
