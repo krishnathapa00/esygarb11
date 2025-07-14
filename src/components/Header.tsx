@@ -151,10 +151,7 @@ const Header = () => {
                     variant="outline"
                     className="hover:bg-green-50 border-green-200"
                   >
-                    <span className="flex items-center space-x-1">
-                      <User className="h-4 w-4" />
-                      <span className="hidden md:inline">Profile</span>
-                    </span>
+                    <User className="h-4 w-4" />
                   </Button>
                 </Link>
               ) : (

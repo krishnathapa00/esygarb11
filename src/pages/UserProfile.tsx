@@ -29,11 +29,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 const UserProfile = () => {
   const { user, logout } = useAuth();
+  const { profile, loading: profileLoading, updateProfile } = useUserProfile();
   const navigate = useNavigate();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -44,7 +46,7 @@ const UserProfile = () => {
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [profileData, setProfileData] = useState({
     full_name: "",
-    phone_number: "",
+    phone: "",
     email: "",
     address: "",
     avatar_url: ""
@@ -55,91 +57,29 @@ const UserProfile = () => {
       navigate("/login");
       return;
     }
-    
-    // Fetch user profile data
-    const fetchProfile = async () => {
-      try {
-        console.log("Fetching profile for user:", user.id);
-        
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .maybeSingle();
-          
-        if (error) {
-          console.error("Error fetching profile:", error);
-          // If profile doesn't exist, create one
-          if (error.code === 'PGRST116') {
-            console.log("Profile doesn't exist, creating one...");
-            const { error: createError } = await supabase
-              .from('profiles')
-              .insert({
-                id: user.id,
-                full_name: "",
-                phone_number: user.phone || "",
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              });
-            
-            if (createError) {
-              console.error("Error creating profile:", createError);
-            } else {
-              console.log("Profile created successfully");
-              // Set default empty data
-              setProfileData({
-                full_name: "",
-                phone_number: user.phone || "",
-                email: user.email || "",
-                address: "",
-                avatar_url: ""
-              });
-            }
-          }
-          return;
-        }
-        
-        if (data) {
-          console.log("Profile data found:", data);
-          setProfileData({
-            full_name: data.full_name || "",
-            phone_number: data.phone_number || data.phone || "",
-            email: user.email || "",
-            address: data.address || "",
-            avatar_url: data.avatar_url || ""
-          });
-        } else {
-          console.log("No profile data found, creating profile...");
-          // Create profile if it doesn't exist
-          const { error: createError } = await supabase
-            .from('profiles')
-            .insert({
-              id: user.id,
-              full_name: "",
-              phone_number: user.phone || "",
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            });
-          
-          if (createError) {
-            console.error("Error creating profile:", createError);
-          } else {
-            setProfileData({
-              full_name: "",
-              phone_number: user.phone || "",
-              email: user.email || "",
-              address: "",
-              avatar_url: ""
-            });
-          }
-        }
-      } catch (error) {
-        console.error("Error in fetchProfile:", error);
-      }
-    };
-    
-    fetchProfile();
   }, [user, navigate]);
+
+  // Load profile data
+  useEffect(() => {
+    if (profile && user) {
+      setProfileData({
+        full_name: profile.full_name || "",
+        phone: profile.phone || "",
+        email: user.email || "",
+        address: profile.address || "",
+        avatar_url: profile.avatar_url || ""
+      });
+    } else if (user && !profileLoading) {
+      // Set defaults if no profile
+      setProfileData({
+        full_name: "",
+        phone: user.phone || "",
+        email: user.email || "",
+        address: "",
+        avatar_url: ""
+      });
+    }
+  }, [profile, user, profileLoading]);
 
   const handleInputChange = (field: string, value: string) => {
     setProfileData(prev => ({ ...prev, [field]: value }));
@@ -153,11 +93,10 @@ const UserProfile = () => {
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = `${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('user-avatars')
-        .upload(filePath, file, { upsert: true });
+        .upload(fileName, file);
 
       if (uploadError) {
         console.error("Upload error:", uploadError);
@@ -166,26 +105,12 @@ const UserProfile = () => {
 
       const { data } = supabase.storage
         .from('user-avatars')
-        .getPublicUrl(filePath);
+        .getPublicUrl(fileName);
 
       const newAvatarUrl = data.publicUrl;
       
       // Update local state immediately for UI feedback
       setProfileData(prev => ({ ...prev, avatar_url: newAvatarUrl }));
-      
-      // Update profile in database
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          avatar_url: newAvatarUrl,
-          updated_at: new Date().toISOString()
-        });
-
-      if (updateError) {
-        console.error("Database update error:", updateError);
-        throw updateError;
-      }
       
       toast({
         title: "Profile picture updated",
@@ -208,20 +133,22 @@ const UserProfile = () => {
     
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          full_name: profileData.full_name,
-          phone_number: profileData.phone_number,
-          phone: profileData.phone_number,
-          address: profileData.address,
-          avatar_url: profileData.avatar_url,
-          updated_at: new Date().toISOString()
-        });
+      const updates = {
+        full_name: profileData.full_name,
+        phone: profileData.phone,
+        address: profileData.address,
+        avatar_url: profileData.avatar_url
+      };
 
-      if (error) {
-        throw error;
+      const result = await updateProfile(updates);
+
+      if (result.error) {
+        toast({
+          title: "Update failed",
+          description: result.error.message,
+          variant: "destructive"
+        });
+        return;
       }
 
       toast({
@@ -253,13 +180,14 @@ const UserProfile = () => {
         async (position) => {
           try {
             const { latitude, longitude } = position.coords;
+            // Use OpenStreetMap Nominatim (free geocoding service)
             const response = await fetch(
-              `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=YOUR_API_KEY`
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
             );
             
             if (response.ok) {
               const data = await response.json();
-              const address = data.results[0]?.formatted || `${latitude}, ${longitude}`;
+              const address = data.display_name || `${latitude}, ${longitude}`;
               handleInputChange("address", address);
             } else {
               // Fallback to coordinates
@@ -300,7 +228,13 @@ const UserProfile = () => {
     });
   };
 
-  if (!user) return null;
+  if (!user || profileLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
@@ -344,7 +278,7 @@ const UserProfile = () => {
                       disabled={uploadingImage}
                     >
                       {uploadingImage ? (
-                        <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
+                        <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
                         <Camera className="h-4 w-4" />
                       )}
@@ -362,7 +296,7 @@ const UserProfile = () => {
                     <p className="text-muted-foreground">{profileData.email}</p>
                     <div className="flex items-center justify-center mt-2 text-sm text-muted-foreground">
                       <Phone className="h-4 w-4 mr-1" />
-                      {profileData.phone_number || "No phone number"}
+                      {profileData.phone || "No phone number"}
                     </div>
                     {profileData.address && (
                       <div className="flex items-center justify-center mt-1 text-sm text-muted-foreground">
@@ -401,10 +335,26 @@ const UserProfile = () => {
           <div className="lg:col-span-2">
             <Card className="border-border">
               <CardHeader>
-                <CardTitle className="text-xl font-semibold flex items-center">
-                  <User className="h-5 w-5 mr-2" />
-                  Personal Information
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-xl font-semibold flex items-center">
+                    <User className="h-5 w-5 mr-2" />
+                    Personal Information
+                  </CardTitle>
+                  {isEditing && (
+                    <Button 
+                      onClick={handleSave}
+                      disabled={loading}
+                      className="ml-auto"
+                    >
+                      {loading ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Save className="h-4 w-4 mr-2" />
+                      )}
+                      Save Changes
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -421,11 +371,11 @@ const UserProfile = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="phone_number" className="text-sm font-medium">Phone Number</Label>
+                    <Label htmlFor="phone" className="text-sm font-medium">Phone Number</Label>
                     <Input
-                      id="phone_number"
-                      value={profileData.phone_number}
-                      onChange={(e) => handleInputChange("phone_number", e.target.value)}
+                      id="phone"
+                      value={profileData.phone}
+                      onChange={(e) => handleInputChange("phone", e.target.value)}
                       disabled={!isEditing}
                       className="transition-colors"
                       placeholder="Enter your phone number"
@@ -487,157 +437,62 @@ const UserProfile = () => {
                         id="address"
                         value={profileData.address}
                         disabled
-                        className="transition-colors bg-muted"
+                        className="bg-muted cursor-not-allowed transition-colors"
                         placeholder="No address provided"
                       />
                     )}
                   </div>
                 </div>
-                
-                {/* Save Button in Personal Information Section */}
-                {isEditing && (
-                  <div className="pt-4 border-t">
-                    <div className="flex gap-3">
-                      <Button 
-                        onClick={handleSave} 
-                        disabled={loading}
-                        className="flex-1"
-                      >
-                        {loading ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        ) : (
-                          <Save className="h-4 w-4 mr-2" />
-                        )}
-                        Save Changes
-                      </Button>
-                    </div>
-                  </div>
-                )}
+              </CardContent>
+            </Card>
+
+            {/* Account Actions */}
+            <Card className="border-border mt-6">
+              <CardHeader>
+                <CardTitle className="text-xl font-semibold">Account Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => handleFeatureClick("Order History")}
+                    className="w-full justify-start"
+                  >
+                    <History className="h-4 w-4 mr-3" />
+                    Order History
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    onClick={() => handleFeatureClick("Payment Methods")}
+                    className="w-full justify-start"
+                  >
+                    <CreditCard className="h-4 w-4 mr-3" />
+                    Payment Methods
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    onClick={() => handleFeatureClick("Help & Support")}
+                    className="w-full justify-start"
+                  >
+                    <HelpCircle className="h-4 w-4 mr-3" />
+                    Help & Support
+                  </Button>
+                  
+                  <Button 
+                    variant="destructive" 
+                    onClick={handleLogout}
+                    className="w-full justify-start"
+                  >
+                    <LogOut className="h-4 w-4 mr-3" />
+                    Logout
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </div>
         </div>
-
-        {/* Actions Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-          {/* Quick Actions */}
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold flex items-center">
-                <Package className="h-5 w-5 mr-2" />
-                Quick Actions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start h-12"
-                  onClick={() => navigate("/orders")}
-                >
-                  <History className="h-5 w-5 mr-3" />
-                  <div className="text-left">
-                    <div className="font-medium">Order History</div>
-                    <div className="text-xs text-muted-foreground">View past orders</div>
-                  </div>
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start h-12"
-                  onClick={() => navigate("/cart")}
-                >
-                  <Package className="h-5 w-5 mr-3" />
-                  <div className="text-left">
-                    <div className="font-medium">View Cart</div>
-                    <div className="text-xs text-muted-foreground">Check current items</div>
-                  </div>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* More Options */}
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold flex items-center">
-                <HelpCircle className="h-5 w-5 mr-2" />
-                Support & Help
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <Button 
-                  variant="ghost" 
-                  className="w-full justify-start h-12 hover:bg-muted"
-                  onClick={() => handleFeatureClick("Cancelled Orders")}
-                >
-                  <X className="h-5 w-5 mr-3" />
-                  <div className="text-left">
-                    <div className="font-medium">Cancelled Orders</div>
-                    <div className="text-xs text-muted-foreground">View cancelled items</div>
-                  </div>
-                </Button>
-                
-                <Button 
-                  variant="ghost" 
-                  className="w-full justify-start h-12 hover:bg-muted"
-                  onClick={() => handleFeatureClick("Returns & Refunds")}
-                >
-                  <RotateCcw className="h-5 w-5 mr-3" />
-                  <div className="text-left">
-                    <div className="font-medium">Returns & Refunds</div>
-                    <div className="text-xs text-muted-foreground">Manage returns</div>
-                  </div>
-                </Button>
-                
-                <Button 
-                  variant="ghost" 
-                  className="w-full justify-start h-12 hover:bg-muted"
-                  onClick={() => handleFeatureClick("Payment Support")}
-                >
-                  <CreditCard className="h-5 w-5 mr-3" />
-                  <div className="text-left">
-                    <div className="font-medium">Payment Support</div>
-                    <div className="text-xs text-muted-foreground">Payment issues</div>
-                  </div>
-                </Button>
-                
-                <Button 
-                  variant="ghost" 
-                  className="w-full justify-start h-12 hover:bg-muted"
-                  onClick={() => toast({ title: "Support", description: "For support, please contact us at support@esygrab.com" })}
-                >
-                  <AlertTriangle className="h-5 w-5 mr-3" />
-                  <div className="text-left">
-                    <div className="font-medium">Report Problem</div>
-                    <div className="text-xs text-muted-foreground">Get help</div>
-                  </div>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Sign Out Section */}
-        <Card className="border-destructive/20 mt-8">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-destructive">Sign Out</h3>
-                <p className="text-sm text-muted-foreground">You'll need to sign in again to access your account</p>
-              </div>
-              <Button 
-                variant="destructive" 
-                onClick={handleLogout}
-                className="ml-4"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
