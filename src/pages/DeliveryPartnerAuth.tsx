@@ -86,7 +86,10 @@ const DeliveryPartnerAuth = () => {
   };
   
   const handleLogin = async () => {
+    console.log('handleLogin function called!', { email, password: password ? 'provided' : 'missing' });
+    
     if (!email || !password) {
+      console.log('Missing email or password');
       toast({
         title: "Missing Information",
         description: "Please enter both email and password",
