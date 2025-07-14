@@ -46,6 +46,7 @@ const DeliveryPartnerAuth = () => {
         email,
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/delivery-dashboard`,
           data: {
             full_name: fullName,
             role: 'delivery_partner',
