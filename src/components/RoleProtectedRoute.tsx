@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
 interface RoleProtectedRouteProps {
   children: React.ReactNode;
@@ -9,10 +8,6 @@ interface RoleProtectedRouteProps {
   redirectTo?: string;
 }
 
-/**
- * A component that protects routes based on user roles
- * Fetches user role from Supabase profiles table and checks against allowed roles
- */
 export const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
   children,
   allowedRoles,
@@ -20,7 +15,7 @@ export const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
 }) => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+  const [shouldRedirect, setShouldRedirect] = useState(false);
 
   useEffect(() => {
     checkUserRole();
@@ -31,6 +26,7 @@ export const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
+        setShouldRedirect(true);
         setLoading(false);
         return;
       }
@@ -44,19 +40,16 @@ export const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
 
       if (error) {
         console.error('Error fetching user role:', error);
-        toast({
-          title: "Error",
-          description: "Failed to verify user permissions",
-          variant: "destructive"
-        });
+        setShouldRedirect(true);
         setLoading(false);
         return;
       }
 
       setUserRole(profile?.role || null);
+      setLoading(false);
     } catch (error) {
       console.error('Auth check failed:', error);
-    } finally {
+      setShouldRedirect(true);
       setLoading(false);
     }
   };
@@ -72,21 +65,11 @@ export const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
     );
   }
 
-  if (!userRole) {
-    toast({
-      title: "Access Denied",
-      description: "Please log in to access this page",
-      variant: "destructive"
-    });
+  if (shouldRedirect || !userRole) {
     return <Navigate to={redirectTo} replace />;
   }
 
   if (!allowedRoles.includes(userRole)) {
-    toast({
-      title: "Access Denied",
-      description: `This page is only accessible to ${allowedRoles.join(', ')} users`,
-      variant: "destructive"
-    });
     return <Navigate to="/" replace />;
   }
 
