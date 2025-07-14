@@ -71,7 +71,7 @@ const CategoryGrid = ({ onCategorySelect }: CategoryGridProps) => {
             className="group cursor-pointer transform transition-all duration-300 hover:scale-105"
           >
             <div
-              className={`bg-gradient-to-br ${category.color} rounded-xl p-2 md:p-4 text-center shadow-md hover:shadow-lg transition-all duration-300 aspect-square flex flex-col justify-center items-center min-h-[80px] md:min-h-[100px]`}
+              className={`bg-gradient-to-br ${category.color} rounded-xl p-2 md:p-4 text-center shadow-md hover:shadow-lg transition-all duration-300 aspect-square flex flex-col justify-center items-center min-h-[70px] md:min-h-[100px]`}
             >
               <div className="w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 mx-auto mb-1 md:mb-2 rounded-full overflow-hidden bg-white/20 backdrop-blur-sm">
                 <img

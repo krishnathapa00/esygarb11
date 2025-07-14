@@ -1,22 +1,40 @@
 import React, { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import Header from "../components/Header";
-import { ArrowLeft, Star, Truck, Shield, Info } from "lucide-react";
+import { ArrowLeft, Star, Truck, Shield, Info, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useProducts } from "@/hooks/useProducts";
 import { useCart } from "@/contexts/CartContext";
 import ProductCard from "../components/ProductCard";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const ProductDetails = () => {
   const { id } = useParams();
   const { addToCart, cart } = useCart();
+  const isMobile = useIsMobile();
 
   const { data: products } = useProducts();
 
   const product = products?.find((p) => p.id.toString() === id);
 
   const [quantity, setQuantity] = useState(1);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // Multiple product images for sliding
+  const productImages = [
+    product?.image || "",
+    product?.image || "",
+    product?.image || "",
+  ];
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % productImages.length);
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + productImages.length) % productImages.length);
+  };
 
   const totalCartQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -60,28 +78,40 @@ const ProductDetails = () => {
             <div className="relative">
               {/* Main image container */}
               <div className="relative overflow-hidden rounded-lg">
-                <div className="flex transition-transform duration-300 ease-in-out">
-                  <img
-                    src={product.image}
-                    alt={`${product.name} - Main`}
-                    className="w-full h-96 object-cover flex-shrink-0"
-                  />
-                  <img
-                    src={product.image}
-                    alt={`${product.name} - Side`}
-                    className="w-full h-96 object-cover flex-shrink-0"
-                  />
-                  <img
-                    src={product.image}
-                    alt={`${product.name} - Detail`}
-                    className="w-full h-96 object-cover flex-shrink-0"
-                  />
+                <div className="flex transition-transform duration-300 ease-in-out" style={{ transform: `translateX(-${currentImageIndex * 100}%)` }}>
+                  {productImages.map((image, index) => (
+                    <img
+                      key={index}
+                      src={image}
+                      alt={`${product.name} - ${index + 1}`}
+                      className="w-full h-96 object-cover flex-shrink-0"
+                    />
+                  ))}
                 </div>
+                {/* Navigation arrows */}
+                <button
+                  onClick={prevImage}
+                  className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-all"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={nextImage}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-all"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
                 {/* Navigation dots */}
                 <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-                  <div className="w-2 h-2 bg-white rounded-full opacity-80"></div>
-                  <div className="w-2 h-2 bg-white/50 rounded-full"></div>
-                  <div className="w-2 h-2 bg-white/50 rounded-full"></div>
+                  {productImages.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentImageIndex(index)}
+                      className={`w-2 h-2 rounded-full transition-all ${
+                        index === currentImageIndex ? "bg-white" : "bg-white/50"
+                      }`}
+                    />
+                  ))}
                 </div>
               </div>
               
@@ -274,55 +304,18 @@ const ProductDetails = () => {
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-6">Recommended Products</h2>
-              <div className="md:hidden">
-                {/* Mobile - Horizontal scroll with 3 items */}
-                <div className="flex overflow-x-auto space-x-4 pb-4 scrollbar-hide">
-                  {relatedProducts.slice(0, 3).map((relatedProduct) => {
-                    const cartItem = cart.find(item => item.id === relatedProduct.id);
-                    const cartQuantity = cartItem?.quantity || 0;
-                    
-                    return (
+              <div className={`${
+                isMobile 
+                  ? "flex overflow-x-auto space-x-4 pb-4 scrollbar-hide"
+                  : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"
+              }`}>
+                {(isMobile ? relatedProducts.slice(0, 3) : relatedProducts).map((relatedProduct) => {
+                  const cartItem = cart.find(item => item.id === relatedProduct.id);
+                  const cartQuantity = cartItem?.quantity || 0;
+                  
+                  return (
+                    <div key={relatedProduct.id} className={isMobile ? "flex-shrink-0 w-40" : ""}>
                       <ProductCard
-                        key={relatedProduct.id}
-                        product={relatedProduct}
-                        cartQuantity={cartQuantity}
-                        className="flex-shrink-0 w-40"
-                        onAddToCart={() => 
-                          addToCart({
-                            id: relatedProduct.id,
-                            name: relatedProduct.name,
-                            price: relatedProduct.price,
-                            image: relatedProduct.image,
-                            weight: relatedProduct.weight,
-                            quantity: 1,
-                          })
-                        }
-                        onUpdateQuantity={(productId: number, quantity: number) => {
-                          if (quantity <= 0) return;
-                          addToCart({
-                            id: relatedProduct.id,
-                            name: relatedProduct.name,
-                            price: relatedProduct.price,
-                            image: relatedProduct.image,
-                            weight: relatedProduct.weight,
-                            quantity: 1,
-                          });
-                        }}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-              <div className="hidden md:block">
-                {/* Desktop - Grid view */}
-                <div className="grid grid-cols-4 gap-4">
-                  {relatedProducts.map((relatedProduct) => {
-                    const cartItem = cart.find(item => item.id === relatedProduct.id);
-                    const cartQuantity = cartItem?.quantity || 0;
-                    
-                    return (
-                      <ProductCard
-                        key={relatedProduct.id}
                         product={relatedProduct}
                         cartQuantity={cartQuantity}
                         onAddToCart={() => 
@@ -347,9 +340,9 @@ const ProductDetails = () => {
                           });
                         }}
                       />
-                    );
-                  })}
-                </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>

@@ -25,6 +25,7 @@ interface CartContextType {
   updateQuantity: (id: number, quantity: number) => void;
   removeItem: (id: number) => void;
   resetCart: () => void;
+  accessCart: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -88,6 +89,15 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({
     }
     dispatch({ type: "ADD_ITEM", payload: item });
   };
+
+  const accessCart = () => {
+    // Check if user is logged in before accessing cart
+    if (!user) {
+      navigate("/login?redirect=/cart");
+      return;
+    }
+    navigate("/cart");
+  };
   const updateQuantity = (id: number, quantity: number) =>
     dispatch({ type: "UPDATE_QUANTITY", payload: { id, quantity } });
   const removeItem = (id: number) =>
@@ -96,7 +106,7 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({
 
   return (
     <CartContext.Provider
-      value={{ cart, addToCart, updateQuantity, removeItem, resetCart }}
+      value={{ cart, addToCart, updateQuantity, removeItem, resetCart, accessCart }}
     >
       {children}
     </CartContext.Provider>

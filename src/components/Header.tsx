@@ -33,7 +33,7 @@ const Header = () => {
   const location = useLocation();
   const isMobile = useIsMobile();
   const { user, logout } = useAuth();
-  const { cart } = useCart();
+  const { cart, accessCart } = useCart();
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -168,19 +168,18 @@ const Header = () => {
                 </Link>
               )}
 
-              <Link to="/cart">
-                <Button
-                  variant="outline"
-                  className="relative hover:bg-green-50 border-green-200"
-                >
-                  <ShoppingCart className="h-4 w-4" />
-                  {totalItems > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                      {totalItems}
-                    </span>
-                  )}
-                </Button>
-              </Link>
+              <Button
+                onClick={accessCart}
+                variant="outline"
+                className="relative hover:bg-green-50 border-green-200"
+              >
+                <ShoppingCart className="h-4 w-4" />
+                {totalItems > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {totalItems}
+                  </span>
+                )}
+              </Button>
             </div>
 
             {/* Mobile Location Button */}
@@ -229,7 +228,7 @@ const Header = () => {
             label="Categories"
             isActive={location.pathname === "/categories"}
           />
-          <Link to="/cart" className="relative">
+          <button onClick={accessCart} className="relative">
             <MobileNavButton
               to="/cart"
               icon={ShoppingCart}
@@ -241,7 +240,7 @@ const Header = () => {
                 {totalItems}
               </span>
             )}
-          </Link>
+          </button>
           {user ? (
             <MobileNavButton
               to="/profile"
