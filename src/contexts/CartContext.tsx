@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "./AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 export interface CartItem {
   id: number;
@@ -25,7 +24,6 @@ interface CartContextType {
   updateQuantity: (id: number, quantity: number) => void;
   removeItem: (id: number) => void;
   resetCart: () => void;
-  accessCart: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -65,8 +63,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
 const CartProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const navigate = useNavigate();
-  const { user } = useAuth();
+  const { toast } = useToast();
   
   const [cart, dispatch] = useReducer(cartReducer, [], () => {
     try {
@@ -82,21 +79,11 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [cart]);
 
   const addToCart = (item: CartItem) => {
-    // Check if user is logged in
-    if (!user) {
-      navigate("/login?redirect=/cart");
-      return;
-    }
     dispatch({ type: "ADD_ITEM", payload: item });
-  };
-
-  const accessCart = () => {
-    // Check if user is logged in before accessing cart
-    if (!user) {
-      navigate("/login?redirect=/cart");
-      return;
-    }
-    navigate("/cart");
+    toast({
+      title: "Added to cart",
+      description: `${item.name} has been added to your cart.`
+    });
   };
   const updateQuantity = (id: number, quantity: number) =>
     dispatch({ type: "UPDATE_QUANTITY", payload: { id, quantity } });
@@ -106,7 +93,7 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({
 
   return (
     <CartContext.Provider
-      value={{ cart, addToCart, updateQuantity, removeItem, resetCart, accessCart }}
+      value={{ cart, addToCart, updateQuantity, removeItem, resetCart }}
     >
       {children}
     </CartContext.Provider>
