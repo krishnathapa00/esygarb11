@@ -3,39 +3,37 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Home, LogOut, Package, MapPin, Phone, Timer, Clock, CheckCircle, User } from 'lucide-react';
+import { Home, LogOut, Package, MapPin, Phone, Timer, Clock, CheckCircle, User, Power, DollarSign, Navigation } from 'lucide-react';
 
 const DeliveryDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [deliveryTimer, setDeliveryTimer] = useState(600); // 10 minutes in seconds
-  const [orderStartTime, setOrderStartTime] = useState<string | null>(null);
-  const [totalDeliveryTime, setTotalDeliveryTime] = useState<number | null>(null);
+  const [isOnline, setIsOnline] = useState(false);
+  const [activeOrder, setActiveOrder] = useState<any>(null);
 
-  // Timer countdown effect
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setDeliveryTimer(prev => {
-        if (prev <= 0) {
-          toast({
-            title: "Delivery Time Alert!",
-            description: "Target delivery time has exceeded!",
-            variant: "destructive"
-          });
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [toast]);
+  // Fetch delivery partner profile for online status
+  const { data: profile } = useQuery({
+    queryKey: ['delivery-profile', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user
+  });
 
   // Fetch delivery partner stats
   const { data: stats } = useQuery({
@@ -85,11 +83,32 @@ const DeliveryDashboard = () => {
     enabled: !!user
   });
 
-  // Fetch active orders
-  const { data: activeOrders, refetch: refetchOrders } = useQuery({
-    queryKey: ['delivery-active-orders', user?.id],
+  // Fetch available orders for assignment (when online)
+  const { data: availableOrders } = useQuery({
+    queryKey: ['available-orders'],
     queryFn: async () => {
-      if (!user) return [];
+      const { data: orders, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          profiles!orders_user_id_fkey(full_name, phone_number)
+        `)
+        .is('delivery_partner_id', null)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: true })
+        .limit(5);
+
+      if (error) throw error;
+      return orders || [];
+    },
+    enabled: isOnline && !!user
+  });
+
+  // Fetch current active order
+  const { data: currentOrder } = useQuery({
+    queryKey: ['current-order', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
 
       const { data: orders, error } = await supabase
         .from('orders')
@@ -99,12 +118,38 @@ const DeliveryDashboard = () => {
         `)
         .eq('delivery_partner_id', user.id)
         .in('status', ['confirmed', 'dispatched', 'out_for_delivery'])
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(1);
 
       if (error) throw error;
-      return orders || [];
+      return orders?.[0] || null;
     },
     enabled: !!user
+  });
+
+  // Accept order mutation
+  const acceptOrderMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      const { error } = await supabase
+        .from('orders')
+        .update({ 
+          delivery_partner_id: user?.id,
+          status: 'confirmed',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', orderId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['available-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['current-order'] });
+      queryClient.invalidateQueries({ queryKey: ['delivery-stats'] });
+      toast({
+        title: "Order Accepted!",
+        description: "You have successfully accepted the order."
+      });
+    }
   });
 
   // Update order status mutation
@@ -130,42 +175,29 @@ const DeliveryDashboard = () => {
         });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['delivery-active-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['current-order'] });
       queryClient.invalidateQueries({ queryKey: ['delivery-stats'] });
       toast({
         title: "Status updated",
         description: "Order status has been updated successfully."
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Update failed",
-        description: error.message,
-        variant: "destructive"
       });
     }
   });
 
   const handleStatusUpdate = (orderId: string, status: 'pending' | 'confirmed' | 'dispatched' | 'out_for_delivery' | 'delivered' | 'cancelled') => {
     updateOrderStatus.mutate({ orderId, status });
-    
-    // Reset timer and start tracking when picking up order
-    if (status === 'out_for_delivery') {
-      setDeliveryTimer(600); // Reset to 10 minutes
-      setOrderStartTime(new Date().toISOString());
-      setTotalDeliveryTime(null);
-    }
-    
-    // Calculate delivery time when order is delivered
-    if (status === 'delivered' && orderStartTime) {
-      const deliveryTime = Math.floor((new Date().getTime() - new Date(orderStartTime).getTime()) / 1000);
-      setTotalDeliveryTime(deliveryTime);
-      toast({
-        title: "Order Delivered!",
-        description: `Total delivery time: ${formatTime(deliveryTime)}`,
-      });
-      setOrderStartTime(null);
-    }
+  };
+
+  const handleAcceptOrder = (orderId: string) => {
+    acceptOrderMutation.mutate(orderId);
+  };
+
+  const toggleAvailability = () => {
+    setIsOnline(!isOnline);
+    toast({
+      title: isOnline ? "Going Offline" : "Going Online",
+      description: isOnline ? "You will not receive new orders" : "You are now available for orders"
+    });
   };
 
   const handleSignOut = async () => {
@@ -173,10 +205,8 @@ const DeliveryDashboard = () => {
     navigate('/delivery-auth');
   };
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  const getEstimatedPayout = (orderAmount: number) => {
+    return (orderAmount * 0.15).toFixed(2); // 15% of order value
   };
 
   useEffect(() => {
@@ -197,50 +227,47 @@ const DeliveryDashboard = () => {
               <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
                 <Package className="h-5 w-5 text-white" />
               </div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-blue-600 bg-clip-text text-transparent">
-                Delivery Dashboard
-              </h1>
+              <h1 className="text-xl font-bold">Delivery Partner Dashboard</h1>
             </div>
             
             <div className="flex items-center space-x-4">
-              {/* Delivery Timer */}
-              <div className="flex items-center space-x-2 bg-red-100 px-3 py-2 rounded-lg">
-                <Timer className="h-4 w-4 text-red-600" />
-                <span className="font-mono text-red-600 font-semibold">
-                  {formatTime(deliveryTimer)}
+              {/* Availability Toggle */}
+              <div className="flex items-center space-x-3 bg-gray-100 px-4 py-2 rounded-lg">
+                <Power className={`h-4 w-4 ${isOnline ? 'text-green-600' : 'text-gray-400'}`} />
+                <span className="text-sm font-medium">
+                  {isOnline ? 'Online' : 'Offline'}
                 </span>
-                <span className="text-xs text-red-500">Target</span>
+                <Switch
+                  checked={isOnline}
+                  onCheckedChange={toggleAvailability}
+                />
               </div>
-              
-              {/* Active Delivery Time */}
-              {orderStartTime && (
-                <div className="flex items-center space-x-2 bg-blue-100 px-3 py-2 rounded-lg">
-                  <Clock className="h-4 w-4 text-blue-600" />
-                  <span className="font-mono text-blue-600 font-semibold">
-                    {formatTime(Math.floor((new Date().getTime() - new Date(orderStartTime).getTime()) / 1000))}
-                  </span>
-                  <span className="text-xs text-blue-500">Active</span>
-                </div>
-              )}
-              
-              {/* Last Delivery Time */}
-              {totalDeliveryTime && !orderStartTime && (
-                <div className="flex items-center space-x-2 bg-green-100 px-3 py-2 rounded-lg">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                  <span className="font-mono text-green-600 font-semibold">
-                    {formatTime(totalDeliveryTime)}
-                  </span>
-                  <span className="text-xs text-green-500">Last</span>
-                </div>
-              )}
               
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => navigate('/')}
+                onClick={() => navigate('/delivery-profile')}
               >
-                <Home className="h-4 w-4 mr-2" />
-                Home
+                <User className="h-4 w-4 mr-2" />
+                Profile
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate('/order-history')}
+              >
+                <Timer className="h-4 w-4 mr-2" />
+                History
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate('/support')}
+              >
+                <Phone className="h-4 w-4 mr-2" />
+                Support
               </Button>
               
               <Button 
@@ -257,7 +284,7 @@ const DeliveryDashboard = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Stats Cards */}
+        {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader className="pb-2">
@@ -273,136 +300,227 @@ const DeliveryDashboard = () => {
               <CardTitle className="text-sm font-medium text-gray-500">Today's Earnings</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">Rs {(stats?.todayEarnings || 0).toFixed(2)}</div>
+              <div className="text-2xl font-bold">₹{(stats?.todayEarnings || 0).toFixed(2)}</div>
             </CardContent>
           </Card>
           
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">Total Earnings</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-500">Status</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">Rs {(stats?.totalEarnings || 0).toFixed(2)}</div>
+              <Badge className={isOnline ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}>
+                {isOnline ? 'Online' : 'Offline'}
+              </Badge>
             </CardContent>
           </Card>
           
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">Pending Orders</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-500">Profile Status</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats?.pendingOrders || 0}</div>
+              <Badge className="bg-green-100 text-green-700">
+                {profile?.role === 'delivery_partner' ? 'Approved' : 'Pending'}
+              </Badge>
             </CardContent>
           </Card>
         </div>
 
-        {/* Active Orders */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Active Deliveries</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {activeOrders && activeOrders.length > 0 ? (
+        {!isOnline ? (
+          /* Offline Status */
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center py-12">
+                <Power className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold mb-2">You're Offline</h3>
+                <p className="text-gray-600 mb-4">Turn on availability to start receiving orders</p>
+                <Button onClick={toggleAvailability} className="bg-green-600 hover:bg-green-700">
+                  <Power className="h-4 w-4 mr-2" />
+                  Go Online
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : currentOrder ? (
+          /* Active Order Management */
+          <Card>
+            <CardHeader>
+              <CardTitle>Active Order</CardTitle>
+            </CardHeader>
+            <CardContent>
               <div className="space-y-4">
-                {activeOrders.map((order: any) => (
-                  <div key={order.id} className="border rounded-lg p-4 bg-gray-50">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <h3 className="font-semibold">Order #{order.order_number}</h3>
-                        <p className="text-sm text-gray-600">
-                          Customer: {order.profiles?.full_name || 'N/A'}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          Amount: Rs {Number(order.total_amount).toFixed(2)}
-                        </p>
-                      </div>
-                      <Badge className={
-                        order.status === 'confirmed' ? 'bg-yellow-100 text-yellow-700' :
-                        order.status === 'dispatched' ? 'bg-blue-100 text-blue-700' :
-                        order.status === 'out_for_delivery' ? 'bg-orange-100 text-orange-700' :
-                        'bg-gray-100 text-gray-700'
-                      }>
-                        {order.status?.replace('_', ' ').toUpperCase()}
-                      </Badge>
+                <div className="border rounded-lg p-4 bg-blue-50">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h3 className="font-semibold text-lg">Order #{currentOrder.order_number}</h3>
+                      <p className="text-sm text-gray-600">
+                        Customer: {currentOrder.profiles?.full_name || 'N/A'}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Amount: ₹{Number(currentOrder.total_amount).toFixed(2)}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Estimated Payout: ₹{getEstimatedPayout(Number(currentOrder.total_amount))}
+                      </p>
+                    </div>
+                    <Badge className={
+                      currentOrder.status === 'confirmed' ? 'bg-yellow-100 text-yellow-700' :
+                      currentOrder.status === 'dispatched' ? 'bg-blue-100 text-blue-700' :
+                      currentOrder.status === 'out_for_delivery' ? 'bg-orange-100 text-orange-700' :
+                      'bg-gray-100 text-gray-700'
+                    }>
+                      {currentOrder.status?.replace('_', ' ').toUpperCase()}
+                    </Badge>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2 text-sm">
+                      <MapPin className="h-4 w-4 text-blue-600" />
+                      <span className="font-medium">Delivery Address:</span>
+                      <span>{currentOrder.delivery_address}</span>
                     </div>
                     
-                    <div className="flex items-center space-x-2 mb-3 text-sm text-gray-600">
-                      <MapPin className="h-4 w-4" />
-                      <span>{order.delivery_address}</span>
-                    </div>
-                    
-                    {order.profiles?.phone_number && (
-                      <div className="flex items-center space-x-2 mb-4 text-sm text-gray-600">
-                        <Phone className="h-4 w-4" />
-                        <span>{order.profiles.phone_number}</span>
+                    {currentOrder.profiles?.phone_number && (
+                      <div className="flex items-center space-x-2 text-sm">
+                        <Phone className="h-4 w-4 text-green-600" />
+                        <span className="font-medium">Customer Phone:</span>
+                        <span>{currentOrder.profiles.phone_number}</span>
                       </div>
                     )}
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-2 mt-4">
+                    {currentOrder.status === 'confirmed' && (
+                      <Button 
+                        onClick={() => handleStatusUpdate(currentOrder.id, 'dispatched')}
+                        disabled={updateOrderStatus.isPending}
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        <Package className="h-4 w-4 mr-2" />
+                        En Route to Pickup
+                      </Button>
+                    )}
                     
-                    <div className="flex flex-wrap gap-2">
-                      {order.status === 'confirmed' && (
-                        <Button 
-                          size="sm" 
-                          onClick={() => handleStatusUpdate(order.id, 'dispatched')}
-                          disabled={updateOrderStatus.isPending}
-                          className="bg-yellow-600 hover:bg-yellow-700"
-                        >
-                          <Package className="h-4 w-4 mr-2" />
-                          Accept Order
-                        </Button>
-                      )}
+                    {currentOrder.status === 'dispatched' && (
+                      <Button 
+                        onClick={() => handleStatusUpdate(currentOrder.id, 'out_for_delivery')}
+                        disabled={updateOrderStatus.isPending}
+                        className="bg-orange-600 hover:bg-orange-700"
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Picked Up
+                      </Button>
+                    )}
+                    
+                    {currentOrder.status === 'out_for_delivery' && (
+                      <Button 
+                        onClick={() => handleStatusUpdate(currentOrder.id, 'delivered')}
+                        disabled={updateOrderStatus.isPending}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Delivered
+                      </Button>
+                    )}
+                    
+                    <Button 
+                      variant="outline"
+                      onClick={() => {
+                        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(currentOrder.delivery_address)}`;
+                        window.open(mapsUrl, '_blank');
+                      }}
+                    >
+                      <Navigation className="h-4 w-4 mr-2" />
+                      Navigate
+                    </Button>
+                    
+                    <Button 
+                      variant="outline"
+                      onClick={() => {
+                        if (currentOrder.profiles?.phone_number) {
+                          window.open(`tel:${currentOrder.profiles.phone_number}`, '_self');
+                        }
+                      }}
+                    >
+                      <Phone className="h-4 w-4 mr-2" />
+                      Call Customer
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          /* Order Assignment */
+          <Card>
+            <CardHeader>
+              <CardTitle>Available Orders</CardTitle>
+              <p className="text-sm text-gray-600">New order requests in your area</p>
+            </CardHeader>
+            <CardContent>
+              {availableOrders && availableOrders.length > 0 ? (
+                <div className="space-y-4">
+                  {availableOrders.map((order: any) => (
+                    <div key={order.id} className="border rounded-lg p-4 bg-green-50">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h3 className="font-semibold">Order #{order.order_number}</h3>
+                          <p className="text-sm text-gray-600">
+                            Customer: {order.profiles?.full_name || 'N/A'}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            Order Value: ₹{Number(order.total_amount).toFixed(2)}
+                          </p>
+                          <p className="text-sm font-medium text-green-700">
+                            Estimated Payout: ₹{getEstimatedPayout(Number(order.total_amount))}
+                          </p>
+                        </div>
+                        <Badge className="bg-yellow-100 text-yellow-700">
+                          NEW ORDER
+                        </Badge>
+                      </div>
                       
-                      {order.status === 'dispatched' && (
-                        <Button 
-                          size="sm" 
-                          onClick={() => handleStatusUpdate(order.id, 'out_for_delivery')}
-                          disabled={updateOrderStatus.isPending}
-                          className="bg-blue-600 hover:bg-blue-700"
-                        >
-                          <Package className="h-4 w-4 mr-2" />
-                          Picked Up
-                        </Button>
-                      )}
+                      <div className="flex items-center space-x-2 mb-4 text-sm text-gray-600">
+                        <MapPin className="h-4 w-4" />
+                        <span>{order.delivery_address}</span>
+                      </div>
                       
-                      {order.status === 'out_for_delivery' && (
+                      <div className="flex gap-2">
                         <Button 
-                          size="sm" 
-                          onClick={() => handleStatusUpdate(order.id, 'delivered')}
-                          disabled={updateOrderStatus.isPending}
+                          onClick={() => handleAcceptOrder(order.id)}
+                          disabled={acceptOrderMutation.isPending}
                           className="bg-green-600 hover:bg-green-700"
                         >
                           <CheckCircle className="h-4 w-4 mr-2" />
-                          Delivered
+                          Accept Order
                         </Button>
-                      )}
-                      
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => {
-                          if (order.profiles?.phone_number) {
-                            window.open(`tel:${order.profiles.phone_number}`, '_self');
-                          }
-                          toast({
-                            title: "Customer contacted",
-                            description: `Called ${order.profiles?.phone_number || 'customer'}`
-                          });
-                        }}
-                      >
-                        <Phone className="h-4 w-4 mr-2" />
-                        Call Customer
-                      </Button>
+                        
+                        <Button 
+                          variant="outline"
+                          onClick={() => {
+                            toast({
+                              title: "Order Rejected",
+                              description: "Order has been rejected"
+                            });
+                          }}
+                        >
+                          Reject
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">No active deliveries at the moment</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">No new orders available at the moment</p>
+                  <p className="text-sm text-gray-400 mt-2">Stay online to receive new orders</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
