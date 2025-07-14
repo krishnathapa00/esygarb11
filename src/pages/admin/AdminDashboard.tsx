@@ -141,12 +141,7 @@ const AdminDashboard = () => {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      // Force invalidate and refetch all dashboard-related queries
-      await queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
-      await queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
-      await queryClient.invalidateQueries({ queryKey: ['delivery-partners'] });
-      
-      // Refetch the current dashboard data
+      // Just refetch the current query, don't invalidate all
       await refetch();
       
       toast({
@@ -160,7 +155,8 @@ const AdminDashboard = () => {
         variant: "destructive"
       });
     } finally {
-      setIsRefreshing(false);
+      // Use setTimeout to prevent infinite loop
+      setTimeout(() => setIsRefreshing(false), 100);
     }
   };
 
