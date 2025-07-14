@@ -296,7 +296,10 @@ const DeliveryPartnerAuth = () => {
                   </div>
                   <Button 
                     className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
-                    onClick={handleLogin}
+                    onClick={() => {
+                      console.log('Login button clicked!');
+                      handleLogin();
+                    }}
                     disabled={!email || !password || loading}
                   >
                     {loading ? 'Logging in...' : 'Login to Dashboard'}
