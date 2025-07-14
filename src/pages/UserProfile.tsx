@@ -18,7 +18,9 @@ import {
   Camera,
   Upload,
   MapPin,
-  History
+  History,
+  Loader2,
+  Navigation
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +41,7 @@ const UserProfile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [profileData, setProfileData] = useState({
     full_name: "",
     phone_number: "",
@@ -86,14 +89,17 @@ const UserProfile = () => {
     setUploadingImage(true);
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('user-avatars')
         .upload(filePath, file, { upsert: true });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        throw uploadError;
+      }
 
       const { data } = supabase.storage
         .from('user-avatars')
@@ -101,24 +107,32 @@ const UserProfile = () => {
 
       const newAvatarUrl = data.publicUrl;
       
-      // Update profile with new avatar URL
+      // Update local state immediately for UI feedback
+      setProfileData(prev => ({ ...prev, avatar_url: newAvatarUrl }));
+      
+      // Update profile in database
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ avatar_url: newAvatarUrl })
-        .eq('id', user.id);
+        .upsert({
+          id: user.id,
+          avatar_url: newAvatarUrl,
+          updated_at: new Date().toISOString()
+        });
 
-      if (updateError) throw updateError;
-
-      setProfileData(prev => ({ ...prev, avatar_url: newAvatarUrl }));
+      if (updateError) {
+        console.error("Database update error:", updateError);
+        throw updateError;
+      }
       
       toast({
         title: "Profile picture updated",
         description: "Your profile picture has been updated successfully."
       });
     } catch (error: any) {
+      console.error("Image upload error:", error);
       toast({
         title: "Upload failed",
-        description: error.message,
+        description: error.message || "Failed to upload image",
         variant: "destructive"
       });
     } finally {
@@ -137,12 +151,16 @@ const UserProfile = () => {
           id: user.id,
           full_name: profileData.full_name,
           phone_number: profileData.phone_number,
+          phone: profileData.phone_number, // Also update phone field
           address: profileData.address,
           avatar_url: profileData.avatar_url,
           updated_at: new Date().toISOString()
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Save error:", error);
+        throw error;
+      }
 
       toast({
         title: "Profile updated",
@@ -150,9 +168,10 @@ const UserProfile = () => {
       });
       setIsEditing(false);
     } catch (error: any) {
+      console.error("Profile update error:", error);
       toast({
         title: "Update failed",
-        description: error.message,
+        description: error.message || "Failed to update profile",
         variant: "destructive"
       });
     } finally {
@@ -163,6 +182,54 @@ const UserProfile = () => {
   const handleLogout = () => {
     logout();
     navigate("/");
+  };
+
+  const handleDetectLocation = () => {
+    setIsDetectingLocation(true);
+    
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const { latitude, longitude } = position.coords;
+            const response = await fetch(
+              `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=YOUR_API_KEY`
+            );
+            
+            if (response.ok) {
+              const data = await response.json();
+              const address = data.results[0]?.formatted || `${latitude}, ${longitude}`;
+              handleInputChange("address", address);
+            } else {
+              // Fallback to coordinates
+              handleInputChange("address", `${latitude}, ${longitude}`);
+            }
+          } catch (error) {
+            console.error("Geocoding error:", error);
+            // Fallback to coordinates
+            const { latitude, longitude } = position.coords;
+            handleInputChange("address", `${latitude}, ${longitude}`);
+          }
+          setIsDetectingLocation(false);
+        },
+        (error) => {
+          console.error("Geolocation error:", error);
+          toast({
+            title: "Location access denied",
+            description: "Please allow location access or enter your address manually.",
+            variant: "destructive"
+          });
+          setIsDetectingLocation(false);
+        }
+      );
+    } else {
+      toast({
+        title: "Geolocation not supported",
+        description: "Please enter your address manually.",
+        variant: "destructive"
+      });
+      setIsDetectingLocation(false);
+    }
   };
 
   const handleFeatureClick = (feature: string) => {
@@ -254,28 +321,14 @@ const UserProfile = () => {
                         Edit Profile
                       </Button>
                     ) : (
-                      <div className="space-y-2">
-                        <Button 
-                          onClick={handleSave} 
-                          disabled={loading}
-                          className="w-full"
-                        >
-                          {loading ? (
-                            <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2" />
-                          ) : (
-                            <Save className="h-4 w-4 mr-2" />
-                          )}
-                          Save Changes
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          onClick={() => setIsEditing(false)}
-                          className="w-full"
-                        >
-                          <X className="h-4 w-4 mr-2" />
-                          Cancel
-                        </Button>
-                      </div>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setIsEditing(false)}
+                        className="w-full"
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Cancel Editing
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -334,16 +387,59 @@ const UserProfile = () => {
 
                   <div className="md:col-span-2 space-y-2">
                     <Label htmlFor="address" className="text-sm font-medium">Complete Address</Label>
-                    <Input
-                      id="address"
-                      value={profileData.address}
-                      onChange={(e) => handleInputChange("address", e.target.value)}
-                      disabled={!isEditing}
-                      className="transition-colors"
-                      placeholder="Enter your complete address"
-                    />
+                    <div className="flex gap-2">
+                      <Input
+                        id="address"
+                        value={profileData.address}
+                        onChange={(e) => handleInputChange("address", e.target.value)}
+                        disabled={!isEditing}
+                        className="transition-colors flex-1"
+                        placeholder="Enter your complete address"
+                      />
+                      {isEditing && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleDetectLocation}
+                          disabled={isDetectingLocation}
+                          className="px-3"
+                        >
+                          {isDetectingLocation ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Navigation className="h-4 w-4" />
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                    {isEditing && (
+                      <p className="text-xs text-muted-foreground">
+                        Click the location button to auto-detect or enter manually
+                      </p>
+                    )}
                   </div>
                 </div>
+                
+                {/* Save Button in Personal Information Section */}
+                {isEditing && (
+                  <div className="pt-4 border-t">
+                    <div className="flex gap-3">
+                      <Button 
+                        onClick={handleSave} 
+                        disabled={loading}
+                        className="flex-1"
+                      >
+                        {loading ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Save className="h-4 w-4 mr-2" />
+                        )}
+                        Save Changes
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
