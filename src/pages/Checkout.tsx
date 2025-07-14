@@ -52,16 +52,20 @@ const Checkout = () => {
 
     // Auto-fill location from previous detection
     const savedLocation = localStorage.getItem("esygrab_user_location");
-    if (savedLocation && savedLocation !== "Current Location Detected") {
-      const savedLocationData = JSON.parse(savedLocation || "{}");
-      if (savedLocationData.address) {
-        setFormData((prev) => ({
-          ...prev,
-          address: savedLocationData.address,
-          city: savedLocationData.city || "",
-          state: savedLocationData.state || "",
-          pincode: savedLocationData.pincode || "",
-        }));
+    if (savedLocation && savedLocation !== "Current Location Detected" && savedLocation !== "null" && savedLocation !== "undefined") {
+      try {
+        const savedLocationData = JSON.parse(savedLocation);
+        if (savedLocationData && savedLocationData.address) {
+          setFormData((prev) => ({
+            ...prev,
+            address: savedLocationData.address,
+            city: savedLocationData.city || "Kathmandu", // Default city if not provided
+            state: savedLocationData.state || "Bagmati", // Default state if not provided
+            pincode: savedLocationData.pincode || "44600", // Default pincode if not provided
+          }));
+        }
+      } catch (error) {
+        console.error("Error parsing saved location:", error);
       }
     }
   }, []);
@@ -135,7 +139,8 @@ const Checkout = () => {
         return;
       }
 
-      if (!formData.address || !formData.city) {
+      // More flexible address validation - check if we have at least an address
+      if (!formData.address || formData.address.trim() === "") {
         alert("Please provide delivery address details.");
         return;
       }
