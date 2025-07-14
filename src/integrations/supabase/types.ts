@@ -395,6 +395,18 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_delivery_partners: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          full_name: string
+          phone_number: string
+        }[]
+      }
+      is_super_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
       order_status:

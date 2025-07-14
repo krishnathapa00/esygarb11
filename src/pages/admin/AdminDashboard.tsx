@@ -13,6 +13,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 const AdminDashboard = () => {
   const [dateFilter, setDateFilter] = useState('today');
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -137,15 +138,30 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleRefresh = () => {
-    refetch();
-    // Force reload all queries
-    queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
-    queryClient.refetchQueries({ queryKey: ['admin-dashboard'] });
-    toast({
-      title: "Data refreshed",
-      description: "Dashboard data has been updated."
-    });
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      // Force invalidate and refetch all dashboard-related queries
+      await queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+      await queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
+      await queryClient.invalidateQueries({ queryKey: ['delivery-partners'] });
+      
+      // Refetch the current dashboard data
+      await refetch();
+      
+      toast({
+        title: "Data refreshed",
+        description: "Dashboard data has been updated with latest information."
+      });
+    } catch (error) {
+      toast({
+        title: "Refresh failed",
+        description: "Failed to refresh dashboard data.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   return (
@@ -168,9 +184,9 @@ const AdminDashboard = () => {
                 <SelectItem value="year">This Year</SelectItem>
               </SelectContent>
             </Select>
-            <Button onClick={handleRefresh} variant="outline" size="sm">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
+            <Button onClick={handleRefresh} variant="outline" size="sm" disabled={isRefreshing}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? 'Refreshing...' : 'Refresh'}
             </Button>
           </div>
         </div>
