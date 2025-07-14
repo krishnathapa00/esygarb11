@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Search, Eye, Trash2, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import AdminLayout from './components/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
 
 const ManageOrders = () => {
@@ -31,12 +31,10 @@ const ManageOrders = () => {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [selectedDeliveryPartner, setSelectedDeliveryPartner] = useState('');
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
-  // Fetch orders from Supabase
-  const { data: orders = [], refetch } = useQuery({
-    queryKey: ['admin-orders'],
-    queryFn: async () => {
+  // Simple fetch function
+  const fetchOrders = useCallback(async () => {
+    try {
       const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -46,46 +44,60 @@ const ManageOrders = () => {
         `)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        toast({
-          title: "Failed to load orders",
-          description: error.message,
-          variant: "destructive"
-        });
-        return [];
-      }
+      if (error) throw error;
       return data || [];
+    } catch (error: any) {
+      console.error('Orders fetch error:', error);
+      return [];
     }
-  });
+  }, []);
 
-  // Fetch delivery partners
-  const { data: deliveryPartners = [] } = useQuery({
-    queryKey: ['delivery-partners'],
-    queryFn: async () => {
+  const fetchDeliveryPartners = useCallback(async () => {
+    try {
       const { data, error } = await supabase
         .from('profiles')
         .select('id, full_name, phone_number')
         .eq('role', 'delivery_partner');
 
-      if (error) {
-        console.error('Failed to load delivery partners:', error);
-        return [];
-      }
+      if (error) throw error;
       return data || [];
+    } catch (error: any) {
+      console.error('Delivery partners fetch error:', error);
+      return [];
     }
+  }, []);
+
+  const checkSuperAdmin = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.rpc('is_super_admin');
+      if (error) throw error;
+      return data || false;
+    } catch (error: any) {
+      console.error('Super admin check error:', error);
+      return false;
+    }
+  }, []);
+
+  // Separate queries to prevent dependency issues
+  const { data: orders = [], refetch: refetchOrders } = useQuery({
+    queryKey: ['orders-list'],
+    queryFn: fetchOrders,
+    staleTime: 2 * 60 * 1000,
+    refetchOnWindowFocus: false
   });
 
-  // Check if current user is super admin
+  const { data: deliveryPartners = [] } = useQuery({
+    queryKey: ['delivery-partners-list'],
+    queryFn: fetchDeliveryPartners,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false
+  });
+
   const { data: isSuperAdmin = false } = useQuery({
-    queryKey: ['is-super-admin'],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('is_super_admin');
-      if (error) {
-        console.error('Failed to check super admin status:', error);
-        return false;
-      }
-      return data || false;
-    }
+    queryKey: ['super-admin-check'],
+    queryFn: checkSuperAdmin,
+    staleTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false
   });
   
   const getStatusColor = (status: string) => {
@@ -101,84 +113,93 @@ const ManageOrders = () => {
   };
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
-    const { error } = await supabase
-      .from('orders')
-      .update({ status: newStatus as any })
-      .eq('id', orderId);
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: newStatus as any })
+        .eq('id', orderId);
 
-    if (error) {
+      if (error) throw error;
+
+      toast({
+        title: "Order updated",
+        description: "Order status has been updated successfully."
+      });
+      refetchOrders();
+    } catch (error: any) {
       toast({
         title: "Failed to update order",
         description: error.message,
         variant: "destructive"
       });
-    } else {
-      toast({
-        title: "Order updated",
-        description: "Order status has been updated successfully."
-      });
-      refetch();
-      queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
     }
   };
 
   const handleAssignDeliveryPartner = async () => {
     if (!selectedOrder || !selectedDeliveryPartner) return;
 
-    const { error } = await supabase
-      .from('orders')
-      .update({ 
-        delivery_partner_id: selectedDeliveryPartner,
-        status: 'dispatched'
-      })
-      .eq('id', selectedOrder.id);
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ 
+          delivery_partner_id: selectedDeliveryPartner,
+          status: 'dispatched'
+        })
+        .eq('id', selectedOrder.id);
 
-    if (error) {
+      if (error) throw error;
+
+      toast({
+        title: "Delivery partner assigned",
+        description: "Order has been assigned and status updated to dispatched."
+      });
+      
+      // Close modal and reset state
+      setAssignModalOpen(false);
+      setSelectedOrder(null);
+      setSelectedDeliveryPartner('');
+      refetchOrders();
+    } catch (error: any) {
       toast({
         title: "Failed to assign delivery partner",
         description: error.message,
         variant: "destructive"
       });
-    } else {
-      toast({
-        title: "Delivery partner assigned",
-        description: "Order has been assigned and status updated to dispatched."
-      });
-      setAssignModalOpen(false);
-      setSelectedOrder(null);
-      setSelectedDeliveryPartner('');
-      refetch();
     }
   };
 
   const handleDeleteOrder = async () => {
     if (!selectedOrder) return;
 
-    const { error } = await supabase
-      .from('orders')
-      .delete()
-      .eq('id', selectedOrder.id);
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .delete()
+        .eq('id', selectedOrder.id);
 
-    if (error) {
+      if (error) throw error;
+
+      toast({
+        title: "Order deleted",
+        description: "Order has been permanently deleted."
+      });
+      
+      // Close modal and reset state
+      setDeleteModalOpen(false);
+      setSelectedOrder(null);
+      refetchOrders();
+    } catch (error: any) {
       toast({
         title: "Failed to delete order",
         description: error.message,
         variant: "destructive"
       });
-    } else {
-      toast({
-        title: "Order deleted",
-        description: "Order has been permanently deleted."
-      });
-      setDeleteModalOpen(false);
-      setSelectedOrder(null);
-      refetch();
     }
   };
 
   // Filter orders based on search and status
   const filteredOrders = orders.filter(order => {
-    const matchesSearch = order.order_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = order.order_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          order.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
     return matchesSearch && matchesStatus;
@@ -222,22 +243,22 @@ const ManageOrders = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Order ID
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Customer
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Date
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Amount
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -259,10 +280,10 @@ const ManageOrders = () => {
                       <div className="text-sm font-medium text-gray-900">Rs {order.total_amount}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <Select value={order.status} onValueChange={(value) => handleStatusChange(order.id, value)}>
+                      <Select value={order.status || ''} onValueChange={(value) => handleStatusChange(order.id, value)}>
                         <SelectTrigger className="w-[140px]">
-                          <Badge className={getStatusColor(order.status)}>
-                            {order.status?.replace('_', ' ')}
+                          <Badge className={getStatusColor(order.status || '')}>
+                            {order.status?.replace('_', ' ') || 'pending'}
                           </Badge>
                         </SelectTrigger>
                         <SelectContent>
@@ -333,7 +354,7 @@ const ManageOrders = () => {
                   <SelectValue placeholder="Select delivery partner" />
                 </SelectTrigger>
                 <SelectContent>
-                  {deliveryPartners.map((partner: any) => (
+                  {deliveryPartners.map((partner) => (
                     <SelectItem key={partner.id} value={partner.id}>
                       {partner.full_name} {partner.phone_number && `- ${partner.phone_number}`}
                     </SelectItem>
