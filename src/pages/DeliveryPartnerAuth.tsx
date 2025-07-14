@@ -85,10 +85,10 @@ const DeliveryPartnerAuth = () => {
   };
   
   const handleVerifyOtp = async () => {
-    if (otp.length !== 4) {
+    if (otp.length !== 6) {
       toast({
         title: "Invalid OTP",
-        description: "Please enter a valid 4-digit OTP",
+        description: "Please enter a valid 6-digit OTP",
         variant: "destructive",
       });
       return;
@@ -218,16 +218,16 @@ const DeliveryPartnerAuth = () => {
                         </Label>
                         <Input
                           id="signupOtp"
-                          placeholder="Enter 4-digit OTP"
+                          placeholder="Enter 6-digit OTP"
                           value={otp}
                           onChange={(e) => setOtp(e.target.value)}
-                          maxLength={4}
+                          maxLength={6}
                         />
                       </div>
                       <Button 
                         className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
                         onClick={handleVerifyOtp}
-                        disabled={otp.length !== 4 || loading}
+                        disabled={otp.length !== 6 || loading}
                       >
                         {loading ? 'Verifying...' : 'Verify & Start Earning'}
                       </Button>
@@ -273,16 +273,16 @@ const DeliveryPartnerAuth = () => {
                         </Label>
                         <Input
                           id="otp"
-                          placeholder="Enter 4-digit OTP"
+                          placeholder="Enter 6-digit OTP"
                           value={otp}
                           onChange={(e) => setOtp(e.target.value)}
-                          maxLength={4}
+                          maxLength={6}
                         />
                       </div>
                       <Button 
                         className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
                         onClick={handleVerifyOtp}
-                        disabled={otp.length !== 4 || loading}
+                        disabled={otp.length !== 6 || loading}
                       >
                         {loading ? 'Verifying...' : 'Login to Dashboard'}
                       </Button>
