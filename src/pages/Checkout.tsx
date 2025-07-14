@@ -124,12 +124,28 @@ const Checkout = () => {
 
   const handlePlaceOrder = async () => {
     try {
+      if (!user?.id) {
+        alert("Please log in to place an order.");
+        navigate("/login");
+        return;
+      }
+
+      if (cart.length === 0) {
+        alert("Your cart is empty.");
+        return;
+      }
+
+      if (!formData.address || !formData.city) {
+        alert("Please provide delivery address details.");
+        return;
+      }
+
       // Create order in database
       const orderData = {
         order_number: `ORD${Date.now()}`,
         user_id: user.id,
         total_amount: totalAmount,
-        delivery_address: `${formData.address}, ${formData.city}, ${formData.state} ${formData.pincode}`,
+        delivery_address: `${formData.address}, ${formData.city}, ${formData.state} ${formData.pincode}`.trim(),
         estimated_delivery: "10-15 mins",
         status: "pending" as const,
         payment_status: (selectedPayment === "cod" ? "pending" : "completed") as "pending" | "completed"
@@ -141,7 +157,10 @@ const Checkout = () => {
         .select()
         .single();
 
-      if (orderError) throw orderError;
+      if (orderError) {
+        console.error("Order creation error:", orderError);
+        throw orderError;
+      }
 
       // Create order items
       const orderItems = cart.map(item => ({
@@ -155,7 +174,10 @@ const Checkout = () => {
         .from('order_items')
         .insert(orderItems);
 
-      if (itemsError) throw itemsError;
+      if (itemsError) {
+        console.error("Order items creation error:", itemsError);
+        throw itemsError;
+      }
 
       // Save order ID to localStorage for order confirmation page
       localStorage.setItem('latest_order_id', order.id);
@@ -276,9 +298,10 @@ const Checkout = () => {
               </div>
             </div>
 
+            {/* Place Order button only visible on desktop */}
             <Button
               onClick={handlePlaceOrder}
-              className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 py-3 text-base font-medium"
+              className="hidden md:flex w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 py-3 text-base font-medium"
             >
               {selectedPayment === "cod"
                 ? "Place Order"
