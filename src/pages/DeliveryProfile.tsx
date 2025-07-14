@@ -1,325 +1,453 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, User, Phone, Car, FileText, CheckCircle, Clock, X } from "lucide-react";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { 
+  ArrowLeft, User, Phone, Mail, Truck, Building, 
+  MapPin, Star, CheckCircle, Calendar, Save
+} from 'lucide-react';
 
-interface Profile {
-  id: string;
-  full_name: string;
-  phone_number: string;
-  vehicle_type: string;
-  license_number: string;
-  role: string;
-  created_at: string;
-}
-
-export default function DeliveryProfile() {
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState(false);
-  const [formData, setFormData] = useState({
-    full_name: "",
-    phone_number: "",
-    vehicle_type: "",
-    license_number: ""
-  });
+const DeliveryProfile = () => {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  const [isEditing, setIsEditing] = useState(false);
+  const [fullName, setFullName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [vehicleType, setVehicleType] = useState('');
+  const [licenseNumber, setLicenseNumber] = useState('');
+  const [darkstoreId, setDarkstoreId] = useState('');
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  const fetchProfile = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        navigate('/delivery-auth');
-        return;
-      }
-
+  // Fetch profile data
+  const { data: profile, isLoading } = useQuery({
+    queryKey: ['delivery-profile-details', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select(`
+          *,
+          darkstores(id, name, address, city)
+        `)
         .eq('id', user.id)
         .single();
-
+      
       if (error) throw error;
+      return data;
+    },
+    enabled: !!user
+  });
 
-      setProfile(data);
-      setFormData({
-        full_name: data.full_name || "",
-        phone_number: data.phone_number || "",
-        vehicle_type: data.vehicle_type || "",
-        license_number: data.license_number || ""
-      });
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load profile",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
+  // Update form when profile data changes
+  React.useEffect(() => {
+    if (profile) {
+      setFullName((profile as any).full_name || '');
+      setPhoneNumber((profile as any).phone_number || '');
+      setVehicleType((profile as any).vehicle_type || '');
+      setLicenseNumber((profile as any).license_number || '');
+      setDarkstoreId((profile as any).darkstore_id || '');
     }
-  };
+  }, [profile]);
 
-  const handleUpdateProfile = async () => {
-    if (!profile) return;
-    
-    setUpdating(true);
-    try {
+  // Fetch available darkstores
+  const { data: darkstores } = useQuery({
+    queryKey: ['darkstores'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('darkstores')
+        .select('*')
+        .eq('is_active', true)
+        .order('name');
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  // Fetch delivery stats
+  const { data: stats } = useQuery({
+    queryKey: ['delivery-profile-stats', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+
+      // Get total deliveries
+      const { data: totalDeliveries } = await supabase
+        .from('orders')
+        .select('total_amount, created_at')
+        .eq('delivery_partner_id', user.id)
+        .eq('status', 'delivered');
+
+      // Get this week's deliveries
+      const weekStart = new Date();
+      weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+      weekStart.setHours(0, 0, 0, 0);
+
+      const { data: weekDeliveries } = await supabase
+        .from('orders')
+        .select('total_amount')
+        .eq('delivery_partner_id', user.id)
+        .eq('status', 'delivered')
+        .gte('created_at', weekStart.toISOString());
+
+      const totalEarnings = (totalDeliveries || []).reduce((sum, order) => sum + (Number(order.total_amount) * 0.15), 0);
+      const weekEarnings = (weekDeliveries || []).reduce((sum, order) => sum + (Number(order.total_amount) * 0.15), 0);
+
+      return {
+        totalDeliveries: totalDeliveries?.length || 0,
+        totalEarnings,
+        weekDeliveries: weekDeliveries?.length || 0,
+        weekEarnings,
+        averageRating: 4.7 // Placeholder
+      };
+    },
+    enabled: !!user
+  });
+
+  // Update profile mutation
+  const updateProfileMutation = useMutation({
+    mutationFn: async (updatedData: any) => {
       const { error } = await supabase
         .from('profiles')
-        .update({
-          full_name: formData.full_name,
-          phone_number: formData.phone_number,
-          vehicle_type: formData.vehicle_type,
-          license_number: formData.license_number,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', profile.id);
-
+        .update(updatedData)
+        .eq('id', user?.id);
+      
       if (error) throw error;
-
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['delivery-profile-details'] });
+      queryClient.invalidateQueries({ queryKey: ['delivery-profile'] });
+      setIsEditing(false);
       toast({
         title: "Profile Updated",
-        description: "Your profile has been updated successfully",
+        description: "Your profile has been updated successfully."
       });
-
-      fetchProfile();
-    } catch (error) {
-      console.error('Error updating profile:', error);
+    },
+    onError: (error: any) => {
       toast({
-        title: "Error",
-        description: "Failed to update profile",
+        title: "Update Failed",
+        description: error.message || "Failed to update profile.",
         variant: "destructive"
       });
-    } finally {
-      setUpdating(false);
     }
+  });
+
+  const handleSave = () => {
+    const updatedData: any = {
+      full_name: fullName,
+      phone_number: phoneNumber,
+      vehicle_type: vehicleType,
+      license_number: licenseNumber,
+    };
+
+    // Only include darkstore_id if it's changed
+    if (darkstoreId !== (profile as any)?.darkstore_id) {
+      updatedData.darkstore_id = darkstoreId || null;
+    }
+
+    updateProfileMutation.mutate(updatedData);
   };
 
-  const getKYCStatus = () => {
-    // Simple logic: if all required fields are filled, consider as approved
-    const hasAllDetails = profile?.full_name && profile?.phone_number && profile?.vehicle_type && profile?.license_number;
-    
-    if (!hasAllDetails) {
-      return { status: 'pending', label: 'Incomplete', color: 'bg-yellow-500' };
+  const getDarkstoreName = () => {
+    if ((profile as any)?.darkstores) {
+      return Array.isArray((profile as any).darkstores) ? (profile as any).darkstores[0]?.name : (profile as any).darkstores?.name;
     }
-    
-    // For MVP, we'll consider complete profiles as approved
-    return { status: 'approved', label: 'Approved', color: 'bg-green-500' };
+    return 'Not Assigned';
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">Loading profile...</div>
+      <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading profile...</p>
+        </div>
       </div>
     );
   }
-
-  if (!profile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">Profile not found</div>
-      </div>
-    );
-  }
-
-  const kycStatus = getKYCStatus();
 
   return (
-    <div className="min-h-screen bg-background p-3 md:p-4">
-      <div className="max-w-2xl mx-auto space-y-4 md:space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 md:gap-4">
-          <Button variant="outline" onClick={() => navigate('/delivery-dashboard')} size="sm" className="w-fit">
-            <ArrowLeft className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
-            <span className="text-xs md:text-sm">Back to Dashboard</span>
-          </Button>
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold">Delivery Partner Profile</h1>
-            <p className="text-muted-foreground text-sm md:text-base">Manage your profile and KYC information</p>
-          </div>
-        </div>
-
-        {/* KYC Status */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5" />
-              KYC Status
-            </CardTitle>
-            <CardDescription>
-              Your document verification status
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {kycStatus.status === 'approved' ? (
-                  <CheckCircle className="w-5 h-5 text-green-500" />
-                ) : kycStatus.status === 'pending' ? (
-                  <Clock className="w-5 h-5 text-yellow-500" />
-                ) : (
-                  <X className="w-5 h-5 text-red-500" />
-                )}
-                <div>
-                  <p className="font-medium">Document Status</p>
-                  <p className="text-sm text-muted-foreground">
-                    {kycStatus.status === 'approved' && "All documents verified"}
-                    {kycStatus.status === 'pending' && "Please complete all required fields"}
-                    {kycStatus.status === 'rejected' && "Documents need revision"}
-                  </p>
-                </div>
-              </div>
-              <Badge className={`${kycStatus.color} text-white`}>
-                {kycStatus.label}
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Profile Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="w-5 h-5" />
-              Personal Information
-            </CardTitle>
-            <CardDescription>
-              Update your personal details
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="full_name" className="text-sm">Full Name *</Label>
-                <Input
-                  id="full_name"
-                  value={formData.full_name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
-                  placeholder="Enter your full name"
-                  className="text-sm"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone_number" className="text-sm">Phone Number *</Label>
-                <Input
-                  id="phone_number"
-                  value={formData.phone_number}
-                  onChange={(e) => setFormData(prev => ({ ...prev, phone_number: e.target.value }))}
-                  placeholder="Enter your phone number"
-                  className="text-sm"
-                />
-              </div>
-            </div>
-
-            <Separator />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="vehicle_type" className="text-sm">Vehicle Type *</Label>
-                <Input
-                  id="vehicle_type"
-                  value={formData.vehicle_type}
-                  onChange={(e) => setFormData(prev => ({ ...prev, vehicle_type: e.target.value }))}
-                  placeholder="e.g., Motorcycle, Bicycle, Car"
-                  className="text-sm"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="license_number" className="text-sm">License Number *</Label>
-                <Input
-                  id="license_number"
-                  value={formData.license_number}
-                  onChange={(e) => setFormData(prev => ({ ...prev, license_number: e.target.value }))}
-                  placeholder="Enter your license number"
-                  className="text-sm"
-                />
-              </div>
-            </div>
-
-            <Button 
-              onClick={handleUpdateProfile} 
-              disabled={updating}
-              className="w-full"
-              size="sm"
-            >
-              {updating ? "Updating..." : "Update Profile"}
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Account Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Account Information</CardTitle>
-            <CardDescription>
-              Your account details
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 text-sm">
-              <div>
-                <Label className="text-muted-foreground text-xs md:text-sm">Partner ID</Label>
-                <p className="font-medium text-sm md:text-base">{profile.id.slice(0, 8)}</p>
-              </div>
-              <div>
-                <Label className="text-muted-foreground text-xs md:text-sm">Account Type</Label>
-                <p className="font-medium capitalize text-sm md:text-base">{profile.role.replace('_', ' ')}</p>
-              </div>
-              <div>
-                <Label className="text-muted-foreground text-xs md:text-sm">Member Since</Label>
-                <p className="font-medium text-sm md:text-base">
-                  {new Date(profile.created_at).toLocaleDateString()}
-                </p>
-              </div>
-              <div>
-                <Label className="text-muted-foreground text-xs md:text-sm">Status</Label>
-                <Badge variant="outline" className="text-green-600 border-green-600 text-xs">
-                  Active
-                </Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Help Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Need Help?</CardTitle>
-            <CardDescription>
-              Contact support if you need assistance
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <Phone className="w-4 h-4 text-muted-foreground" />
-                <div>
-                  <p className="font-medium text-sm md:text-base">Support Hotline</p>
-                  <p className="text-xs md:text-sm text-muted-foreground">+977 98765 43210</p>
-                </div>
-              </div>
-              <Button variant="outline" className="w-full" size="sm">
-                <Phone className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
-                <span className="text-xs md:text-sm">Contact Support</span>
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
+      {/* Header */}
+      <div className="bg-card/80 backdrop-blur-lg shadow-lg border-b border-border/50">
+        <div className="max-w-4xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-14 md:h-16">
+            <div className="flex items-center space-x-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/delivery-dashboard')}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Dashboard
               </Button>
             </div>
-          </CardContent>
-        </Card>
+            <h1 className="text-lg md:text-xl font-bold text-foreground">Profile Settings</h1>
+            <div className="w-24"></div> {/* Spacer for centering */}
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-3 sm:px-6 lg:px-8 py-6">
+        <div className="grid gap-6 md:grid-cols-3">
+          {/* Stats Cards */}
+          <div className="md:col-span-3">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+              <Card className="bg-card/60 backdrop-blur-sm border-border/50">
+                <CardContent className="pt-4">
+                  <div className="text-center">
+                    <CheckCircle className="h-6 w-6 text-green-600 mx-auto mb-2" />
+                    <div className="text-xl font-bold">{stats?.totalDeliveries || 0}</div>
+                    <p className="text-xs text-muted-foreground">Total Deliveries</p>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-card/60 backdrop-blur-sm border-border/50">
+                <CardContent className="pt-4">
+                  <div className="text-center">
+                    <Calendar className="h-6 w-6 text-blue-600 mx-auto mb-2" />
+                    <div className="text-xl font-bold">{stats?.weekDeliveries || 0}</div>
+                    <p className="text-xs text-muted-foreground">This Week</p>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-card/60 backdrop-blur-sm border-border/50">
+                <CardContent className="pt-4">
+                  <div className="text-center">
+                    <Star className="h-6 w-6 text-yellow-500 mx-auto mb-2" />
+                    <div className="text-xl font-bold">{stats?.averageRating || 0}</div>
+                    <p className="text-xs text-muted-foreground">Rating</p>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-card/60 backdrop-blur-sm border-border/50">
+                <CardContent className="pt-4">
+                  <div className="text-center">
+                    <div className="text-green-600 font-bold text-lg">Rs</div>
+                    <div className="text-xl font-bold">{(stats?.totalEarnings || 0).toFixed(0)}</div>
+                    <p className="text-xs text-muted-foreground">Total Earned</p>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-card/60 backdrop-blur-sm border-border/50">
+                <CardContent className="pt-4">
+                  <div className="text-center">
+                    <div className="text-green-600 font-bold text-lg">Rs</div>
+                    <div className="text-xl font-bold">{(stats?.weekEarnings || 0).toFixed(0)}</div>
+                    <p className="text-xs text-muted-foreground">This Week</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Profile Information */}
+          <Card className="md:col-span-2 bg-card/60 backdrop-blur-sm border-border/50">
+            <CardHeader className="border-b border-border/50">
+              <div className="flex justify-between items-center">
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5 text-primary" />
+                  Personal Information
+                </CardTitle>
+                {!isEditing ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsEditing(true)}
+                  >
+                    Edit Profile
+                  </Button>
+                ) : (
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsEditing(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleSave}
+                      disabled={updateProfileMutation.isPending}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      Save
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="fullName">Full Name</Label>
+                  {isEditing ? (
+                    <Input
+                      id="fullName"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="mt-1"
+                    />
+                  ) : (
+                    <p className="mt-1 text-sm text-muted-foreground">{(profile as any)?.full_name || 'Not provided'}</p>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="email">Email Address</Label>
+                  <div className="mt-1 flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">{user?.email}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="phoneNumber">Phone Number</Label>
+                  {isEditing ? (
+                    <Input
+                      id="phoneNumber"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      className="mt-1"
+                    />
+                  ) : (
+                    <div className="mt-1 flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">{(profile as any)?.phone_number || 'Not provided'}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="vehicleType">Vehicle Type</Label>
+                  {isEditing ? (
+                    <Input
+                      id="vehicleType"
+                      value={vehicleType}
+                      onChange={(e) => setVehicleType(e.target.value)}
+                      placeholder="e.g., Motorcycle, Bicycle, Scooter"
+                      className="mt-1"
+                    />
+                  ) : (
+                    <div className="mt-1 flex items-center gap-2">
+                      <Truck className="h-4 w-4 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">{(profile as any)?.vehicle_type || 'Not provided'}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="licenseNumber">License/Vehicle Number</Label>
+                  {isEditing ? (
+                    <Input
+                      id="licenseNumber"
+                      value={licenseNumber}
+                      onChange={(e) => setLicenseNumber(e.target.value)}
+                      className="mt-1"
+                    />
+                  ) : (
+                    <p className="mt-1 text-sm text-muted-foreground">{(profile as any)?.license_number || 'Not provided'}</p>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="darkstore">Assigned Darkstore</Label>
+                  {isEditing ? (
+                    <Select value={darkstoreId} onValueChange={setDarkstoreId}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="Select a darkstore" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">No Darkstore</SelectItem>
+                        {darkstores?.map((darkstore) => (
+                          <SelectItem key={darkstore.id} value={darkstore.id.toString()}>
+                            {darkstore.name} - {darkstore.city}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="mt-1 flex items-center gap-2">
+                      <Building className="h-4 w-4 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">{getDarkstoreName()}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Account Status */}
+          <Card className="bg-card/60 backdrop-blur-sm border-border/50">
+            <CardHeader className="border-b border-border/50">
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-primary" />
+                Account Status
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Account Status</span>
+                  <Badge className="bg-green-100 text-green-800">
+                    Active
+                  </Badge>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Partner Role</span>
+                  <Badge className="bg-blue-100 text-blue-800">
+                    Delivery Partner
+                  </Badge>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Verification</span>
+                  <Badge className="bg-green-100 text-green-800">
+                    Verified
+                  </Badge>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Joined</span>
+                  <span className="text-sm text-muted-foreground">
+                    {new Date((profile as any)?.created_at || '').toLocaleDateString()}
+                  </span>
+                </div>
+
+                <div className="pt-4 border-t">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm">Performance</span>
+                    <span className="text-sm font-medium text-green-600">Excellent</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="bg-green-600 h-2 rounded-full" style={{ width: '85%' }}></div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Based on delivery speed and customer ratings</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
-}
+};
+
+export default DeliveryProfile;

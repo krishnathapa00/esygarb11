@@ -8,7 +8,29 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Home, LogOut, Package, MapPin, Phone, Timer, Clock, CheckCircle, User, Power, DollarSign, Navigation } from 'lucide-react';
+import { 
+  Home, LogOut, Package, MapPin, Phone, Timer, Clock, CheckCircle, 
+  User, Power, DollarSign, Navigation, Building, Star, Truck,
+  AlertCircle, RefreshCw
+} from 'lucide-react';
+
+interface OrderWithProfile {
+  id: string;
+  order_number: string;
+  total_amount: number;
+  delivery_address: string;
+  status: string;
+  created_at: string;
+  darkstore_id: number;
+  profiles: {
+    full_name: string;
+    phone_number: string;
+  } | null;
+  darkstores: {
+    name: string;
+    address: string;
+  } | null;
+}
 
 const DeliveryDashboard = () => {
   const { user, logout } = useAuth();
@@ -16,16 +38,18 @@ const DeliveryDashboard = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isOnline, setIsOnline] = useState(false);
-  const [activeOrder, setActiveOrder] = useState<any>(null);
 
-  // Fetch delivery partner profile for online status
-  const { data: profile } = useQuery({
+  // Fetch delivery partner profile
+  const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ['delivery-profile', user?.id],
     queryFn: async () => {
       if (!user) return null;
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select(`
+          *,
+          darkstores(name, address)
+        `)
         .eq('id', user.id)
         .single();
       
@@ -33,6 +57,20 @@ const DeliveryDashboard = () => {
       return data;
     },
     enabled: !!user
+  });
+
+  // Update online status when toggle changes
+  const updateOnlineStatus = useMutation({
+    mutationFn: async (online: boolean) => {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_online: online })
+        .eq('id', user?.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['delivery-profile'] });
+    }
   });
 
   // Fetch delivery partner stats
@@ -45,33 +83,29 @@ const DeliveryDashboard = () => {
       today.setHours(0, 0, 0, 0);
 
       // Get today's deliveries
-      const { data: todayDeliveries, error: todayError } = await supabase
+      const { data: todayDeliveries } = await supabase
         .from('orders')
-        .select('*')
+        .select('total_amount')
         .eq('delivery_partner_id', user.id)
         .eq('status', 'delivered')
         .gte('created_at', today.toISOString());
 
-      // Get all completed deliveries for earnings
-      const { data: completedDeliveries, error: completedError } = await supabase
+      // Get all completed deliveries for total earnings
+      const { data: completedDeliveries } = await supabase
         .from('orders')
-        .select('*')
+        .select('total_amount')
         .eq('delivery_partner_id', user.id)
         .eq('status', 'delivered');
 
       // Get pending orders
-      const { data: pendingOrders, error: pendingError } = await supabase
+      const { data: pendingOrders } = await supabase
         .from('orders')
-        .select('*')
+        .select('id')
         .eq('delivery_partner_id', user.id)
         .in('status', ['confirmed', 'dispatched', 'out_for_delivery']);
 
-      if (todayError || completedError || pendingError) {
-        throw new Error('Failed to fetch stats');
-      }
-
-      const todayEarnings = (todayDeliveries || []).reduce((sum, order) => sum + (Number(order.total_amount) * 0.1), 0);
-      const totalEarnings = (completedDeliveries || []).reduce((sum, order) => sum + (Number(order.total_amount) * 0.1), 0);
+      const todayEarnings = (todayDeliveries || []).reduce((sum, order) => sum + (Number(order.total_amount) * 0.15), 0);
+      const totalEarnings = (completedDeliveries || []).reduce((sum, order) => sum + (Number(order.total_amount) * 0.15), 0);
 
       return {
         todayDeliveries: todayDeliveries?.length || 0,
@@ -83,25 +117,29 @@ const DeliveryDashboard = () => {
     enabled: !!user
   });
 
-  // Fetch available orders for assignment (when online)
-  const { data: availableOrders } = useQuery({
-    queryKey: ['available-orders'],
+  // Fetch available orders for pickup from assigned darkstore
+  const { data: availableOrders, refetch: refetchAvailable } = useQuery({
+    queryKey: ['available-orders', profile?.darkstore_id],
     queryFn: async () => {
+      if (!profile?.darkstore_id) return [];
+      
       const { data: orders, error } = await supabase
         .from('orders')
         .select(`
           *,
-          profiles!orders_user_id_fkey(full_name, phone_number)
+          profiles!orders_user_id_fkey(full_name, phone_number),
+          darkstores(name, address)
         `)
+        .eq('darkstore_id', parseInt(profile.darkstore_id))
         .is('delivery_partner_id', null)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: true })
-        .limit(5);
+        .eq('status', 'ready_for_pickup')
+        .order('created_at', { ascending: true });
 
       if (error) throw error;
       return orders || [];
     },
-    enabled: isOnline && !!user
+    enabled: !!profile?.darkstore_id && isOnline,
+    refetchInterval: 30000 // Refresh every 30 seconds
   });
 
   // Fetch current active order
@@ -114,7 +152,8 @@ const DeliveryDashboard = () => {
         .from('orders')
         .select(`
           *,
-          profiles!orders_user_id_fkey(full_name, phone_number)
+          profiles!orders_user_id_fkey(full_name, phone_number),
+          darkstores(name, address)
         `)
         .eq('delivery_partner_id', user.id)
         .in('status', ['confirmed', 'dispatched', 'out_for_delivery'])
@@ -127,8 +166,8 @@ const DeliveryDashboard = () => {
     enabled: !!user
   });
 
-  // Accept order mutation
-  const acceptOrderMutation = useMutation({
+  // Accept/Claim order mutation
+  const claimOrderMutation = useMutation({
     mutationFn: async (orderId: string) => {
       const { error } = await supabase
         .from('orders')
@@ -137,24 +176,42 @@ const DeliveryDashboard = () => {
           status: 'confirmed',
           updated_at: new Date().toISOString()
         })
-        .eq('id', orderId);
+        .eq('id', orderId)
+        .is('delivery_partner_id', null); // Ensure it hasn't been claimed by someone else
 
       if (error) throw error;
+
+      // Add status history
+      await supabase
+        .from('order_status_history')
+        .insert({
+          order_id: orderId,
+          status: 'confirmed',
+          notes: 'Order claimed by delivery partner'
+        });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['available-orders'] });
       queryClient.invalidateQueries({ queryKey: ['current-order'] });
       queryClient.invalidateQueries({ queryKey: ['delivery-stats'] });
       toast({
-        title: "Order Accepted!",
-        description: "You have successfully accepted the order."
+        title: "Order Claimed!",
+        description: "You have successfully claimed this order."
       });
+    },
+    onError: () => {
+      toast({
+        title: "Failed to claim order",
+        description: "This order may have been claimed by another partner.",
+        variant: "destructive"
+      });
+      refetchAvailable();
     }
   });
 
   // Update order status mutation
   const updateOrderStatus = useMutation({
-    mutationFn: async ({ orderId, status }: { orderId: string; status: 'pending' | 'confirmed' | 'dispatched' | 'out_for_delivery' | 'delivered' | 'cancelled' }) => {
+    mutationFn: async ({ orderId, status }: { orderId: string; status: 'pending' | 'confirmed' | 'dispatched' | 'out_for_delivery' | 'delivered' | 'cancelled' | 'ready_for_pickup' }) => {
       const { error } = await supabase
         .from('orders')
         .update({ 
@@ -170,33 +227,35 @@ const DeliveryDashboard = () => {
         .from('order_status_history')
         .insert({
           order_id: orderId,
-          status,
-          notes: `Status updated by delivery partner`
+          status: status as any,
+          notes: `Status updated to ${status} by delivery partner`
         });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['current-order'] });
       queryClient.invalidateQueries({ queryKey: ['delivery-stats'] });
       toast({
-        title: "Status updated",
+        title: "Status Updated",
         description: "Order status has been updated successfully."
       });
     }
   });
 
-  const handleStatusUpdate = (orderId: string, status: 'pending' | 'confirmed' | 'dispatched' | 'out_for_delivery' | 'delivered' | 'cancelled') => {
+  const handleStatusUpdate = (orderId: string, status: 'pending' | 'confirmed' | 'dispatched' | 'out_for_delivery' | 'delivered' | 'cancelled' | 'ready_for_pickup') => {
     updateOrderStatus.mutate({ orderId, status });
   };
 
-  const handleAcceptOrder = (orderId: string) => {
-    acceptOrderMutation.mutate(orderId);
+  const handleClaimOrder = (orderId: string) => {
+    claimOrderMutation.mutate(orderId);
   };
 
   const toggleAvailability = () => {
-    setIsOnline(!isOnline);
+    const newStatus = !isOnline;
+    setIsOnline(newStatus);
+    updateOnlineStatus.mutate(newStatus);
     toast({
-      title: isOnline ? "Going Offline" : "Going Online",
-      description: isOnline ? "You will not receive new orders" : "You are now available for orders"
+      title: newStatus ? "Going Online" : "Going Offline",
+      description: newStatus ? "You are now available for orders" : "You will not receive new orders"
     });
   };
 
@@ -209,13 +268,39 @@ const DeliveryDashboard = () => {
     return (orderAmount * 0.15).toFixed(2); // 15% of order value
   };
 
+  const getStatusBadgeClass = (status: string) => {
+    switch (status) {
+      case 'ready_for_pickup': return 'bg-blue-100 text-blue-800';
+      case 'confirmed': return 'bg-yellow-100 text-yellow-800';
+      case 'dispatched': return 'bg-orange-100 text-orange-800';
+      case 'out_for_delivery': return 'bg-purple-100 text-purple-800';
+      case 'delivered': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   useEffect(() => {
     if (!user) {
       navigate('/delivery-auth');
     }
   }, [user, navigate]);
 
-  if (!user) return null;
+  useEffect(() => {
+    if (profile?.is_online !== undefined) {
+      setIsOnline(profile.is_online);
+    }
+  }, [profile?.is_online]);
+
+  if (!user || profileLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background flex items-center justify-center">
+        <div className="text-center">
+          <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+          <p className="text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
@@ -225,18 +310,20 @@ const DeliveryDashboard = () => {
           <div className="flex justify-between items-center h-14 md:h-16">
             <div className="flex items-center space-x-2 md:space-x-3">
               <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-r from-primary to-accent rounded-xl flex items-center justify-center shadow-lg">
-                <Package className="h-4 w-4 md:h-6 md:w-6 text-primary-foreground" />
+                <Truck className="h-4 w-4 md:h-6 md:w-6 text-primary-foreground" />
               </div>
               <div>
                 <h1 className="text-base md:text-xl font-bold text-foreground">Delivery Partner</h1>
-                <p className="text-xs text-muted-foreground hidden sm:block">Partner Dashboard</p>
+                 <p className="text-xs text-muted-foreground hidden sm:block">
+                   {profile?.darkstores ? (Array.isArray(profile.darkstores) ? profile.darkstores[0]?.name : (profile.darkstores as any)?.name) : 'No Darkstore Assigned'}
+                 </p>
               </div>
             </div>
             
             <div className="flex items-center space-x-1 md:space-x-4">
               {/* Availability Toggle */}
               <div className="flex items-center space-x-2 md:space-x-3 bg-muted/50 px-2 md:px-4 py-1 md:py-2 rounded-xl border border-border/50 backdrop-blur-sm">
-                <Power className={`h-3 w-3 md:h-4 md:w-4 ${isOnline ? 'text-success' : 'text-muted-foreground'}`} />
+                <Power className={`h-3 w-3 md:h-4 md:w-4 ${isOnline ? 'text-green-500' : 'text-gray-400'}`} />
                 <span className="text-xs md:text-sm font-medium text-foreground hidden sm:block">
                   {isOnline ? 'Online' : 'Offline'}
                 </span>
@@ -253,7 +340,7 @@ const DeliveryDashboard = () => {
                 className="hidden lg:flex"
               >
                 <User className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-                <span className="text-xs md:text-sm">Profile</span>
+                Profile
               </Button>
               
               <Button 
@@ -263,7 +350,7 @@ const DeliveryDashboard = () => {
                 className="hidden md:flex"
               >
                 <Timer className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-                <span className="text-xs md:text-sm">History</span>
+                History
               </Button>
               
               <Button 
@@ -282,7 +369,7 @@ const DeliveryDashboard = () => {
                 className="hidden lg:flex"
               >
                 <LogOut className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-                <span className="text-xs md:text-sm">Sign Out</span>
+                Sign Out
               </Button>
             </div>
           </div>
@@ -296,13 +383,12 @@ const DeliveryDashboard = () => {
             <CardHeader className="pb-2 md:pb-3">
               <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground flex items-center gap-1 md:gap-2">
                 <CheckCircle className="h-3 w-3 md:h-4 md:w-4" />
-                <span className="hidden sm:block">Today's Deliveries</span>
-                <span className="sm:hidden">Deliveries</span>
+                Today's Deliveries
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-xl md:text-3xl font-bold text-foreground">{stats?.todayDeliveries || 0}</div>
-              <p className="text-xs text-muted-foreground mt-1">Today</p>
+              <p className="text-xs text-muted-foreground mt-1">Completed</p>
             </CardContent>
           </Card>
           
@@ -310,13 +396,12 @@ const DeliveryDashboard = () => {
             <CardHeader className="pb-2 md:pb-3">
               <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground flex items-center gap-1 md:gap-2">
                 <DollarSign className="h-3 w-3 md:h-4 md:w-4" />
-                <span className="hidden sm:block">Today's Earnings</span>
-                <span className="sm:hidden">Earnings</span>
+                Today's Earnings
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-xl md:text-3xl font-bold text-success">Rs {(stats?.todayEarnings || 0).toFixed(2)}</div>
-              <p className="text-xs text-muted-foreground mt-1">Today</p>
+              <div className="text-xl md:text-3xl font-bold text-green-600">Rs {(stats?.todayEarnings || 0).toFixed(2)}</div>
+              <p className="text-xs text-muted-foreground mt-1">Earned</p>
             </CardContent>
           </Card>
           
@@ -328,7 +413,7 @@ const DeliveryDashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-               <Badge className={`${isOnline ? 'bg-success/10 text-success border-success/20' : 'bg-muted text-muted-foreground border-border'} text-xs md:text-sm px-2 md:px-3 py-1`}>
+              <Badge className={`${isOnline ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'} text-xs md:text-sm px-2 md:px-3 py-1`}>
                 {isOnline ? 'Online' : 'Offline'}
               </Badge>
             </CardContent>
@@ -337,17 +422,33 @@ const DeliveryDashboard = () => {
           <Card className="bg-card/60 backdrop-blur-sm border-border/50 shadow-lg hover:shadow-xl transition-all duration-300">
             <CardHeader className="pb-2 md:pb-3">
               <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground flex items-center gap-1 md:gap-2">
-                <User className="h-3 w-3 md:h-4 md:w-4" />
-                Profile
+                <Building className="h-3 w-3 md:h-4 md:w-4" />
+                Darkstore
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Badge className="bg-success/10 text-success border-success/20 text-xs md:text-sm px-2 md:px-3 py-1">
-                {profile?.role === 'delivery_partner' ? 'Approved' : 'Pending'}
-              </Badge>
+               <div className="text-xs md:text-sm font-medium text-foreground">
+                 {profile?.darkstores ? (Array.isArray(profile.darkstores) ? profile.darkstores[0]?.name : (profile.darkstores as any)?.name) : 'Not Assigned'}
+               </div>
+              <p className="text-xs text-muted-foreground mt-1">Location</p>
             </CardContent>
           </Card>
         </div>
+
+        {/* No Darkstore Assigned Warning */}
+        {!profile?.darkstore_id && (
+          <Card className="bg-yellow-50 border-yellow-200 mb-6">
+            <CardContent className="pt-6">
+              <div className="flex items-center space-x-3">
+                <AlertCircle className="h-6 w-6 text-yellow-600" />
+                <div>
+                  <h3 className="text-lg font-semibold text-yellow-800">No Darkstore Assigned</h3>
+                  <p className="text-yellow-700">Contact admin to get assigned to a darkstore before you can receive orders.</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {!isOnline ? (
           /* Offline Status */
@@ -361,7 +462,8 @@ const DeliveryDashboard = () => {
                 <p className="text-muted-foreground mb-4 md:mb-6 text-sm md:text-lg">Turn on availability to receive orders</p>
                 <Button 
                   onClick={toggleAvailability} 
-                  className="bg-success hover:bg-success/90 text-success-foreground shadow-lg hover:shadow-xl transition-all duration-300 px-6 md:px-8 py-2 md:py-3 text-sm md:text-lg"
+                  className="bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 px-6 md:px-8 py-2 md:py-3 text-sm md:text-lg"
+                  disabled={!profile?.darkstore_id}
                 >
                   <Power className="h-4 w-4 md:h-5 md:w-5 mr-2" />
                   Go Online
@@ -371,200 +473,193 @@ const DeliveryDashboard = () => {
           </Card>
         ) : currentOrder ? (
           /* Active Order Management */
-          <Card className="bg-card/60 backdrop-blur-sm border-border/50 shadow-lg">
+          <Card className="bg-card/60 backdrop-blur-sm border-border/50 shadow-lg mb-6">
             <CardHeader className="border-b border-border/50">
               <CardTitle className="text-lg md:text-xl font-bold text-foreground flex items-center gap-2">
                 <Package className="h-4 w-4 md:h-5 md:w-5 text-primary" />
                 Active Order
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-3 md:space-y-4">
-                <div className="border rounded-lg p-3 md:p-4 bg-primary/5">
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <div className="border rounded-lg p-4 bg-primary/5">
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 gap-2">
                     <div className="flex-1">
                       <h3 className="font-semibold text-base md:text-lg">Order #{currentOrder.order_number}</h3>
-                      <p className="text-xs md:text-sm text-gray-600">
+                      <p className="text-sm text-gray-600">
                         Customer: {currentOrder.profiles?.full_name || 'N/A'}
                       </p>
-                       <p className="text-xs md:text-sm text-gray-600">
-                         Amount: Rs {Number(currentOrder.total_amount).toFixed(2)}
-                       </p>
-                       <p className="text-xs md:text-sm text-gray-600">
-                         Estimated Payout: Rs {getEstimatedPayout(Number(currentOrder.total_amount))}
-                       </p>
+                      <p className="text-sm text-gray-600">
+                        Amount: Rs {Number(currentOrder.total_amount).toFixed(2)}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Estimated Payout: Rs {getEstimatedPayout(Number(currentOrder.total_amount))}
+                      </p>
                     </div>
-                     <Badge className={
-                      currentOrder.status === 'confirmed' ? 'bg-warning/10 text-warning' :
-                      currentOrder.status === 'dispatched' ? 'bg-primary/10 text-primary' :
-                      currentOrder.status === 'out_for_delivery' ? 'bg-info/10 text-info' :
-                      'bg-muted text-muted-foreground'
-                    }>
+                    <Badge className={getStatusBadgeClass(currentOrder.status)}>
                       {currentOrder.status?.replace('_', ' ').toUpperCase()}
                     </Badge>
                   </div>
                   
-                  <div className="space-y-2 md:space-y-3">
-                       <div className="flex items-start space-x-2 text-xs md:text-sm">
-                      <MapPin className="h-3 w-3 md:h-4 md:w-4 text-primary mt-0.5" />
+                  <div className="space-y-3">
+                    <div className="flex items-start space-x-2 text-sm">
+                      <Building className="h-4 w-4 text-primary mt-0.5" />
                       <div>
-                        <span className="font-medium">Delivery Address:</span>
+                        <span className="font-medium">Pickup from:</span>
+                        <span className="ml-1">{currentOrder.darkstores?.name} - {currentOrder.darkstores?.address}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start space-x-2 text-sm">
+                      <MapPin className="h-4 w-4 text-primary mt-0.5" />
+                      <div>
+                        <span className="font-medium">Delivery to:</span>
                         <span className="ml-1">{currentOrder.delivery_address}</span>
                       </div>
                     </div>
                     
                     {currentOrder.profiles?.phone_number && (
-                       <div className="flex items-center space-x-2 text-xs md:text-sm">
-                        <Phone className="h-3 w-3 md:h-4 md:w-4 text-success" />
-                        <span className="font-medium">Customer Phone:</span>
+                      <div className="flex items-center space-x-2 text-sm">
+                        <Phone className="h-4 w-4 text-green-600" />
+                        <span className="font-medium">Customer:</span>
                         <span>{currentOrder.profiles.phone_number}</span>
                       </div>
                     )}
                   </div>
                   
-                  <div className="flex flex-col sm:flex-row flex-wrap gap-2 mt-3 md:mt-4">
+                  <div className="flex flex-col sm:flex-row flex-wrap gap-2 mt-4">
                     {currentOrder.status === 'confirmed' && (
                       <Button 
                         onClick={() => handleStatusUpdate(currentOrder.id, 'dispatched')}
-                        disabled={updateOrderStatus.isPending}
-                        className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs md:text-sm flex-1 sm:flex-none"
-                        size="sm"
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
                       >
-                        <Package className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-                        En Route to Pickup
+                        <Package className="h-4 w-4 mr-2" />
+                        Mark as Picked Up
                       </Button>
                     )}
                     
                     {currentOrder.status === 'dispatched' && (
                       <Button 
                         onClick={() => handleStatusUpdate(currentOrder.id, 'out_for_delivery')}
-                        disabled={updateOrderStatus.isPending}
-                        className="bg-warning hover:bg-warning/90 text-warning-foreground text-xs md:text-sm flex-1 sm:flex-none"
-                        size="sm"
+                        className="bg-orange-600 hover:bg-orange-700 text-white"
                       >
-                        <CheckCircle className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-                        Picked Up
+                        <Truck className="h-4 w-4 mr-2" />
+                        En Route to Customer
                       </Button>
                     )}
                     
                     {currentOrder.status === 'out_for_delivery' && (
                       <Button 
                         onClick={() => handleStatusUpdate(currentOrder.id, 'delivered')}
-                        disabled={updateOrderStatus.isPending}
-                        className="bg-success hover:bg-success/90 text-success-foreground text-xs md:text-sm flex-1 sm:flex-none"
-                        size="sm"
+                        className="bg-green-600 hover:bg-green-700 text-white"
                       >
-                        <CheckCircle className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-                        Delivered
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Mark as Delivered
                       </Button>
                     )}
-                    
-                    <Button 
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(currentOrder.delivery_address)}`;
-                        window.open(mapsUrl, '_blank');
-                      }}
-                      className="text-xs md:text-sm flex-1 sm:flex-none"
-                    >
-                      <Navigation className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-                      Navigate
-                    </Button>
-                    
-                    <Button 
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        if (currentOrder.profiles?.phone_number) {
-                          window.open(`tel:${currentOrder.profiles.phone_number}`, '_self');
-                        }
-                      }}
-                      className="text-xs md:text-sm flex-1 sm:flex-none"
-                    >
-                      <Phone className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-                      Call
-                    </Button>
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
         ) : (
-          /* Order Assignment */
-          <Card className="bg-card/60 backdrop-blur-sm border-border/50 shadow-lg">
-            <CardHeader className="border-b border-border/50">
-              <CardTitle className="text-lg md:text-xl font-bold text-foreground flex items-center gap-2">
-                <MapPin className="h-4 w-4 md:h-5 md:w-5 text-primary" />
-                Available Orders
-              </CardTitle>
-              <p className="text-xs md:text-sm text-muted-foreground">New order requests in your area</p>
-            </CardHeader>
-            <CardContent>
-              {availableOrders && availableOrders.length > 0 ? (
-                <div className="space-y-3 md:space-y-4">
-                     {availableOrders.map((order: any) => (
-                    <div key={order.id} className="border rounded-lg p-3 md:p-4 bg-success/5">
-                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-3 gap-2">
+          /* Available Orders for Pickup */
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-bold text-foreground">Available Orders</h2>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => refetchAvailable()}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Refresh
+              </Button>
+            </div>
+            
+            {!availableOrders?.length ? (
+              <Card className="bg-card/60 backdrop-blur-sm border-border/50 shadow-lg">
+                <CardContent className="pt-6">
+                  <div className="text-center py-12">
+                    <div className="w-20 h-20 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <Package className="h-10 w-10 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-lg font-bold mb-2 text-foreground">No Orders Available</h3>
+                    <p className="text-muted-foreground text-sm">
+                      All orders from your darkstore have been claimed or none are ready for pickup yet.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-4">
+                {availableOrders.map((order: OrderWithProfile) => (
+                  <Card key={order.id} className="bg-card/60 backdrop-blur-sm border-border/50 shadow-lg hover:shadow-xl transition-all duration-300">
+                    <CardContent className="pt-6">
+                      <div className="flex justify-between items-start mb-4">
                         <div className="flex-1">
-                          <h3 className="font-semibold text-sm md:text-base">Order #{order.order_number}</h3>
-                          <p className="text-xs md:text-sm text-gray-600">
-                            Customer: {order.profiles?.full_name || 'N/A'}
+                          <h3 className="font-semibold text-lg">Order #{order.order_number}</h3>
+                          <p className="text-sm text-gray-600">Customer: {order.profiles?.full_name || 'N/A'}</p>
+                          <p className="text-sm text-gray-600">Amount: Rs {Number(order.total_amount).toFixed(2)}</p>
+                          <p className="text-sm text-green-600 font-medium">
+                            Estimated Payout: Rs {getEstimatedPayout(Number(order.total_amount))}
                           </p>
-                           <p className="text-xs md:text-sm text-gray-600">
-                             Order Value: Rs {Number(order.total_amount).toFixed(2)}
-                           </p>
-                            <p className="text-xs md:text-sm font-medium text-success">
-                              Estimated Payout: Rs {getEstimatedPayout(Number(order.total_amount))}
-                           </p>
                         </div>
-                        <Badge className="bg-warning/10 text-warning text-xs self-start">
-                          NEW ORDER
+                        <Badge className={getStatusBadgeClass(order.status)}>
+                          Ready for Pickup
                         </Badge>
                       </div>
                       
-                      <div className="flex items-start space-x-2 mb-3 md:mb-4 text-xs md:text-sm text-gray-600">
-                        <MapPin className="h-3 w-3 md:h-4 md:w-4 mt-0.5" />
-                        <span>{order.delivery_address}</span>
+                      <div className="space-y-2 mb-4">
+                        <div className="flex items-start space-x-2 text-sm">
+                          <Building className="h-4 w-4 text-primary mt-0.5" />
+                          <div>
+                            <span className="font-medium">Pickup from:</span>
+                            <span className="ml-1">{order.darkstores?.name}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-start space-x-2 text-sm">
+                          <MapPin className="h-4 w-4 text-primary mt-0.5" />
+                          <div>
+                            <span className="font-medium">Deliver to:</span>
+                            <span className="ml-1">{order.delivery_address}</span>
+                          </div>
+                        </div>
+                        
+                        {order.profiles?.phone_number && (
+                          <div className="flex items-center space-x-2 text-sm">
+                            <Phone className="h-4 w-4 text-green-600" />
+                            <span className="font-medium">Customer:</span>
+                            <span>{order.profiles.phone_number}</span>
+                          </div>
+                        )}
                       </div>
                       
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <Button 
-                          onClick={() => handleAcceptOrder(order.id)}
-                          disabled={acceptOrderMutation.isPending}
-                          className="bg-success hover:bg-success/90 text-success-foreground text-xs md:text-sm flex-1 sm:flex-none"
-                          size="sm"
-                        >
-                          <CheckCircle className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-                          Accept Order
-                        </Button>
-                        
-                        <Button 
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            toast({
-                              title: "Order Rejected",
-                              description: "Order has been rejected"
-                            });
-                          }}
-                          className="text-xs md:text-sm flex-1 sm:flex-none"
-                        >
-                          Reject
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-6 md:py-8">
-                  <Package className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground mx-auto mb-3 md:mb-4" />
-                  <p className="text-muted-foreground text-sm md:text-base">No new orders available at the moment</p>
-                  <p className="text-xs md:text-sm text-muted-foreground mt-2">Stay online to receive new orders</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                      <Button 
+                        onClick={() => handleClaimOrder(order.id)}
+                        className="w-full bg-green-600 hover:bg-green-700 text-white"
+                        disabled={claimOrderMutation.isPending}
+                      >
+                        {claimOrderMutation.isPending ? (
+                          <>
+                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                            Claiming...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Accept & Claim Order
+                          </>
+                        )}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

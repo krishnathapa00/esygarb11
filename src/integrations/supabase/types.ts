@@ -124,6 +124,48 @@ export type Database = {
         }
         Relationships: []
       }
+      darkstores: {
+        Row: {
+          address: string
+          city: string
+          created_at: string | null
+          id: number
+          is_active: boolean | null
+          manager_name: string | null
+          name: string
+          phone_number: string | null
+          state: string | null
+          updated_at: string | null
+          zip_code: string
+        }
+        Insert: {
+          address: string
+          city: string
+          created_at?: string | null
+          id?: number
+          is_active?: boolean | null
+          manager_name?: string | null
+          name: string
+          phone_number?: string | null
+          state?: string | null
+          updated_at?: string | null
+          zip_code: string
+        }
+        Update: {
+          address?: string
+          city?: string
+          created_at?: string | null
+          id?: number
+          is_active?: boolean | null
+          manager_name?: string | null
+          name?: string
+          phone_number?: string | null
+          state?: string | null
+          updated_at?: string | null
+          zip_code?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string | null
@@ -201,6 +243,7 @@ export type Database = {
       orders: {
         Row: {
           created_at: string | null
+          darkstore_id: number | null
           delivery_address: string
           delivery_partner_id: string | null
           estimated_delivery: string | null
@@ -214,6 +257,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          darkstore_id?: number | null
           delivery_address: string
           delivery_partner_id?: string | null
           estimated_delivery?: string | null
@@ -227,6 +271,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          darkstore_id?: number | null
           delivery_address?: string
           delivery_partner_id?: string | null
           estimated_delivery?: string | null
@@ -239,6 +284,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "orders_darkstore_id_fkey"
+            columns: ["darkstore_id"]
+            isOneToOne: false
+            referencedRelation: "darkstores"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "orders_delivery_partner_id_fkey"
             columns: ["delivery_partner_id"]
@@ -352,8 +404,10 @@ export type Database = {
           address: string | null
           avatar_url: string | null
           created_at: string | null
+          darkstore_id: string | null
           full_name: string | null
           id: string
+          is_online: boolean | null
           license_number: string | null
           location: string | null
           phone: string | null
@@ -366,8 +420,10 @@ export type Database = {
           address?: string | null
           avatar_url?: string | null
           created_at?: string | null
+          darkstore_id?: string | null
           full_name?: string | null
           id: string
+          is_online?: boolean | null
           license_number?: string | null
           location?: string | null
           phone?: string | null
@@ -380,8 +436,10 @@ export type Database = {
           address?: string | null
           avatar_url?: string | null
           created_at?: string | null
+          darkstore_id?: string | null
           full_name?: string | null
           id?: string
+          is_online?: boolean | null
           license_number?: string | null
           location?: string | null
           phone?: string | null
@@ -422,6 +480,7 @@ export type Database = {
         | "out_for_delivery"
         | "delivered"
         | "cancelled"
+        | "ready_for_pickup"
       payment_status: "pending" | "completed" | "failed" | "refunded"
       user_role: "customer" | "admin" | "delivery_partner" | "super_admin"
     }
@@ -558,6 +617,7 @@ export const Constants = {
         "out_for_delivery",
         "delivered",
         "cancelled",
+        "ready_for_pickup",
       ],
       payment_status: ["pending", "completed", "failed", "refunded"],
       user_role: ["customer", "admin", "delivery_partner", "super_admin"],
