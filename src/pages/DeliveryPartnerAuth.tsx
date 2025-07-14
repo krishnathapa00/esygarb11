@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
 const DeliveryPartnerAuth = () => {
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [vehicleType, setVehicleType] = useState('');
   const [licenseNumber, setLicenseNumber] = useState('');
@@ -24,10 +24,10 @@ const DeliveryPartnerAuth = () => {
   const navigate = useNavigate();
   
   const handleSendOtp = async () => {
-    if (phoneNumber.length < 10) {
+    if (!email || !email.includes('@')) {
       toast({
-        title: "Invalid Phone Number",
-        description: "Please enter a valid 10-digit phone number",
+        title: "Invalid Email",
+        description: "Please enter a valid email address",
         variant: "destructive",
       });
       return;
@@ -47,7 +47,7 @@ const DeliveryPartnerAuth = () => {
       }
       
       if (activeTab === 'signup') {
-        const { error: signUpError } = await signUp(phoneNumber, fullName, 'delivery_partner');
+        const { error: signUpError } = await signUp(email, fullName, 'delivery_partner');
         if (signUpError) {
           toast({
             title: "Signup Error",
@@ -59,7 +59,7 @@ const DeliveryPartnerAuth = () => {
         }
       }
       
-      const { error } = await sendOtp(phoneNumber);
+      const { error } = await sendOtp(email);
       if (error) {
         toast({
           title: "Error",
@@ -70,7 +70,7 @@ const DeliveryPartnerAuth = () => {
         setIsOtpSent(true);
         toast({
           title: "OTP Sent",
-          description: "Please check your phone for the verification code.",
+          description: "Please check your email for the verification code.",
         });
       }
     } catch (error) {
@@ -97,7 +97,7 @@ const DeliveryPartnerAuth = () => {
     setLoading(true);
     
     try {
-      const { error } = await verifyOtp(phoneNumber, otp);
+      const { error } = await verifyOtp(email, otp);
       if (error) {
         toast({
           title: "Verification Failed",
@@ -125,7 +125,7 @@ const DeliveryPartnerAuth = () => {
   const resetForm = () => {
     setIsOtpSent(false);
     setOtp('');
-    setPhoneNumber('');
+    setEmail('');
     setFullName('');
     setVehicleType('');
     setLicenseNumber('');
@@ -175,13 +175,13 @@ const DeliveryPartnerAuth = () => {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="signupPhone">Phone Number</Label>
+                        <Label htmlFor="signupEmail">Email Address</Label>
                         <Input
-                          id="signupPhone"
-                          placeholder="Enter your phone number"
-                          value={phoneNumber}
-                          onChange={(e) => setPhoneNumber(e.target.value)}
-                          type="tel"
+                          id="signupEmail"
+                          placeholder="Enter your email address"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          type="email"
                         />
                       </div>
                       <div>
@@ -205,7 +205,7 @@ const DeliveryPartnerAuth = () => {
                       <Button 
                         className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
                         onClick={handleSendOtp}
-                        disabled={!phoneNumber || !fullName || !vehicleType || !licenseNumber || loading}
+                        disabled={!email || !fullName || !vehicleType || !licenseNumber || loading}
                       >
                         {loading ? 'Creating Account...' : 'Join as Partner'}
                       </Button>
@@ -214,7 +214,7 @@ const DeliveryPartnerAuth = () => {
                     <>
                       <div>
                         <Label htmlFor="signupOtp">
-                          Enter OTP sent to {phoneNumber}
+                          Enter OTP sent to {email}
                         </Label>
                         <Input
                           id="signupOtp"
@@ -236,7 +236,7 @@ const DeliveryPartnerAuth = () => {
                         className="w-full text-sm text-gray-600"
                         onClick={resetForm}
                       >
-                        Change Phone Number
+                        Change Email Address
                       </Button>
                     </>
                   )}
@@ -248,19 +248,19 @@ const DeliveryPartnerAuth = () => {
                   {!isOtpSent ? (
                     <>
                       <div>
-                        <Label htmlFor="phone">Phone Number</Label>
+                        <Label htmlFor="email">Email Address</Label>
                         <Input
-                          id="phone"
-                          placeholder="Enter your registered phone number"
-                          value={phoneNumber}
-                          onChange={(e) => setPhoneNumber(e.target.value)}
-                          type="tel"
+                          id="email"
+                          placeholder="Enter your registered email address"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          type="email"
                         />
                       </div>
                       <Button 
                         className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
                         onClick={handleSendOtp}
-                        disabled={phoneNumber.length < 10 || loading}
+                        disabled={!email || !email.includes('@') || loading}
                       >
                         {loading ? 'Sending...' : 'Send OTP'}
                       </Button>
@@ -269,7 +269,7 @@ const DeliveryPartnerAuth = () => {
                     <>
                       <div>
                         <Label htmlFor="otp">
-                          Enter OTP sent to {phoneNumber}
+                          Enter OTP sent to {email}
                         </Label>
                         <Input
                           id="otp"
@@ -291,7 +291,7 @@ const DeliveryPartnerAuth = () => {
                         className="w-full text-sm text-gray-600"
                         onClick={resetForm}
                       >
-                        Change Phone Number
+                        Change Email Address
                       </Button>
                     </>
                   )}

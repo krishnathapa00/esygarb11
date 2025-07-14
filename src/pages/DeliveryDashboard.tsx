@@ -15,6 +15,8 @@ const DeliveryDashboard = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [deliveryTimer, setDeliveryTimer] = useState(600); // 10 minutes in seconds
+  const [orderStartTime, setOrderStartTime] = useState<string | null>(null);
+  const [totalDeliveryTime, setTotalDeliveryTime] = useState<number | null>(null);
 
   // Timer countdown effect
   useEffect(() => {
@@ -147,9 +149,22 @@ const DeliveryDashboard = () => {
   const handleStatusUpdate = (orderId: string, status: 'pending' | 'confirmed' | 'dispatched' | 'out_for_delivery' | 'delivered' | 'cancelled') => {
     updateOrderStatus.mutate({ orderId, status });
     
-    // Reset timer when picking up new order
+    // Reset timer and start tracking when picking up order
     if (status === 'out_for_delivery') {
       setDeliveryTimer(600); // Reset to 10 minutes
+      setOrderStartTime(new Date().toISOString());
+      setTotalDeliveryTime(null);
+    }
+    
+    // Calculate delivery time when order is delivered
+    if (status === 'delivered' && orderStartTime) {
+      const deliveryTime = Math.floor((new Date().getTime() - new Date(orderStartTime).getTime()) / 1000);
+      setTotalDeliveryTime(deliveryTime);
+      toast({
+        title: "Order Delivered!",
+        description: `Total delivery time: ${formatTime(deliveryTime)}`,
+      });
+      setOrderStartTime(null);
     }
   };
 
@@ -194,7 +209,30 @@ const DeliveryDashboard = () => {
                 <span className="font-mono text-red-600 font-semibold">
                   {formatTime(deliveryTimer)}
                 </span>
+                <span className="text-xs text-red-500">Target</span>
               </div>
+              
+              {/* Active Delivery Time */}
+              {orderStartTime && (
+                <div className="flex items-center space-x-2 bg-blue-100 px-3 py-2 rounded-lg">
+                  <Clock className="h-4 w-4 text-blue-600" />
+                  <span className="font-mono text-blue-600 font-semibold">
+                    {formatTime(Math.floor((new Date().getTime() - new Date(orderStartTime).getTime()) / 1000))}
+                  </span>
+                  <span className="text-xs text-blue-500">Active</span>
+                </div>
+              )}
+              
+              {/* Last Delivery Time */}
+              {totalDeliveryTime && !orderStartTime && (
+                <div className="flex items-center space-x-2 bg-green-100 px-3 py-2 rounded-lg">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <span className="font-mono text-green-600 font-semibold">
+                    {formatTime(totalDeliveryTime)}
+                  </span>
+                  <span className="text-xs text-green-500">Last</span>
+                </div>
+              )}
               
               <Button 
                 variant="outline" 
@@ -300,14 +338,16 @@ const DeliveryDashboard = () => {
                       </div>
                     )}
                     
-                    <div className="flex space-x-2">
+                    <div className="flex flex-wrap gap-2">
                       {order.status === 'confirmed' && (
                         <Button 
                           size="sm" 
                           onClick={() => handleStatusUpdate(order.id, 'dispatched')}
                           disabled={updateOrderStatus.isPending}
+                          className="bg-yellow-600 hover:bg-yellow-700"
                         >
-                          Mark as Dispatched
+                          <Package className="h-4 w-4 mr-2" />
+                          Accept Order
                         </Button>
                       )}
                       
@@ -316,6 +356,7 @@ const DeliveryDashboard = () => {
                           size="sm" 
                           onClick={() => handleStatusUpdate(order.id, 'out_for_delivery')}
                           disabled={updateOrderStatus.isPending}
+                          className="bg-blue-600 hover:bg-blue-700"
                         >
                           <Package className="h-4 w-4 mr-2" />
                           Picked Up
@@ -330,20 +371,25 @@ const DeliveryDashboard = () => {
                           className="bg-green-600 hover:bg-green-700"
                         >
                           <CheckCircle className="h-4 w-4 mr-2" />
-                          Mark as Delivered
+                          Delivered
                         </Button>
                       )}
                       
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => toast({
-                          title: "Customer contacted",
-                          description: `Called ${order.profiles?.phone_number || 'customer'}`
-                        })}
+                        onClick={() => {
+                          if (order.profiles?.phone_number) {
+                            window.open(`tel:${order.profiles.phone_number}`, '_self');
+                          }
+                          toast({
+                            title: "Customer contacted",
+                            description: `Called ${order.profiles?.phone_number || 'customer'}`
+                          });
+                        }}
                       >
                         <Phone className="h-4 w-4 mr-2" />
-                        Contact Customer
+                        Call Customer
                       </Button>
                     </div>
                   </div>
