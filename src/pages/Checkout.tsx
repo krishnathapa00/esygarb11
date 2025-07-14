@@ -184,18 +184,18 @@ const Checkout = () => {
               </h3>
             </div>
 
-            <div className="flex flex-wrap gap-3">
+            <div className="space-y-3">
               {paymentOptions.map((option) => (
                 <div
                   key={option.id}
-                  className={`border-2 rounded-lg p-3 cursor-pointer transition-all flex-1 min-w-[140px] ${
+                  className={`border-2 rounded-lg p-4 cursor-pointer transition-all w-full ${
                     selectedPayment === option.id
                       ? "border-green-500 bg-green-50"
                       : "border-gray-200 hover:border-gray-300"
                   }`}
                   onClick={() => setSelectedPayment(option.id)}
                 >
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-3">
                     <input
                       type="radio"
                       id={option.id}
@@ -205,9 +205,9 @@ const Checkout = () => {
                       onChange={(e) => setSelectedPayment(e.target.value)}
                       className="text-green-600 w-4 h-4"
                     />
-                    <div className="flex items-center space-x-1">
-                      <span className="text-lg">{option.icon}</span>
-                      <span className="text-xs font-medium">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xl">{option.icon}</span>
+                      <span className="text-sm font-medium">
                         {option.label}
                       </span>
                     </div>

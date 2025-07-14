@@ -448,65 +448,60 @@ const UserProfile = () => {
 
             {/* Account Actions */}
             <Card className="border-border mt-6">
-              <CardHeader>
-                <CardTitle className="text-xl font-semibold">Account Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex flex-wrap gap-3 justify-center">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => handleFeatureClick("Order History")}
-                    className="flex-1 min-w-[120px] justify-start"
-                  >
-                    <History className="h-4 w-4 mr-2" />
-                    Order History
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    onClick={() => handleFeatureClick("Payment Methods")}
-                    className="flex-1 min-w-[120px] justify-start"
-                  >
-                    <CreditCard className="h-4 w-4 mr-2" />
-                    Payment Methods
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    onClick={() => handleFeatureClick("Help & Support")}
-                    className="flex-1 min-w-[120px] justify-start"
-                  >
-                    <HelpCircle className="h-4 w-4 mr-2" />
-                    Help & Support
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    onClick={() => handleFeatureClick("Track Orders")}
-                    className="flex-1 min-w-[120px] justify-start"
-                  >
-                    <Package className="h-4 w-4 mr-2" />
-                    Track Orders
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    onClick={() => handleFeatureClick("Reset Password")}
-                    className="flex-1 min-w-[120px] justify-start"
-                  >
-                    <RotateCcw className="h-4 w-4 mr-2" />
-                    Reset Password
-                  </Button>
-                  
-                  <Button 
-                    variant="destructive" 
-                    onClick={handleLogout}
-                    className="flex-1 min-w-[120px] justify-start"
-                  >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Logout
-                  </Button>
-                </div>
+              <CardContent className="space-y-3">
+                <Button 
+                  variant="outline" 
+                  onClick={() => handleFeatureClick("Order History")}
+                  className="w-full justify-start"
+                >
+                  <History className="h-4 w-4 mr-3" />
+                  Order History
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  onClick={() => handleFeatureClick("Payment Methods")}
+                  className="w-full justify-start"
+                >
+                  <CreditCard className="h-4 w-4 mr-3" />
+                  Payment Methods
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  onClick={() => handleFeatureClick("Help & Support")}
+                  className="w-full justify-start"
+                >
+                  <HelpCircle className="h-4 w-4 mr-3" />
+                  Help & Support
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  onClick={() => handleFeatureClick("Track Orders")}
+                  className="w-full justify-start"
+                >
+                  <Package className="h-4 w-4 mr-3" />
+                  Track Orders
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  onClick={() => handleFeatureClick("Reset Password")}
+                  className="w-full justify-start"
+                >
+                  <RotateCcw className="h-4 w-4 mr-3" />
+                  Reset Password
+                </Button>
+                
+                <Button 
+                  variant="destructive" 
+                  onClick={handleLogout}
+                  className="w-full justify-start"
+                >
+                  <LogOut className="h-4 w-4 mr-3" />
+                  Logout
+                </Button>
               </CardContent>
             </Card>
           </div>
