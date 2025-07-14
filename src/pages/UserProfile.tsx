@@ -151,14 +151,13 @@ const UserProfile = () => {
           id: user.id,
           full_name: profileData.full_name,
           phone_number: profileData.phone_number,
-          phone: profileData.phone_number, // Also update phone field
+          phone: profileData.phone_number,
           address: profileData.address,
           avatar_url: profileData.avatar_url,
           updated_at: new Date().toISOString()
         });
 
       if (error) {
-        console.error("Save error:", error);
         throw error;
       }
 
@@ -168,7 +167,6 @@ const UserProfile = () => {
       });
       setIsEditing(false);
     } catch (error: any) {
-      console.error("Profile update error:", error);
       toast({
         title: "Update failed",
         description: error.message || "Failed to update profile",
@@ -387,36 +385,48 @@ const UserProfile = () => {
 
                   <div className="md:col-span-2 space-y-2">
                     <Label htmlFor="address" className="text-sm font-medium">Complete Address</Label>
-                    <div className="flex gap-2">
+                    {isEditing ? (
+                      <div className="space-y-3">
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleDetectLocation}
+                            disabled={isDetectingLocation}
+                            className="flex-1"
+                          >
+                            {isDetectingLocation ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <Navigation className="h-4 w-4 mr-2" />
+                            )}
+                            Auto Detect Location
+                          </Button>
+                        </div>
+                        <div className="relative">
+                          <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t border-border" />
+                          </div>
+                          <div className="relative flex justify-center text-xs uppercase">
+                            <span className="bg-background px-2 text-muted-foreground">OR</span>
+                          </div>
+                        </div>
+                        <Input
+                          id="address"
+                          value={profileData.address}
+                          onChange={(e) => handleInputChange("address", e.target.value)}
+                          className="transition-colors"
+                          placeholder="Enter your address manually"
+                        />
+                      </div>
+                    ) : (
                       <Input
                         id="address"
                         value={profileData.address}
-                        onChange={(e) => handleInputChange("address", e.target.value)}
-                        disabled={!isEditing}
-                        className="transition-colors flex-1"
-                        placeholder="Enter your complete address"
+                        disabled
+                        className="transition-colors bg-muted"
+                        placeholder="No address provided"
                       />
-                      {isEditing && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={handleDetectLocation}
-                          disabled={isDetectingLocation}
-                          className="px-3"
-                        >
-                          {isDetectingLocation ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Navigation className="h-4 w-4" />
-                          )}
-                        </Button>
-                      )}
-                    </div>
-                    {isEditing && (
-                      <p className="text-xs text-muted-foreground">
-                        Click the location button to auto-detect or enter manually
-                      </p>
                     )}
                   </div>
                 </div>
