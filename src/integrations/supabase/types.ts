@@ -166,6 +166,66 @@ export type Database = {
         }
         Relationships: []
       }
+      kyc_verifications: {
+        Row: {
+          admin_comments: string | null
+          citizenship_document_url: string | null
+          created_at: string | null
+          id: string
+          license_document_url: string | null
+          pan_document_url: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          submitted_at: string | null
+          updated_at: string | null
+          user_id: string
+          verification_status: string
+        }
+        Insert: {
+          admin_comments?: string | null
+          citizenship_document_url?: string | null
+          created_at?: string | null
+          id?: string
+          license_document_url?: string | null
+          pan_document_url?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          submitted_at?: string | null
+          updated_at?: string | null
+          user_id: string
+          verification_status?: string
+        }
+        Update: {
+          admin_comments?: string | null
+          citizenship_document_url?: string | null
+          created_at?: string | null
+          id?: string
+          license_document_url?: string | null
+          pan_document_url?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          submitted_at?: string | null
+          updated_at?: string | null
+          user_id?: string
+          verification_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kyc_verifications_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kyc_verifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           created_at: string | null
@@ -408,6 +468,7 @@ export type Database = {
           full_name: string | null
           id: string
           is_online: boolean | null
+          kyc_verified: boolean | null
           license_number: string | null
           location: string | null
           phone: string | null
@@ -424,6 +485,7 @@ export type Database = {
           full_name?: string | null
           id: string
           is_online?: boolean | null
+          kyc_verified?: boolean | null
           license_number?: string | null
           location?: string | null
           phone?: string | null
@@ -440,6 +502,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_online?: boolean | null
+          kyc_verified?: boolean | null
           license_number?: string | null
           location?: string | null
           phone?: string | null

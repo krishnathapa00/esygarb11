@@ -270,12 +270,12 @@ const DeliveryDashboard = () => {
 
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
-      case 'ready_for_pickup': return 'bg-blue-100 text-blue-800';
-      case 'confirmed': return 'bg-yellow-100 text-yellow-800';
-      case 'dispatched': return 'bg-orange-100 text-orange-800';
-      case 'out_for_delivery': return 'bg-purple-100 text-purple-800';
-      case 'delivered': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'ready_for_pickup': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'confirmed': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'dispatched': return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'out_for_delivery': return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'delivered': return 'bg-green-100 text-green-800 border-green-200';
+      default: return 'bg-muted text-muted-foreground border-border';
     }
   };
 
@@ -413,7 +413,7 @@ const DeliveryDashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Badge className={`${isOnline ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'} text-xs md:text-sm px-2 md:px-3 py-1`}>
+              <Badge className={`${isOnline ? 'bg-green-100 text-green-800 border-green-200' : 'bg-muted text-muted-foreground border-border'} text-xs md:text-sm px-2 md:px-3 py-1 border`}>
                 {isOnline ? 'Online' : 'Offline'}
               </Badge>
             </CardContent>
@@ -435,15 +435,29 @@ const DeliveryDashboard = () => {
           </Card>
         </div>
 
-        {/* No Darkstore Assigned Warning */}
-        {!profile?.darkstore_id && (
+        {/* KYC and Darkstore Status Warnings */}
+        {(!profile?.kyc_verified || !profile?.darkstore_id) && (
           <Card className="bg-yellow-50 border-yellow-200 mb-6">
             <CardContent className="pt-6">
               <div className="flex items-center space-x-3">
                 <AlertCircle className="h-6 w-6 text-yellow-600" />
                 <div>
-                  <h3 className="text-lg font-semibold text-yellow-800">No Darkstore Assigned</h3>
-                  <p className="text-yellow-700">Contact admin to get assigned to a darkstore before you can receive orders.</p>
+                  <h3 className="text-lg font-semibold text-yellow-800">Account Setup Required</h3>
+                  <div className="space-y-1 mt-2">
+                    {!profile?.kyc_verified && (
+                      <p className="text-yellow-700">• Complete KYC verification in your profile</p>
+                    )}
+                    {!profile?.darkstore_id && (
+                      <p className="text-yellow-700">• Contact admin to get assigned to a darkstore</p>
+                    )}
+                  </div>
+                  <Button 
+                    onClick={() => navigate('/delivery-profile')}
+                    className="mt-3 bg-yellow-600 hover:bg-yellow-700 text-white"
+                    size="sm"
+                  >
+                    Complete Profile Setup
+                  </Button>
                 </div>
               </div>
             </CardContent>
@@ -463,7 +477,7 @@ const DeliveryDashboard = () => {
                 <Button 
                   onClick={toggleAvailability} 
                   className="bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 px-6 md:px-8 py-2 md:py-3 text-sm md:text-lg"
-                  disabled={!profile?.darkstore_id}
+                  disabled={!profile?.darkstore_id || !profile?.kyc_verified}
                 >
                   <Power className="h-4 w-4 md:h-5 md:w-5 mr-2" />
                   Go Online

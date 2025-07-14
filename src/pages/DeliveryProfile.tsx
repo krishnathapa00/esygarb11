@@ -5,14 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import KYCUpload from '@/components/KYCUpload';
 import { 
   ArrowLeft, User, Phone, Mail, Truck, Building, 
-  MapPin, Star, CheckCircle, Calendar, Save
+  MapPin, Star, CheckCircle, Calendar, Save, FileText, Shield
 } from 'lucide-react';
 
 const DeliveryProfile = () => {
@@ -43,6 +45,26 @@ const DeliveryProfile = () => {
         .single();
       
       if (error) throw error;
+      return data;
+    },
+    enabled: !!user
+  });
+
+  // Fetch KYC status
+  const { data: kycStatus } = useQuery({
+    queryKey: ['kyc-status', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data, error } = await supabase
+        .from('kyc_verifications')
+        .select('verification_status')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+      
       return data;
     },
     enabled: !!user
@@ -192,16 +214,35 @@ const DeliveryProfile = () => {
                 Back to Dashboard
               </Button>
             </div>
-            <h1 className="text-lg md:text-xl font-bold text-foreground">Profile Settings</h1>
+            <h1 className="text-lg md:text-xl font-bold text-foreground">Delivery Partner Profile</h1>
             <div className="w-24"></div> {/* Spacer for centering */}
           </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-3 sm:px-6 lg:px-8 py-6">
-        <div className="grid gap-6 md:grid-cols-3">
+      <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 py-6">
+        {/* KYC Status Alert */}
+        {kycStatus?.verification_status !== 'approved' && (
+          <div className="mb-6">
+            <Card className="bg-yellow-50 border-yellow-200">
+              <CardContent className="pt-6">
+                <div className="flex items-center space-x-3">
+                  <Shield className="h-6 w-6 text-yellow-600" />
+                  <div>
+                    <h3 className="text-lg font-semibold text-yellow-800">KYC Verification Required</h3>
+                    <p className="text-yellow-700">
+                      Complete your KYC verification to start receiving and delivering orders.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        <div className="grid gap-6">
           {/* Stats Cards */}
-          <div className="md:col-span-3">
+          <div>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
               <Card className="bg-card/60 backdrop-blur-sm border-border/50">
                 <CardContent className="pt-4">
@@ -255,8 +296,31 @@ const DeliveryProfile = () => {
             </div>
           </div>
 
-          {/* Profile Information */}
-          <Card className="md:col-span-2 bg-card/60 backdrop-blur-sm border-border/50">
+          {/* Main Content Tabs */}
+          <Tabs defaultValue="profile" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="profile" className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                Profile
+              </TabsTrigger>
+              <TabsTrigger value="kyc" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                KYC Documents
+                {kycStatus?.verification_status === 'approved' && (
+                  <CheckCircle className="h-3 w-3 text-green-600" />
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="account" className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                Account
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Profile Tab */}
+            <TabsContent value="profile" className="mt-6 space-y-6">
+              <div className="grid gap-6 md:grid-cols-3">
+                {/* Profile Information */}
+                <Card className="md:col-span-2 bg-card/60 backdrop-blur-sm border-border/50">
             <CardHeader className="border-b border-border/50">
               <div className="flex justify-between items-center">
                 <CardTitle className="flex items-center gap-2">
@@ -393,8 +457,8 @@ const DeliveryProfile = () => {
             </CardContent>
           </Card>
 
-          {/* Account Status */}
-          <Card className="bg-card/60 backdrop-blur-sm border-border/50">
+                {/* Account Status */}
+                <Card className="bg-card/60 backdrop-blur-sm border-border/50">
             <CardHeader className="border-b border-border/50">
               <CardTitle className="flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 text-primary" />
@@ -418,10 +482,25 @@ const DeliveryProfile = () => {
                 </div>
                 
                 <div className="flex justify-between items-center">
-                  <span className="text-sm">Verification</span>
-                  <Badge className="bg-green-100 text-green-800">
-                    Verified
-                  </Badge>
+                  <span className="text-sm">KYC Status</span>
+                  {kycStatus?.verification_status === 'approved' ? (
+                    <Badge className="bg-green-100 text-green-800">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Verified
+                    </Badge>
+                  ) : kycStatus?.verification_status === 'pending' ? (
+                    <Badge className="bg-yellow-100 text-yellow-800">
+                      Pending Review
+                    </Badge>
+                  ) : kycStatus?.verification_status === 'rejected' ? (
+                    <Badge className="bg-red-100 text-red-800">
+                      Rejected
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline">
+                      Not Submitted
+                    </Badge>
+                  )}
                 </div>
                 
                 <div className="flex justify-between items-center">
@@ -441,9 +520,93 @@ const DeliveryProfile = () => {
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">Based on delivery speed and customer ratings</p>
                 </div>
+                </div>
+              </CardContent>
+            </Card>
               </div>
-            </CardContent>
-          </Card>
+            </TabsContent>
+
+            {/* KYC Tab */}
+            <TabsContent value="kyc" className="mt-6">
+              <KYCUpload />
+            </TabsContent>
+
+            {/* Account Tab */}
+            <TabsContent value="account" className="mt-6">
+              <Card className="bg-card/60 backdrop-blur-sm border-border/50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="h-5 w-5 text-primary" />
+                    Account Management
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <Label className="text-sm font-medium">Account Type</Label>
+                        <p className="text-sm text-muted-foreground mt-1">Delivery Partner Account</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">Member Since</Label>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {new Date((profile as any)?.created_at || '').toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="pt-4 border-t">
+                      <h4 className="text-sm font-medium mb-3">Work Eligibility</h4>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                            <span className="text-sm">Profile Completed</span>
+                          </div>
+                          <Badge className="bg-green-100 text-green-800">✓</Badge>
+                        </div>
+                        
+                        <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-primary" />
+                            <span className="text-sm">KYC Verification</span>
+                          </div>
+                          {kycStatus?.verification_status === 'approved' ? (
+                            <Badge className="bg-green-100 text-green-800">✓ Verified</Badge>
+                          ) : (
+                            <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <Building className="h-4 w-4 text-primary" />
+                            <span className="text-sm">Darkstore Assignment</span>
+                          </div>
+                          {(profile as any)?.darkstore_id ? (
+                            <Badge className="bg-green-100 text-green-800">✓ Assigned</Badge>
+                          ) : (
+                            <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {kycStatus?.verification_status === 'approved' && (profile as any)?.darkstore_id && (
+                        <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="h-5 w-5 text-green-600" />
+                            <span className="text-sm font-medium text-green-800">
+                              Ready to Work! You can now receive and deliver orders.
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
