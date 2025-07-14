@@ -39,39 +39,84 @@ const AdminDashboard = () => {
           break;
       }
 
-      // Fetch orders data
-      const { data: orders, error: ordersError } = await supabase
-        .from('orders')
-        .select('*')
-        .gte('created_at', startDate.toISOString());
+      try {
+        // Fetch orders data
+        const { data: orders, error: ordersError } = await supabase
+          .from('orders')
+          .select('*')
+          .gte('created_at', startDate.toISOString());
 
-      // Fetch orders for today specifically
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-      const { data: todayOrders, error: todayOrdersError } = await supabase
-        .from('orders')
-        .select('*')
-        .gte('created_at', todayStart.toISOString());
+        // Fetch orders for today specifically
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const { data: todayOrders, error: todayOrdersError } = await supabase
+          .from('orders')
+          .select('*')
+          .gte('created_at', todayStart.toISOString());
 
-      // Fetch users
-      const { data: users, error: usersError } = await supabase
-        .from('profiles')
-        .select('*');
+        // Fetch users
+        const { data: users, error: usersError } = await supabase
+          .from('profiles')
+          .select('*');
 
-      // Fetch users registered today
-      const { data: todayUsers, error: todayUsersError } = await supabase
-        .from('profiles')
-        .select('*')
-        .gte('created_at', todayStart.toISOString());
+        // Fetch users registered today
+        const { data: todayUsers, error: todayUsersError } = await supabase
+          .from('profiles')
+          .select('*')
+          .gte('created_at', todayStart.toISOString());
 
-      // Fetch products for inventory
-      const { data: products, error: productsError } = await supabase
-        .from('products')
-        .select('*')
-        .lt('stock_quantity', 10);
+        // Fetch products for inventory
+        const { data: products, error: productsError } = await supabase
+          .from('products')
+          .select('*')
+          .lt('stock_quantity', 10);
 
-      if (ordersError || usersError || productsError) {
-        console.error('Dashboard fetch error:', ordersError || usersError || productsError);
+        if (ordersError || usersError || productsError) {
+          console.error('Dashboard fetch error:', ordersError || usersError || productsError);
+          return {
+            totalOrders: 0,
+            ordersToday: 0,
+            totalRevenue: 0,
+            revenueToday: 0,
+            totalUsers: 0,
+            newUsersToday: 0,
+            pendingOrders: 0,
+            lowStockItems: 0,
+            refundsProcessed: 0,
+            refundAmount: 0,
+            recentOrders: [],
+            lowStockProducts: []
+          };
+        }
+
+        const totalOrders = orders?.length || 0;
+        const ordersToday = todayOrders?.length || 0;
+        const totalRevenue = orders?.reduce((sum, order) => sum + Number(order.total_amount), 0) || 0;
+        const revenueToday = todayOrders?.reduce((sum, order) => sum + Number(order.total_amount), 0) || 0;
+        const totalUsers = users?.length || 0;
+        const newUsersToday = todayUsers?.length || 0;
+        const pendingOrders = orders?.filter(order => order.status === 'pending')?.length || 0;
+        const lowStockItems = products?.length || 0;
+        const refundsProcessed = orders?.filter(order => order.payment_status === 'refunded')?.length || 0;
+        const refundAmount = orders?.filter(order => order.payment_status === 'refunded')
+          ?.reduce((sum, order) => sum + Number(order.total_amount), 0) || 0;
+
+        return {
+          totalOrders,
+          ordersToday,
+          totalRevenue,
+          revenueToday,
+          totalUsers,
+          newUsersToday,
+          pendingOrders,
+          lowStockItems,
+          refundsProcessed,
+          refundAmount,
+          recentOrders: orders?.slice(0, 5) || [],
+          lowStockProducts: products?.slice(0, 5) || []
+        };
+      } catch (error) {
+        console.error('Dashboard query error:', error);
         return {
           totalOrders: 0,
           ordersToday: 0,
@@ -87,34 +132,9 @@ const AdminDashboard = () => {
           lowStockProducts: []
         };
       }
-
-      const totalOrders = orders?.length || 0;
-      const ordersToday = todayOrders?.length || 0;
-      const totalRevenue = orders?.reduce((sum, order) => sum + Number(order.total_amount), 0) || 0;
-      const revenueToday = todayOrders?.reduce((sum, order) => sum + Number(order.total_amount), 0) || 0;
-      const totalUsers = users?.length || 0;
-      const newUsersToday = todayUsers?.length || 0;
-      const pendingOrders = orders?.filter(order => order.status === 'pending')?.length || 0;
-      const lowStockItems = products?.length || 0;
-      const refundsProcessed = orders?.filter(order => order.payment_status === 'refunded')?.length || 0;
-      const refundAmount = orders?.filter(order => order.payment_status === 'refunded')
-        ?.reduce((sum, order) => sum + Number(order.total_amount), 0) || 0;
-
-      return {
-        totalOrders,
-        ordersToday,
-        totalRevenue,
-        revenueToday,
-        totalUsers,
-        newUsersToday,
-        pendingOrders,
-        lowStockItems,
-        refundsProcessed,
-        refundAmount,
-        recentOrders: orders?.slice(0, 5) || [],
-        lowStockProducts: products?.slice(0, 5) || []
-      };
-    }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false
   });
 
   const handleRefund = async (orderId: string) => {
