@@ -333,16 +333,17 @@ const DeliveryDashboard = () => {
                 />
               </div>
               
+              {/* Profile Button - Always visible */}
               <Button 
                 variant="outline" 
                 size="sm"
                 onClick={() => navigate('/delivery-profile')}
-                className="hidden lg:flex"
               >
-                <User className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-                Profile
+                <User className="h-3 w-3 md:h-4 md:w-4 mr-0 md:mr-2" />
+                <span className="hidden md:inline">Profile</span>
               </Button>
               
+              {/* History Button - Hidden on small screens */}
               <Button 
                 variant="outline" 
                 size="sm"
@@ -353,23 +354,14 @@ const DeliveryDashboard = () => {
                 History
               </Button>
               
+              {/* Sign Out Button */}
               <Button 
                 variant="outline" 
                 size="sm"
                 onClick={handleSignOut}
-                className="lg:hidden"
               >
-                <LogOut className="h-3 w-3 md:h-4 md:w-4" />
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handleSignOut}
-                className="hidden lg:flex"
-              >
-                <LogOut className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-                Sign Out
+                <LogOut className="h-3 w-3 md:h-4 md:w-4 mr-0 lg:mr-2" />
+                <span className="hidden lg:inline">Sign Out</span>
               </Button>
             </div>
           </div>
@@ -377,6 +369,28 @@ const DeliveryDashboard = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 md:py-6">
+        {/* Mobile Quick Navigation */}
+        <div className="md:hidden mb-6">
+          <div className="grid grid-cols-2 gap-3">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/delivery-profile')}
+              className="h-12 flex flex-col items-center justify-center space-y-1"
+            >
+              <User className="h-4 w-4" />
+              <span className="text-xs">Profile & KYC</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/order-history')}
+              className="h-12 flex flex-col items-center justify-center space-y-1"
+            >
+              <Timer className="h-4 w-4" />
+              <span className="text-xs">Earnings & History</span>
+            </Button>
+          </div>
+        </div>
+
         {/* Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
           <Card className="bg-card/60 backdrop-blur-sm border-border/50 shadow-lg hover:shadow-xl transition-all duration-300">
