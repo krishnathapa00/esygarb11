@@ -1,512 +1,230 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
-import Header from "../components/Header";
-import { 
-  ArrowLeft, 
-  User, 
-  Mail, 
-  Phone, 
-  Edit3, 
-  Save, 
-  X, 
-  LogOut, 
-  Package, 
-  RotateCcw, 
-  CreditCard, 
-  HelpCircle, 
-  AlertTriangle,
-  Camera,
-  Upload,
-  MapPin,
-  History,
-  Loader2,
-  Navigation
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
-import { useUserProfile } from "@/hooks/useUserProfile";
-import { useToast } from "@/hooks/use-toast";
+import Header from "@/components/Header";
+import InputField from "@/components/InputField";
+import TextAreaField from "@/components/TextAreaField";
+import {
+  fetchUserProfile,
+  updateUserProfile,
+  ProfileFormValues,
+} from "@/services/profileService";
 import { supabase } from "@/integrations/supabase/client";
 
-const UserProfile = () => {
-  const { user, logout } = useAuth();
-  const { profile, loading: profileLoading, updateProfile } = useUserProfile();
+const UserProfile: React.FC = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  
+  const { user, loading: authLoading } = useAuth();
+
+  const [profile, setProfile] = useState<ProfileFormValues | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
-  const [profileData, setProfileData] = useState({
-    full_name: "",
-    phone: "",
-    email: "",
-    address: "",
-    avatar_url: ""
+  const [updating, setUpdating] = useState(false);
+  const [updateError, setUpdateError] = useState<string | null>(null);
+
+  const { register, handleSubmit, reset, watch } = useForm<ProfileFormValues>({
+    defaultValues: {
+      full_name: "",
+      phone: "",
+      address: "",
+      avatar_url: "",
+    },
+    mode: "onBlur",
   });
 
   useEffect(() => {
-    if (!user) {
+    if (!user) return;
+    setLoadingProfile(true);
+    setError(null);
+
+    fetchUserProfile()
+      .then((data) => {
+        setProfile(data);
+        reset(data);
+      })
+      .catch((err) => {
+        setError(err.message || "Failed to load profile");
+      })
+      .finally(() => {
+        setLoadingProfile(false);
+      });
+  }, [user, reset]);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
       navigate("/login");
+    }
+  }, [authLoading, user, navigate]);
+
+  const avatarUrl = watch("avatar_url");
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!user) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const fileExt = file.name.split(".").pop();
+    const filePath = `avatars/${user.id}/avatar.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("user-avatars")
+      .upload(filePath, file, { upsert: true });
+
+    if (uploadError) {
+      console.error("Avatar upload error:", uploadError.message);
       return;
     }
-  }, [user, navigate]);
 
-  // Load profile data
-  useEffect(() => {
-    if (profile && user) {
-      setProfileData({
-        full_name: profile.full_name || "",
-        phone: profile.phone || "",
-        email: user.email || "",
-        address: profile.address || "",
-        avatar_url: profile.avatar_url || ""
-      });
-    } else if (user && !profileLoading) {
-      // Set defaults if no profile
-      setProfileData({
-        full_name: "",
-        phone: user.phone || "",
-        email: user.email || "",
-        address: "",
-        avatar_url: ""
-      });
-    }
-  }, [profile, user, profileLoading]);
+    const { data: publicUrlData } = supabase.storage
+      .from("user-avatars")
+      .getPublicUrl(filePath);
 
-  const handleInputChange = (field: string, value: string) => {
-    setProfileData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !user) return;
-
-    setUploadingImage(true);
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('user-avatars')
-        .upload(fileName, file);
-
-      if (uploadError) {
-        console.error("Upload error:", uploadError);
-        throw uploadError;
-      }
-
-      const { data } = supabase.storage
-        .from('user-avatars')
-        .getPublicUrl(fileName);
-
-      const newAvatarUrl = data.publicUrl;
-      
-      // Update local state immediately for UI feedback
-      setProfileData(prev => ({ ...prev, avatar_url: newAvatarUrl }));
-      
-      toast({
-        title: "Profile picture updated",
-        description: "Your profile picture has been updated successfully."
-      });
-    } catch (error: any) {
-      console.error("Image upload error:", error);
-      toast({
-        title: "Upload failed",
-        description: error.message || "Failed to upload image",
-        variant: "destructive"
-      });
-    } finally {
-      setUploadingImage(false);
-    }
-  };
-
-  const handleSave = async () => {
-    if (!user) return;
-    
-    setLoading(true);
-    try {
-      const updates = {
-        full_name: profileData.full_name,
-        phone: profileData.phone,
-        address: profileData.address,
-        avatar_url: profileData.avatar_url
-      };
-
-      const result = await updateProfile(updates);
-
-      if (result.error) {
-        toast({
-          title: "Update failed",
-          description: result.error.message,
-          variant: "destructive"
-        });
-        return;
-      }
-
-      toast({
-        title: "Profile updated",
-        description: "Your profile has been updated successfully."
-      });
-      setIsEditing(false);
-    } catch (error: any) {
-      toast({
-        title: "Update failed",
-        description: error.message || "Failed to update profile",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLogout = () => {
-    logout();
-    navigate("/");
-  };
-
-  const handleDetectLocation = () => {
-    setIsDetectingLocation(true);
-    
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          try {
-            const { latitude, longitude } = position.coords;
-            // Use OpenStreetMap Nominatim (free geocoding service)
-            const response = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
-            );
-            
-            if (response.ok) {
-              const data = await response.json();
-              const address = data.display_name || `${latitude}, ${longitude}`;
-              handleInputChange("address", address);
-            } else {
-              // Fallback to coordinates
-              handleInputChange("address", `${latitude}, ${longitude}`);
-            }
-          } catch (error) {
-            console.error("Geocoding error:", error);
-            // Fallback to coordinates
-            const { latitude, longitude } = position.coords;
-            handleInputChange("address", `${latitude}, ${longitude}`);
-          }
-          setIsDetectingLocation(false);
-        },
-        (error) => {
-          console.error("Geolocation error:", error);
-          toast({
-            title: "Location access denied",
-            description: "Please allow location access or enter your address manually.",
-            variant: "destructive"
-          });
-          setIsDetectingLocation(false);
-        }
+    if (publicUrlData?.publicUrl) {
+      const newAvatarUrl = publicUrlData.publicUrl;
+      reset({ ...watch(), avatar_url: newAvatarUrl });
+      setProfile((prev) =>
+        prev ? { ...prev, avatar_url: newAvatarUrl } : null
       );
-    } else {
-      toast({
-        title: "Geolocation not supported",
-        description: "Please enter your address manually.",
-        variant: "destructive"
-      });
-      setIsDetectingLocation(false);
     }
   };
 
-  const handleFeatureClick = (feature: string) => {
-    toast({ 
-      title: `${feature} coming soon`, 
-      description: `${feature} feature will be available soon.` 
-    });
+  const onSubmit = async (data: ProfileFormValues) => {
+    setUpdating(true);
+    setUpdateError(null);
+
+    try {
+      const updatedProfile = await updateUserProfile(data);
+      setProfile(updatedProfile);
+      reset(updatedProfile);
+      setIsEditing(false);
+    } catch (err: any) {
+      setUpdateError(err.message || "Failed to update profile");
+    } finally {
+      setUpdating(false);
+    }
   };
 
-  if (!user || profileLoading) {
+  if (authLoading || loadingProfile) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin h-12 w-12 rounded-full border-b-2 border-green-600 mx-auto" />
+          <p className="mt-4 text-gray-600">Loading profile...</p>
+        </div>
       </div>
     );
   }
 
+  if (error) {
+    return <p className="text-red-600">Error loading profile: {error}</p>;
+  }
+
+  if (!user) return null;
+
   return (
-    <div className="min-h-screen bg-background pb-20 md:pb-0">
+    <div className="min-h-screen bg-gray-50">
       <Header />
-      
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        {/* Header */}
-        <div className="flex items-center mb-8">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/")}
-            className="mr-3 p-2"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Profile Settings</h1>
-            <p className="text-muted-foreground mt-1">Manage your account information and preferences</p>
-          </div>
+      <main className="max-w-4xl mx-auto px-4 py-10">
+        <h1 className="text-3xl font-semibold mb-6">My Account</h1>
+        <div className="bg-white shadow-sm rounded-lg p-6 md:flex gap-10">
+          <aside className="w-full md:w-1/3 text-center mb-6 md:mb-0">
+            <img
+              src={avatarUrl || profile?.avatar_url || "/images/avatar.jpg"}
+              alt="Avatar"
+              className="w-24 h-24 rounded-full border mx-auto"
+            />
+            <h2 className="mt-4 text-lg font-medium">{watch("full_name")}</h2>
+            <p className="text-sm text-gray-500">{user.email}</p>
+          </aside>
+          <section className="flex-1">
+            {!isEditing ? (
+              <div className="space-y-4 text-sm text-gray-700">
+                <div>
+                  <p className="font-medium">Full Name</p>
+                  <p>{profile?.full_name || "-"}</p>
+                </div>
+                <div>
+                  <p className="font-medium">Phone</p>
+                  <p>{profile?.phone || "-"}</p>
+                </div>
+                <div>
+                  <p className="font-medium">Address</p>
+                  <p>{profile?.address || "-"}</p>
+                </div>
+                <button
+                  className="mt-4 bg-green-600 text-white px-5 py-2 rounded hover:bg-green-700"
+                  onClick={() => setIsEditing(true)}
+                >
+                  Edit Profile
+                </button>
+              </div>
+            ) : (
+              <form
+                onSubmit={handleSubmit(onSubmit)}
+                className="space-y-5"
+                noValidate
+              >
+                <InputField
+                  label="Full Name"
+                  name="full_name"
+                  register={register}
+                  required
+                />
+                <InputField
+                  label="Phone Number"
+                  name="phone"
+                  register={register}
+                  required
+                  pattern={{
+                    value: /^\+?[0-9\s\-]{7,15}$/,
+                    message: "Invalid phone number",
+                  }}
+                />
+                <TextAreaField
+                  label="Address"
+                  name="address"
+                  register={register}
+                  rows={3}
+                />
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Profile Photo
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+                  />
+                </div>
+                <div className="flex gap-4">
+                  <button
+                    type="submit"
+                    disabled={updating}
+                    className="bg-green-600 text-white px-5 py-2 rounded hover:bg-green-700 disabled:opacity-60"
+                  >
+                    {updating ? "Saving..." : "Save"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      reset(profile || {});
+                      setIsEditing(false);
+                    }}
+                    className="text-gray-600 hover:underline"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                {updateError && (
+                  <p className="text-red-600 mt-2">{updateError}</p>
+                )}
+              </form>
+            )}
+          </section>
         </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Profile Overview Card */}
-          <div className="lg:col-span-1">
-            <Card className="border-border">
-              <CardContent className="pt-6">
-                <div className="flex flex-col items-center space-y-4">
-                  <div className="relative group">
-                    <Avatar className="w-32 h-32 border-4 border-border shadow-lg">
-                      <AvatarImage src={profileData.avatar_url} alt={profileData.full_name} className="object-cover" />
-                      <AvatarFallback className="text-2xl bg-primary/10 text-primary">
-                        {profileData.full_name ? profileData.full_name.charAt(0).toUpperCase() : user?.email?.charAt(0).toUpperCase() || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      className="absolute -bottom-2 -right-2 h-10 w-10 rounded-full p-0 shadow-lg"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploadingImage}
-                    >
-                      {uploadingImage ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Camera className="h-4 w-4" />
-                      )}
-                    </Button>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                    />
-                  </div>
-                  <div className="text-center">
-                    <h3 className="text-xl font-semibold text-foreground">{profileData.full_name || "User"}</h3>
-                    <p className="text-muted-foreground">{profileData.email}</p>
-                    <div className="flex items-center justify-center mt-2 text-sm text-muted-foreground">
-                      <Phone className="h-4 w-4 mr-1" />
-                      {profileData.phone || "No phone number"}
-                    </div>
-                    {profileData.address && (
-                      <div className="flex items-center justify-center mt-1 text-sm text-muted-foreground">
-                        <MapPin className="h-4 w-4 mr-1" />
-                        {profileData.address}
-                      </div>
-                    )}
-                  </div>
-                  <div className="w-full pt-4">
-                    {!isEditing ? (
-                      <Button 
-                        variant="default" 
-                        className="w-full"
-                        onClick={() => setIsEditing(true)}
-                      >
-                        <Edit3 className="h-4 w-4 mr-2" />
-                        Edit Profile
-                      </Button>
-                    ) : (
-                      <Button 
-                        variant="outline" 
-                        onClick={() => setIsEditing(false)}
-                        className="w-full"
-                      >
-                        <X className="h-4 w-4 mr-2" />
-                        Cancel Editing
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Profile Information */}
-          <div className="lg:col-span-2">
-            <Card className="border-border">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-xl font-semibold flex items-center">
-                    <User className="h-5 w-5 mr-2" />
-                    Personal Information
-                  </CardTitle>
-                  {isEditing && (
-                    <Button 
-                      onClick={handleSave}
-                      disabled={loading}
-                      className="ml-auto"
-                    >
-                      {loading ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Save className="h-4 w-4 mr-2" />
-                      )}
-                      Save Changes
-                    </Button>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="full_name" className="text-sm font-medium">Full Name</Label>
-                    <Input
-                      id="full_name"
-                      value={profileData.full_name}
-                      onChange={(e) => handleInputChange("full_name", e.target.value)}
-                      disabled={!isEditing}
-                      className="transition-colors"
-                      placeholder="Enter your full name"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="phone" className="text-sm font-medium">Phone Number</Label>
-                    <Input
-                      id="phone"
-                      value={profileData.phone}
-                      onChange={(e) => handleInputChange("phone", e.target.value)}
-                      disabled={!isEditing}
-                      className="transition-colors"
-                      placeholder="Enter your phone number"
-                    />
-                  </div>
-
-                  <div className="md:col-span-2 space-y-2">
-                    <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
-                    <div className="relative">
-                      <Mail className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        id="email"
-                        value={profileData.email}
-                        disabled
-                        className="bg-muted cursor-not-allowed pl-10"
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground">Email cannot be changed for security reasons</p>
-                  </div>
-
-                  <div className="md:col-span-2 space-y-2">
-                    <Label htmlFor="address" className="text-sm font-medium">Complete Address</Label>
-                    {isEditing ? (
-                      <div className="space-y-3">
-                        <div className="flex gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={handleDetectLocation}
-                            disabled={isDetectingLocation}
-                            className="flex-1"
-                          >
-                            {isDetectingLocation ? (
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            ) : (
-                              <Navigation className="h-4 w-4 mr-2" />
-                            )}
-                            Auto Detect Location
-                          </Button>
-                        </div>
-                        <div className="relative">
-                          <div className="absolute inset-0 flex items-center">
-                            <span className="w-full border-t border-border" />
-                          </div>
-                          <div className="relative flex justify-center text-xs uppercase">
-                            <span className="bg-background px-2 text-muted-foreground">OR</span>
-                          </div>
-                        </div>
-                        <Input
-                          id="address"
-                          value={profileData.address}
-                          onChange={(e) => handleInputChange("address", e.target.value)}
-                          className="transition-colors"
-                          placeholder="Enter your address manually"
-                        />
-                      </div>
-                    ) : (
-                      <Input
-                        id="address"
-                        value={profileData.address}
-                        disabled
-                        className="bg-muted cursor-not-allowed transition-colors"
-                        placeholder="No address provided"
-                      />
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Account Actions */}
-            <Card className="border-border mt-6">
-              <CardContent className="space-y-3">
-                <Button 
-                  variant="outline" 
-                  onClick={() => handleFeatureClick("Order History")}
-                  className="w-full justify-start"
-                >
-                  <History className="h-4 w-4 mr-3" />
-                  Order History
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  onClick={() => handleFeatureClick("Payment Methods")}
-                  className="w-full justify-start"
-                >
-                  <CreditCard className="h-4 w-4 mr-3" />
-                  Payment Methods
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  onClick={() => handleFeatureClick("Help & Support")}
-                  className="w-full justify-start"
-                >
-                  <HelpCircle className="h-4 w-4 mr-3" />
-                  Help & Support
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  onClick={() => handleFeatureClick("Track Orders")}
-                  className="w-full justify-start"
-                >
-                  <Package className="h-4 w-4 mr-3" />
-                  Track Orders
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  onClick={() => handleFeatureClick("Reset Password")}
-                  className="w-full justify-start"
-                >
-                  <RotateCcw className="h-4 w-4 mr-3" />
-                  Reset Password
-                </Button>
-                
-                <Button 
-                  variant="destructive" 
-                  onClick={handleLogout}
-                  className="w-full justify-start"
-                >
-                  <LogOut className="h-4 w-4 mr-3" />
-                  Logout
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
+      </main>
     </div>
   );
 };
