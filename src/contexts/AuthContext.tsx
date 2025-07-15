@@ -51,7 +51,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange(
+    const initializeAuth = async () => {
+      // Get initial session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        const user: User = {
+          id: session.user.id,
+          email: session.user.email || "",
+          isVerified: true,
+        };
+        setUser(user);
+        setIsAuthenticated(true);
+        localStorage.setItem("user", JSON.stringify(user));
+      }
+      setLoading(false);
+    };
+
+    initializeAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (session?.user) {
           const user: User = {
@@ -71,22 +91,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        const user: User = {
-          id: session.user.id,
-          email: session.user.email || "",
-          isVerified: true,
-        };
-        setUser(user);
-        setIsAuthenticated(true);
-        localStorage.setItem("user", JSON.stringify(user));
-      }
-      setLoading(false);
-    });
-
     return () => {
-      authListener?.subscription.unsubscribe();
+      subscription.unsubscribe();
     };
   }, []);
 
@@ -179,31 +185,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setUser(null);
     setIsAuthenticated(false);
     localStorage.removeItem("user");
-  }, []);
-
-  useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (session?.user) {
-          const user: User = {
-            id: session.user.id,
-            email: session.user.email || "",
-            isVerified: true,
-          };
-          setUser(user);
-          setIsAuthenticated(true);
-          localStorage.setItem("user", JSON.stringify(user));
-        } else {
-          setUser(null);
-          setIsAuthenticated(false);
-          localStorage.removeItem("user");
-        }
-      }
-    );
-
-    return () => {
-      authListener?.subscription.unsubscribe();
-    };
   }, []);
 
   const value: AuthContextType = {

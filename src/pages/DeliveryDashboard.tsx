@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { 
   Home, LogOut, Package, MapPin, Phone, Timer, Clock, CheckCircle, 
   User, Power, DollarSign, Navigation, Building, Star, Truck,
-  AlertCircle, RefreshCw
+  AlertCircle, RefreshCw, Wallet
 } from 'lucide-react';
 
 interface OrderWithProfile {
@@ -371,14 +371,22 @@ const DeliveryDashboard = () => {
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 md:py-6">
         {/* Mobile Quick Navigation */}
         <div className="md:hidden mb-6">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <Button 
               variant="outline" 
               onClick={() => navigate('/delivery-profile')}
               className="h-12 flex flex-col items-center justify-center space-y-1"
             >
               <User className="h-4 w-4" />
-              <span className="text-xs">Profile & KYC</span>
+              <span className="text-xs">Profile</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/delivery-profile')}
+              className="h-12 flex flex-col items-center justify-center space-y-1"
+            >
+              <Wallet className="h-4 w-4" />
+              <span className="text-xs">Earnings</span>
             </Button>
             <Button 
               variant="outline" 
@@ -386,7 +394,7 @@ const DeliveryDashboard = () => {
               className="h-12 flex flex-col items-center justify-center space-y-1"
             >
               <Timer className="h-4 w-4" />
-              <span className="text-xs">Earnings & History</span>
+              <span className="text-xs">History</span>
             </Button>
           </div>
         </div>
