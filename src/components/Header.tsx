@@ -145,7 +145,7 @@ const Header = () => {
                 <span className="font-medium">10 mins</span>
               </div>
 
-              {user ? (
+              {user && !location.pathname.includes('/delivery') ? (
                 <Link to="/profile">
                   <Button
                     variant="outline"
@@ -154,7 +154,7 @@ const Header = () => {
                     <User className="h-4 w-4" />
                   </Button>
                 </Link>
-              ) : (
+              ) : user && location.pathname.includes('/delivery') ? null : (
                 <Link to="/login">
                   <Button
                     variant="outline"
@@ -239,14 +239,14 @@ const Header = () => {
               </span>
             )}
           </Link>
-          {user ? (
+          {user && !location.pathname.includes('/delivery') ? (
             <MobileNavButton
               to="/profile"
               icon={User}
               label="Account"
               isActive={location.pathname === "/profile"}
             />
-          ) : (
+          ) : user && location.pathname.includes('/delivery') ? null : (
             <MobileNavButton
               to="/login"
               icon={User}

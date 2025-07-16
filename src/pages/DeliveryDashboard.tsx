@@ -332,6 +332,22 @@ const DeliveryDashboard = () => {
                   onCheckedChange={toggleAvailability}
                 />
               </div>
+
+              {/* Navigation button - Google Maps for customer location */}
+              {currentOrder && (
+                <Button
+                  onClick={() => {
+                    const address = encodeURIComponent(currentOrder.delivery_address);
+                    window.open(`https://www.google.com/maps/search/?api=1&query=${address}`, '_blank');
+                  }}
+                  variant="default"
+                  size="sm"
+                  className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700"
+                >
+                  <Navigation className="h-3 w-3 md:h-4 md:w-4" />
+                  <span className="hidden md:inline">Navigate</span>
+                </Button>
+              )}
               
               {/* Profile Button - Always visible */}
               <Button 
@@ -564,6 +580,19 @@ const DeliveryDashboard = () => {
                   </div>
                   
                   <div className="flex flex-col sm:flex-row flex-wrap gap-2 mt-4">
+                    {/* Navigation button for customer address */}
+                    <Button
+                      onClick={() => {
+                        const address = encodeURIComponent(currentOrder.delivery_address);
+                        window.open(`https://www.google.com/maps/search/?api=1&query=${address}`, '_blank');
+                      }}
+                      variant="outline"
+                      className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                    >
+                      <Navigation className="h-4 w-4 mr-2" />
+                      Navigate to Customer
+                    </Button>
+
                     {currentOrder.status === 'confirmed' && (
                       <Button 
                         onClick={() => handleStatusUpdate(currentOrder.id, 'dispatched')}
