@@ -6,15 +6,20 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, CheckCircle, XCircle, Clock, User, Phone, MapPin } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Search, CheckCircle, XCircle, Clock, User, Phone, MapPin, FileText, Eye, UserCheck, UserX } from 'lucide-react';
 import AdminLayout from './components/AdminLayout';
 
 const DeliveryList = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedKYC, setSelectedKYC] = useState<any>(null);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [adminComments, setAdminComments] = useState('');
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch delivery partners
+  // Fetch delivery partners with KYC data
   const { data: deliveryPartners = [], isLoading } = useQuery({
     queryKey: ['delivery-partners'],
     queryFn: async () => {
@@ -22,7 +27,17 @@ const DeliveryList = () => {
         .from('profiles')
         .select(`
           *,
-          orders!orders_delivery_partner_id_fkey(id, status, created_at)
+          orders!orders_delivery_partner_id_fkey(id, status, created_at),
+          kyc_verifications!kyc_verifications_user_id_fkey(
+            id,
+            verification_status,
+            citizenship_document_url,
+            license_document_url,
+            pan_document_url,
+            admin_comments,
+            submitted_at,
+            reviewed_at
+          )
         `)
         .eq('role', 'delivery_partner')
         .order('created_at', { ascending: false });
@@ -66,6 +81,38 @@ const DeliveryList = () => {
     }
   });
 
+  // Update KYC status mutation
+  const updateKYCMutation = useMutation({
+    mutationFn: async ({ id, status, comments }: { id: string; status: string; comments: string }) => {
+      const { error } = await supabase
+        .from('kyc_verifications')
+        .update({
+          verification_status: status,
+          admin_comments: comments,
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: (await supabase.auth.getUser()).data.user?.id
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['delivery-partners'] });
+      setReviewModalOpen(false);
+      toast({
+        title: "KYC Updated",
+        description: "KYC verification status has been updated successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: "Failed to update KYC verification.",
+        variant: "destructive",
+      });
+    }
+  });
+
   const filteredPartners = deliveryPartners.filter(partner =>
     partner.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     partner.phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -93,6 +140,54 @@ const DeliveryList = () => {
     ).length;
     
     return { total, completed, pending };
+  };
+
+  const getKYCStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return <Badge variant="outline" className="text-yellow-700 bg-yellow-50 border-yellow-200">Pending Review</Badge>;
+      case 'approved':
+        return <Badge className="text-green-700 bg-green-50 border-green-200">KYC Verified</Badge>;
+      case 'rejected':
+        return <Badge variant="destructive">KYC Rejected</Badge>;
+      default:
+        return <Badge variant="outline" className="text-gray-700">No KYC</Badge>;
+    }
+  };
+
+  const handleReviewKYC = (partner: any) => {
+    const kyc = partner.kyc_verifications[0];
+    if (kyc) {
+      setSelectedKYC({...kyc, partner_name: partner.full_name});
+      setAdminComments(kyc.admin_comments || '');
+      setReviewModalOpen(true);
+    }
+  };
+
+  const handleApproveKYC = () => {
+    if (selectedKYC) {
+      updateKYCMutation.mutate({
+        id: selectedKYC.id,
+        status: 'approved',
+        comments: adminComments
+      });
+    }
+  };
+
+  const handleRejectKYC = () => {
+    if (selectedKYC) {
+      updateKYCMutation.mutate({
+        id: selectedKYC.id,
+        status: 'rejected',
+        comments: adminComments
+      });
+    }
+  };
+
+  const openDocument = (url: string | null) => {
+    if (url) {
+      window.open(url, '_blank');
+    }
   };
 
   return (
@@ -158,6 +253,55 @@ const DeliveryList = () => {
                             </div>
                           </div>
 
+                          {/* KYC Status Section */}
+                          <div className="border-t pt-3 mb-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm font-medium text-gray-600">KYC Status:</span>
+                              {partner.kyc_verifications?.[0] 
+                                ? getKYCStatusBadge(partner.kyc_verifications[0].verification_status)
+                                : getKYCStatusBadge('none')
+                              }
+                            </div>
+                            
+                            {partner.kyc_verifications?.[0] && (
+                              <div className="flex flex-wrap gap-2 mb-2">
+                                {partner.kyc_verifications[0].citizenship_document_url && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => openDocument(partner.kyc_verifications[0].citizenship_document_url)}
+                                    className="h-7 text-xs"
+                                  >
+                                    <FileText className="w-3 h-3 mr-1" />
+                                    Citizenship
+                                  </Button>
+                                )}
+                                {partner.kyc_verifications[0].license_document_url && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => openDocument(partner.kyc_verifications[0].license_document_url)}
+                                    className="h-7 text-xs"
+                                  >
+                                    <FileText className="w-3 h-3 mr-1" />
+                                    License
+                                  </Button>
+                                )}
+                                {partner.kyc_verifications[0].pan_document_url && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => openDocument(partner.kyc_verifications[0].pan_document_url)}
+                                    className="h-7 text-xs"
+                                  >
+                                    <FileText className="w-3 h-3 mr-1" />
+                                    PAN
+                                  </Button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
                           {partner.license_number && (
                             <div className="text-sm text-gray-600 mb-3">
                               <span className="font-medium">License:</span> {partner.license_number}
@@ -181,6 +325,19 @@ const DeliveryList = () => {
                         </div>
                         
                         <div className="flex flex-col space-y-2 ml-4">
+                          {/* KYC Review Button */}
+                          {partner.kyc_verifications?.[0]?.verification_status === 'pending' && (
+                            <Button
+                              size="sm"
+                              onClick={() => handleReviewKYC(partner)}
+                              className="bg-blue-600 hover:bg-blue-700"
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              Review KYC
+                            </Button>
+                          )}
+                          
+                          {/* Partner Approval/Revoke */}
                           {partner.role === 'customer' ? (
                             <Button
                               size="sm"
@@ -226,6 +383,91 @@ const DeliveryList = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* KYC Review Modal */}
+        <Dialog open={reviewModalOpen} onOpenChange={setReviewModalOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Review KYC Documents</DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-semibold mb-2">Partner: {selectedKYC?.partner_name}</h4>
+                <p className="text-sm text-muted-foreground">
+                  Submitted: {selectedKYC?.submitted_at ? new Date(selectedKYC.submitted_at).toLocaleDateString() : 'N/A'}
+                </p>
+              </div>
+
+              {/* Document Links */}
+              <div className="grid grid-cols-3 gap-2">
+                {selectedKYC?.citizenship_document_url && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => openDocument(selectedKYC.citizenship_document_url)}
+                    className="text-xs"
+                  >
+                    <FileText className="w-3 h-3 mr-1" />
+                    Citizenship
+                  </Button>
+                )}
+                {selectedKYC?.license_document_url && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => openDocument(selectedKYC.license_document_url)}
+                    className="text-xs"
+                  >
+                    <FileText className="w-3 h-3 mr-1" />
+                    License
+                  </Button>
+                )}
+                {selectedKYC?.pan_document_url && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => openDocument(selectedKYC.pan_document_url)}
+                    className="text-xs"
+                  >
+                    <FileText className="w-3 h-3 mr-1" />
+                    PAN
+                  </Button>
+                )}
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">Admin Comments</label>
+                <Textarea
+                  value={adminComments}
+                  onChange={(e) => setAdminComments(e.target.value)}
+                  placeholder="Add comments about the verification..."
+                  className="min-h-20"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleApproveKYC}
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                  disabled={updateKYCMutation.isPending}
+                >
+                  <UserCheck className="w-4 h-4 mr-1" />
+                  Approve
+                </Button>
+                <Button
+                  onClick={handleRejectKYC}
+                  variant="destructive"
+                  className="flex-1"
+                  disabled={updateKYCMutation.isPending}
+                >
+                  <UserX className="w-4 h-4 mr-1" />
+                  Reject
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );
