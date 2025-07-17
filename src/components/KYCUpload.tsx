@@ -419,19 +419,32 @@ const KYCUpload = () => {
       </div>
 
       {/* Submit for Review */}
-      {isAllDocumentsUploaded() && kycVerification?.verification_status === 'pending' && (
+      {isAllDocumentsUploaded() && kycVerification?.verification_status !== 'approved' && (
         <Card className="bg-card/60 backdrop-blur-sm border-border/50">
           <CardContent className="pt-6">
             <div className="text-center">
               <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">All Documents Uploaded!</h3>
               <p className="text-muted-foreground mb-4">
-                Your documents are submitted for review. Admin will verify and approve your KYC.
+                {kycVerification?.verification_status === 'pending' 
+                  ? "Your documents are submitted for review. Admin will verify and approve your KYC."
+                  : "Click below to submit your documents for admin review."
+                }
               </p>
-              <Badge className="bg-yellow-100 text-yellow-800">
-                <Clock className="h-3 w-3 mr-1" />
-                Awaiting Admin Review
-              </Badge>
+              {kycVerification?.verification_status === 'pending' ? (
+                <Badge className="bg-yellow-100 text-yellow-800">
+                  <Clock className="h-3 w-3 mr-1" />
+                  Awaiting Admin Review
+                </Badge>
+              ) : (
+                <Button 
+                  onClick={() => submitForReview.mutate()}
+                  disabled={submitForReview.isPending}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  {submitForReview.isPending ? "Submitting..." : "Send for Review"}
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>

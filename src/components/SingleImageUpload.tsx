@@ -61,7 +61,9 @@ const SingleImageUpload: React.FC<SingleImageUploadProps> = ({
         .from('user-avatars')
         .getPublicUrl(filePath);
 
-      onImageUpload(publicUrl);
+      // Force re-render with timestamp to show updated image
+      const timestampedUrl = `${publicUrl}?t=${Date.now()}`;
+      onImageUpload(timestampedUrl);
       
       toast({
         title: "Image uploaded successfully",

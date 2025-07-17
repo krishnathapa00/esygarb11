@@ -260,12 +260,12 @@ const UserProfile: React.FC = () => {
             </section>
           </div>
 
-          {/* Sign Out Button at the bottom */}
-          <div className="mt-8 pt-6 border-t border-border">
+          {/* Sign Out Button at the bottom center */}
+          <div className="mt-8 pt-6 border-t border-border flex justify-center">
             <Button
               onClick={handleLogout}
               variant="outline"
-              className="flex items-center gap-2 text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+              className="flex items-center gap-2 text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground px-8"
             >
               <LogOut className="h-4 w-4" />
               Sign Out
