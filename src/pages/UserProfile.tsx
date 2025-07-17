@@ -5,16 +5,20 @@ import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
 import InputField from "@/components/InputField";
 import TextAreaField from "@/components/TextAreaField";
+import SingleImageUpload from "@/components/SingleImageUpload";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import {
   fetchUserProfile,
   updateUserProfile,
   ProfileFormValues,
 } from "@/services/profileService";
-import { supabase } from "@/integrations/supabase/client";
 
 const UserProfile: React.FC = () => {
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, logout } = useAuth();
+  const { toast } = useToast();
 
   const [profile, setProfile] = useState<ProfileFormValues | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
@@ -23,7 +27,7 @@ const UserProfile: React.FC = () => {
   const [updating, setUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
 
-  const { register, handleSubmit, reset, watch } = useForm<ProfileFormValues>({
+  const { register, handleSubmit, reset, watch, setValue } = useForm<ProfileFormValues>({
     defaultValues: {
       full_name: "",
       phone: "",
@@ -42,9 +46,15 @@ const UserProfile: React.FC = () => {
       .then((data) => {
         setProfile(data);
         reset(data);
+        // If user has no profile data, automatically enter edit mode
+        if (!data?.full_name || !data?.phone) {
+          setIsEditing(true);
+        }
       })
       .catch((err) => {
         setError(err.message || "Failed to load profile");
+        // If profile doesn't exist, enter edit mode for new user
+        setIsEditing(true);
       })
       .finally(() => {
         setLoadingProfile(false);
@@ -59,33 +69,24 @@ const UserProfile: React.FC = () => {
 
   const avatarUrl = watch("avatar_url");
 
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!user) return;
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleImageUpload = (url: string) => {
+    setValue("avatar_url", url);
+  };
 
-    const fileExt = file.name.split(".").pop();
-    const filePath = `avatars/${user.id}/avatar.${fileExt}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("user-avatars")
-      .upload(filePath, file, { upsert: true });
-
-    if (uploadError) {
-      console.error("Avatar upload error:", uploadError.message);
-      return;
-    }
-
-    const { data: publicUrlData } = supabase.storage
-      .from("user-avatars")
-      .getPublicUrl(filePath);
-
-    if (publicUrlData?.publicUrl) {
-      const newAvatarUrl = publicUrlData.publicUrl;
-      reset({ ...watch(), avatar_url: newAvatarUrl });
-      setProfile((prev) =>
-        prev ? { ...prev, avatar_url: newAvatarUrl } : null
-      );
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast({
+        title: "Logged out successfully",
+        description: "You have been logged out of your account"
+      });
+      navigate("/");
+    } catch (error) {
+      toast({
+        title: "Logout failed",
+        description: "There was an error logging you out",
+        variant: "destructive"
+      });
     }
   };
 
@@ -98,8 +99,18 @@ const UserProfile: React.FC = () => {
       setProfile(updatedProfile);
       reset(updatedProfile);
       setIsEditing(false);
+      
+      toast({
+        title: "Profile updated successfully",
+        description: "Your profile information has been saved"
+      });
     } catch (err: any) {
       setUpdateError(err.message || "Failed to update profile");
+      toast({
+        title: "Update failed",
+        description: err.message || "Failed to update profile",
+        variant: "destructive"
+      });
     } finally {
       setUpdating(false);
     }
@@ -107,122 +118,159 @@ const UserProfile: React.FC = () => {
 
   if (authLoading || loadingProfile) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="animate-spin h-12 w-12 rounded-full border-b-2 border-green-600 mx-auto" />
-          <p className="mt-4 text-gray-600">Loading profile...</p>
+          <div className="animate-spin h-12 w-12 rounded-full border-b-2 border-primary mx-auto" />
+          <p className="mt-4 text-muted-foreground">Loading profile...</p>
         </div>
       </div>
     );
   }
 
-  if (error) {
-    return <p className="text-red-600">Error loading profile: {error}</p>;
+  if (error && !isEditing) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="max-w-4xl mx-auto px-4 py-10">
+          <div className="text-center">
+            <p className="text-destructive mb-4">Error loading profile: {error}</p>
+            <Button onClick={() => setIsEditing(true)}>Create Profile</Button>
+          </div>
+        </main>
+      </div>
+    );
   }
 
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Header />
       <main className="max-w-4xl mx-auto px-4 py-10">
         <h1 className="text-3xl font-semibold mb-6">My Account</h1>
-        <div className="bg-white shadow-sm rounded-lg p-6 md:flex gap-10">
-          <aside className="w-full md:w-1/3 text-center mb-6 md:mb-0">
-            <img
-              src={avatarUrl || profile?.avatar_url || "/images/avatar.jpg"}
-              alt="Avatar"
-              className="w-24 h-24 rounded-full border mx-auto"
-            />
-            <h2 className="mt-4 text-lg font-medium">{watch("full_name")}</h2>
-            <p className="text-sm text-gray-500">{user.email}</p>
-          </aside>
-          <section className="flex-1">
-            {!isEditing ? (
-              <div className="space-y-4 text-sm text-gray-700">
-                <div>
-                  <p className="font-medium">Full Name</p>
-                  <p>{profile?.full_name || "-"}</p>
-                </div>
-                <div>
-                  <p className="font-medium">Phone</p>
-                  <p>{profile?.phone || "-"}</p>
-                </div>
-                <div>
-                  <p className="font-medium">Address</p>
-                  <p>{profile?.address || "-"}</p>
-                </div>
-                <button
-                  className="mt-4 bg-green-600 text-white px-5 py-2 rounded hover:bg-green-700"
-                  onClick={() => setIsEditing(true)}
-                >
-                  Edit Profile
-                </button>
-              </div>
-            ) : (
-              <form
-                onSubmit={handleSubmit(onSubmit)}
-                className="space-y-5"
-                noValidate
-              >
-                <InputField
-                  label="Full Name"
-                  name="full_name"
-                  register={register}
-                  required
-                />
-                <InputField
-                  label="Phone Number"
-                  name="phone"
-                  register={register}
-                  required
-                  pattern={{
-                    value: /^\+?[0-9\s\-]{7,15}$/,
-                    message: "Invalid phone number",
+        <div className="bg-card shadow-sm rounded-lg p-6">
+          <div className="md:flex gap-10">
+            <aside className="w-full md:w-1/3 text-center mb-6 md:mb-0">
+              <div className="w-24 h-24 mx-auto mb-4">
+                <img
+                  src={avatarUrl || profile?.avatar_url || "/images/avatar.jpg"}
+                  alt="Avatar"
+                  className="w-full h-full rounded-full border object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "/images/avatar.jpg";
                   }}
                 />
-                <TextAreaField
-                  label="Address"
-                  name="address"
-                  register={register}
-                  rows={3}
-                />
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Profile Photo
-                  </label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarUpload}
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+              </div>
+              <h2 className="text-lg font-medium">{profile?.full_name || "Your Name"}</h2>
+              <p className="text-sm text-muted-foreground">{user.email}</p>
+            </aside>
+
+            <section className="flex-1">
+              {!isEditing ? (
+                <div className="space-y-6">
+                  <div className="space-y-4 text-sm">
+                    <div>
+                      <p className="font-medium text-foreground">Full Name</p>
+                      <p className="text-muted-foreground">{profile?.full_name || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">Phone</p>
+                      <p className="text-muted-foreground">{profile?.phone || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">Address</p>
+                      <p className="text-muted-foreground">{profile?.address || "-"}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-4">
+                    <Button
+                      onClick={() => setIsEditing(true)}
+                      className="bg-primary hover:bg-primary/90"
+                    >
+                      Edit Profile
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <form
+                  onSubmit={handleSubmit(onSubmit)}
+                  className="space-y-6"
+                  noValidate
+                >
+                  <InputField
+                    label="Full Name"
+                    name="full_name"
+                    register={register}
+                    required
                   />
-                </div>
-                <div className="flex gap-4">
-                  <button
-                    type="submit"
-                    disabled={updating}
-                    className="bg-green-600 text-white px-5 py-2 rounded hover:bg-green-700 disabled:opacity-60"
-                  >
-                    {updating ? "Saving..." : "Save"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      reset(profile || {});
-                      setIsEditing(false);
+                  <InputField
+                    label="Phone Number"
+                    name="phone"
+                    register={register}
+                    required
+                    pattern={{
+                      value: /^\+?[0-9\s\-]{7,15}$/,
+                      message: "Invalid phone number",
                     }}
-                    className="text-gray-600 hover:underline"
-                  >
-                    Cancel
-                  </button>
-                </div>
-                {updateError && (
-                  <p className="text-red-600 mt-2">{updateError}</p>
-                )}
-              </form>
-            )}
-          </section>
+                  />
+                  <TextAreaField
+                    label="Address"
+                    name="address"
+                    register={register}
+                    rows={3}
+                  />
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Profile Photo
+                    </label>
+                    <SingleImageUpload
+                      onImageUpload={handleImageUpload}
+                      currentImage={avatarUrl}
+                      folder="avatars"
+                    />
+                  </div>
+
+                  <div className="flex gap-4">
+                    <Button
+                      type="submit"
+                      disabled={updating}
+                      className="bg-primary hover:bg-primary/90"
+                    >
+                      {updating ? "Saving..." : "Save Profile"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        reset(profile || {});
+                        setIsEditing(false);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                  
+                  {updateError && (
+                    <p className="text-destructive text-sm">{updateError}</p>
+                  )}
+                </form>
+              )}
+            </section>
+          </div>
+
+          {/* Sign Out Button at the bottom */}
+          <div className="mt-8 pt-6 border-t border-border">
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              className="flex items-center gap-2 text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign Out
+            </Button>
+          </div>
         </div>
       </main>
     </div>
