@@ -3,16 +3,21 @@ import React, { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Package, ShoppingBag, Users, Wallet, 
-  LogOut, Menu, X, Truck
+  LogOut, Menu, X, Truck, RefreshCw
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 interface AdminLayoutProps {
   children: ReactNode;
+  onRefresh?: () => void;
 }
 
-const AdminLayout = ({ children }: AdminLayoutProps) => {
+const AdminLayout = ({ children, onRefresh }: AdminLayoutProps) => {
   const location = useLocation();
+  const { toast } = useToast();
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
   
   const navigationItems = [
     { name: 'Dashboard', icon: LayoutDashboard, href: '/admin/dashboard' },
@@ -24,6 +29,27 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   ];
   
   const isActive = (path: string) => location.pathname === path;
+
+  const handleRefresh = async () => {
+    if (onRefresh && !isRefreshing) {
+      setIsRefreshing(true);
+      try {
+        await onRefresh();
+        toast({
+          title: "Data refreshed",
+          description: "Page data has been updated."
+        });
+      } catch (error) {
+        toast({
+          title: "Refresh failed",
+          description: "Failed to refresh data.",
+          variant: "destructive"
+        });
+      } finally {
+        setTimeout(() => setIsRefreshing(false), 500);
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
@@ -115,13 +141,28 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       
       {/* Content */}
       <div className="md:pl-64 flex flex-col flex-1">
-        <div className="sticky top-0 z-10 bg-white md:hidden pl-1 pt-1 sm:pl-3 sm:pt-3">
-          <button
-            className="flex items-center justify-center h-12 w-12 rounded-md text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-green-500"
-            onClick={() => setIsSidebarOpen(true)}
-          >
-            <Menu className="h-6 w-6" />
-          </button>
+        <div className="sticky top-0 z-10 bg-white border-b border-gray-200">
+          <div className="flex justify-between items-center px-4 py-3">
+            <button
+              className="md:hidden flex items-center justify-center h-8 w-8 rounded-md text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-green-500"
+              onClick={() => setIsSidebarOpen(true)}
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            
+            {onRefresh && (
+              <Button 
+                onClick={handleRefresh} 
+                variant="outline" 
+                size="sm" 
+                disabled={isRefreshing}
+                className="ml-auto"
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                {isRefreshing ? 'Refreshing...' : 'Refresh'}
+              </Button>
+            )}
+          </div>
         </div>
         
         <main className="flex-1 p-4 sm:p-6">
