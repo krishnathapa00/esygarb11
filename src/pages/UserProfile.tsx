@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
 import InputField from "@/components/InputField";
 import TextAreaField from "@/components/TextAreaField";
-import SingleImageUpload from "@/components/SingleImageUpload";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -151,15 +151,85 @@ const UserProfile: React.FC = () => {
         <div className="bg-card shadow-sm rounded-lg p-6">
           <div className="md:flex gap-10">
             <aside className="w-full md:w-1/3 text-center mb-6 md:mb-0">
-              <div className="w-24 h-24 mx-auto mb-4">
-                <img
-                  src={avatarUrl || profile?.avatar_url || "/images/avatar.jpg"}
-                  alt="Avatar"
-                  className="w-full h-full rounded-full border object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = "/images/avatar.jpg";
+              <div className="w-24 h-24 mx-auto mb-4 relative group">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  id="avatar-upload"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+
+                    // Validate file type
+                    if (!file.type.startsWith('image/')) {
+                      toast({
+                        title: "Invalid file type",
+                        description: "Please select an image file",
+                        variant: "destructive"
+                      });
+                      return;
+                    }
+
+                    // Validate file size (max 5MB)
+                    if (file.size > 5 * 1024 * 1024) {
+                      toast({
+                        title: "File too large",
+                        description: "Please select an image smaller than 5MB",
+                        variant: "destructive"
+                      });
+                      return;
+                    }
+
+                    try {
+                      const fileExt = file.name.split('.').pop();
+                      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+                      const filePath = `avatars/${fileName}`;
+
+                      const { error: uploadError } = await supabase.storage
+                        .from('user-avatars')
+                        .upload(filePath, file);
+
+                      if (uploadError) {
+                        throw uploadError;
+                      }
+
+                      const { data: { publicUrl } } = supabase.storage
+                        .from('user-avatars')
+                        .getPublicUrl(filePath);
+
+                      setValue("avatar_url", `${publicUrl}?t=${Date.now()}`);
+                      
+                      toast({
+                        title: "Image uploaded successfully",
+                        description: "Your avatar has been updated"
+                      });
+
+                    } catch (error: any) {
+                      toast({
+                        title: "Upload failed",
+                        description: error.message || "Failed to upload image",
+                        variant: "destructive"
+                      });
+                    }
                   }}
                 />
+                <label 
+                  htmlFor="avatar-upload" 
+                  className="cursor-pointer block w-full h-full"
+                >
+                  <img
+                    src={avatarUrl || profile?.avatar_url || "/images/avatar.jpg"}
+                    alt="Avatar"
+                    className="w-full h-full rounded-full border object-cover group-hover:opacity-75 transition-opacity"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "/images/avatar.jpg";
+                    }}
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span className="text-white text-xs">Change Photo</span>
+                  </div>
+                </label>
               </div>
               <h2 className="text-lg font-medium">{profile?.full_name || "Your Name"}</h2>
               <p className="text-sm text-muted-foreground">{user.email}</p>
@@ -220,17 +290,6 @@ const UserProfile: React.FC = () => {
                     register={register}
                     rows={3}
                   />
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Profile Photo
-                    </label>
-                    <SingleImageUpload
-                      onImageUpload={handleImageUpload}
-                      currentImage={avatarUrl}
-                      folder="avatars"
-                    />
-                  </div>
 
                   <div className="flex gap-4">
                     <Button

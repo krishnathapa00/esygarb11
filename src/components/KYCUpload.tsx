@@ -193,8 +193,33 @@ const KYCUpload = () => {
            kycVerification?.pan_document_url;
   };
 
-  const viewDocument = (url: string) => {
-    window.open(url, '_blank');
+  const viewDocument = async (documentType: string, url: string) => {
+    try {
+      // Extract the file path from the URL
+      const urlParts = url.split('/');
+      const filePath = urlParts.slice(-2).join('/'); // Get userId/documentType.ext
+      
+      // Get signed URL for viewing
+      const { data, error } = await supabase.storage
+        .from('kyc-documents')
+        .createSignedUrl(filePath, 3600); // 1 hour expiry
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.signedUrl) {
+        window.open(data.signedUrl, '_blank');
+      } else {
+        throw new Error('Failed to get signed URL');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Failed to view document",
+        description: error.message || "Could not load document",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -257,7 +282,7 @@ const KYCUpload = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => viewDocument(kycVerification.citizenship_document_url!)}
+                  onClick={() => viewDocument('citizenship', kycVerification.citizenship_document_url!)}
                   className="flex-1"
                 >
                   <Eye className="h-4 w-4 mr-2" />
@@ -316,7 +341,7 @@ const KYCUpload = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => viewDocument(kycVerification.license_document_url!)}
+                  onClick={() => viewDocument('license', kycVerification.license_document_url!)}
                   className="flex-1"
                 >
                   <Eye className="h-4 w-4 mr-2" />
@@ -375,7 +400,7 @@ const KYCUpload = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => viewDocument(kycVerification.pan_document_url!)}
+                  onClick={() => viewDocument('pan', kycVerification.pan_document_url!)}
                   className="flex-1"
                 >
                   <Eye className="h-4 w-4 mr-2" />

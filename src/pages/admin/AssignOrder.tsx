@@ -47,14 +47,7 @@ const AssignOrder = () => {
   const { data: deliveryPersons = [] } = useQuery({
     queryKey: ['available-delivery-partners'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(`
-          *,
-          assigned_orders:orders!delivery_partner_id(count)
-        `)
-        .eq('role', 'delivery_partner')
-        .order('created_at', { ascending: false });
+      const { data, error } = await supabase.rpc('get_delivery_partners');
 
       if (error) {
         toast({
@@ -224,7 +217,7 @@ const AssignOrder = () => {
                         <div className="flex items-center justify-between">
                           <div>
                             <h4 className="font-medium">{person.full_name || 'N/A'}</h4>
-                            <p className="text-sm text-gray-500">{person.phone_number || person.phone || 'N/A'}</p>
+                            <p className="text-sm text-gray-500">{person.phone_number || 'N/A'}</p>
                           </div>
                           <div className="text-right">
                             <div className="flex items-center text-yellow-500">
@@ -234,7 +227,7 @@ const AssignOrder = () => {
                               </svg>
                             </div>
                             <p className="text-sm text-gray-500">
-                              {person.assigned_orders?.[0]?.count || 0} active orders
+                              Available
                             </p>
                           </div>
                         </div>

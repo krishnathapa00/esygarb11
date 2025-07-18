@@ -235,8 +235,7 @@ const ManageOrders = () => {
                           variant="ghost" 
                           size="sm"
                           onClick={() => {
-                            // Navigate to order details or show order details modal
-                            window.open(`/admin/orders/${order.id}`, '_blank');
+                            window.location.href = `/admin/orders/${order.id}`;
                           }}
                         >
                           <Eye className="h-4 w-4 mr-1" />
@@ -256,18 +255,20 @@ const ManageOrders = () => {
                             Assign
                           </Button>
                         )}
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="text-red-600 hover:bg-red-50"
-                          onClick={() => {
-                            setSelectedOrder(order);
-                            setDeleteModalOpen(true);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4 mr-1" />
-                          Delete
-                        </Button>
+                         {isSuperAdmin && (
+                           <Button 
+                             variant="ghost" 
+                             size="sm" 
+                             className="text-red-600 hover:bg-red-50"
+                             onClick={() => {
+                               setSelectedOrder(order);
+                               setDeleteModalOpen(true);
+                             }}
+                           >
+                             <Trash2 className="h-4 w-4 mr-1" />
+                             Delete
+                           </Button>
+                         )}
                       </div>
                     </td>
                   </tr>

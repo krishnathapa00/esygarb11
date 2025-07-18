@@ -24,6 +24,7 @@ import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import ManageProducts from "./pages/admin/ManageProducts";
 import ManageOrders from "./pages/admin/ManageOrders";
+import OrderDetails from "./pages/admin/OrderDetails";
 import ManageUsers from "./pages/admin/ManageUsers";
 import Transactions from "./pages/admin/Transactions";
 import AssignOrder from "./pages/admin/AssignOrder";
@@ -119,6 +120,14 @@ function App() {
                 element={
                   <RoleProtectedRoute allowedRoles={["admin"]}>
                     <ManageOrders />
+                  </RoleProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/orders/:orderId"
+                element={
+                  <RoleProtectedRoute allowedRoles={["admin"]}>
+                    <OrderDetails />
                   </RoleProtectedRoute>
                 }
               />
