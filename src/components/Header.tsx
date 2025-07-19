@@ -111,9 +111,11 @@ const Header = () => {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
-                <Package className="h-5 w-5 text-white" />
-              </div>
+              <img 
+                src="/src/assets/esygrab-logo.png" 
+                alt="EsyGrab"
+                className="w-8 h-8 object-contain"
+              />
               <h1 className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                 EsyGrab
               </h1>
@@ -226,9 +228,9 @@ const Header = () => {
             label="Categories"
             isActive={location.pathname === "/categories"}
           />
-          <Link to={user ? "/cart" : "/login?redirect=/cart"} className="relative">
+          <div className="relative">
             <MobileNavButton
-              to={user ? "/cart" : "/login"}
+              to={user ? "/cart" : "/login?redirect=/cart"}
               icon={ShoppingCart}
               label="Cart"
               isActive={location.pathname === "/cart"}
@@ -238,7 +240,7 @@ const Header = () => {
                 {totalItems}
               </span>
             )}
-          </Link>
+          </div>
           {user && !location.pathname.includes('/delivery') ? (
             <MobileNavButton
               to="/profile"

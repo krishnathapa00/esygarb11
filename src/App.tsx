@@ -25,6 +25,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import ManageProducts from "./pages/admin/ManageProducts";
 import ManageOrders from "./pages/admin/ManageOrders";
 import OrderDetails from "./pages/admin/OrderDetails";
+import AddProduct from "./pages/admin/AddProduct";
 import ManageUsers from "./pages/admin/ManageUsers";
 import Transactions from "./pages/admin/Transactions";
 import AssignOrder from "./pages/admin/AssignOrder";
@@ -102,7 +103,7 @@ function App() {
               <Route
                 path="/admin/dashboard"
                 element={
-                  <RoleProtectedRoute allowedRoles={["admin"]}>
+                  <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
                     <AdminDashboard />
                   </RoleProtectedRoute>
                 }
@@ -110,7 +111,7 @@ function App() {
               <Route
                 path="/admin/products"
                 element={
-                  <RoleProtectedRoute allowedRoles={["admin"]}>
+                  <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
                     <ManageProducts />
                   </RoleProtectedRoute>
                 }
@@ -118,7 +119,7 @@ function App() {
               <Route
                 path="/admin/orders"
                 element={
-                  <RoleProtectedRoute allowedRoles={["admin"]}>
+                  <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
                     <ManageOrders />
                   </RoleProtectedRoute>
                 }
@@ -128,6 +129,14 @@ function App() {
                 element={
                   <RoleProtectedRoute allowedRoles={["admin"]}>
                     <OrderDetails />
+                  </RoleProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/products/add"
+                element={
+                  <RoleProtectedRoute allowedRoles={["admin"]}>
+                    <AddProduct />
                   </RoleProtectedRoute>
                 }
               />

@@ -116,7 +116,7 @@ const OrderDetails = () => {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Total Amount</span>
-                    <span className="font-medium text-lg">₹{order.total_amount}</span>
+                    <span className="font-medium text-lg">Rs {order.total_amount}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Payment Status</span>
@@ -151,7 +151,7 @@ const OrderDetails = () => {
                         <p className="text-gray-600">Quantity: {item.quantity}</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium">₹{item.price}</p>
+                        <p className="font-medium">Rs {item.price}</p>
                       </div>
                     </div>
                   ))}

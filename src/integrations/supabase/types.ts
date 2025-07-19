@@ -522,8 +522,19 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
-      get_delivery_partners: {
+      get_available_darkstores: {
         Args: Record<PropertyKey, never>
+        Returns: {
+          id: number
+          name: string
+          address: string
+          city: string
+          state: string
+          zip_code: string
+        }[]
+      }
+      get_delivery_partners: {
+        Args: Record<PropertyKey, never> | { _darkstore_id?: number }
         Returns: {
           id: string
           full_name: string

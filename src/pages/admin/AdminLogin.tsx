@@ -64,8 +64,8 @@ const AdminLogin = () => {
       return;
     }
 
-    if (profile.role !== "admin") {
-      // User is not admin, sign out and show error
+    if (profile.role !== "admin" && profile.role !== "super_admin") {
+      // User is not admin or super_admin, sign out and show error
       await supabase.auth.signOut();
       toast({
         title: "Access Denied",

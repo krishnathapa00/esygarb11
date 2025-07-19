@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import KYCUpload from '@/components/KYCUpload';
 import EarningsTransfer from '@/components/EarningsTransfer';
+import DarkstoreSelector from '@/components/DarkstoreSelector';
 import { 
   ArrowLeft, User, Phone, Mail, Truck, Building, 
   MapPin, Star, CheckCircle, Calendar, Save, FileText, Shield, Wallet

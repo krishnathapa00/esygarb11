@@ -197,7 +197,7 @@ const ManageProducts = () => {
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
           <h1 className="text-2xl font-bold">Products Management</h1>
           <Button 
-            onClick={handleAddProduct}
+            onClick={() => window.location.href = '/admin/products/add'}
             className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
           >
             <Plus className="h-4 w-4 mr-2" /> Add New Product
