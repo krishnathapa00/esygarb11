@@ -23,8 +23,10 @@ const EarningsTransfer: React.FC<EarningsTransferProps> = ({ totalEarnings, avai
   const [transferAmount, setTransferAmount] = useState('');
   const [transferMethod, setTransferMethod] = useState('');
   const [bankAccount, setBankAccount] = useState('');
-  const [ifscCode, setIfscCode] = useState('');
-  const [upiId, setUpiId] = useState('');
+  const [bankName, setBankName] = useState('');
+  const [accountHolder, setAccountHolder] = useState('');
+  const [esewaNumber, setEsewaNumber] = useState('');
+  const [khaltiNumber, setKhaltiNumber] = useState('');
 
   const transferMutation = useMutation({
     mutationFn: async (transferData: any) => {
@@ -45,8 +47,10 @@ const EarningsTransfer: React.FC<EarningsTransferProps> = ({ totalEarnings, avai
       setTransferAmount('');
       setTransferMethod('');
       setBankAccount('');
-      setIfscCode('');
-      setUpiId('');
+      setBankName('');
+      setAccountHolder('');
+      setEsewaNumber('');
+      setKhaltiNumber('');
       queryClient.invalidateQueries({ queryKey: ['delivery-profile-stats'] });
     },
     onError: () => {
@@ -78,19 +82,28 @@ const EarningsTransfer: React.FC<EarningsTransferProps> = ({ totalEarnings, avai
       return;
     }
 
-    if (transferMethod === 'bank' && (!bankAccount || !ifscCode)) {
+    if (transferMethod === 'bank' && (!bankAccount || !bankName || !accountHolder)) {
       toast({
         title: "Bank Details Required",
-        description: "Please provide bank account and IFSC code.",
+        description: "Please provide complete bank account details.",
         variant: "destructive"
       });
       return;
     }
 
-    if (transferMethod === 'upi' && !upiId) {
+    if (transferMethod === 'esewa' && !esewaNumber) {
       toast({
-        title: "UPI ID Required",
-        description: "Please provide your UPI ID.",
+        title: "eSewa Number Required",
+        description: "Please provide your eSewa mobile number.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (transferMethod === 'khalti' && !khaltiNumber) {
+      toast({
+        title: "Khalti Number Required",
+        description: "Please provide your Khalti mobile number.",
         variant: "destructive"
       });
       return;
@@ -100,8 +113,9 @@ const EarningsTransfer: React.FC<EarningsTransferProps> = ({ totalEarnings, avai
       userId: user?.id,
       amount,
       method: transferMethod,
-      ...(transferMethod === 'bank' && { bankAccount, ifscCode }),
-      ...(transferMethod === 'upi' && { upiId }),
+      ...(transferMethod === 'bank' && { bankAccount, bankName, accountHolder }),
+      ...(transferMethod === 'esewa' && { esewaNumber }),
+      ...(transferMethod === 'khalti' && { khaltiNumber }),
       timestamp: new Date().toISOString()
     };
 
@@ -175,58 +189,87 @@ const EarningsTransfer: React.FC<EarningsTransferProps> = ({ totalEarnings, avai
                 <SelectValue placeholder="Select transfer method" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="esewa">
+                  <div className="flex items-center gap-2">
+                    <Wallet className="h-4 w-4" />
+                    eSewa
+                  </div>
+                </SelectItem>
+                <SelectItem value="khalti">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4" />
+                    Khalti
+                  </div>
+                </SelectItem>
                 <SelectItem value="bank">
                   <div className="flex items-center gap-2">
                     <Building2 className="h-4 w-4" />
                     Bank Account
                   </div>
                 </SelectItem>
-                <SelectItem value="upi">
-                  <div className="flex items-center gap-2">
-                    <CreditCard className="h-4 w-4" />
-                    UPI
-                  </div>
-                </SelectItem>
               </SelectContent>
             </Select>
           </div>
 
+          {transferMethod === 'esewa' && (
+            <div>
+              <Label htmlFor="esewaNumber">eSewa Mobile Number</Label>
+              <Input
+                id="esewaNumber"
+                value={esewaNumber}
+                onChange={(e) => setEsewaNumber(e.target.value)}
+                placeholder="98XXXXXXXX"
+                className="mt-1"
+              />
+            </div>
+          )}
+
+          {transferMethod === 'khalti' && (
+            <div>
+              <Label htmlFor="khaltiNumber">Khalti Mobile Number</Label>
+              <Input
+                id="khaltiNumber"
+                value={khaltiNumber}
+                onChange={(e) => setKhaltiNumber(e.target.value)}
+                placeholder="98XXXXXXXX"
+                className="mt-1"
+              />
+            </div>
+          )}
+
           {transferMethod === 'bank' && (
             <>
               <div>
-                <Label htmlFor="bankAccount">Bank Account Number</Label>
+                <Label htmlFor="bankName">Bank Name</Label>
+                <Input
+                  id="bankName"
+                  value={bankName}
+                  onChange={(e) => setBankName(e.target.value)}
+                  placeholder="e.g., Nepal Investment Bank"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="accountHolder">Account Holder Name</Label>
+                <Input
+                  id="accountHolder"
+                  value={accountHolder}
+                  onChange={(e) => setAccountHolder(e.target.value)}
+                  placeholder="Full name as per bank account"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="bankAccount">Account Number</Label>
                 <Input
                   id="bankAccount"
                   value={bankAccount}
                   onChange={(e) => setBankAccount(e.target.value)}
-                  placeholder="Enter your bank account number"
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label htmlFor="ifsc">IFSC Code</Label>
-                <Input
-                  id="ifsc"
-                  value={ifscCode}
-                  onChange={(e) => setIfscCode(e.target.value)}
-                  placeholder="Enter IFSC code"
+                  placeholder="Bank account number"
                   className="mt-1"
                 />
               </div>
             </>
-          )}
-
-          {transferMethod === 'upi' && (
-            <div>
-              <Label htmlFor="upi">UPI ID</Label>
-              <Input
-                id="upi"
-                value={upiId}
-                onChange={(e) => setUpiId(e.target.value)}
-                placeholder="yourname@upi"
-                className="mt-1"
-              />
-            </div>
           )}
 
           <Button
@@ -256,9 +299,10 @@ const EarningsTransfer: React.FC<EarningsTransferProps> = ({ totalEarnings, avai
             <h4 className="font-semibold text-blue-800">Transfer Information</h4>
             <ul className="text-sm text-blue-700 space-y-1">
               <li>• Bank transfers typically take 1-3 business days</li>
-              <li>• UPI transfers are usually instant</li>
-              <li>• Minimum transfer amount: Rs 1</li>
-              <li>• No transfer fees for amounts above Rs 100</li>
+              <li>• eSewa and Khalti transfers are usually instant</li>
+              <li>• Minimum transfer amount: Rs 100</li>
+              <li>• No transfer fees for verified accounts</li>
+              <li>• Ensure your account details are correct to avoid delays</li>
             </ul>
           </div>
         </CardContent>

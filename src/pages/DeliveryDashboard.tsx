@@ -12,7 +12,7 @@ import DarkstoreSelector from '@/components/DarkstoreSelector';
 import { 
   Home, LogOut, Package, MapPin, Phone, Timer, Clock, CheckCircle, 
   User, Power, DollarSign, Navigation, Building, Star, Truck,
-  AlertCircle, RefreshCw, Wallet
+  AlertCircle, RefreshCw, Wallet, Eye
 } from 'lucide-react';
 
 interface OrderWithProfile {
@@ -594,35 +594,13 @@ const DeliveryDashboard = () => {
                       Navigate to Customer
                     </Button>
 
-                    {currentOrder.status === 'confirmed' && (
-                      <Button 
-                        onClick={() => handleStatusUpdate(currentOrder.id, 'dispatched')}
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
-                      >
-                        <Package className="h-4 w-4 mr-2" />
-                        Mark as Picked Up
-                      </Button>
-                    )}
-                    
-                    {currentOrder.status === 'dispatched' && (
-                      <Button 
-                        onClick={() => handleStatusUpdate(currentOrder.id, 'out_for_delivery')}
-                        className="bg-orange-600 hover:bg-orange-700 text-white"
-                      >
-                        <Truck className="h-4 w-4 mr-2" />
-                        En Route to Customer
-                      </Button>
-                    )}
-                    
-                    {currentOrder.status === 'out_for_delivery' && (
-                      <Button 
-                        onClick={() => handleStatusUpdate(currentOrder.id, 'delivered')}
-                        className="bg-green-600 hover:bg-green-700 text-white"
-                      >
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                        Mark as Delivered
-                      </Button>
-                    )}
+                    <Button
+                      onClick={() => navigate(`/delivery-order/${currentOrder.id}`)}
+                      className="bg-primary hover:bg-primary/90 text-white flex-1"
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      View Order Details
+                    </Button>
                   </div>
                 </div>
               </div>

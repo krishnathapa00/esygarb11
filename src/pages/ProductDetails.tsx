@@ -38,10 +38,10 @@ const ProductDetails = () => {
 
   const totalCartQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  // Get related products (same category, excluding current product)
+  // Get related products (same category, excluding current product) - limit to 3
   const relatedProducts = products?.filter(
     (p) => p.category === product?.category && p.id !== product?.id
-  ).slice(0, 4) || [];
+  ).slice(0, 3) || [];
 
   if (!product) {
     return (

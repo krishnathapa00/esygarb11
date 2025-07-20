@@ -13,6 +13,7 @@ import Checkout from "./pages/Checkout";
 import PaymentPage from "./pages/PaymentPage";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import OrderTracking from "./pages/OrderTracking";
+import DeliveryOrderDetail from "./pages/DeliveryOrderDetail";
 import LocationSelector from "./pages/LocationSelector";
 import OrderHistory from "./pages/OrderHistory";
 import UserProfile from "./pages/UserProfile";
@@ -87,6 +88,14 @@ function App() {
                 element={
                   <RoleProtectedRoute allowedRoles={["delivery_partner"]}>
                     <DeliveryProfile />
+                  </RoleProtectedRoute>
+                }
+              />
+              <Route
+                path="/delivery-order/:orderId"
+                element={
+                  <RoleProtectedRoute allowedRoles={["delivery_partner"]}>
+                    <DeliveryOrderDetail />
                   </RoleProtectedRoute>
                 }
               />
