@@ -55,7 +55,7 @@ const ProductCard = ({
 
   const handleDecrease = (e: React.MouseEvent) => {
     e.preventDefault();
-    onUpdateQuantity(id, cartQuantity - 1);
+    onUpdateQuantity(id, Math.max(0, cartQuantity - 1));
   };
 
   const handleIncrease = (e: React.MouseEvent) => {

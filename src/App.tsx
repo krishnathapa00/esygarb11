@@ -13,6 +13,7 @@ import Checkout from "./pages/Checkout";
 import PaymentPage from "./pages/PaymentPage";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import OrderTracking from "./pages/OrderTracking";
+import LocationSelector from "./pages/LocationSelector";
 import OrderHistory from "./pages/OrderHistory";
 import UserProfile from "./pages/UserProfile";
 import DeliveryDashboard from "./pages/DeliveryDashboard";
@@ -59,6 +60,7 @@ function App() {
               <Route path="/payment" element={<PaymentPage />} />
               <Route path="/order-confirmation" element={<OrderConfirmation />} />
               <Route path="/track-order/:id" element={<OrderTracking />} />
+              <Route path="/location-selector" element={<LocationSelector />} />
               <Route path="/order-history" element={<OrderHistory />} />
               <Route path="/profile" element={<UserProfile />} />
               <Route path="/location" element={<MapLocation />} />

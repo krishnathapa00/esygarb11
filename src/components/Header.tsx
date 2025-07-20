@@ -111,11 +111,6 @@ const Header = () => {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-3">
-              <img 
-                src="/src/assets/esygrab-logo.png" 
-                alt="EsyGrab"
-                className="w-8 h-8 object-contain"
-              />
               <h1 className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                 EsyGrab
               </h1>

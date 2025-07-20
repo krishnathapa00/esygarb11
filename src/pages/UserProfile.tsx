@@ -198,7 +198,14 @@ const UserProfile: React.FC = () => {
                         .from('user-avatars')
                         .getPublicUrl(filePath);
 
-                      setValue("avatar_url", `${publicUrl}?t=${Date.now()}`);
+                      const newAvatarUrl = `${publicUrl}?t=${Date.now()}`;
+                      setValue("avatar_url", newAvatarUrl);
+                      
+                      // Update the profile immediately in the database
+                      await supabase
+                        .from('profiles')
+                        .update({ avatar_url: newAvatarUrl })
+                        .eq('id', user.id);
                       
                       toast({
                         title: "Image uploaded successfully",

@@ -288,11 +288,12 @@ const CategoryProducts = () => {
       
       if (quantity <= 0) {
         delete newCart[productId];
+        setCartItems(prevTotal => Math.max(0, prevTotal - currentQty));
       } else {
         newCart[productId] = quantity;
+        setCartItems(prevTotal => prevTotal + diff);
       }
       
-      setCartItems(prevTotal => prevTotal + diff);
       return newCart;
     });
   };
