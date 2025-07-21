@@ -38,6 +38,7 @@ import MapLocation from "./pages/MapLocation";
 import SearchResults from "./pages/SearchResults";
 import SupportPage from "./pages/SupportPage";
 import { Unauthorized } from "./pages/Unauthorized";
+import ManualLocationSelector from "./pages/ManualLocationSelector";
 
 const queryClient = new QueryClient();
 
@@ -65,6 +66,7 @@ function App() {
               <Route path="/order-history" element={<OrderHistory />} />
               <Route path="/profile" element={<UserProfile />} />
               <Route path="/location" element={<MapLocation />} />
+              <Route path="/manual-location" element={<ManualLocationSelector />} />
 
               {/* Delivery Partner Routes */}
               <Route

@@ -24,7 +24,7 @@ const AddProduct = () => {
     short_description: '',
     description: '',
     original_price: '',
-    selling_price: '',
+    price: '',
     stock_quantity: '',
     unit_of_measurement: 'piece',
     minimum_order_quantity: '1',
@@ -36,7 +36,8 @@ const AddProduct = () => {
     is_organic: false,
     delivery_time: '10-15 mins',
     weight: '',
-    offer: ''
+    offer: '',
+    discount: ''
   });
 
   // Fetch categories
@@ -66,14 +67,14 @@ const AddProduct = () => {
 
     try {
       // Validate required fields
-      if (!productData.name || !productData.selling_price || !productData.category_id) {
+      if (!productData.name || !productData.price || !productData.category_id) {
         throw new Error('Please fill in all required fields');
       }
 
       const payload = {
         name: productData.name,
         description: productData.description || productData.short_description,
-        price: Number(productData.selling_price),
+        price: Number(productData.price),
         original_price: productData.original_price ? Number(productData.original_price) : null,
         stock_quantity: productData.stock_quantity ? Number(productData.stock_quantity) : 0,
         category_id: Number(productData.category_id),
@@ -81,6 +82,7 @@ const AddProduct = () => {
         weight: productData.weight,
         delivery_time: productData.delivery_time,
         offer: productData.offer || null,
+        discount: productData.discount ? Number(productData.discount) : null,
         is_active: true
       };
 
@@ -217,12 +219,12 @@ const AddProduct = () => {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="selling_price">Selling Price *</Label>
+                      <Label htmlFor="price">Selling Price *</Label>
                       <Input
-                        id="selling_price"
+                        id="price"
                         type="number"
-                        value={productData.selling_price}
-                        onChange={(e) => handleInputChange('selling_price', e.target.value)}
+                        value={productData.price}
+                        onChange={(e) => handleInputChange('price', e.target.value)}
                         placeholder="0"
                         min="0"
                         step="0.01"

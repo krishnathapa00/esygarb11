@@ -541,6 +541,10 @@ export type Database = {
           phone_number: string
         }[]
       }
+      is_admin_user: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
       is_super_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean

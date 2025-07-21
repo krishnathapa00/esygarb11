@@ -14,6 +14,7 @@ import {
   updateUserProfile,
   ProfileFormValues,
 } from "@/services/profileService";
+import SingleImageUpload from "@/components/SingleImageUpload";
 
 const UserProfile: React.FC = () => {
   const navigate = useNavigate();
