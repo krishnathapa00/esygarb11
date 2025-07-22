@@ -61,7 +61,9 @@ const DeliveryProfile = () => {
     },
     enabled: !!user,
     retry: 1,
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes for faster loading
+    gcTime: 10 * 60 * 1000 // Keep in cache for 10 minutes
   });
 
   // Fetch KYC status
@@ -82,16 +84,18 @@ const DeliveryProfile = () => {
       
       return data;
     },
-    enabled: !!user
+    enabled: !!user,
+    staleTime: 2 * 60 * 1000, // Cache for 2 minutes
+    gcTime: 5 * 60 * 1000
   });
 
-  // Fetch darkstores
+  // Fetch darkstores with caching
   const { data: darkstores } = useQuery({
     queryKey: ['darkstores'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('darkstores')
-        .select('*')
+        .select('id, name, address, city, state, zip_code') // Only select needed fields
         .eq('is_active', true)
         .order('name');
       
@@ -100,7 +104,9 @@ const DeliveryProfile = () => {
         return [];
       }
       return data || [];
-    }
+    },
+    staleTime: 10 * 60 * 1000, // Cache for 10 minutes (darkstores don't change often)
+    gcTime: 30 * 60 * 1000
   });
 
   // Fetch delivery stats
@@ -472,32 +478,36 @@ const DeliveryProfile = () => {
                       )}
                     </div>
 
-                    <div>
-                      <Label htmlFor="darkstore">Preferred Darkstore</Label>
-                      {isEditing ? (
-                        <Select value={formData.darkstore_id} onValueChange={(value) => handleInputChange('darkstore_id', value)}>
-                          <SelectTrigger className="mt-1">
-                            <SelectValue placeholder="Choose your preferred darkstore" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="">No Preference</SelectItem>
-                            {darkstores?.map((darkstore) => (
-                              <SelectItem key={darkstore.id} value={darkstore.id.toString()}>
-                                {darkstore.name} - {darkstore.city}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <div className="mt-1 flex items-center gap-2">
-                          <Building className="h-4 w-4 text-muted-foreground" />
-                          <p className="text-sm text-muted-foreground">{getDarkstoreName()}</p>
-                        </div>
-                      )}
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Choose the darkstore closest to you for easier pickup
-                      </p>
-                    </div>
+                     <div>
+                       <Label htmlFor="darkstore">Assigned Darkstore</Label>
+                       {isEditing ? (
+                         <Select
+                           value={formData.darkstore_id || ''}
+                           onValueChange={(value) => handleInputChange('darkstore_id', value)}
+                         >
+                           <SelectTrigger className="mt-1">
+                             <SelectValue placeholder="Select a darkstore" />
+                           </SelectTrigger>
+                           <SelectContent>
+                             {darkstores?.map((darkstore) => (
+                               <SelectItem key={darkstore.id} value={darkstore.id.toString()}>
+                                 <div className="flex flex-col">
+                                   <span className="font-medium">{darkstore.name}</span>
+                                   <span className="text-sm text-gray-500">
+                                     {darkstore.city}, {darkstore.state}
+                                   </span>
+                                 </div>
+                               </SelectItem>
+                             ))}
+                           </SelectContent>
+                         </Select>
+                       ) : (
+                         <div className="mt-1 flex items-center gap-2">
+                           <Building className="h-4 w-4 text-muted-foreground" />
+                           <p className="text-sm text-muted-foreground">{getDarkstoreName()}</p>
+                         </div>
+                       )}
+                     </div>
                   </div>
                 </div>
               </CardContent>

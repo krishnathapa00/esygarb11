@@ -447,29 +447,43 @@ const KYCUpload = () => {
       {isAllDocumentsUploaded() && kycVerification?.verification_status !== 'approved' && (
         <Card className="bg-card/60 backdrop-blur-sm border-border/50">
           <CardContent className="pt-6">
-            <div className="text-center">
-              <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">All Documents Uploaded!</h3>
-              <p className="text-muted-foreground mb-4">
-                {kycVerification?.verification_status === 'pending' 
-                  ? "Your documents are submitted for review. Admin will verify and approve your KYC."
-                  : "Click below to submit your documents for admin review."
-                }
-              </p>
-              {kycVerification?.verification_status === 'pending' ? (
-                <Badge className="bg-yellow-100 text-yellow-800">
-                  <Clock className="h-3 w-3 mr-1" />
-                  Awaiting Admin Review
-                </Badge>
-              ) : (
-                <Button 
-                  onClick={() => submitForReview.mutate()}
-                  disabled={submitForReview.isPending}
-                  className="bg-primary hover:bg-primary/90"
-                >
-                  {submitForReview.isPending ? "Submitting..." : "Send for Review"}
-                </Button>
-              )}
+            <div className="text-center space-y-4">
+              <CheckCircle className="h-12 w-12 text-green-600 mx-auto" />
+              <div>
+                <h3 className="text-lg font-semibold mb-2">All Documents Uploaded!</h3>
+                {kycVerification?.verification_status === 'pending' ? (
+                  <div className="space-y-3">
+                    <p className="text-muted-foreground">
+                      Your documents are submitted for review. Admin will verify and approve your KYC.
+                    </p>
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                      <Badge className="bg-yellow-100 text-yellow-800 mb-2">
+                        <Clock className="h-3 w-3 mr-1" />
+                        Awaiting Admin Review
+                      </Badge>
+                      <p className="text-sm text-yellow-700 mt-2">
+                        📋 Documents have been submitted successfully<br/>
+                        ⏳ Admin verification is in progress<br/>
+                        🔔 You'll be notified once approved
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-muted-foreground">
+                      Click below to submit your documents for admin review.
+                    </p>
+                    <Button 
+                      onClick={() => submitForReview.mutate()}
+                      disabled={submitForReview.isPending}
+                      className="bg-primary hover:bg-primary/90 px-8 py-2"
+                      size="lg"
+                    >
+                      {submitForReview.isPending ? "Submitting..." : "Send for Review"}
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
