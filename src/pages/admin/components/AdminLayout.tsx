@@ -3,7 +3,7 @@ import React, { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Package, ShoppingBag, Users, Wallet, 
-  LogOut, Menu, X, Truck, RefreshCw
+  LogOut, Menu, X, Truck, RefreshCw, FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -24,6 +24,7 @@ const AdminLayout = ({ children, onRefresh }: AdminLayoutProps) => {
     { name: 'Products', icon: Package, href: '/admin/products' },
     { name: 'Orders', icon: ShoppingBag, href: '/admin/orders' },
     { name: 'Delivery Partners', icon: Truck, href: '/admin/delivery-partners' },
+    { name: 'KYC Management', icon: FileText, href: '/admin/kyc' },
     { name: 'Users', icon: Users, href: '/admin/users' },
     { name: 'Transactions', icon: Wallet, href: '/admin/transactions' },
   ];

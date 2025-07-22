@@ -130,12 +130,12 @@ const ManageKYC = () => {
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center gap-4 mb-2">
-                      <h3 className="font-semibold">{kyc.profiles.full_name}</h3>
+                      <h3 className="font-semibold">{kyc.profiles?.full_name || 'Unknown User'}</h3>
                       {getStatusBadge(kyc.verification_status)}
-                      <Badge variant="outline">{kyc.profiles.role}</Badge>
+                      <Badge variant="outline">{kyc.profiles?.role || 'Unknown'}</Badge>
                     </div>
                     <p className="text-sm text-muted-foreground mb-2">
-                      Phone: {kyc.profiles.phone_number}
+                      Phone: {kyc.profiles?.phone_number || 'Not provided'}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       Submitted: {new Date(kyc.submitted_at).toLocaleDateString()}
@@ -181,16 +181,14 @@ const ManageKYC = () => {
                       )}
                     </div>
                     
-                    {kyc.verification_status === 'pending' && (
-                      <Button
-                        size="sm"
-                        onClick={() => handleReview(kyc)}
-                        className="w-full"
-                      >
-                        <Eye className="w-4 h-4 mr-1" />
-                        Review
-                      </Button>
-                    )}
+                    <Button
+                      size="sm"
+                      onClick={() => handleReview(kyc)}
+                      className="w-full"
+                    >
+                      <Eye className="w-4 h-4 mr-1" />
+                      Review
+                    </Button>
                   </div>
                 </div>
               </Card>
@@ -206,8 +204,8 @@ const ManageKYC = () => {
             
             <div className="space-y-4">
               <div>
-                <h4 className="font-semibold mb-2">Applicant: {selectedKYC?.profiles.full_name}</h4>
-                <p className="text-sm text-muted-foreground">Role: {selectedKYC?.profiles.role}</p>
+                <h4 className="font-semibold mb-2">Applicant: {selectedKYC?.profiles?.full_name}</h4>
+                <p className="text-sm text-muted-foreground">Role: {selectedKYC?.profiles?.role}</p>
               </div>
 
               <div>

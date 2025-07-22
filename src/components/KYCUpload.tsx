@@ -462,9 +462,9 @@ const KYCUpload = () => {
                         Awaiting Admin Review
                       </Badge>
                       <p className="text-sm text-yellow-700 mt-2">
-                        📋 Documents have been submitted successfully<br/>
-                        ⏳ Admin verification is in progress<br/>
-                        🔔 You'll be notified once approved
+                        All Documents Uploaded!<br/>
+                        Your documents are submitted for review. Admin will verify and approve your KYC.<br/><br/>
+                        Awaiting Admin Review
                       </p>
                     </div>
                   </div>

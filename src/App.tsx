@@ -39,6 +39,7 @@ import SearchResults from "./pages/SearchResults";
 import SupportPage from "./pages/SupportPage";
 import { Unauthorized } from "./pages/Unauthorized";
 import ManualLocationSelector from "./pages/ManualLocationSelector";
+import ManageKYC from "./pages/admin/ManageKYC";
 
 const queryClient = new QueryClient();
 
@@ -140,7 +141,7 @@ function App() {
               <Route
                 path="/admin/orders/:orderId"
                 element={
-                  <RoleProtectedRoute allowedRoles={["admin"]}>
+                  <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
                     <OrderDetails />
                   </RoleProtectedRoute>
                 }
@@ -148,7 +149,7 @@ function App() {
               <Route
                 path="/admin/products/add"
                 element={
-                  <RoleProtectedRoute allowedRoles={["admin"]}>
+                  <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
                     <AddProduct />
                   </RoleProtectedRoute>
                 }
@@ -156,7 +157,7 @@ function App() {
               <Route
                 path="/admin/orders/assign/:orderId"
                 element={
-                  <RoleProtectedRoute allowedRoles={["admin"]}>
+                  <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
                     <AssignOrder />
                   </RoleProtectedRoute>
                 }
@@ -164,7 +165,7 @@ function App() {
               <Route
                 path="/admin/users"
                 element={
-                  <RoleProtectedRoute allowedRoles={["admin"]}>
+                  <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
                     <ManageUsers />
                   </RoleProtectedRoute>
                 }
@@ -172,7 +173,7 @@ function App() {
               <Route
                 path="/admin/transactions"
                 element={
-                  <RoleProtectedRoute allowedRoles={["admin"]}>
+                  <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
                     <Transactions />
                   </RoleProtectedRoute>
                 }
@@ -180,7 +181,7 @@ function App() {
               <Route
                 path="/admin/delivery-partners"
                 element={
-                  <RoleProtectedRoute allowedRoles={["admin"]}>
+                  <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
                     <DeliveryList />
                   </RoleProtectedRoute>
                 }
@@ -188,8 +189,16 @@ function App() {
               <Route
                 path="/admin/assign-delivery"
                 element={
-                  <RoleProtectedRoute allowedRoles={["admin"]}>
+                  <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
                     <AssignDelivery />
+                  </RoleProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/kyc"
+                element={
+                  <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
+                    <ManageKYC />
                   </RoleProtectedRoute>
                 }
               />
