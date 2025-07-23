@@ -11,7 +11,7 @@ import { MapPin, Clock, Package, CheckCircle, User, DollarSign, RefreshCw, LogOu
 import { Link, useNavigate } from 'react-router-dom';
 
 const DeliveryDashboard = () => {
-  const { user, signOut } = useAuth();
+  const { user, logout } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -43,7 +43,7 @@ const DeliveryDashboard = () => {
           darkstores ( name, city )
         `)
         .eq('status', 'ready_for_pickup')
-        .eq('darkstore_id', parseInt(profile?.darkstore_id || '0'))
+        .eq('darkstore_id', profile?.darkstore_id ? parseInt(profile.darkstore_id) : 0)
         .is('delivery_partner_id', null)
         .order('created_at', { ascending: true });
       
@@ -139,7 +139,7 @@ const DeliveryDashboard = () => {
 
   const handleSignOut = async () => {
     try {
-      await signOut();
+      await logout();
       navigate('/delivery/auth');
     } catch (error) {
       toast({
