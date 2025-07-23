@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   BrowserRouter as Router,
@@ -6,13 +7,13 @@ import {
   Navigate,
 } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
-import SignUp from "./pages/SignUp";
-import Login from "./pages/Login";
-import Home from "./pages/Home";
-import Payment from "./pages/Payment";
+import SignUp from "./pages/AuthHybrid";
+import Login from "./pages/AuthHybrid";
+import Home from "./pages/Index";
+import Payment from "./pages/PaymentPage";
 import OrderHistory from "./pages/OrderHistory";
 import OrderTracking from "./pages/OrderTracking";
-import Profile from "./pages/Profile";
+import Profile from "./pages/UserProfile";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import ManageProducts from "./pages/admin/ManageProducts";

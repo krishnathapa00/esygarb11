@@ -92,7 +92,7 @@ const DeliveryDashboard = () => {
   });
 
   const updateOnlineStatusMutation = useMutation({
-    mutationFn: async (isOnline) => {
+    mutationFn: async (isOnline: boolean) => {
       const { error } = await supabase
         .from('profiles')
         .update({ is_online: isOnline })
@@ -106,7 +106,7 @@ const DeliveryDashboard = () => {
   });
 
   const acceptOrderMutation = useMutation({
-    mutationFn: async (orderId) => {
+    mutationFn: async (orderId: string) => {
       const { error } = await supabase
         .from('orders')
         .update({ 
@@ -134,12 +134,12 @@ const DeliveryDashboard = () => {
     }
   }, [profile]);
 
-  const handleOnlineToggle = (checked) => {
+  const handleOnlineToggle = (checked: boolean) => {
     setIsOnline(checked);
     updateOnlineStatusMutation.mutate(checked);
   };
 
-  const handleOrderNavigation = (order) => {
+  const handleOrderNavigation = (order: any) => {
     navigate(`/delivery/order/${order.id}`);
   };
 

@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, MapPin, Phone, Clock, Package, CheckCircle, Navigation } from 'lucide-react';
 
 const DeliveryOrderDetail = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -37,8 +37,8 @@ const DeliveryOrderDetail = () => {
   });
 
   const updateOrderStatusMutation = useMutation({
-    mutationFn: async ({ status, timestamp_field }) => {
-      const updates = { status };
+    mutationFn: async ({ status, timestamp_field }: { status: string; timestamp_field?: string }) => {
+      const updates: any = { status };
       if (timestamp_field) {
         updates[timestamp_field] = new Date().toISOString();
       }
@@ -69,7 +69,7 @@ const DeliveryOrderDetail = () => {
   });
 
   useEffect(() => {
-    let interval;
+    let interval: NodeJS.Timeout;
     if (isTimerRunning) {
       interval = setInterval(() => {
         setTimer(prev => prev + 1);
@@ -96,12 +96,14 @@ const DeliveryOrderDetail = () => {
   };
 
   const openMap = () => {
-    const address = encodeURIComponent(order.delivery_address);
-    const mapUrl = `https://www.google.com/maps/search/?api=1&query=${address}`;
-    window.open(mapUrl, '_blank');
+    if (order?.delivery_address) {
+      const address = encodeURIComponent(order.delivery_address);
+      const mapUrl = `https://www.google.com/maps/search/?api=1&query=${address}`;
+      window.open(mapUrl, '_blank');
+    }
   };
 
-  const formatTime = (seconds) => {
+  const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
@@ -112,6 +114,16 @@ const DeliveryOrderDetail = () => {
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-4xl mx-auto">
           <div className="text-center">Loading order details...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!order) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center">Order not found</div>
         </div>
       </div>
     );
@@ -202,7 +214,7 @@ const DeliveryOrderDetail = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {order.order_items?.map((item, index) => (
+              {order.order_items?.map((item: any, index: number) => (
                 <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
                   <div>
                     <p className="font-medium">{item.products?.name}</p>
