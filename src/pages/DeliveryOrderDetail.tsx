@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, MapPin, Phone, Clock, Package, CheckCircle, Navigation } from 'lucide-react';
 
 const DeliveryOrderDetail = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -37,8 +37,8 @@ const DeliveryOrderDetail = () => {
   });
 
   const updateOrderStatusMutation = useMutation({
-    mutationFn: async ({ status, timestamp_field }: { status: string; timestamp_field?: string }) => {
-      const updates: any = { status };
+    mutationFn: async ({ status, timestamp_field }) => {
+      const updates = { status };
       if (timestamp_field) {
         updates[timestamp_field] = new Date().toISOString();
       }
@@ -51,15 +51,13 @@ const DeliveryOrderDetail = () => {
       if (error) throw error;
 
       // Add to status history
-      const { error: historyError } = await supabase
+      await supabase
         .from('order_status_history')
         .insert({
           order_id: id,
-          status: status as "pending" | "confirmed" | "dispatched" | "out_for_delivery" | "delivered" | "cancelled" | "ready_for_pickup",
+          status: status,
           notes: `Order ${status.replace('_', ' ')} by delivery partner`
         });
-
-      if (historyError) throw historyError;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['order-detail', id] });
@@ -71,7 +69,7 @@ const DeliveryOrderDetail = () => {
   });
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval;
     if (isTimerRunning) {
       interval = setInterval(() => {
         setTimer(prev => prev + 1);
@@ -98,14 +96,12 @@ const DeliveryOrderDetail = () => {
   };
 
   const openMap = () => {
-    if (order?.delivery_address) {
-      const address = encodeURIComponent(order.delivery_address);
-      const mapUrl = `https://www.google.com/maps/search/?api=1&query=${address}`;
-      window.open(mapUrl, '_blank');
-    }
+    const address = encodeURIComponent(order.delivery_address);
+    const mapUrl = `https://www.google.com/maps/search/?api=1&query=${address}`;
+    window.open(mapUrl, '_blank');
   };
 
-  const formatTime = (seconds: number) => {
+  const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
@@ -116,16 +112,6 @@ const DeliveryOrderDetail = () => {
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-4xl mx-auto">
           <div className="text-center">Loading order details...</div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!order) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center">Order not found</div>
         </div>
       </div>
     );
@@ -184,7 +170,7 @@ const DeliveryOrderDetail = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Amount</p>
-                <p className="font-medium text-lg">₹{parseFloat(order.total_amount.toString()).toFixed(2)}</p>
+                <p className="font-medium text-lg">₹{parseFloat(order.total_amount).toFixed(2)}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Order Time</p>
@@ -216,13 +202,13 @@ const DeliveryOrderDetail = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {order.order_items?.map((item: any, index: number) => (
+              {order.order_items?.map((item, index) => (
                 <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
                   <div>
                     <p className="font-medium">{item.products?.name}</p>
                     <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
                   </div>
-                  <p className="font-medium">₹{parseFloat(item.price.toString()).toFixed(2)}</p>
+                  <p className="font-medium">₹{parseFloat(item.price).toFixed(2)}</p>
                 </div>
               ))}
             </div>

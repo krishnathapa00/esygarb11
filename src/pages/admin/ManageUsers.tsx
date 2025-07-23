@@ -7,17 +7,15 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Search, UserCheck, UserX } from 'lucide-react';
+import { Search, RefreshCw, UserCheck, UserX } from 'lucide-react';
 import AdminLayout from './components/AdminLayout';
-
-type UserRole = "customer" | "admin" | "delivery_partner" | "super_admin";
 
 const ManageUsers = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: users = [], isLoading } = useQuery({
+  const { data: users = [], isLoading, refetch } = useQuery({
     queryKey: ['admin-users'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -31,7 +29,7 @@ const ManageUsers = () => {
   });
 
   const updateUserMutation = useMutation({
-    mutationFn: async ({ userId, role }: { userId: string; role: UserRole }) => {
+    mutationFn: async ({ userId, role }) => {
       const { error } = await supabase
         .from('profiles')
         .update({ role })
@@ -56,7 +54,7 @@ const ManageUsers = () => {
   });
 
   const deleteUserMutation = useMutation({
-    mutationFn: async (userId: string) => {
+    mutationFn: async (userId) => {
       const { error } = await supabase
         .from('profiles')
         .delete()
@@ -86,7 +84,7 @@ const ManageUsers = () => {
     user.role?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getRoleBadge = (role: string) => {
+  const getRoleBadge = (role) => {
     switch (role) {
       case 'admin':
         return <Badge variant="destructive">Admin</Badge>;
@@ -106,6 +104,10 @@ const ManageUsers = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Manage Users</h1>
+          <Button onClick={refetch} disabled={isLoading}>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh
+          </Button>
         </div>
 
         <div className="flex items-center space-x-2">

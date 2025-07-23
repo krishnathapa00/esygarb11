@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,7 +11,7 @@ interface RoleProtectedRouteProps {
 export const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
   children,
   allowedRoles,
-  redirectTo = '/admin/login'
+  redirectTo = '/auth'
 }) => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -39,7 +38,7 @@ export const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
         .eq('id', user.id)
         .single();
 
-      if (error || !profile) {
+      if (error) {
         console.error('Error fetching user role:', error);
         setShouldRedirect(true);
         setLoading(false);
@@ -71,6 +70,7 @@ export const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
   }
 
   if (!allowedRoles.includes(userRole)) {
+    // Redirect to a safe page that doesn't have role protection
     return <Navigate to="/unauthorized" replace />;
   }
 

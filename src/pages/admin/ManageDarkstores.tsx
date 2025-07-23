@@ -20,7 +20,7 @@ const ManageDarkstores = () => {
     phone_number: '',
     manager_name: ''
   });
-  const [editingDarkstore, setEditingDarkstore] = useState<any>(null);
+  const [editingDarkstore, setEditingDarkstore] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -39,7 +39,7 @@ const ManageDarkstores = () => {
   });
 
   const createDarkstoreMutation = useMutation({
-    mutationFn: async (darkstore: typeof newDarkstore) => {
+    mutationFn: async (darkstore) => {
       const { error } = await supabase
         .from('darkstores')
         .insert([darkstore]);
@@ -73,7 +73,7 @@ const ManageDarkstores = () => {
   });
 
   const updateDarkstoreMutation = useMutation({
-    mutationFn: async ({ id, ...updates }: { id: number } & Partial<typeof newDarkstore>) => {
+    mutationFn: async ({ id, ...updates }) => {
       const { error } = await supabase
         .from('darkstores')
         .update(updates)
@@ -100,7 +100,7 @@ const ManageDarkstores = () => {
   });
 
   const deleteDarkstoreMutation = useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async (id) => {
       const { error } = await supabase
         .from('darkstores')
         .delete()
@@ -124,7 +124,7 @@ const ManageDarkstores = () => {
     }
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (editingDarkstore) {
       updateDarkstoreMutation.mutate({ ...editingDarkstore });
@@ -133,7 +133,7 @@ const ManageDarkstores = () => {
     }
   };
 
-  const openEditDialog = (darkstore: any) => {
+  const openEditDialog = (darkstore) => {
     setEditingDarkstore(darkstore);
     setDialogOpen(true);
   };

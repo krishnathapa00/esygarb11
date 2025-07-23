@@ -12,7 +12,7 @@ import { Eye, FileText, UserCheck, UserX, Trash2 } from 'lucide-react';
 import AdminLayout from './components/AdminLayout';
 
 const ManageKYC = () => {
-  const [selectedKYC, setSelectedKYC] = useState<any>(null);
+  const [selectedKYC, setSelectedKYC] = useState(null);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [adminComments, setAdminComments] = useState('');
   const { toast } = useToast();
@@ -39,7 +39,7 @@ const ManageKYC = () => {
   });
 
   const updateKYCMutation = useMutation({
-    mutationFn: async ({ id, status, comments }: { id: string; status: string; comments: string }) => {
+    mutationFn: async ({ id, status, comments }) => {
       const { data: { user } } = await supabase.auth.getUser();
       
       const { error } = await supabase
@@ -80,7 +80,7 @@ const ManageKYC = () => {
   });
 
   const deleteKYCMutation = useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async (id) => {
       const { error } = await supabase
         .from('kyc_verifications')
         .delete()
@@ -104,7 +104,7 @@ const ManageKYC = () => {
     }
   });
 
-  const handleReview = (kyc: any) => {
+  const handleReview = (kyc) => {
     setSelectedKYC(kyc);
     setAdminComments(kyc.admin_comments || '');
     setReviewModalOpen(true);
@@ -130,7 +130,7 @@ const ManageKYC = () => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status) => {
     switch (status) {
       case 'pending':
         return <Badge variant="outline" className="text-yellow-600">Pending</Badge>;
@@ -143,7 +143,7 @@ const ManageKYC = () => {
     }
   };
 
-  const openDocument = (url: string) => {
+  const openDocument = (url) => {
     if (url) {
       window.open(url, '_blank');
     }
