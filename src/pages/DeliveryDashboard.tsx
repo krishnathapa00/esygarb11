@@ -306,7 +306,7 @@ const DeliveryDashboard = () => {
               )}
             </div>
           </CardContent>
-        </div>
+        </Card>
       </div>
     </div>
   );
