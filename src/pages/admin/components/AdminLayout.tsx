@@ -1,176 +1,85 @@
 
-import React, { ReactNode } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { 
-  LayoutDashboard, Package, ShoppingBag, Users, Wallet, 
-  LogOut, Menu, X, Truck, RefreshCw, FileText
-} from 'lucide-react';
+import React from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
+import { 
+  Home, 
+  Package, 
+  ShoppingCart, 
+  Users, 
+  Plus, 
+  UserCheck, 
+  Settings,
+  Store,
+  CreditCard,
+  LogOut
+} from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
-interface AdminLayoutProps {
-  children: ReactNode;
-  onRefresh?: () => void;
-}
-
-const AdminLayout = ({ children, onRefresh }: AdminLayoutProps) => {
+const AdminLayout = ({ children }) => {
   const location = useLocation();
-  const { toast } = useToast();
-  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
-  const [isRefreshing, setIsRefreshing] = React.useState(false);
-  
-  const navigationItems = [
-    { name: 'Dashboard', icon: LayoutDashboard, href: '/admin/dashboard' },
-    { name: 'Products', icon: Package, href: '/admin/products' },
-    { name: 'Orders', icon: ShoppingBag, href: '/admin/orders' },
-    { name: 'Delivery Partners', icon: Truck, href: '/admin/delivery-partners' },
-    { name: 'KYC Management', icon: FileText, href: '/admin/kyc' },
-    { name: 'Users', icon: Users, href: '/admin/users' },
-    { name: 'Transactions', icon: Wallet, href: '/admin/transactions' },
-  ];
-  
-  const isActive = (path: string) => location.pathname === path;
+  const navigate = useNavigate();
+  const { logout } = useAuth();
 
-  const handleRefresh = async () => {
-    if (onRefresh && !isRefreshing) {
-      setIsRefreshing(true);
-      try {
-        await onRefresh();
-        toast({
-          title: "Data refreshed",
-          description: "Page data has been updated."
-        });
-      } catch (error) {
-        toast({
-          title: "Refresh failed",
-          description: "Failed to refresh data.",
-          variant: "destructive"
-        });
-      } finally {
-        setTimeout(() => setIsRefreshing(false), 500);
-      }
-    }
+  const sidebarItems = [
+    { icon: Home, label: 'Dashboard', path: '/admin/dashboard' },
+    { icon: ShoppingCart, label: 'Orders', path: '/admin/orders' },
+    { icon: Package, label: 'Products', path: '/admin/products' },
+    { icon: Plus, label: 'Add Product', path: '/admin/add-product' },
+    { icon: Users, label: 'Users', path: '/admin/users' },
+    { icon: Users, label: 'Delivery Partners', path: '/admin/delivery-partners' },
+    { icon: UserCheck, label: 'KYC Management', path: '/admin/kyc' },
+    { icon: Store, label: 'Darkstores', path: '/admin/darkstores' },
+    { icon: Settings, label: 'Delivery Settings', path: '/admin/delivery-settings' },
+    { icon: CreditCard, label: 'Transactions', path: '/admin/transactions' },
+  ];
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/admin/login');
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex">
-      {/* Sidebar for desktop */}
-      <div className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 bg-white shadow-sm">
-        <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
-          <div className="flex items-center justify-center px-4">
-            <h1 className="text-xl font-bold text-green-600">EsyGrab Admin</h1>
-          </div>
-          <nav className="mt-8 flex-1 px-4 space-y-1">
-            {navigationItems.map((item) => (
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Sidebar */}
+      <div className="w-64 bg-white shadow-lg">
+        <div className="p-6">
+          <h1 className="text-xl font-bold text-gray-800">Admin Panel</h1>
+        </div>
+        <nav className="mt-6">
+          {sidebarItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname === item.path;
+            return (
               <Link
-                key={item.name}
-                to={item.href}
-                className={`group flex items-center px-3 py-2 rounded-lg ${
-                  isActive(item.href)
-                    ? 'bg-green-100 text-green-700'
-                    : 'text-gray-600 hover:bg-gray-50'
+                key={item.path}
+                to={item.path}
+                className={`flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100 ${
+                  isActive ? 'bg-gray-100 border-r-2 border-green-500' : ''
                 }`}
               >
-                <item.icon className={`flex-shrink-0 h-5 w-5 mr-3 ${
-                  isActive(item.href) ? 'text-green-700' : 'text-gray-400 group-hover:text-gray-600'
-                }`} />
-                <span className="font-medium">{item.name}</span>
+                <Icon className="w-5 h-5 mr-3" />
+                {item.label}
               </Link>
-            ))}
-          </nav>
-        </div>
-        <div className="px-4 py-4 border-t border-gray-200">
-          <Link
-            to="/admin"
-            className="group flex items-center px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50"
+            );
+          })}
+        </nav>
+        <div className="absolute bottom-6 left-6">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleLogout}
+            className="flex items-center"
           >
-            <LogOut className="flex-shrink-0 h-5 w-5 mr-3 text-gray-400 group-hover:text-gray-600" />
-            <span className="font-medium">Logout</span>
-          </Link>
+            <LogOut className="w-4 h-4 mr-2" />
+            Logout
+          </Button>
         </div>
       </div>
-      
-      {/* Mobile sidebar */}
-      <div className={`fixed inset-0 z-40 md:hidden ${isSidebarOpen ? 'block' : 'hidden'}`}>
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setIsSidebarOpen(false)}></div>
-        
-        <div className="fixed inset-y-0 left-0 max-w-xs w-full bg-white">
-          <div className="absolute top-0 right-0 -mr-12 pt-2">
-            <button
-              className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
-              onClick={() => setIsSidebarOpen(false)}
-            >
-              <X className="h-6 w-6 text-white" />
-            </button>
-          </div>
-          
-          <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
-            <div className="flex items-center justify-center px-4">
-              <h1 className="text-xl font-bold text-green-600">EsyGrab Admin</h1>
-            </div>
-            <nav className="mt-8 flex-1 px-4 space-y-1">
-              {navigationItems.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  onClick={() => setIsSidebarOpen(false)}
-                  className={`group flex items-center px-3 py-2 rounded-lg ${
-                    isActive(item.href)
-                      ? 'bg-green-100 text-green-700'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  <item.icon className={`flex-shrink-0 h-5 w-5 mr-3 ${
-                    isActive(item.href) ? 'text-green-700' : 'text-gray-400 group-hover:text-gray-600'
-                  }`} />
-                  <span className="font-medium">{item.name}</span>
-                </Link>
-              ))}
-            </nav>
-          </div>
-          <div className="px-4 py-4 border-t border-gray-200">
-            <Link
-              to="/admin"
-              className="group flex items-center px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50"
-            >
-              <LogOut className="flex-shrink-0 h-5 w-5 mr-3 text-gray-400 group-hover:text-gray-600" />
-              <span className="font-medium">Logout</span>
-            </Link>
-          </div>
-        </div>
-      </div>
-      
-      {/* Content */}
-      <div className="md:pl-64 flex flex-col flex-1">
-        <div className="sticky top-0 z-10 bg-white border-b border-gray-200">
-          <div className="flex justify-between items-center px-4 py-3">
-            <button
-              className="md:hidden flex items-center justify-center h-8 w-8 rounded-md text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-green-500"
-              onClick={() => setIsSidebarOpen(true)}
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-            
-            {onRefresh && (
-              <Button 
-                onClick={handleRefresh} 
-                variant="outline" 
-                size="sm" 
-                disabled={isRefreshing}
-                className="ml-auto"
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                {isRefreshing ? 'Refreshing...' : 'Refresh'}
-              </Button>
-            )}
-          </div>
-        </div>
-        
-        <main className="flex-1 p-4 sm:p-6">
-          <div className="max-w-7xl mx-auto">
-            {children}
-          </div>
-        </main>
+
+      {/* Main Content */}
+      <div className="flex-1 p-8">
+        {children}
       </div>
     </div>
   );

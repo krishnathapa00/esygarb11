@@ -1,86 +1,52 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, CheckCircle, MapPin, Navigation, Clock, Truck, Phone } from 'lucide-react';
-
-interface OrderWithDetails {
-  id: string;
-  order_number: string;
-  total_amount: number;
-  delivery_address: string;
-  status: string;
-  created_at: string;
-  estimated_delivery: string;
-  profiles: {
-    full_name: string;
-    phone_number: string;
-  } | null;
-  order_items: Array<{
-    quantity: number;
-    price: number;
-    products?: {
-      name: string;
-    };
-  }>;
-}
+import { ArrowLeft, MapPin, Phone, Clock, Package, CheckCircle, Navigation } from 'lucide-react';
 
 const DeliveryOrderDetail = () => {
-  const { orderId } = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [deliveryTimer, setDeliveryTimer] = useState(600); // 10 minutes
+  const [timer, setTimer] = useState(0);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
 
-  // Fetch order details
   const { data: order, isLoading } = useQuery({
-    queryKey: ['delivery-order-detail', orderId],
+    queryKey: ['order-detail', id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('orders')
         .select(`
           *,
           profiles!orders_user_id_fkey(full_name, phone_number),
-          order_items(quantity, price, products(name))
+          order_items(*, products(*))
         `)
-        .eq('id', orderId)
-        .eq('delivery_partner_id', user?.id)
+        .eq('id', id)
         .single();
       
       if (error) throw error;
-      return data as OrderWithDetails;
+      return data;
     },
-    enabled: !!orderId && !!user,
-    refetchInterval: 5000 // Refresh every 5 seconds
+    enabled: !!id
   });
 
-  // Timer countdown effect
-  useEffect(() => {
-    if (order?.status === 'out_for_delivery') {
-      const timer = setInterval(() => {
-        setDeliveryTimer(prev => Math.max(0, prev - 1));
-      }, 1000);
-      
-      return () => clearInterval(timer);
-    }
-  }, [order?.status]);
+  const updateOrderStatusMutation = useMutation({
+    mutationFn: async ({ status, timestamp_field }) => {
+      const updates = { status };
+      if (timestamp_field) {
+        updates[timestamp_field] = new Date().toISOString();
+      }
 
-  // Update order status mutation
-  const updateStatus = useMutation({
-    mutationFn: async (newStatus: 'pending' | 'confirmed' | 'dispatched' | 'out_for_delivery' | 'delivered' | 'cancelled' | 'ready_for_pickup') => {
       const { error } = await supabase
         .from('orders')
-        .update({ 
-          status: newStatus,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', orderId);
+        .update(updates)
+        .eq('id', id);
 
       if (error) throw error;
 
@@ -88,231 +54,192 @@ const DeliveryOrderDetail = () => {
       await supabase
         .from('order_status_history')
         .insert({
-        order_id: orderId,
-        status: newStatus,
-        notes: `Status updated to ${newStatus} by delivery partner`
+          order_id: id,
+          status: status,
+          notes: `Order ${status.replace('_', ' ')} by delivery partner`
         });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['delivery-order-detail'] });
-      queryClient.invalidateQueries({ queryKey: ['current-order'] });
-      queryClient.invalidateQueries({ queryKey: ['delivery-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['order-detail', id] });
       toast({
         title: "Status Updated",
-        description: "Order status has been updated successfully."
+        description: "Order status has been updated successfully.",
       });
     }
   });
 
-  const handleStatusUpdate = (status: 'pending' | 'confirmed' | 'dispatched' | 'out_for_delivery' | 'delivered' | 'cancelled' | 'ready_for_pickup') => {
-    updateStatus.mutate(status);
-  };
-
-  const handleNavigate = () => {
-    if (order?.delivery_address) {
-      const address = encodeURIComponent(order.delivery_address);
-      window.open(`https://www.google.com/maps/search/?api=1&query=${address}`, '_blank');
+  useEffect(() => {
+    let interval;
+    if (isTimerRunning) {
+      interval = setInterval(() => {
+        setTimer(prev => prev + 1);
+      }, 1000);
     }
+    return () => clearInterval(interval);
+  }, [isTimerRunning]);
+
+  const handlePickup = () => {
+    updateOrderStatusMutation.mutate({ 
+      status: 'out_for_delivery', 
+      timestamp_field: 'picked_up_at' 
+    });
+    setIsTimerRunning(true);
   };
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  const handleDelivered = () => {
+    updateOrderStatusMutation.mutate({ 
+      status: 'delivered', 
+      timestamp_field: 'delivered_at' 
+    });
+    setIsTimerRunning(false);
+    navigate('/delivery/dashboard');
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'confirmed': return 'bg-blue-100 text-blue-800';
-      case 'dispatched': return 'bg-orange-100 text-orange-800';
-      case 'out_for_delivery': return 'bg-purple-100 text-purple-800';
-      case 'delivered': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+  const openMap = () => {
+    const address = encodeURIComponent(order.delivery_address);
+    const mapUrl = `https://www.google.com/maps/search/?api=1&query=${address}`;
+    window.open(mapUrl, '_blank');
+  };
+
+  const formatTime = (seconds) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading order details...</p>
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center">Loading order details...</div>
         </div>
-      </div>
-    );
-  }
-
-  if (!order) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardContent className="pt-6 text-center">
-            <h3 className="text-lg font-semibold mb-2">Order Not Found</h3>
-            <p className="text-muted-foreground mb-4">This order doesn't exist or you don't have access to it.</p>
-            <Button onClick={() => navigate('/delivery-dashboard')}>
-              Back to Dashboard
-            </Button>
-          </CardContent>
-        </Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
-      {/* Header */}
-      <div className="bg-card/80 backdrop-blur-lg shadow-lg border-b border-border/50">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/delivery-dashboard')}
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <h1 className="text-xl font-bold">Order Details</h1>
-            </div>
-            <Badge className={getStatusColor(order.status)}>
-              {order.status.replace('_', ' ').toUpperCase()}
-            </Badge>
-          </div>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" onClick={() => navigate('/delivery/dashboard')}>
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
+          <h1 className="text-3xl font-bold">Order #{order.order_number}</h1>
+          <Badge variant="outline">{order.status.replace('_', ' ')}</Badge>
         </div>
-      </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-        {/* Order Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Truck className="h-5 w-5" />
-              Order #{order.order_number}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <h4 className="font-semibold mb-2">Customer Information</h4>
-                <div className="space-y-1 text-sm">
-                  <p><strong>Name:</strong> {order.profiles?.full_name}</p>
-                  <p><strong>Phone:</strong> {order.profiles?.phone_number}</p>
-                  <p><strong>Order Total:</strong> Rs {order.total_amount}</p>
+        {isTimerRunning && (
+          <Card className="border-blue-200 bg-blue-50">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-blue-600" />
+                  <span className="font-medium text-blue-800">Delivery Timer</span>
                 </div>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-2">Delivery Information</h4>
-                <div className="space-y-1 text-sm">
-                  <p><strong>Address:</strong> {order.delivery_address}</p>
-                  <p><strong>Estimated:</strong> {order.estimated_delivery}</p>
-                  <p><strong>Order Time:</strong> {new Date(order.created_at).toLocaleString()}</p>
+                <div className="text-2xl font-bold text-blue-600">
+                  {formatTime(timer)}
                 </div>
-              </div>
-            </div>
-
-            {/* Order Items */}
-            <div>
-              <h4 className="font-semibold mb-2">Order Items</h4>
-              <div className="bg-muted/50 rounded-lg p-3">
-                {order.order_items.map((item, index) => (
-                  <div key={index} className="flex justify-between items-center py-1">
-                    <span className="text-sm">{item.products?.name || 'Product'}</span>
-                    <span className="text-sm">
-                      {item.quantity}x Rs {item.price} = Rs {item.quantity * item.price}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Timer Card - Show when out for delivery */}
-        {order.status === 'out_for_delivery' && (
-          <Card className="border-orange-200 bg-orange-50">
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <Clock className="h-8 w-8 text-orange-600 mx-auto mb-2" />
-                <h3 className="text-lg font-semibold text-orange-800 mb-1">Delivery Timer</h3>
-                <div className="text-3xl font-bold text-orange-600 mb-2">
-                  {formatTime(deliveryTimer)}
-                </div>
-                <p className="text-orange-700 text-sm">
-                  Expected delivery time remaining
-                </p>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Action Buttons */}
-        <div className="space-y-4">
-          {/* Navigation Button */}
-          <Button
-            onClick={handleNavigate}
-            className="w-full bg-blue-600 hover:bg-blue-700"
-            size="lg"
-          >
-            <Navigation className="h-5 w-5 mr-2" />
-            Navigate to Customer Location
-          </Button>
+        <div className="grid md:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="w-5 h-5" />
+                Order Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Customer</p>
+                <p className="font-medium">{order.profiles?.full_name}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Phone</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-medium">{order.profiles?.phone_number}</p>
+                  <Button size="sm" variant="outline" asChild>
+                    <a href={`tel:${order.profiles?.phone_number}`}>
+                      <Phone className="w-4 h-4" />
+                    </a>
+                  </Button>
+                </div>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Total Amount</p>
+                <p className="font-medium text-lg">₹{parseFloat(order.total_amount).toFixed(2)}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Order Time</p>
+                <p className="font-medium">{new Date(order.created_at).toLocaleString()}</p>
+              </div>
+            </CardContent>
+          </Card>
 
-          {/* Contact Customer */}
-          <Button
-            onClick={() => window.open(`tel:${order.profiles?.phone_number}`, '_self')}
-            variant="outline"
-            className="w-full"
-            size="lg"
-          >
-            <Phone className="h-5 w-5 mr-2" />
-            Call Customer: {order.profiles?.phone_number}
-          </Button>
-
-          {/* Status Update Buttons */}
-          <div className="grid grid-cols-3 gap-3">
-            {order.status === 'confirmed' && (
-              <Button
-                onClick={() => handleStatusUpdate('dispatched')}
-                disabled={updateStatus.isPending}
-                className="bg-orange-600 hover:bg-orange-700"
-              >
-                Picked Up
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="w-5 h-5" />
+                Delivery Address
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm">{order.delivery_address}</p>
+              <Button onClick={openMap} className="w-full">
+                <Navigation className="w-4 h-4 mr-2" />
+                Open in Maps
               </Button>
-            )}
-            
-            {(order.status === 'dispatched' || order.status === 'confirmed') && (
-              <Button
-                onClick={() => handleStatusUpdate('out_for_delivery')}
-                disabled={updateStatus.isPending}
-                className="bg-purple-600 hover:bg-purple-700"
-              >
-                In Route
-              </Button>
-            )}
-            
-            {(order.status === 'out_for_delivery' || order.status === 'dispatched') && (
-              <Button
-                onClick={() => handleStatusUpdate('delivered')}
-                disabled={updateStatus.isPending}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                <CheckCircle className="h-4 w-4 mr-1" />
-                Delivered
-              </Button>
-            )}
-          </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Instructions */}
         <Card>
-          <CardContent className="pt-6">
-            <h4 className="font-semibold mb-2">Delivery Instructions</h4>
-            <div className="text-sm text-muted-foreground space-y-1">
-              <p>• Follow the navigation to reach the customer's location</p>
-              <p>• Call the customer if you need help finding the address</p>
-              <p>• Update the status as you progress with the delivery</p>
-              <p>• Confirm delivery only after handing over the order</p>
+          <CardHeader>
+            <CardTitle>Order Items</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {order.order_items?.map((item, index) => (
+                <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                  <div>
+                    <p className="font-medium">{item.products?.name}</p>
+                    <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                  </div>
+                  <p className="font-medium">₹{parseFloat(item.price).toFixed(2)}</p>
+                </div>
+              ))}
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Order Status Actions</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {order.status === 'dispatched' && (
+              <Button onClick={handlePickup} className="w-full" size="lg">
+                <Package className="w-4 h-4 mr-2" />
+                Mark as Picked Up
+              </Button>
+            )}
+            
+            {order.status === 'out_for_delivery' && (
+              <Button onClick={handleDelivered} className="w-full" size="lg">
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Mark as Delivered
+              </Button>
+            )}
+
+            {order.status === 'delivered' && (
+              <div className="text-center py-4">
+                <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                <p className="text-green-600 font-medium">Order Delivered Successfully!</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

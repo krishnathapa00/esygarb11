@@ -1,18 +1,18 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, FileText, UserCheck, UserX } from 'lucide-react';
+import { Eye, FileText, UserCheck, UserX, Trash2 } from 'lucide-react';
 import AdminLayout from './components/AdminLayout';
 
 const ManageKYC = () => {
-  const [selectedKYC, setSelectedKYC] = useState<any>(null);
+  const [selectedKYC, setSelectedKYC] = useState(null);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [adminComments, setAdminComments] = useState('');
   const { toast } = useToast();
@@ -39,18 +39,28 @@ const ManageKYC = () => {
   });
 
   const updateKYCMutation = useMutation({
-    mutationFn: async ({ id, status, comments }: { id: string; status: string; comments: string }) => {
+    mutationFn: async ({ id, status, comments }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
       const { error } = await supabase
         .from('kyc_verifications')
         .update({
           verification_status: status,
           admin_comments: comments,
           reviewed_at: new Date().toISOString(),
-          reviewed_by: (await supabase.auth.getUser()).data.user?.id
+          reviewed_by: user?.id
         })
         .eq('id', id);
 
       if (error) throw error;
+
+      // Update profile kyc_verified status
+      if (status === 'approved') {
+        await supabase
+          .from('profiles')
+          .update({ kyc_verified: true })
+          .eq('id', selectedKYC.user_id);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-kyc-verifications'] });
@@ -69,7 +79,32 @@ const ManageKYC = () => {
     }
   });
 
-  const handleReview = (kyc: any) => {
+  const deleteKYCMutation = useMutation({
+    mutationFn: async (id) => {
+      const { error } = await supabase
+        .from('kyc_verifications')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-kyc-verifications'] });
+      toast({
+        title: "KYC Deleted",
+        description: "KYC verification has been deleted successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete KYC verification.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleReview = (kyc) => {
     setSelectedKYC(kyc);
     setAdminComments(kyc.admin_comments || '');
     setReviewModalOpen(true);
@@ -95,12 +130,12 @@ const ManageKYC = () => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status) => {
     switch (status) {
       case 'pending':
-        return <Badge variant="outline" className="text-warning">Pending</Badge>;
+        return <Badge variant="outline" className="text-yellow-600">Pending</Badge>;
       case 'approved':
-        return <Badge variant="outline" className="text-success">Approved</Badge>;
+        return <Badge variant="outline" className="text-green-600">Approved</Badge>;
       case 'rejected':
         return <Badge variant="destructive">Rejected</Badge>;
       default:
@@ -108,7 +143,7 @@ const ManageKYC = () => {
     }
   };
 
-  const openDocument = (url: string | null) => {
+  const openDocument = (url) => {
     if (url) {
       window.open(url, '_blank');
     }
@@ -181,14 +216,24 @@ const ManageKYC = () => {
                       )}
                     </div>
                     
-                    <Button
-                      size="sm"
-                      onClick={() => handleReview(kyc)}
-                      className="w-full"
-                    >
-                      <Eye className="w-4 h-4 mr-1" />
-                      Review
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => handleReview(kyc)}
+                      >
+                        <Eye className="w-4 h-4 mr-1" />
+                        Review
+                      </Button>
+                      {kyc.verification_status === 'rejected' && (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => deleteKYCMutation.mutate(kyc.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </Card>
