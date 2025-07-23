@@ -14,6 +14,8 @@ import Payment from "./pages/PaymentPage";
 import OrderHistory from "./pages/OrderHistory";
 import OrderTracking from "./pages/OrderTracking";
 import Profile from "./pages/UserProfile";
+import CartPage from "./pages/CartPage";
+import Categories from "./pages/Categories";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import ManageProducts from "./pages/admin/ManageProducts";
@@ -36,6 +38,8 @@ const App: React.FC = () => {
           <Route path="/signup" element={<SignUp />} />
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<Home />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/categories" element={<Categories />} />
           <Route path="/payment" element={<Payment />} />
           <Route path="/order-history" element={<OrderHistory />} />
           <Route path="/order-tracking/:id" element={<OrderTracking />} />
@@ -73,7 +77,6 @@ const App: React.FC = () => {
               </RoleProtectedRoute>
             }
           />
-
           <Route
             path="/admin/users"
             element={
