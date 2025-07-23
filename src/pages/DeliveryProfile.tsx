@@ -11,7 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Save, FileText, DollarSign } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { KYCSubmission } from '@/components/KYCSubmission';
+import KYCSubmission from '@/components/KYCSubmission';
 
 const DeliveryProfile = () => {
   const { user } = useAuth();
@@ -94,7 +94,7 @@ const DeliveryProfile = () => {
         phone_number: profile.phone_number || '',
         vehicle_type: profile.vehicle_type || '',
         license_number: profile.license_number || '',
-        darkstore_id: profile.darkstore_id || ''
+        darkstore_id: profile.darkstore_id?.toString() || ''
       });
     }
   }, [profile]);
@@ -103,7 +103,10 @@ const DeliveryProfile = () => {
     mutationFn: async (updates: typeof formData) => {
       const { error } = await supabase
         .from('profiles')
-        .update(updates)
+        .update({
+          ...updates,
+          darkstore_id: updates.darkstore_id ? parseInt(updates.darkstore_id) : null
+        })
         .eq('id', user?.id);
 
       if (error) throw error;

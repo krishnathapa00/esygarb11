@@ -55,7 +55,7 @@ const DeliveryOrderDetail = () => {
         .from('order_status_history')
         .insert({
           order_id: id,
-          status: status,
+          status: status as "pending" | "confirmed" | "dispatched" | "out_for_delivery" | "delivered" | "cancelled" | "ready_for_pickup",
           notes: `Order ${status.replace('_', ' ')} by delivery partner`
         });
     },

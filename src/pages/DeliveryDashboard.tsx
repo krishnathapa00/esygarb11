@@ -43,7 +43,7 @@ const DeliveryDashboard = () => {
           profiles!orders_user_id_fkey(full_name, phone_number)
         `)
         .eq('status', 'ready_for_pickup')
-        .eq('darkstore_id', profile?.darkstore_id)
+        .eq('darkstore_id', parseInt(profile?.darkstore_id || '0'))
         .is('delivery_partner_id', null)
         .order('created_at', { ascending: true });
       

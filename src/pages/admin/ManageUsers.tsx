@@ -10,6 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Search, UserCheck, UserX } from 'lucide-react';
 import AdminLayout from './components/AdminLayout';
 
+type UserRole = "customer" | "admin" | "delivery_partner" | "super_admin";
+
 const ManageUsers = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
@@ -29,7 +31,7 @@ const ManageUsers = () => {
   });
 
   const updateUserMutation = useMutation({
-    mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
+    mutationFn: async ({ userId, role }: { userId: string; role: UserRole }) => {
       const { error } = await supabase
         .from('profiles')
         .update({ role })
