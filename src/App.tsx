@@ -20,7 +20,7 @@ import ProductDetails from "./pages/ProductDetails";
 import SearchResults from "./pages/SearchResults";
 import Checkout from "./pages/Checkout";
 import OrderConfirmation from "./pages/OrderConfirmation";
-import Unauthorized from "./pages/Unauthorized";
+import { Unauthorized } from "./pages/Unauthorized";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -46,6 +46,7 @@ const App: React.FC = () => {
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Home />} />
+          <Route path="/auth" element={<AuthHybrid />} />
           <Route path="/signup" element={<AuthHybrid />} />
           <Route path="/login" element={<AuthHybrid />} />
           <Route path="/cart" element={<CartPage />} />
