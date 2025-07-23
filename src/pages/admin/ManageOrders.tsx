@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -36,7 +37,7 @@ const ManageOrders = () => {
   });
 
   const updateOrderStatusMutation = useMutation({
-    mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
+    mutationFn: async ({ orderId, status }: { orderId: string; status: "pending" | "confirmed" | "dispatched" | "out_for_delivery" | "delivered" | "cancelled" | "ready_for_pickup" }) => {
       const { error } = await supabase
         .from('orders')
         .update({ status })
@@ -91,7 +92,7 @@ const ManageOrders = () => {
     }
   };
 
-  const handleStatusChange = (orderId: string, newStatus: string) => {
+  const handleStatusChange = (orderId: string, newStatus: "pending" | "confirmed" | "dispatched" | "out_for_delivery" | "delivered" | "cancelled" | "ready_for_pickup") => {
     updateOrderStatusMutation.mutate({ orderId, status: newStatus });
   };
 
@@ -143,7 +144,7 @@ const ManageOrders = () => {
                     <div className="flex items-center gap-4 mb-2">
                       <h3 className="font-semibold">Order #{order.order_number}</h3>
                       {getStatusBadge(order.status)}
-                      <Badge variant="outline">₹{parseFloat(order.total_amount).toFixed(2)}</Badge>
+                      <Badge variant="outline">₹{parseFloat(order.total_amount.toString()).toFixed(2)}</Badge>
                     </div>
                     <p className="text-sm text-muted-foreground mb-1">
                       Customer: {order.profiles?.full_name} ({order.profiles?.phone_number})

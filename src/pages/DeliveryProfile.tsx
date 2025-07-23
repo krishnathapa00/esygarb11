@@ -65,7 +65,7 @@ const DeliveryProfile = () => {
         .eq('delivery_partner_id', user?.id);
       
       if (error) throw error;
-      return data.reduce((sum, earning) => sum + parseFloat(earning.amount), 0);
+      return data.reduce((sum, earning) => sum + parseFloat(earning.amount.toString()), 0);
     },
     enabled: !!user?.id
   });
@@ -94,7 +94,7 @@ const DeliveryProfile = () => {
         phone_number: profile.phone_number || '',
         vehicle_type: profile.vehicle_type || '',
         license_number: profile.license_number || '',
-        darkstore_id: profile.darkstore_id?.toString() || ''
+        darkstore_id: profile.darkstore_id || ''
       });
     }
   }, [profile]);
@@ -105,7 +105,7 @@ const DeliveryProfile = () => {
         .from('profiles')
         .update({
           ...updates,
-          darkstore_id: updates.darkstore_id ? parseInt(updates.darkstore_id) : null
+          darkstore_id: updates.darkstore_id || null
         })
         .eq('id', user?.id);
 

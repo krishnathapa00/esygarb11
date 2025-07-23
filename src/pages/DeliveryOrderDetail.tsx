@@ -51,13 +51,15 @@ const DeliveryOrderDetail = () => {
       if (error) throw error;
 
       // Add to status history
-      await supabase
+      const { error: historyError } = await supabase
         .from('order_status_history')
         .insert({
           order_id: id,
           status: status as "pending" | "confirmed" | "dispatched" | "out_for_delivery" | "delivered" | "cancelled" | "ready_for_pickup",
           notes: `Order ${status.replace('_', ' ')} by delivery partner`
         });
+
+      if (historyError) throw historyError;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['order-detail', id] });
@@ -182,7 +184,7 @@ const DeliveryOrderDetail = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Amount</p>
-                <p className="font-medium text-lg">₹{parseFloat(order.total_amount).toFixed(2)}</p>
+                <p className="font-medium text-lg">₹{parseFloat(order.total_amount.toString()).toFixed(2)}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Order Time</p>
@@ -220,7 +222,7 @@ const DeliveryOrderDetail = () => {
                     <p className="font-medium">{item.products?.name}</p>
                     <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
                   </div>
-                  <p className="font-medium">₹{parseFloat(item.price).toFixed(2)}</p>
+                  <p className="font-medium">₹{parseFloat(item.price.toString()).toFixed(2)}</p>
                 </div>
               ))}
             </div>

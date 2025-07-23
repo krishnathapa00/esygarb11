@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -39,7 +40,19 @@ const ManageProducts = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as ProductRow[];
+      return data.map(product => ({
+        id: product.id.toString(),
+        name: product.name,
+        description: product.description || '',
+        price: product.price.toString(),
+        image_url: product.image_url || '',
+        category: product.category_id?.toString() || '',
+        subcategory: '',
+        stock_quantity: product.stock_quantity || 0,
+        is_active: product.is_active || false,
+        created_at: product.created_at,
+        updated_at: product.updated_at
+      })) as ProductRow[];
     }
   });
 
@@ -48,7 +61,7 @@ const ManageProducts = () => {
       const { error } = await supabase
         .from('products')
         .delete()
-        .eq('id', productId);
+        .eq('id', parseInt(productId));
 
       if (error) throw error;
     },
@@ -73,7 +86,7 @@ const ManageProducts = () => {
       const { error } = await supabase
         .from('products')
         .update({ is_active: isActive })
-        .eq('id', productId);
+        .eq('id', parseInt(productId));
 
       if (error) throw error;
     },
