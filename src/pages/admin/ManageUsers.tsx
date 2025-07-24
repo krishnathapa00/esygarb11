@@ -29,10 +29,10 @@ const ManageUsers = () => {
   });
 
   const updateUserMutation = useMutation({
-    mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
+    mutationFn: async ({ userId, role }) => {
       const { error } = await supabase
         .from('profiles')
-        .update({ role: role as any })
+        .update({ role })
         .eq('id', userId);
 
       if (error) throw error;
@@ -54,7 +54,7 @@ const ManageUsers = () => {
   });
 
   const deleteUserMutation = useMutation({
-    mutationFn: async (userId: string) => {
+    mutationFn: async (userId) => {
       const { error } = await supabase
         .from('profiles')
         .delete()
@@ -84,7 +84,7 @@ const ManageUsers = () => {
     user.role?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getRoleBadge = (role: string) => {
+  const getRoleBadge = (role) => {
     switch (role) {
       case 'admin':
         return <Badge variant="destructive">Admin</Badge>;
@@ -104,7 +104,7 @@ const ManageUsers = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Manage Users</h1>
-          <Button onClick={() => refetch()} disabled={isLoading}>
+          <Button onClick={refetch} disabled={isLoading}>
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </Button>

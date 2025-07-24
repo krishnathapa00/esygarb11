@@ -39,7 +39,7 @@ const ManageKYC = () => {
   });
 
   const updateKYCMutation = useMutation({
-    mutationFn: async ({ id, status, comments }: { id: any; status: string; comments: string }) => {
+    mutationFn: async ({ id, status, comments }) => {
       const { data: { user } } = await supabase.auth.getUser();
       
       const { error } = await supabase
@@ -80,7 +80,7 @@ const ManageKYC = () => {
   });
 
   const deleteKYCMutation = useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async (id) => {
       const { error } = await supabase
         .from('kyc_verifications')
         .delete()

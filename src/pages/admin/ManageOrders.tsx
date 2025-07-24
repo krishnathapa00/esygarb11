@@ -163,7 +163,7 @@ const ManageOrders = () => {
   };
 
   return (
-    <AdminLayout>
+    <AdminLayout onRefresh={() => refetchOrders()}>
       <div className="space-y-6">
         <h1 className="text-2xl font-bold">Orders Management</h1>
         
