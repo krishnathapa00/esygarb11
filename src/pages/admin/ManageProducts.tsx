@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Search, Plus, Edit2, Trash2, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -46,7 +47,7 @@ const ManageProducts = () => {
     description: ''
   });
 
-  // Fetch products from supabase, now selecting new persistent "offer"
+  // Fetch products from supabase
   const { data: products = [], refetch, isLoading } = useQuery<ProductRow[]>({
     queryKey: ['admin-products'],
     queryFn: async () => {
@@ -107,7 +108,7 @@ const ManageProducts = () => {
     e.preventDefault();
     setCreating(true);
 
-    // Prepare payload, includes persistent offer
+    // Prepare payload
     const payload: any = {
       name: productData.name,
       price: Number(productData.price),
@@ -192,12 +193,12 @@ const ManageProducts = () => {
   };
 
   return (
-    <AdminLayout onRefresh={() => refetch()}>
+    <AdminLayout>
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
           <h1 className="text-2xl font-bold">Products Management</h1>
           <Button 
-            onClick={() => window.location.href = '/admin/products/add'}
+            onClick={handleAddProduct}
             className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
           >
             <Plus className="h-4 w-4 mr-2" /> Add New Product
@@ -243,7 +244,6 @@ const ManageProducts = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
-                          {/* FIX: Only use product.image_url */}
                           <img className="h-10 w-10 rounded-sm object-cover" src={product.image_url} alt="" />
                         </div>
                         <div className="ml-4">
@@ -273,7 +273,6 @@ const ManageProducts = () => {
                       {product.discount ? <span className="text-red-600 font-bold">{product.discount}%</span> : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
-                      {/* Render offer (can be null), show dash otherwise */}
                       {typeof product.offer === "string" && product.offer.trim().length > 0
                         ? <span className="text-orange-600">{product.offer}</span>
                         : '-'}
@@ -295,7 +294,7 @@ const ManageProducts = () => {
           </div>
         </div>
 
-        {/* Add Product Modal - Horizontal Design */}
+        {/* Add Product Modal */}
         {showAddProduct && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
             <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto relative">

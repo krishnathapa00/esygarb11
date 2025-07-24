@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Header from "../components/Header";
@@ -8,11 +9,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
+import { useToast } from "@/hooks/use-toast";
 
 const Checkout = () => {
   const { cart, resetCart } = useCart();
   const [selectedPayment, setSelectedPayment] = useState("cod");
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
@@ -38,7 +42,7 @@ const Checkout = () => {
   const totalAmount = subtotal + deliveryFee;
 
   useEffect(() => {
-    // Auto-fill from profile data (simulated - in real app this would come from database/context)
+    // Auto-fill from profile data
     const profileData = {
       fullName: "John Doe",
       phone: "+977 9876543210",
@@ -59,9 +63,9 @@ const Checkout = () => {
           setFormData((prev) => ({
             ...prev,
             address: savedLocationData.address,
-            city: savedLocationData.city || "Kathmandu", // Default city if not provided
-            state: savedLocationData.state || "Bagmati", // Default state if not provided
-            pincode: savedLocationData.pincode || "44600", // Default pincode if not provided
+            city: savedLocationData.city || "Kathmandu",
+            state: savedLocationData.state || "Bagmati",
+            pincode: savedLocationData.pincode || "44600",
           }));
         }
       } catch (error) {
@@ -77,7 +81,6 @@ const Checkout = () => {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           try {
-            // Simulate a successful geocoding response
             const locationData = {
               address: "Thamel, Kathmandu",
               city: "Kathmandu",
@@ -94,7 +97,6 @@ const Checkout = () => {
               pincode: locationData.pincode,
             }));
 
-            // Save to localStorage
             localStorage.setItem(
               "esygrab_user_location",
               JSON.stringify(locationData)
@@ -128,20 +130,34 @@ const Checkout = () => {
 
   const handlePlaceOrder = async () => {
     try {
+      setIsPlacingOrder(true);
+      
       if (!user?.id) {
-        alert("Please log in to place an order.");
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to place an order.",
+          variant: "destructive",
+        });
         navigate("/login");
         return;
       }
 
       if (cart.length === 0) {
-        alert("Your cart is empty.");
+        toast({
+          title: "Empty Cart",
+          description: "Your cart is empty. Please add items before placing an order.",
+          variant: "destructive",
+        });
         return;
       }
 
-      // More flexible address validation - check if we have at least an address
-      if (!formData.address || formData.address.trim() === "") {
-        alert("Please provide delivery address details.");
+      // Validate required fields
+      if (!formData.fullName || !formData.phone || !formData.address) {
+        toast({
+          title: "Missing Information",
+          description: "Please fill in all required fields (name, phone, address).",
+          variant: "destructive",
+        });
         return;
       }
 
@@ -156,6 +172,8 @@ const Checkout = () => {
         payment_status: (selectedPayment === "cod" ? "pending" : "completed") as "pending" | "completed"
       };
 
+      console.log("Creating order with data:", orderData);
+
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert(orderData)
@@ -164,8 +182,15 @@ const Checkout = () => {
 
       if (orderError) {
         console.error("Order creation error:", orderError);
-        throw orderError;
+        toast({
+          title: "Order Failed",
+          description: "Failed to create order. Please try again.",
+          variant: "destructive",
+        });
+        return;
       }
+
+      console.log("Order created successfully:", order);
 
       // Create order items
       const orderItems = cart.map(item => ({
@@ -175,23 +200,43 @@ const Checkout = () => {
         price: item.price
       }));
 
+      console.log("Creating order items:", orderItems);
+
       const { error: itemsError } = await supabase
         .from('order_items')
         .insert(orderItems);
 
       if (itemsError) {
         console.error("Order items creation error:", itemsError);
-        throw itemsError;
+        toast({
+          title: "Order Failed",
+          description: "Failed to add items to order. Please try again.",
+          variant: "destructive",
+        });
+        return;
       }
+
+      console.log("Order items created successfully");
 
       // Save order ID to localStorage for order confirmation page
       localStorage.setItem('latest_order_id', order.id);
+      
+      toast({
+        title: "Order Placed Successfully",
+        description: "Your order has been placed and is being processed.",
+      });
       
       resetCart();
       navigate("/order-confirmation");
     } catch (error) {
       console.error("Order placement failed:", error);
-      alert("Failed to place order. Please try again.");
+      toast({
+        title: "Order Failed",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsPlacingOrder(false);
     }
   };
 
@@ -203,7 +248,6 @@ const Checkout = () => {
   ];
 
   if (loading) {
-    // Show loading while checking auth
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto" />
@@ -231,15 +275,101 @@ const Checkout = () => {
           </h1>
         </div>
 
-        {/* Responsive layout with proper spacing */}
+        {/* Delivery Address */}
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
+          <div className="flex items-center space-x-2 mb-6">
+            <MapPin className="h-5 w-5 text-green-600" />
+            <h3 className="text-lg font-semibold">Delivery Address</h3>
+          </div>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="fullName">Full Name *</Label>
+                <Input
+                  id="fullName"
+                  value={formData.fullName}
+                  onChange={(e) => handleInputChange("fullName", e.target.value)}
+                  placeholder="Enter your full name"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="phone">Phone Number *</Label>
+                <Input
+                  id="phone"
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange("phone", e.target.value)}
+                  placeholder="Enter phone number"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="address">Address *</Label>
+              <Input
+                id="address"
+                value={formData.address}
+                onChange={(e) => handleInputChange("address", e.target.value)}
+                placeholder="Enter your delivery address"
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="city">City</Label>
+                <Input
+                  id="city"
+                  value={formData.city}
+                  onChange={(e) => handleInputChange("city", e.target.value)}
+                  placeholder="City"
+                />
+              </div>
+              <div>
+                <Label htmlFor="state">State</Label>
+                <Input
+                  id="state"
+                  value={formData.state}
+                  onChange={(e) => handleInputChange("state", e.target.value)}
+                  placeholder="State"
+                />
+              </div>
+              <div>
+                <Label htmlFor="pincode">Pincode</Label>
+                <Input
+                  id="pincode"
+                  value={formData.pincode}
+                  onChange={(e) => handleInputChange("pincode", e.target.value)}
+                  placeholder="Pincode"
+                />
+              </div>
+            </div>
+
+            <Button
+              onClick={detectCurrentLocation}
+              disabled={isDetectingLocation}
+              variant="outline"
+              className="w-full"
+            >
+              {isDetectingLocation ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <MapPin className="h-4 w-4 mr-2" />
+              )}
+              {isDetectingLocation ? "Detecting..." : "Use Current Location"}
+            </Button>
+          </div>
+        </div>
+
+        {/* Responsive layout */}
         <div className="space-y-6 lg:grid lg:grid-cols-2 lg:gap-8 lg:space-y-0 pb-20 md:pb-0">
           {/* Payment Method */}
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
             <div className="flex items-center space-x-2 mb-6">
               <CreditCard className="h-5 w-5 text-green-600" />
-              <h3 className="text-lg font-semibold">
-                Payment Method
-              </h3>
+              <h3 className="text-lg font-semibold">Payment Method</h3>
             </div>
 
             <div className="space-y-3">
@@ -265,9 +395,7 @@ const Checkout = () => {
                     />
                     <div className="flex items-center space-x-2">
                       <span className="text-xl">{option.icon}</span>
-                      <span className="text-sm font-medium">
-                        {option.label}
-                      </span>
+                      <span className="text-sm font-medium">{option.label}</span>
                     </div>
                   </div>
                 </div>
@@ -275,7 +403,7 @@ const Checkout = () => {
             </div>
           </div>
 
-          {/* Order Summary - Mobile optimized */}
+          {/* Order Summary */}
           <div className="bg-white rounded-lg p-4 shadow-sm lg:h-fit">
             <h3 className="text-base lg:text-lg font-semibold text-gray-900 mb-4">
               Order Summary
@@ -306,29 +434,33 @@ const Checkout = () => {
             {/* Place Order button only visible on desktop */}
             <Button
               onClick={handlePlaceOrder}
+              disabled={isPlacingOrder}
               className="hidden md:flex w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 py-3 text-base font-medium"
             >
-              {selectedPayment === "cod"
-                ? "Place Order"
-                : `Pay with ${
-                    paymentOptions.find((p) => p.id === selectedPayment)?.label
-                  }`}
+              {isPlacingOrder ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : null}
+              {isPlacingOrder ? "Placing Order..." : (
+                selectedPayment === "cod" ? "Place Order" : `Pay with ${paymentOptions.find((p) => p.id === selectedPayment)?.label}`
+              )}
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Mobile Place Order Button - Only visible on mobile for checkout page */}
+      {/* Mobile Place Order Button */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t shadow-lg p-4">
         <Button
           onClick={handlePlaceOrder}
+          disabled={isPlacingOrder}
           className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 py-3 text-base font-medium"
         >
-          {selectedPayment === "cod"
-            ? "Place Order"
-            : `Pay with ${
-                paymentOptions.find((p) => p.id === selectedPayment)?.label
-              }`}
+          {isPlacingOrder ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : null}
+          {isPlacingOrder ? "Placing Order..." : (
+            selectedPayment === "cod" ? "Place Order" : `Pay with ${paymentOptions.find((p) => p.id === selectedPayment)?.label}`
+          )}
         </Button>
       </div>
     </div>

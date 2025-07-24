@@ -166,6 +166,80 @@ export type Database = {
         }
         Relationships: []
       }
+      delivery_config: {
+        Row: {
+          delivery_fee: number
+          delivery_partner_charge: number
+          id: number
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          delivery_fee?: number
+          delivery_partner_charge?: number
+          id?: number
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          delivery_fee?: number
+          delivery_partner_charge?: number
+          id?: number
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_config_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      delivery_earnings: {
+        Row: {
+          amount: number
+          created_at: string | null
+          delivery_partner_id: string
+          delivery_time_minutes: number | null
+          id: string
+          order_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          delivery_partner_id: string
+          delivery_time_minutes?: number | null
+          id?: string
+          order_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          delivery_partner_id?: string
+          delivery_time_minutes?: number | null
+          id?: string
+          order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_earnings_delivery_partner_id_fkey"
+            columns: ["delivery_partner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_earnings_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kyc_verifications: {
         Row: {
           admin_comments: string | null
@@ -302,42 +376,51 @@ export type Database = {
       }
       orders: {
         Row: {
+          accepted_at: string | null
           created_at: string | null
           darkstore_id: number | null
+          delivered_at: string | null
           delivery_address: string
           delivery_partner_id: string | null
           estimated_delivery: string | null
           id: string
           order_number: string
           payment_status: Database["public"]["Enums"]["payment_status"] | null
+          picked_up_at: string | null
           status: Database["public"]["Enums"]["order_status"] | null
           total_amount: number
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
+          accepted_at?: string | null
           created_at?: string | null
           darkstore_id?: number | null
+          delivered_at?: string | null
           delivery_address: string
           delivery_partner_id?: string | null
           estimated_delivery?: string | null
           id?: string
           order_number: string
           payment_status?: Database["public"]["Enums"]["payment_status"] | null
+          picked_up_at?: string | null
           status?: Database["public"]["Enums"]["order_status"] | null
           total_amount: number
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
+          accepted_at?: string | null
           created_at?: string | null
           darkstore_id?: number | null
+          delivered_at?: string | null
           delivery_address?: string
           delivery_partner_id?: string | null
           estimated_delivery?: string | null
           id?: string
           order_number?: string
           payment_status?: Database["public"]["Enums"]["payment_status"] | null
+          picked_up_at?: string | null
           status?: Database["public"]["Enums"]["order_status"] | null
           total_amount?: number
           updated_at?: string | null
