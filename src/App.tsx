@@ -6,8 +6,10 @@ import {
   Routes,
   Navigate,
 } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from "./contexts/AuthContext";
 import { CartProvider } from "./contexts/CartContext";
+import { Toaster } from "@/components/ui/toaster";
 import AuthHybrid from "./pages/AuthHybrid";
 import AuthPasswordReset from "./pages/AuthPasswordReset";
 import Index from "./pages/Index";
@@ -24,8 +26,10 @@ import ManageUsers from "./pages/admin/ManageUsers";
 import ManageKYC from "./pages/admin/ManageKYC";
 import ManageDarkstores from "./pages/admin/ManageDarkstores";
 import DeliverySettings from "./pages/admin/DeliverySettings";
+import DeliveryList from "./pages/admin/DeliveryList";
 import DeliveryDashboard from "./pages/DeliveryDashboard";
 import DeliveryProfile from "./pages/DeliveryProfile";
+import DeliveryPartnerAuth from "./pages/DeliveryPartnerAuth";
 import DeliveryOrderDetail from "./pages/DeliveryOrderDetail";
 import CartPage from "./pages/CartPage";
 import Categories from "./pages/Categories";
@@ -36,10 +40,14 @@ import OrderConfirmation from "./pages/OrderConfirmation";
 import Checkout from "./pages/Checkout";
 import { Unauthorized } from "./pages/Unauthorized";
 
+// Create a QueryClient instance
+const queryClient = new QueryClient();
+
 const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <CartProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <CartProvider>
         <Router>
           <Routes>
             <Route path="/auth" element={<AuthHybrid />} />
@@ -99,6 +107,14 @@ const App: React.FC = () => {
               }
             />
             <Route
+              path="/admin/delivery-partners"
+              element={
+                <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
+                  <DeliveryList />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
               path="/admin/darkstores"
               element={
                 <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
@@ -113,14 +129,17 @@ const App: React.FC = () => {
                   <DeliverySettings />
                 </RoleProtectedRoute>
               }
-            />
+             />
+            <Route path="/delivery/auth" element={<DeliveryPartnerAuth />} />
             <Route path="/delivery/dashboard" element={<DeliveryDashboard />} />
             <Route path="/delivery/profile" element={<DeliveryProfile />} />
             <Route path="/delivery/order/:id" element={<DeliveryOrderDetail />} />
           </Routes>
         </Router>
+        <Toaster />
       </CartProvider>
     </AuthProvider>
+    </QueryClientProvider>
   );
 };
 
