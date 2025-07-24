@@ -39,7 +39,7 @@ const ManageDarkstores = () => {
   });
 
   const createDarkstoreMutation = useMutation({
-    mutationFn: async (darkstore: any) => {
+    mutationFn: async (darkstore) => {
       const { error } = await supabase
         .from('darkstores')
         .insert([darkstore]);
@@ -73,7 +73,7 @@ const ManageDarkstores = () => {
   });
 
   const updateDarkstoreMutation = useMutation({
-    mutationFn: async ({ id, ...updates }: { id: number; [key: string]: any }) => {
+    mutationFn: async ({ id, ...updates }) => {
       const { error } = await supabase
         .from('darkstores')
         .update(updates)
@@ -100,7 +100,7 @@ const ManageDarkstores = () => {
   });
 
   const deleteDarkstoreMutation = useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async (id) => {
       const { error } = await supabase
         .from('darkstores')
         .delete()
