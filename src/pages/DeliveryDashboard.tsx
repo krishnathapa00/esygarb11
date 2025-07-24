@@ -101,9 +101,9 @@ const DeliveryDashboard = () => {
     }
   };
 
-  const updateOrderStatus = async (orderId, newStatus) => {
+  const updateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
-      const updateData = { status: newStatus };
+      const updateData: any = { status: newStatus };
       
       if (newStatus === 'accepted') {
         updateData.accepted_at = new Date().toISOString();

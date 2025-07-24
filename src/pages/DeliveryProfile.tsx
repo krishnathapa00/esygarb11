@@ -92,7 +92,7 @@ const DeliveryProfile = () => {
   });
 
   const updateProfileMutation = useMutation({
-    mutationFn: async (updates) => {
+    mutationFn: async (updates: any) => {
       const { error } = await supabase
         .from('profiles')
         .update(updates)
@@ -137,7 +137,7 @@ const DeliveryProfile = () => {
     return darkstores.find(ds => ds.id.toString() === formData.darkstore_id);
   };
 
-  const totalEarnings = earnings.reduce((sum, earning) => sum + parseFloat(earning.amount), 0);
+  const totalEarnings = earnings.reduce((sum, earning) => sum + parseFloat(earning.amount?.toString() || '0'), 0);
 
   const getKYCStatusBadge = () => {
     switch (kycStatus) {
@@ -331,7 +331,7 @@ const DeliveryProfile = () => {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-medium">₹{parseFloat(earning.amount).toFixed(2)}</p>
+                      <p className="font-medium">₹{parseFloat(earning.amount?.toString() || '0').toFixed(2)}</p>
                       {earning.delivery_time_minutes && (
                         <p className="text-sm text-muted-foreground">
                           {earning.delivery_time_minutes} mins

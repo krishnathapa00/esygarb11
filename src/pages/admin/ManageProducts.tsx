@@ -193,7 +193,7 @@ const ManageProducts = () => {
   };
 
   return (
-    <AdminLayout onRefresh={() => refetch()}>
+    <AdminLayout>
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
           <h1 className="text-2xl font-bold">Products Management</h1>

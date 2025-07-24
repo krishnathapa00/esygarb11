@@ -37,8 +37,8 @@ const DeliveryOrderDetail = () => {
   });
 
   const updateOrderStatusMutation = useMutation({
-    mutationFn: async ({ status, timestamp_field }) => {
-      const updates = { status };
+    mutationFn: async ({ status, timestamp_field }: { status: string; timestamp_field?: string }) => {
+      const updates: any = { status };
       if (timestamp_field) {
         updates[timestamp_field] = new Date().toISOString();
       }
@@ -55,7 +55,7 @@ const DeliveryOrderDetail = () => {
         .from('order_status_history')
         .insert({
           order_id: id,
-          status: status,
+          status: status as any,
           notes: `Order ${status.replace('_', ' ')} by delivery partner`
         });
     },
@@ -101,7 +101,7 @@ const DeliveryOrderDetail = () => {
     window.open(mapUrl, '_blank');
   };
 
-  const formatTime = (seconds) => {
+  const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
@@ -170,7 +170,7 @@ const DeliveryOrderDetail = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Amount</p>
-                <p className="font-medium text-lg">₹{parseFloat(order.total_amount).toFixed(2)}</p>
+                <p className="font-medium text-lg">₹{parseFloat(order.total_amount?.toString() || '0').toFixed(2)}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Order Time</p>
@@ -208,7 +208,7 @@ const DeliveryOrderDetail = () => {
                     <p className="font-medium">{item.products?.name}</p>
                     <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
                   </div>
-                  <p className="font-medium">₹{parseFloat(item.price).toFixed(2)}</p>
+                  <p className="font-medium">₹{parseFloat(item.price?.toString() || '0').toFixed(2)}</p>
                 </div>
               ))}
             </div>

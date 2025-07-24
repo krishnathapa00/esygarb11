@@ -8,13 +8,13 @@ import {
 } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { CartProvider } from "./contexts/CartContext";
-import SignUp from "./pages/SignUp";
-import Login from "./pages/Login";
-import Home from "./pages/Home";
-import Payment from "./pages/Payment";
+import AuthHybrid from "./pages/AuthHybrid";
+import AuthPasswordReset from "./pages/AuthPasswordReset";
+import Index from "./pages/Index";
+import PaymentPage from "./pages/PaymentPage";
 import OrderHistory from "./pages/OrderHistory";
 import OrderTracking from "./pages/OrderTracking";
-import Profile from "./pages/Profile";
+import UserProfile from "./pages/UserProfile";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import ManageProducts from "./pages/admin/ManageProducts";
@@ -42,9 +42,9 @@ const App: React.FC = () => {
       <CartProvider>
         <Router>
           <Routes>
-            <Route path="/signup" element={<SignUp />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/" element={<Home />} />
+            <Route path="/auth" element={<AuthHybrid />} />
+            <Route path="/auth/reset" element={<AuthPasswordReset />} />
+            <Route path="/" element={<Index />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/categories" element={<Categories />} />
@@ -52,10 +52,10 @@ const App: React.FC = () => {
             <Route path="/product/:productId" element={<ProductDetails />} />
             <Route path="/search" element={<SearchResults />} />
             <Route path="/order-confirmation" element={<OrderConfirmation />} />
-            <Route path="/payment" element={<Payment />} />
+            <Route path="/payment" element={<PaymentPage />} />
             <Route path="/order-history" element={<OrderHistory />} />
             <Route path="/order-tracking/:id" element={<OrderTracking />} />
-            <Route path="/profile" element={<Profile />} />
+            <Route path="/profile" element={<UserProfile />} />
             <Route path="/unauthorized" element={<Unauthorized />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route
