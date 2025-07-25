@@ -1,7 +1,6 @@
 
 import React from "react";
 import {
-  BrowserRouter as Router,
   Route,
   Routes,
   Navigate,
@@ -40,8 +39,7 @@ const App: React.FC = () => {
   return (
     <AuthProvider>
       <CartProvider>
-        <Router>
-          <Routes>
+        <Routes>
             <Route path="/auth" element={<AuthHybrid />} />
             <Route path="/" element={<Index />} />
             <Route path="/cart" element={<CartPage />} />
@@ -117,8 +115,7 @@ const App: React.FC = () => {
             <Route path="/delivery/dashboard" element={<DeliveryDashboard />} />
             <Route path="/delivery/profile" element={<DeliveryProfile />} />
             <Route path="/delivery/order/:id" element={<DeliveryOrderDetail />} />
-          </Routes>
-        </Router>
+        </Routes>
       </CartProvider>
     </AuthProvider>
   );
