@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
-const AdminLayout = ({ children }) => {
+const AdminLayout = ({ children, onRefresh }: { children: React.ReactNode; onRefresh?: () => void }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuth();

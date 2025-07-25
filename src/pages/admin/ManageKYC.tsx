@@ -39,7 +39,7 @@ const ManageKYC = () => {
   });
 
   const updateKYCMutation = useMutation({
-    mutationFn: async ({ id, status, comments }) => {
+    mutationFn: async ({ id, status, comments }: { id: string; status: string; comments: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
       
       const { error } = await supabase
@@ -80,7 +80,7 @@ const ManageKYC = () => {
   });
 
   const deleteKYCMutation = useMutation({
-    mutationFn: async (id) => {
+    mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('kyc_verifications')
         .delete()
@@ -104,7 +104,7 @@ const ManageKYC = () => {
     }
   });
 
-  const handleReview = (kyc) => {
+  const handleReview = (kyc: any) => {
     setSelectedKYC(kyc);
     setAdminComments(kyc.admin_comments || '');
     setReviewModalOpen(true);
@@ -130,7 +130,7 @@ const ManageKYC = () => {
     }
   };
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
         return <Badge variant="outline" className="text-yellow-600">Pending</Badge>;
@@ -143,7 +143,7 @@ const ManageKYC = () => {
     }
   };
 
-  const openDocument = (url) => {
+  const openDocument = (url: string) => {
     if (url) {
       window.open(url, '_blank');
     }

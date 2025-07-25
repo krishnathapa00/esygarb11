@@ -27,15 +27,18 @@ const DeliverySettings = () => {
       
       if (error) throw error;
       return data;
-    },
-    onSuccess: (data) => {
-      setDeliveryFee(data.delivery_fee.toString());
-      setPartnerCharge(data.delivery_partner_charge.toString());
     }
   });
 
+  React.useEffect(() => {
+    if (config) {
+      setDeliveryFee(config.delivery_fee.toString());
+      setPartnerCharge(config.delivery_partner_charge.toString());
+    }
+  }, [config]);
+
   const updateConfigMutation = useMutation({
-    mutationFn: async ({ deliveryFee, partnerCharge }) => {
+    mutationFn: async ({ deliveryFee, partnerCharge }: { deliveryFee: string; partnerCharge: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
       
       const { error } = await supabase
@@ -46,7 +49,7 @@ const DeliverySettings = () => {
           updated_at: new Date().toISOString(),
           updated_by: user?.id
         })
-        .eq('id', config.id);
+        .eq('id', config?.id);
 
       if (error) throw error;
     },
@@ -66,7 +69,7 @@ const DeliverySettings = () => {
     }
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     updateConfigMutation.mutate({ deliveryFee, partnerCharge });
   };
