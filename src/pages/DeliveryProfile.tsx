@@ -1,19 +1,18 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { User, Phone, Car, MapPin, CheckCircle, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from '@/hooks/use-toast';
+import { Edit, Save, X, CheckCircle, AlertCircle, DollarSign, Package } from 'lucide-react';
 
 const DeliveryProfile = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -24,6 +23,7 @@ const DeliveryProfile = () => {
     darkstore_id: ''
   });
 
+  // Fetch delivery partner profile
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ['delivery-profile', user?.id],
     queryFn: async () => {
@@ -39,20 +39,17 @@ const DeliveryProfile = () => {
     enabled: !!user?.id
   });
 
+  // Fetch available darkstores
   const { data: darkstores = [] } = useQuery({
-    queryKey: ['darkstores'],
+    queryKey: ['available-darkstores'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('darkstores')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
-      
+      const { data, error } = await supabase.rpc('get_available_darkstores');
       if (error) throw error;
       return data;
     }
   });
 
+  // Fetch KYC status
   const { data: kycStatus } = useQuery({
     queryKey: ['kyc-status', user?.id],
     queryFn: async () => {
@@ -61,14 +58,16 @@ const DeliveryProfile = () => {
         .select('verification_status')
         .eq('user_id', user?.id)
         .order('created_at', { ascending: false })
-        .limit(1);
+        .limit(1)
+        .single();
       
-      if (error) throw error;
-      return data[0]?.verification_status || null;
+      if (error && error.code !== 'PGRST116') throw error;
+      return data?.verification_status || 'not_submitted';
     },
     enabled: !!user?.id
   });
 
+  // Fetch earnings
   const { data: earnings = [] } = useQuery({
     queryKey: ['delivery-earnings', user?.id],
     queryFn: async () => {
@@ -76,11 +75,7 @@ const DeliveryProfile = () => {
         .from('delivery_earnings')
         .select(`
           *,
-          orders!delivery_earnings_order_id_fkey(
-            order_number,
-            created_at,
-            total_amount
-          )
+          orders(order_number, created_at)
         `)
         .eq('delivery_partner_id', user?.id)
         .order('created_at', { ascending: false });
@@ -92,7 +87,7 @@ const DeliveryProfile = () => {
   });
 
   const updateProfileMutation = useMutation({
-    mutationFn: async (updates) => {
+    mutationFn: async (updates: any) => {
       const { error } = await supabase
         .from('profiles')
         .update(updates)
@@ -134,10 +129,10 @@ const DeliveryProfile = () => {
   };
 
   const getSelectedDarkstore = () => {
-    return darkstores.find(ds => ds.id.toString() === formData.darkstore_id);
+    return darkstores.find((ds: any) => ds.id.toString() === formData.darkstore_id);
   };
 
-  const totalEarnings = earnings.reduce((sum, earning) => sum + parseFloat(earning.amount), 0);
+  const totalEarnings = earnings.reduce((sum: number, earning: any) => sum + parseFloat(earning.amount), 0);
 
   const getKYCStatusBadge = () => {
     switch (kycStatus) {
@@ -148,181 +143,220 @@ const DeliveryProfile = () => {
       case 'pending':
         return <Badge variant="outline" className="text-yellow-600"><AlertCircle className="w-3 h-3 mr-1" />KYC Pending</Badge>;
       default:
-        return <Badge variant="outline" className="text-gray-600"><AlertCircle className="w-3 h-3 mr-1" />KYC Required</Badge>;
+        return <Badge variant="outline" className="text-gray-600"><AlertCircle className="w-3 h-3 mr-1" />KYC Not Submitted</Badge>;
     }
   };
 
   if (profileLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-gray-50 p-4">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center">Loading profile...</div>
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-muted-foreground">Loading profile...</p>
+          </div>
         </div>
       </div>
     );
   }
 
-  const isSetupComplete = profile?.kyc_verified && profile?.darkstore_id;
+  const isProfileComplete = profile?.full_name && profile?.phone_number && profile?.vehicle_type && profile?.license_number && profile?.darkstore_id;
+  const isKYCApproved = kycStatus === 'approved';
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-4xl mx-auto space-y-6">
+        {/* Header */}
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Delivery Partner Profile</h1>
+          <h1 className="text-2xl font-bold">Delivery Partner Profile</h1>
           {getKYCStatusBadge()}
         </div>
 
-        {!isSetupComplete && (
+        {/* Warning if setup incomplete */}
+        {(!isProfileComplete || !isKYCApproved) && (
           <Card className="border-yellow-200 bg-yellow-50">
             <CardContent className="p-4">
-              <div className="flex items-center gap-2 text-yellow-800">
-                <AlertCircle className="w-5 h-5" />
-                <p className="font-medium">Account setup required</p>
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-yellow-600" />
+                <div>
+                  <p className="font-medium text-yellow-800">Account Setup Required</p>
+                  <p className="text-sm text-yellow-700">
+                    Please complete your profile and KYC verification to start receiving delivery requests.
+                  </p>
+                </div>
               </div>
-              <p className="text-sm text-yellow-700 mt-1">
-                Please complete your profile and KYC verification to start receiving orders.
-              </p>
             </CardContent>
           </Card>
         )}
 
-        <div className="grid md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="w-5 h-5" />
-                Profile Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Full Name</label>
-                  {isEditing ? (
-                    <Input
-                      value={formData.full_name}
-                      onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                      placeholder="Enter full name"
-                    />
-                  ) : (
-                    <p className="text-sm text-muted-foreground">{profile?.full_name || 'Not provided'}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Phone Number</label>
-                  {isEditing ? (
-                    <Input
-                      value={formData.phone_number}
-                      onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
-                      placeholder="Enter phone number"
-                    />
-                  ) : (
-                    <p className="text-sm text-muted-foreground">{profile?.phone_number || 'Not provided'}</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Vehicle Type</label>
-                  {isEditing ? (
-                    <Select value={formData.vehicle_type} onValueChange={(value) => setFormData({ ...formData, vehicle_type: value })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select vehicle type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="bike">Bike</SelectItem>
-                        <SelectItem value="scooter">Scooter</SelectItem>
-                        <SelectItem value="car">Car</SelectItem>
-                        <SelectItem value="bicycle">Bicycle</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">{profile?.vehicle_type || 'Not provided'}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="text-sm font-medium">License Number</label>
-                  {isEditing ? (
-                    <Input
-                      value={formData.license_number}
-                      onChange={(e) => setFormData({ ...formData, license_number: e.target.value })}
-                      placeholder="Enter license number"
-                    />
-                  ) : (
-                    <p className="text-sm text-muted-foreground">{profile?.license_number || 'Not provided'}</p>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium">Assigned Darkstore</label>
+        {/* Profile Information */}
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle>Profile Information</CardTitle>
+              <Button
+                variant={isEditing ? "outline" : "default"}
+                size="sm"
+                onClick={() => isEditing ? setIsEditing(false) : setIsEditing(true)}
+              >
                 {isEditing ? (
-                  <Select value={formData.darkstore_id} onValueChange={(value) => setFormData({ ...formData, darkstore_id: value })}>
+                  <>
+                    <X className="w-4 h-4 mr-2" />
+                    Cancel
+                  </>
+                ) : (
+                  <>
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit Profile
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {isEditing ? (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="full_name">Full Name</Label>
+                  <Input
+                    id="full_name"
+                    value={formData.full_name}
+                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="phone_number">Phone Number</Label>
+                  <Input
+                    id="phone_number"
+                    value={formData.phone_number}
+                    onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="vehicle_type">Vehicle Type</Label>
+                  <Select
+                    value={formData.vehicle_type}
+                    onValueChange={(value) => setFormData({ ...formData, vehicle_type: value })}
+                  >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select darkstore" />
+                      <SelectValue placeholder="Select Vehicle Type" />
                     </SelectTrigger>
                     <SelectContent>
-                      {darkstores.map((darkstore) => (
+                      <SelectItem value="bike">Bike</SelectItem>
+                      <SelectItem value="scooter">Scooter</SelectItem>
+                      <SelectItem value="car">Car</SelectItem>
+                      <SelectItem value="cycle">Cycle</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="license_number">License Number</Label>
+                  <Input
+                    id="license_number"
+                    value={formData.license_number}
+                    onChange={(e) => setFormData({ ...formData, license_number: e.target.value })}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="darkstore">Assigned Darkstore</Label>
+                  <Select
+                    value={formData.darkstore_id}
+                    onValueChange={(value) => setFormData({ ...formData, darkstore_id: value })}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select Darkstore" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {darkstores?.map((darkstore: any) => (
                         <SelectItem key={darkstore.id} value={darkstore.id.toString()}>
-                          {darkstore.name} - {darkstore.city}
+                          {darkstore.name} - {darkstore.address}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
+                </div>
+                
+                <Button onClick={handleSave} disabled={updateProfileMutation.isPending}>
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Changes
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm text-muted-foreground">Full Name</p>
+                  <p className="font-medium">{profile?.full_name || 'Not provided'}</p>
+                </div>
+                
+                <div>
+                  <p className="text-sm text-muted-foreground">Phone Number</p>
+                  <p className="font-medium">{profile?.phone_number || 'Not provided'}</p>
+                </div>
+                
+                <div>
+                  <p className="text-sm text-muted-foreground">Vehicle Type</p>
+                  <p className="font-medium">{profile?.vehicle_type || 'Not provided'}</p>
+                </div>
+                
+                <div>
+                  <p className="text-sm text-muted-foreground">License Number</p>
+                  <p className="font-medium">{profile?.license_number || 'Not provided'}</p>
+                </div>
+                
+                <div>
+                  <p className="text-sm text-muted-foreground">Assigned Darkstore</p>
+                  <p className="font-medium">
                     {getSelectedDarkstore()?.name || 'Not assigned'}
                   </p>
-                )}
-              </div>
-
-              <div className="flex gap-2">
-                {isEditing ? (
-                  <>
-                    <Button onClick={handleSave} disabled={updateProfileMutation.isPending}>
-                      Save Changes
-                    </Button>
-                    <Button variant="outline" onClick={() => setIsEditing(false)}>
-                      Cancel
-                    </Button>
-                  </>
-                ) : (
-                  <Button onClick={() => setIsEditing(true)}>
-                    Edit Profile
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Earnings Summary</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <p className="text-sm text-green-600">Total Earnings</p>
-                  <p className="text-2xl font-bold text-green-700">₹{totalEarnings.toFixed(2)}</p>
-                </div>
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <p className="text-sm text-blue-600">Completed Orders</p>
-                  <p className="text-2xl font-bold text-blue-700">{earnings.length}</p>
+                  {getSelectedDarkstore() && (
+                    <p className="text-sm text-muted-foreground">
+                      {getSelectedDarkstore()?.address}
+                    </p>
+                  )}
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            )}
+          </CardContent>
+        </Card>
 
+        {/* Earnings Summary */}
         <Card>
           <CardHeader>
-            <CardTitle>Recent Earnings</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5" />
+              Earnings Summary
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="text-center p-4 bg-green-50 rounded-lg">
+                <p className="text-sm text-muted-foreground">Total Earnings</p>
+                <p className="text-2xl font-bold text-green-600">₹{totalEarnings.toFixed(2)}</p>
+              </div>
+              <div className="text-center p-4 bg-blue-50 rounded-lg">
+                <p className="text-sm text-muted-foreground">Completed Orders</p>
+                <p className="text-2xl font-bold text-blue-600">{earnings.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Recent Earnings */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Recent Earnings
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
               {earnings.length > 0 ? (
-                earnings.slice(0, 10).map((earning) => (
+                earnings.slice(0, 10).map((earning: any) => (
                   <div key={earning.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
                     <div>
                       <p className="font-medium">Order #{earning.orders?.order_number}</p>
@@ -331,7 +365,7 @@ const DeliveryProfile = () => {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-medium">₹{parseFloat(earning.amount).toFixed(2)}</p>
+                      <p className="font-medium">₹{parseFloat(String(earning.amount || '0')).toFixed(2)}</p>
                       {earning.delivery_time_minutes && (
                         <p className="text-sm text-muted-foreground">
                           {earning.delivery_time_minutes} mins

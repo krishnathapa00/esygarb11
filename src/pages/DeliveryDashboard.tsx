@@ -1,21 +1,14 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Package, 
-  Clock, 
-  DollarSign, 
-  CheckCircle, 
-  User, 
-  Phone,
-  MapPin,
-  Navigation
-} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { toast } from '@/hooks/use-toast';
+import { Package, Clock, DollarSign, User, MapPin, Phone } from 'lucide-react';
 
 const DeliveryDashboard = () => {
   const { user } = useAuth();
@@ -26,15 +19,12 @@ const DeliveryDashboard = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) {
-      navigate('/login');
-      return;
+    if (user) {
+      fetchOrders();
+      fetchEarnings();
+      fetchOnlineStatus();
     }
-    
-    fetchOrders();
-    fetchEarnings();
-    fetchOnlineStatus();
-  }, [user, navigate]);
+  }, [user]);
 
   const fetchOrders = async () => {
     try {
@@ -42,16 +32,24 @@ const DeliveryDashboard = () => {
         .from('orders')
         .select(`
           *,
-          profiles!orders_user_id_fkey (full_name, phone_number),
-          order_items (quantity, price, products (name))
+          profiles!orders_user_id_fkey(full_name, phone_number),
+          order_items(
+            *,
+            products(name, image_url)
+          )
         `)
-        .eq('delivery_partner_id', user?.id)
+        .or(`delivery_partner_id.eq.${user.id},status.eq.ready_for_pickup`)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       setOrders(data || []);
     } catch (error) {
       console.error('Error fetching orders:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch orders.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -60,8 +58,7 @@ const DeliveryDashboard = () => {
       const { data, error } = await supabase
         .from('delivery_earnings')
         .select('*')
-        .eq('delivery_partner_id', user?.id)
-        .order('created_at', { ascending: false });
+        .eq('delivery_partner_id', user.id);
 
       if (error) throw error;
       setEarnings(data || []);
@@ -75,35 +72,42 @@ const DeliveryDashboard = () => {
       const { data, error } = await supabase
         .from('profiles')
         .select('is_online')
-        .eq('id', user?.id)
+        .eq('id', user.id)
         .single();
 
       if (error) throw error;
       setIsOnline(data?.is_online || false);
+      setLoading(false);
     } catch (error) {
       console.error('Error fetching online status:', error);
-    } finally {
       setLoading(false);
     }
   };
 
   const toggleOnlineStatus = async () => {
     try {
+      const newStatus = !isOnline;
       const { error } = await supabase
         .from('profiles')
-        .update({ is_online: !isOnline })
-        .eq('id', user?.id);
+        .update({ is_online: newStatus })
+        .eq('id', user.id);
 
       if (error) throw error;
-      setIsOnline(!isOnline);
+      setIsOnline(newStatus);
+      toast({
+        title: newStatus ? "You're now online" : "You're now offline",
+        description: newStatus 
+          ? "You'll receive new delivery requests" 
+          : "You won't receive new delivery requests",
+      });
     } catch (error) {
       console.error('Error updating online status:', error);
     }
   };
 
-  const updateOrderStatus = async (orderId, newStatus) => {
+  const updateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
-      const updateData = { status: newStatus };
+      const updateData: any = { status: newStatus };
       
       if (newStatus === 'accepted') {
         updateData.accepted_at = new Date().toISOString();
@@ -119,7 +123,12 @@ const DeliveryDashboard = () => {
         .eq('id', orderId);
 
       if (error) throw error;
-      
+
+      toast({
+        title: "Status Updated",
+        description: `Order status updated to ${newStatus}`,
+      });
+
       fetchOrders();
       fetchEarnings();
     } catch (error) {
@@ -127,201 +136,212 @@ const DeliveryDashboard = () => {
     }
   };
 
-  const getStatusColor = (status) => {
-    switch(status) {
-      case 'ready_for_pickup': return 'bg-blue-100 text-blue-800';
-      case 'accepted': return 'bg-yellow-100 text-yellow-800';
-      case 'picked_up': return 'bg-purple-100 text-purple-800';
-      case 'out_for_delivery': return 'bg-orange-100 text-orange-800';
-      case 'delivered': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'ready_for_pickup':
+        return 'bg-blue-100 text-blue-800';
+      case 'accepted':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'out_for_delivery':
+        return 'bg-orange-100 text-orange-800';
+      case 'delivered':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const totalEarnings = earnings.reduce((sum, earning) => sum + parseFloat(earning.amount), 0);
-  const todayEarnings = earnings
-    .filter(earning => new Date(earning.created_at).toDateString() === new Date().toDateString())
-    .reduce((sum, earning) => sum + parseFloat(earning.amount), 0);
-
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      <div className="min-h-screen bg-gray-50 p-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-muted-foreground">Loading dashboard...</p>
+          </div>
+        </div>
       </div>
     );
   }
 
+  const todayOrders = orders.filter(order => {
+    const today = new Date().toDateString();
+    return new Date(order.created_at).toDateString() === today;
+  });
+
+  const todayEarnings = earnings.filter(earning => {
+    const today = new Date().toDateString();
+    return new Date(earning.created_at).toDateString() === today;
+  }).reduce((sum, earning) => sum + parseFloat(earning.amount || '0'), 0);
+
+  const totalEarnings = earnings.reduce((sum, earning) => sum + parseFloat(earning.amount || '0'), 0);
+
+  const availableOrders = orders.filter(order => 
+    order.status === 'ready_for_pickup' || 
+    (order.delivery_partner_id === user.id && order.status !== 'delivered')
+  );
+
+  const recentDeliveries = orders.filter(order => 
+    order.delivery_partner_id === user.id && order.status === 'delivered'
+  ).slice(0, 5);
+
   return (
     <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Delivery Dashboard</h1>
-          <div className="flex items-center space-x-4">
-            <Button
-              onClick={toggleOnlineStatus}
-              className={`${
-                isOnline 
-                  ? 'bg-green-500 hover:bg-green-600' 
-                  : 'bg-gray-500 hover:bg-gray-600'
-              } text-white`}
-            >
-              {isOnline ? 'Online' : 'Offline'}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => navigate('/delivery/profile')}
-            >
-              <User className="w-4 h-4 mr-2" />
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">Delivery Dashboard</h1>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="online-status"
+                checked={isOnline}
+                onCheckedChange={toggleOnlineStatus}
+              />
+              <Label htmlFor="online-status">
+                {isOnline ? 'Online' : 'Offline'}
+              </Label>
+            </div>
+            <Button onClick={() => navigate('/delivery/profile')}>
               Profile
             </Button>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Today's Orders</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {orders.filter(order => 
-                  new Date(order.created_at).toDateString() === new Date().toDateString()
-                ).length}
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <Package className="h-8 w-8 text-blue-600" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Today's Orders</p>
+                  <p className="text-2xl font-bold">{todayOrders.length}</p>
+                </div>
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Deliveries</CardTitle>
-              <CheckCircle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {orders.filter(order => order.status === 'delivered').length}
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <Clock className="h-8 w-8 text-green-600" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Deliveries</p>
+                  <p className="text-2xl font-bold">{earnings.length}</p>
+                </div>
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Today's Earnings</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">Rs {todayEarnings.toFixed(2)}</div>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <DollarSign className="h-8 w-8 text-purple-600" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Today's Earnings</p>
+                  <p className="text-2xl font-bold">₹{todayEarnings.toFixed(2)}</p>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Earnings</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">Rs {totalEarnings.toFixed(2)}</div>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <DollarSign className="h-8 w-8 text-orange-600" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Earnings</p>
+                  <p className="text-2xl font-bold">₹{totalEarnings.toFixed(2)}</p>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Available Orders */}
-        <Card className="mb-8">
+        <Card>
           <CardHeader>
             <CardTitle>Available Orders</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {orders.filter(order => ['ready_for_pickup', 'accepted', 'picked_up', 'out_for_delivery'].includes(order.status)).map((order) => (
-                <div key={order.id} className="border rounded-lg p-4 bg-white">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="font-semibold text-lg">Order #{order.order_number}</h3>
-                      <p className="text-gray-600">
-                        <User className="inline w-4 h-4 mr-1" />
-                        {order.profiles?.full_name || 'Unknown Customer'}
-                      </p>
-                      <p className="text-gray-600">
-                        <Phone className="inline w-4 h-4 mr-1" />
-                        {order.profiles?.phone_number || 'No phone'}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <Badge className={getStatusColor(order.status)}>
-                        {order.status?.replace('_', ' ').toUpperCase()}
-                      </Badge>
-                      <p className="text-lg font-bold mt-2">Rs {order.total_amount}</p>
-                    </div>
-                  </div>
-
-                  <div className="mb-4">
-                    <p className="text-sm text-gray-600 mb-2">
-                      <MapPin className="inline w-4 h-4 mr-1" />
-                      Delivery Address:
-                    </p>
-                    <p className="font-medium">{order.delivery_address}</p>
-                  </div>
-
-                  <div className="mb-4">
-                    <p className="text-sm text-gray-600 mb-2">Items:</p>
-                    <div className="space-y-1">
-                      {order.order_items?.map((item, index) => (
-                        <div key={index} className="flex justify-between text-sm">
-                          <span>{item.products?.name} x{item.quantity}</span>
-                          <span>Rs {item.price}</span>
+            {availableOrders.length > 0 ? (
+              <div className="space-y-4">
+                {availableOrders.map((order) => (
+                  <div key={order.id} className="border rounded-lg p-4 space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4" />
+                          <span className="font-medium">{order.profiles?.full_name}</span>
                         </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Phone className="h-4 w-4" />
+                          <span>{order.profiles?.phone_number}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <MapPin className="h-4 w-4" />
+                          <span>{order.delivery_address}</span>
+                        </div>
+                      </div>
+                      <Badge className={getStatusColor(order.status)}>
+                        {order.status.replace('_', ' ')}
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">Order Items:</p>
+                      {order.order_items?.map((item: any, index: number) => (
+                        <p key={index} className="text-sm text-muted-foreground">
+                          {item.quantity}x {item.products?.name}
+                        </p>
                       ))}
                     </div>
-                  </div>
 
-                  <div className="flex space-x-2">
-                    {order.status === 'ready_for_pickup' && (
-                      <Button
-                        onClick={() => updateOrderStatus(order.id, 'accepted')}
-                        className="bg-blue-500 hover:bg-blue-600"
-                      >
-                        Accept Order
-                      </Button>
-                    )}
-                    {order.status === 'accepted' && (
-                      <Button
-                        onClick={() => updateOrderStatus(order.id, 'picked_up')}
-                        className="bg-yellow-500 hover:bg-yellow-600"
-                      >
-                        Mark as Picked Up
-                      </Button>
-                    )}
-                    {order.status === 'picked_up' && (
-                      <Button
-                        onClick={() => updateOrderStatus(order.id, 'out_for_delivery')}
-                        className="bg-purple-500 hover:bg-purple-600"
-                      >
-                        Out for Delivery
-                      </Button>
-                    )}
-                    {order.status === 'out_for_delivery' && (
-                      <Button
-                        onClick={() => updateOrderStatus(order.id, 'delivered')}
-                        className="bg-green-500 hover:bg-green-600"
-                      >
-                        Mark as Delivered
-                      </Button>
-                    )}
-                    <Button
-                      variant="outline"
-                      onClick={() => navigate(`/delivery/order/${order.id}`)}
-                    >
-                      View Details
-                    </Button>
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold">₹{parseFloat(order.total_amount).toFixed(2)}</span>
+                      <div className="space-x-2">
+                        {order.status === 'ready_for_pickup' && !order.delivery_partner_id && (
+                          <Button 
+                            size="sm"
+                            onClick={() => updateOrderStatus(order.id, 'accepted')}
+                          >
+                            Accept Order
+                          </Button>
+                        )}
+                        {order.delivery_partner_id === user.id && order.status === 'accepted' && (
+                          <Button 
+                            size="sm"
+                            onClick={() => updateOrderStatus(order.id, 'out_for_delivery')}
+                          >
+                            Mark Picked Up
+                          </Button>
+                        )}
+                        {order.delivery_partner_id === user.id && order.status === 'out_for_delivery' && (
+                          <Button 
+                            size="sm"
+                            onClick={() => updateOrderStatus(order.id, 'delivered')}
+                          >
+                            Mark Delivered
+                          </Button>
+                        )}
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => navigate(`/delivery/order/${order.id}`)}
+                        >
+                          View Details
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
-              {orders.filter(order => ['ready_for_pickup', 'accepted', 'picked_up', 'out_for_delivery'].includes(order.status)).length === 0 && (
-                <p className="text-center text-gray-500 py-8">No orders available</p>
-              )}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-muted-foreground py-8">
+                No available orders at the moment.
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -331,26 +351,27 @@ const DeliveryDashboard = () => {
             <CardTitle>Recent Deliveries</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {orders.filter(order => order.status === 'delivered').slice(0, 5).map((order) => (
-                <div key={order.id} className="flex justify-between items-center border-b pb-2">
-                  <div>
-                    <p className="font-medium">Order #{order.order_number}</p>
-                    <p className="text-sm text-gray-600">{order.profiles?.full_name}</p>
-                    <p className="text-xs text-gray-500">
-                      {new Date(order.delivered_at).toLocaleString()}
-                    </p>
+            {recentDeliveries.length > 0 ? (
+              <div className="space-y-3">
+                {recentDeliveries.map((order) => (
+                  <div key={order.id} className="flex justify-between items-center p-3 bg-gray-50 rounded">
+                    <div>
+                      <p className="font-medium">{order.profiles?.full_name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Delivered on {new Date(order.delivered_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium">₹{parseFloat(order.total_amount).toFixed(2)}</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold">Rs {order.total_amount}</p>
-                    <Badge className="bg-green-100 text-green-800">Delivered</Badge>
-                  </div>
-                </div>
-              ))}
-              {orders.filter(order => order.status === 'delivered').length === 0 && (
-                <p className="text-center text-gray-500 py-4">No deliveries yet</p>
-              )}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-muted-foreground py-8">
+                No recent deliveries.
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>
