@@ -5,6 +5,7 @@ import {
   Routes,
   Navigate,
 } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "./contexts/AuthContext";
 import { CartProvider } from "./contexts/CartContext";
 import AuthHybrid from "./pages/AuthHybrid";
@@ -35,11 +36,14 @@ import OrderConfirmation from "./pages/OrderConfirmation";
 import Checkout from "./pages/Checkout";
 import { Unauthorized } from "./pages/Unauthorized";
 
+const queryClient = new QueryClient();
+
 const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <CartProvider>
-        <Routes>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <CartProvider>
+          <Routes>
             <Route path="/auth" element={<AuthHybrid />} />
             <Route path="/" element={<Index />} />
             <Route path="/cart" element={<CartPage />} />
@@ -115,9 +119,10 @@ const App: React.FC = () => {
             <Route path="/delivery/dashboard" element={<DeliveryDashboard />} />
             <Route path="/delivery/profile" element={<DeliveryProfile />} />
             <Route path="/delivery/order/:id" element={<DeliveryOrderDetail />} />
-        </Routes>
-      </CartProvider>
-    </AuthProvider>
+          </Routes>
+        </CartProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 };
 
