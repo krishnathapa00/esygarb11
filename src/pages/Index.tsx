@@ -31,15 +31,7 @@ const Index = () => {
   };
 
   const handleUpdateQuantity = (productId: number, quantity: number) => {
-    if (quantity <= 0) {
-      // Remove item from cart when quantity is 0
-      const updatedCart = cart.filter(item => item.id !== productId);
-      // Update the cart context with the filtered cart
-      cart.length = 0;
-      updatedCart.forEach(item => cart.push(item));
-    } else {
-      updateQuantity(productId, quantity);
-    }
+    updateQuantity(productId, quantity);
   };
 
   const getCartQuantity = (productId: number) => {
@@ -110,7 +102,7 @@ const Index = () => {
         {fruitProducts.length > 0 && (
           <ProductSection
             title="Fresh Fruits & Vegetables"
-            products={fruitProducts.slice(0, 3)}
+            products={fruitProducts}
             onAddToCart={handleAddToCart}
             onUpdateQuantity={handleUpdateQuantity}
             cartQuantityGetter={getCartQuantity}
@@ -120,7 +112,7 @@ const Index = () => {
         {dairyProducts.length > 0 && (
           <ProductSection
             title="Dairy & Eggs"
-            products={dairyProducts.slice(0, 3)}
+            products={dairyProducts}
             onAddToCart={handleAddToCart}
             onUpdateQuantity={handleUpdateQuantity}
             cartQuantityGetter={getCartQuantity}
@@ -130,7 +122,7 @@ const Index = () => {
         {snackProducts.length > 0 && (
           <ProductSection
             title="Snacks & Beverages"
-            products={snackProducts.slice(0, 3)}
+            products={snackProducts}
             onAddToCart={handleAddToCart}
             onUpdateQuantity={handleUpdateQuantity}
             cartQuantityGetter={getCartQuantity}
