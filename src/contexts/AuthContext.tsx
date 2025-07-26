@@ -25,11 +25,9 @@ interface AuthContextType {
   sendOtp: (email: string) => Promise<{ error?: { message: string } }>;
   verifyOtp: (
     email: string,
-    otp: string,
-    navigate?: (path: string) => void
+    otp: string
   ) => Promise<{ error?: { message: string } }>;
   resendOtp: (email: string) => Promise<{ error?: { message: string } }>;
-  signUp: (phone: string, fullName: string, role: string) => Promise<{ error?: { message: string } }>;
   logout: () => void;
 }
 
@@ -51,27 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const initializeAuth = async () => {
-      // Get initial session
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user) {
-        const user: User = {
-          id: session.user.id,
-          email: session.user.email || "",
-          isVerified: true,
-        };
-        setUser(user);
-        setIsAuthenticated(true);
-        localStorage.setItem("user", JSON.stringify(user));
-      }
-      setLoading(false);
-    };
-
-    initializeAuth();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (session?.user) {
           const user: User = {
@@ -91,8 +69,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     );
 
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        const user: User = {
+          id: session.user.id,
+          email: session.user.email || "",
+          isVerified: true,
+        };
+        setUser(user);
+        setIsAuthenticated(true);
+        localStorage.setItem("user", JSON.stringify(user));
+      }
+      setLoading(false);
+    });
+
     return () => {
-      subscription.unsubscribe();
+      authListener?.subscription.unsubscribe();
     };
   }, []);
 
@@ -128,7 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     [sendOtp]
   );
 
-  const verifyOtp = useCallback(async (email: string, otp: string, navigate?: (path: string) => void) => {
+  const verifyOtp = useCallback(async (email: string, otp: string) => {
     try {
       const { data, error } = await supabase.auth.verifyOtp({
         email,
@@ -153,29 +145,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setIsAuthenticated(true);
       localStorage.setItem("user", JSON.stringify(newUser));
 
-      // Redirect to payment page after successful verification for new users
-      if (navigate) {
-        navigate("/payment");
-      }
-
       return {};
     } catch (err: any) {
       console.error("Unexpected error verifying OTP:", err.message);
       return {
         error: { message: "Unexpected error occurred while verifying OTP." },
-      };
-    }
-  }, []);
-
-  const signUp = useCallback(async (phone: string, fullName: string, role: string) => {
-    try {
-      // For delivery partners, we'll just return success since the actual signup
-      // will happen during OTP verification
-      return {};
-    } catch (err: any) {
-      console.error("Unexpected error during signup:", err.message);
-      return {
-        error: { message: "Unexpected error occurred during signup." },
       };
     }
   }, []);
@@ -187,6 +161,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     localStorage.removeItem("user");
   }, []);
 
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (session?.user) {
+          const user: User = {
+            id: session.user.id,
+            email: session.user.email || "",
+            isVerified: true,
+          };
+          setUser(user);
+          setIsAuthenticated(true);
+          localStorage.setItem("user", JSON.stringify(user));
+        } else {
+          setUser(null);
+          setIsAuthenticated(false);
+          localStorage.removeItem("user");
+        }
+      }
+    );
+
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
+  }, []);
+
   const value: AuthContextType = {
     user,
     loading,
@@ -194,7 +193,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     sendOtp,
     verifyOtp,
     resendOtp,
-    signUp,
     logout,
   };
 
