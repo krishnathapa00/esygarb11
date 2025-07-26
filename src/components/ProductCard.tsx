@@ -1,3 +1,4 @@
+import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,11 +13,6 @@ export interface Product {
   discount?: number;
   deliveryTime: string;
   category: string;
-  description?: string;
-  rating?: number;
-  reviews?: number;
-  inStock?: boolean;
-  benefits?: string[];
 }
 
 interface ProductCardProps {
@@ -24,7 +20,6 @@ interface ProductCardProps {
   onAddToCart: (product: Product) => void;
   cartQuantity: number;
   onUpdateQuantity: (productId: number, quantity: number) => void;
-  className?: string;
 }
 
 const ProductCard = ({
@@ -32,113 +27,88 @@ const ProductCard = ({
   onAddToCart,
   cartQuantity,
   onUpdateQuantity,
-  className = "",
 }: ProductCardProps) => {
-  const {
-    id,
-    name,
-    price,
-    originalPrice,
-    image,
-    weight,
-    discount,
-    deliveryTime,
-  } = product;
-
-  const hasDiscount = !!discount;
-  const hasOriginalPrice = !!originalPrice;
-
-  const handleAdd = (e: React.MouseEvent) => {
-    e.preventDefault();
-    onAddToCart(product);
-  };
-
-  const handleDecrease = (e: React.MouseEvent) => {
-    e.preventDefault();
-    onUpdateQuantity(id, Math.max(0, cartQuantity - 1));
-  };
-
-  const handleIncrease = (e: React.MouseEvent) => {
-    e.preventDefault();
-    onUpdateQuantity(id, cartQuantity + 1);
-  };
-
   return (
-    <div className={`bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-200 hover:-translate-y-1 w-full group relative ${className}`}>
-      <Link to={`/product/${id}`} className="block group">
-        <div className="relative aspect-square bg-gray-50 overflow-hidden">
+    <div className="bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 w-full group">
+      <Link to={`/product/${product.id}`} className="block">
+        <div className="relative aspect-square overflow-hidden bg-gray-50">
           <img
-            src={image}
-            alt={name}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 rounded-xl shadow-sm"
+            src={product.image}
+            alt={product.name}
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
-
-          {hasDiscount && (
-            <Badge className="absolute top-2 left-2 bg-gradient-to-r from-red-500 to-orange-400 text-white px-1.5 py-0.5 text-[11px] sm:text-xs font-bold rounded-xl shadow">
-              {discount}% OFF
+          {product.discount && (
+            <Badge className="absolute top-2 left-2 bg-red-500 hover:bg-red-500 text-white text-xs font-medium px-1.5 py-0.5 rounded">
+              {product.discount}% OFF
             </Badge>
           )}
-
-          <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm rounded-md px-1.5 py-0.5 shadow-sm border border-gray-100">
-            <span className="text-[10px] sm:text-xs font-bold text-green-600">
-              {deliveryTime}
+          <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm rounded px-1.5 py-0.5">
+            <span className="text-xs font-medium text-green-600">
+              {product.deliveryTime}
             </span>
           </div>
         </div>
       </Link>
 
-      <div className="px-3 pt-2 pb-3 flex flex-col justify-between min-h-[130px]">
-        <Link to={`/product/${id}`}>
-          <h3 className="font-semibold text-gray-900 text-xs sm:text-base leading-tight line-clamp-2 hover:text-green-600 transition-colors min-h-[2.1rem] sm:min-h-[2.4rem]">
-            {name}
+      <div className="p-3 space-y-2">
+        <Link to={`/product/${product.id}`}>
+          <h3 className="font-medium text-gray-900 text-sm leading-tight line-clamp-2 hover:text-green-600 transition-colors">
+            {product.name}
           </h3>
         </Link>
 
-        <div className="flex items-center gap-2 mt-1 mb-2">
-          <span className="text-[11px] sm:text-xs text-gray-500">{weight}</span>
-        </div>
+        <p className="text-xs text-gray-500">{product.weight}</p>
 
-        <div className="flex items-end justify-between gap-2 mt-2">
-          <div className="flex flex-col items-start">
-            {hasOriginalPrice && (
-              <span className="text-[11px] sm:text-xs text-red-400 line-through mb-0.5">
-                Rs{originalPrice}
+        {/* Price and Add Button Row */}
+        <div className="flex items-center justify-between pt-1">
+          {/* Left side - Price */}
+          <div className="flex items-baseline gap-1">
+            <span className="font-bold text-gray-900 text-sm">
+              Rs{product.price}
+            </span>
+            {product.originalPrice && (
+              <span className="text-xs text-gray-400 line-through">
+                Rs{product.originalPrice}
               </span>
             )}
-            <span className="font-extrabold text-green-700 text-base sm:text-lg">
-              Rs{price}
-            </span>
           </div>
 
+          {/* Right side - Add Button */}
           <div className="flex-shrink-0">
             {cartQuantity === 0 ? (
               <Button
-                onClick={handleAdd}
-                className="!h-7 !px-3 text-[13px] font-bold bg-gradient-to-r from-lime-500 to-green-600 hover:from-green-500 hover:to-lime-600 shadow ring-2 ring-lime-100/70 hover:ring-green-300/90 focus:ring-2 focus:ring-green-400 rounded-full transition-all duration-200"
-                style={{ minWidth: 54, letterSpacing: ".06em" }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onAddToCart(product);
+                }}
+                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-0 text-xs font-semibold h-8 px-4 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
               >
-                <span className="flex items-center gap-1">Add</span>
+                ADD
               </Button>
             ) : (
-              <div className="flex items-center justify-between bg-green-600 rounded-lg px-1 shadow space-x-1">
+              <div className="flex items-center justify-between bg-green-600 rounded-lg px-2 py-1.5">
                 <Button
-                  onClick={handleDecrease}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onUpdateQuantity(product.id, cartQuantity - 1);
+                  }}
                   variant="ghost"
                   size="sm"
-                  className="w-7 h-7 sm:w-8 sm:h-8 !bg-transparent text-white hover:bg-green-700 rounded text-base font-bold"
-                  aria-label="Decrease quantity"
+                  className="w-5 h-5 p-0 text-white hover:bg-green-700 rounded text-sm font-medium"
                 >
                   −
                 </Button>
-                <span className="font-bold text-white text-sm sm:text-base px-2">
+                <span className="font-medium text-white text-xs px-2">
                   {cartQuantity}
                 </span>
                 <Button
-                  onClick={handleIncrease}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onUpdateQuantity(product.id, cartQuantity + 1);
+                  }}
                   variant="ghost"
                   size="sm"
-                  className="w-7 h-7 sm:w-8 sm:h-8 !bg-transparent text-white hover:bg-green-700 rounded text-base font-bold"
-                  aria-label="Increase quantity"
+                  className="w-5 h-5 p-0 text-white hover:bg-green-700 rounded text-sm font-medium"
                 >
                   +
                 </Button>
@@ -147,8 +117,6 @@ const ProductCard = ({
           </div>
         </div>
       </div>
-
-      <div className="absolute inset-0 rounded-2xl pointer-events-none group-hover:ring-[2.5px] group-hover:ring-green-400 transition-all duration-200" />
     </div>
   );
 };
