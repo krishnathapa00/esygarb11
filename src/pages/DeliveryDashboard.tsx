@@ -192,6 +192,17 @@ const DeliveryDashboard = () => {
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">Delivery Dashboard</h1>
           <div className="flex items-center gap-4">
+            {/* Navigation Buttons */}
+            <Button variant="outline" onClick={() => navigate('/delivery-partner/orders')}>
+              Orders
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/delivery-partner/earnings')}>
+              Earnings
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/delivery-partner/history')}>
+              History
+            </Button>
+            
             <div className="flex items-center space-x-2">
               <Switch
                 id="online-status"
@@ -202,7 +213,7 @@ const DeliveryDashboard = () => {
                 {isOnline ? 'Online' : 'Offline'}
               </Label>
             </div>
-            <Button onClick={() => navigate('/delivery/profile')}>
+            <Button onClick={() => navigate('/delivery-partner/profile')}>
               Profile
             </Button>
           </div>
@@ -304,7 +315,7 @@ const DeliveryDashboard = () => {
                         {order.status === 'ready_for_pickup' && !order.delivery_partner_id && (
                           <Button 
                             size="sm"
-                            onClick={() => updateOrderStatus(order.id, 'accepted')}
+                            onClick={() => updateOrderStatus(order.id, 'dispatched')}
                           >
                             Accept Order
                           </Button>
@@ -328,7 +339,7 @@ const DeliveryDashboard = () => {
                         <Button 
                           size="sm" 
                           variant="outline"
-                          onClick={() => navigate(`/delivery/order/${order.id}`)}
+                          onClick={() => navigate(`/delivery-partner/order/${order.id}`)}
                         >
                           View Details
                         </Button>

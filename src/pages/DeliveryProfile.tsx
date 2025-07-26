@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -9,10 +10,11 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
-import { Edit, Save, X, CheckCircle, AlertCircle, DollarSign, Package } from 'lucide-react';
+import { Edit, Save, X, CheckCircle, AlertCircle, DollarSign, Package, ArrowLeft } from 'lucide-react';
 
 const DeliveryProfile = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -167,8 +169,13 @@ const DeliveryProfile = () => {
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Delivery Partner Profile</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="outline" size="icon" onClick={() => navigate('/delivery-partner/dashboard')}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <h1 className="text-2xl font-bold">Delivery Partner Profile</h1>
+          </div>
           {getKYCStatusBadge()}
         </div>
 

@@ -9,14 +9,14 @@ import { toast } from '@/hooks/use-toast';
 import { ArrowLeft, Phone, MapPin, Clock, Package } from 'lucide-react';
 
 const DeliveryOrderDetail = () => {
-  const { id } = useParams();
+  const { orderId } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [timer, setTimer] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
 
   const { data: order, isLoading } = useQuery({
-    queryKey: ['order-detail', id],
+    queryKey: ['order-detail', orderId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('orders')
@@ -28,13 +28,13 @@ const DeliveryOrderDetail = () => {
             products(name, image_url, price)
           )
         `)
-        .eq('id', id)
+        .eq('id', orderId)
         .single();
       
       if (error) throw error;
       return data;
     },
-    enabled: !!id
+    enabled: !!orderId
   });
 
   const updateOrderStatusMutation = useMutation({
@@ -47,7 +47,7 @@ const DeliveryOrderDetail = () => {
       const { error } = await supabase
         .from('orders')
         .update(updates)
-        .eq('id', id);
+        .eq('id', orderId);
 
       if (error) throw error;
 
@@ -55,13 +55,13 @@ const DeliveryOrderDetail = () => {
       await supabase
         .from('order_status_history')
         .insert({
-          order_id: id,
+          order_id: orderId,
           status: status as any,
           notes: `Order ${status.replace('_', ' ')} by delivery partner`
         });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['order-detail', id] });
+      queryClient.invalidateQueries({ queryKey: ['order-detail', orderId] });
       toast({
         title: "Status Updated",
         description: "Order status has been updated successfully.",
@@ -93,7 +93,7 @@ const DeliveryOrderDetail = () => {
       timestamp_field: 'delivered_at' 
     });
     setIsTimerRunning(false);
-    navigate('/delivery/dashboard');
+    navigate('/delivery-partner/dashboard');
   };
 
   const openMap = (address: string) => {
@@ -126,7 +126,7 @@ const DeliveryOrderDetail = () => {
         <div className="max-w-2xl mx-auto">
           <div className="text-center py-12">
             <p className="text-muted-foreground">Order not found</p>
-            <Button onClick={() => navigate('/delivery/dashboard')} className="mt-4">
+            <Button onClick={() => navigate('/delivery-partner/dashboard')} className="mt-4">
               Back to Dashboard
             </Button>
           </div>
@@ -143,7 +143,7 @@ const DeliveryOrderDetail = () => {
           <Button
             variant="outline"
             size="icon"
-            onClick={() => navigate('/delivery/dashboard')}
+            onClick={() => navigate('/delivery-partner/dashboard')}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>

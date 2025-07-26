@@ -31,7 +31,7 @@ const DeliveryOrders = () => {
             )
           )
         `)
-        .in('status', ['ready_for_pickup', 'accepted', 'picked_up', 'out_for_delivery'])
+        .in('status', ['ready_for_pickup', 'confirmed', 'dispatched', 'out_for_delivery'])
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -45,7 +45,7 @@ const DeliveryOrders = () => {
       .from('orders')
       .update({
         delivery_partner_id: user?.id,
-        status: 'accepted',
+        status: 'dispatched',
         accepted_at: new Date().toISOString()
       })
       .eq('id', orderId)
@@ -73,8 +73,8 @@ const DeliveryOrders = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'ready_for_pickup': return 'bg-blue-100 text-blue-800';
-      case 'accepted': return 'bg-yellow-100 text-yellow-800';
-      case 'picked_up': return 'bg-orange-100 text-orange-800';
+      case 'confirmed': return 'bg-green-100 text-green-800';
+      case 'dispatched': return 'bg-yellow-100 text-yellow-800';
       case 'out_for_delivery': return 'bg-purple-100 text-purple-800';
       default: return 'bg-gray-100 text-gray-800';
     }
