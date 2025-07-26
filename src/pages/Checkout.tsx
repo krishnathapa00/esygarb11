@@ -1,22 +1,26 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Header from "../components/Header";
-import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, MapPin, CreditCard, Loader2 } from "lucide-react";
+import {
+  ArrowLeft,
+  MapPin,
+  CreditCard,
+  Loader2,
+  Banknote,
+  WalletIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
-import { useToast } from "@/hooks/use-toast";
+import EsewaLogo from "../assets/payments/esewa.jpg";
+import KhaltiLogo from "../assets/payments/khalti.jpg";
 
 const Checkout = () => {
-  const { cart, resetCart } = useCart();
+  const { resetCart } = useCart();
   const [selectedPayment, setSelectedPayment] = useState("cod");
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
-  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
-  const { toast } = useToast();
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
@@ -35,14 +39,10 @@ const Checkout = () => {
     }
   }, [loading, user, navigate]);
 
-  // Calculate totals from cart
-  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const deliveryFee = subtotal > 200 ? 0 : 20;
-  const totalAmount = subtotal + deliveryFee;
+  const totalAmount = 160;
 
   useEffect(() => {
-    // Auto-fill from profile data
+    // Auto-fill from profile data (simulated - in real app this would come from database/context)
     const profileData = {
       fullName: "John Doe",
       phone: "+977 9876543210",
@@ -56,20 +56,16 @@ const Checkout = () => {
 
     // Auto-fill location from previous detection
     const savedLocation = localStorage.getItem("esygrab_user_location");
-    if (savedLocation && savedLocation !== "Current Location Detected" && savedLocation !== "null" && savedLocation !== "undefined") {
-      try {
-        const savedLocationData = JSON.parse(savedLocation);
-        if (savedLocationData && savedLocationData.address) {
-          setFormData((prev) => ({
-            ...prev,
-            address: savedLocationData.address,
-            city: savedLocationData.city || "Kathmandu",
-            state: savedLocationData.state || "Bagmati",
-            pincode: savedLocationData.pincode || "44600",
-          }));
-        }
-      } catch (error) {
-        console.error("Error parsing saved location:", error);
+    if (savedLocation && savedLocation !== "Current Location Detected") {
+      const savedLocationData = JSON.parse(savedLocation || "{}");
+      if (savedLocationData.address) {
+        setFormData((prev) => ({
+          ...prev,
+          address: savedLocationData.address,
+          city: savedLocationData.city || "",
+          state: savedLocationData.state || "",
+          pincode: savedLocationData.pincode || "",
+        }));
       }
     }
   }, []);
@@ -81,6 +77,7 @@ const Checkout = () => {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           try {
+            // Simulate a successful geocoding response
             const locationData = {
               address: "Thamel, Kathmandu",
               city: "Kathmandu",
@@ -97,6 +94,7 @@ const Checkout = () => {
               pincode: locationData.pincode,
             }));
 
+            // Save to localStorage
             localStorage.setItem(
               "esygrab_user_location",
               JSON.stringify(locationData)
@@ -128,126 +126,39 @@ const Checkout = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handlePlaceOrder = async () => {
-    try {
-      setIsPlacingOrder(true);
-      
-      if (!user?.id) {
-        toast({
-          title: "Authentication Required",
-          description: "Please log in to place an order.",
-          variant: "destructive",
-        });
-        navigate("/login");
-        return;
-      }
-
-      if (cart.length === 0) {
-        toast({
-          title: "Empty Cart",
-          description: "Your cart is empty. Please add items before placing an order.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Validate required fields
-      if (!formData.fullName || !formData.phone || !formData.address) {
-        toast({
-          title: "Missing Information",
-          description: "Please fill in all required fields (name, phone, address).",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Create order in database
-      const orderData = {
-        order_number: `ORD${Date.now()}`,
-        user_id: user.id,
-        total_amount: totalAmount,
-        delivery_address: `${formData.address}, ${formData.city}, ${formData.state} ${formData.pincode}`.trim(),
-        estimated_delivery: "10-15 mins",
-        status: "pending" as const,
-        payment_status: (selectedPayment === "cod" ? "pending" : "completed") as "pending" | "completed"
-      };
-
-      console.log("Creating order with data:", orderData);
-
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert(orderData)
-        .select()
-        .single();
-
-      if (orderError) {
-        console.error("Order creation error:", orderError);
-        toast({
-          title: "Order Failed",
-          description: "Failed to create order. Please try again.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      console.log("Order created successfully:", order);
-
-      // Create order items
-      const orderItems = cart.map(item => ({
-        order_id: order.id,
-        product_id: item.id,
-        quantity: item.quantity,
-        price: item.price
-      }));
-
-      console.log("Creating order items:", orderItems);
-
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems);
-
-      if (itemsError) {
-        console.error("Order items creation error:", itemsError);
-        toast({
-          title: "Order Failed",
-          description: "Failed to add items to order. Please try again.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      console.log("Order items created successfully");
-
-      // Save order ID to localStorage for order confirmation page
-      localStorage.setItem('latest_order_id', order.id);
-      
-      toast({
-        title: "Order Placed Successfully",
-        description: "Your order has been placed and is being processed.",
-      });
-      
+  const handlePlaceOrder = () => {
+    if (selectedPayment === "cod") {
       resetCart();
-      navigate("/order-confirmation");
-    } catch (error) {
-      console.error("Order placement failed:", error);
-      toast({
-        title: "Order Failed",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsPlacingOrder(false);
+      // Direct to order confirmation for COD
+      window.location.href = "/order-confirmation";
+    } else {
+      // For now, simulate payment success for other methods
+      // In production, integrate with actual payment gateways
+      console.log(`Processing ${selectedPayment} payment...`);
+      setTimeout(() => {
+        resetCart();
+        window.location.href = "/order-confirmation";
+      }, 2000);
     }
   };
 
   const paymentOptions = [
-    { id: "cod", label: "Cash on Delivery (COD)", icon: "💵" },
-    { id: "khalti", label: "Khalti", icon: "📱" },
-    { id: "esewa", label: "eSewa", icon: "💳" },
-    { id: "bank", label: "Bank Transfer", icon: "🏦" },
+    {
+      id: "cod",
+      label: "Cash on Delivery (COD)",
+      icon: <WalletIcon className="h-6 w-6" />,
+    },
+    { id: "khalti", label: "Khalti", icon: KhaltiLogo },
+    { id: "esewa", label: "eSewa", icon: EsewaLogo },
+    {
+      id: "bank",
+      label: "Bank Transfer",
+      icon: <Banknote className="h-6 w-6" />,
+    },
   ];
 
   if (loading) {
+    // Show loading while checking auth
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto" />
@@ -275,135 +186,188 @@ const Checkout = () => {
           </h1>
         </div>
 
-        {/* Delivery Address */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
-          <div className="flex items-center space-x-2 mb-6">
-            <MapPin className="h-5 w-5 text-green-600" />
-            <h3 className="text-lg font-semibold">Delivery Address</h3>
-          </div>
-
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="fullName">Full Name *</Label>
-                <Input
-                  id="fullName"
-                  value={formData.fullName}
-                  onChange={(e) => handleInputChange("fullName", e.target.value)}
-                  placeholder="Enter your full name"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="phone">Phone Number *</Label>
-                <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => handleInputChange("phone", e.target.value)}
-                  placeholder="Enter phone number"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="address">Address *</Label>
-              <Input
-                id="address"
-                value={formData.address}
-                onChange={(e) => handleInputChange("address", e.target.value)}
-                placeholder="Enter your delivery address"
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="city">City</Label>
-                <Input
-                  id="city"
-                  value={formData.city}
-                  onChange={(e) => handleInputChange("city", e.target.value)}
-                  placeholder="City"
-                />
-              </div>
-              <div>
-                <Label htmlFor="state">State</Label>
-                <Input
-                  id="state"
-                  value={formData.state}
-                  onChange={(e) => handleInputChange("state", e.target.value)}
-                  placeholder="State"
-                />
-              </div>
-              <div>
-                <Label htmlFor="pincode">Pincode</Label>
-                <Input
-                  id="pincode"
-                  value={formData.pincode}
-                  onChange={(e) => handleInputChange("pincode", e.target.value)}
-                  placeholder="Pincode"
-                />
-              </div>
-            </div>
-
-            <Button
-              onClick={detectCurrentLocation}
-              disabled={isDetectingLocation}
-              variant="outline"
-              className="w-full"
-            >
-              {isDetectingLocation ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <MapPin className="h-4 w-4 mr-2" />
-              )}
-              {isDetectingLocation ? "Detecting..." : "Use Current Location"}
-            </Button>
-          </div>
-        </div>
-
-        {/* Responsive layout */}
-        <div className="space-y-6 lg:grid lg:grid-cols-2 lg:gap-8 lg:space-y-0 pb-20 md:pb-0">
-          {/* Payment Method */}
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center space-x-2 mb-6">
-              <CreditCard className="h-5 w-5 text-green-600" />
-              <h3 className="text-lg font-semibold">Payment Method</h3>
-            </div>
-
-            <div className="space-y-3">
-              {paymentOptions.map((option) => (
-                <div
-                  key={option.id}
-                  className={`border-2 rounded-lg p-4 cursor-pointer transition-all w-full ${
-                    selectedPayment === option.id
-                      ? "border-green-500 bg-green-50"
-                      : "border-gray-200 hover:border-gray-300"
-                  }`}
-                  onClick={() => setSelectedPayment(option.id)}
+        {/* Mobile-first layout */}
+        <div className="space-y-4 lg:grid lg:grid-cols-3 lg:gap-6 lg:space-y-0">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-4">
+            {/* Delivery Address */}
+            <div className="bg-white rounded-lg p-4 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-2">
+                  <MapPin className="h-4 w-4 lg:h-5 lg:w-5 text-green-600" />
+                  <h3 className="text-base lg:text-lg font-semibold">
+                    Delivery Address
+                  </h3>
+                </div>
+                <Button
+                  onClick={detectCurrentLocation}
+                  disabled={isDetectingLocation}
+                  variant="outline"
+                  size="sm"
+                  className="text-green-600 border-green-200 hover:bg-green-50 text-xs lg:text-sm px-2 lg:px-3"
                 >
-                  <div className="flex items-center space-x-3">
-                    <input
-                      type="radio"
-                      id={option.id}
-                      name="payment"
-                      value={option.id}
-                      checked={selectedPayment === option.id}
-                      onChange={(e) => setSelectedPayment(e.target.value)}
-                      className="text-green-600 w-4 h-4"
+                  {isDetectingLocation ? (
+                    <>
+                      <Loader2 className="h-3 w-3 lg:h-4 lg:w-4 mr-1 animate-spin" />
+                      <span className="hidden sm:inline">Detecting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <MapPin className="h-3 w-3 lg:h-4 lg:w-4 mr-1" />
+                      <span className="hidden sm:inline">Auto-Detect</span>
+                      <span className="sm:hidden">GPS</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="fullName" className="text-sm">
+                    Full Name
+                  </Label>
+                  <Input
+                    id="fullName"
+                    placeholder="Enter your full name"
+                    value={formData.fullName}
+                    onChange={(e) =>
+                      handleInputChange("fullName", e.target.value)
+                    }
+                    className="mt-1"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="phone" className="text-sm">
+                      Phone Number
+                    </Label>
+                    <Input
+                      id="phone"
+                      placeholder="Enter phone number"
+                      value={formData.phone}
+                      onChange={(e) =>
+                        handleInputChange("phone", e.target.value)
+                      }
+                      className="mt-1"
                     />
-                    <div className="flex items-center space-x-2">
-                      <span className="text-xl">{option.icon}</span>
-                      <span className="text-sm font-medium">{option.label}</span>
-                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="pincode" className="text-sm">
+                      Pincode
+                    </Label>
+                    <Input
+                      id="pincode"
+                      placeholder="Enter pincode"
+                      value={formData.pincode}
+                      onChange={(e) =>
+                        handleInputChange("pincode", e.target.value)
+                      }
+                      className="mt-1"
+                    />
                   </div>
                 </div>
-              ))}
+
+                <div>
+                  <Label htmlFor="address" className="text-sm">
+                    Complete Address
+                  </Label>
+                  <Input
+                    id="address"
+                    placeholder="House no, Building, Street, Area"
+                    value={formData.address}
+                    onChange={(e) =>
+                      handleInputChange("address", e.target.value)
+                    }
+                    className="mt-1"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="city" className="text-sm">
+                      City
+                    </Label>
+                    <Input
+                      id="city"
+                      placeholder="Enter city"
+                      value={formData.city}
+                      onChange={(e) =>
+                        handleInputChange("city", e.target.value)
+                      }
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="state" className="text-sm">
+                      State/Province
+                    </Label>
+                    <Input
+                      id="state"
+                      placeholder="Enter state"
+                      value={formData.state}
+                      onChange={(e) =>
+                        handleInputChange("state", e.target.value)
+                      }
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Payment Method */}
+            <div className="bg-white rounded-lg p-4 shadow-sm">
+              <div className="flex items-center space-x-2 mb-4">
+                <CreditCard className="h-4 w-4 lg:h-5 lg:w-5 text-green-600" />
+                <h3 className="text-base lg:text-lg font-semibold">
+                  Payment Method
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {paymentOptions.map((option) => (
+                  <div
+                    key={option.id}
+                    className={`border-2 rounded-lg p-3 cursor-pointer transition-all ${
+                      selectedPayment === option.id
+                        ? "border-green-500 bg-green-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                    onClick={() => setSelectedPayment(option.id)}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="radio"
+                        id={option.id}
+                        name="payment"
+                        value={option.id}
+                        checked={selectedPayment === option.id}
+                        onChange={(e) => setSelectedPayment(e.target.value)}
+                        className="text-green-600 w-4 h-4"
+                      />
+                      <div className="flex items-center space-x-2">
+                        {typeof option.icon === "string" ? (
+                          <img
+                            src={option.icon}
+                            alt={option.label}
+                            className="h-6 w-6"
+                          />
+                        ) : (
+                          <span className="text-lg">{option.icon}</span>
+                        )}
+                        <span className="text-sm font-medium">
+                          {option.label}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Order Summary */}
+          {/* Order Summary - Mobile optimized */}
           <div className="bg-white rounded-lg p-4 shadow-sm lg:h-fit">
             <h3 className="text-base lg:text-lg font-semibold text-gray-900 mb-4">
               Order Summary
@@ -411,18 +375,13 @@ const Checkout = () => {
 
             <div className="space-y-2 mb-4 text-sm">
               <div className="flex justify-between">
-                <span>Subtotal ({totalItems} items)</span>
-                <span>Rs {subtotal}</span>
+                <span>Subtotal (3 items)</span>
+                <span>Rs 140</span>
               </div>
               <div className="flex justify-between">
                 <span>Delivery Fee</span>
-                <span className={deliveryFee === 0 ? "text-green-600 font-medium" : ""}>
-                  Rs {deliveryFee}
-                </span>
+                <span>Rs 20</span>
               </div>
-              {deliveryFee === 0 && (
-                <p className="text-xs text-green-600">Free delivery on orders above Rs.200</p>
-              )}
               <div className="border-t pt-2 mt-3">
                 <div className="flex justify-between font-semibold text-base lg:text-lg">
                   <span>Total</span>
@@ -431,37 +390,18 @@ const Checkout = () => {
               </div>
             </div>
 
-            {/* Place Order button only visible on desktop */}
             <Button
               onClick={handlePlaceOrder}
-              disabled={isPlacingOrder}
-              className="hidden md:flex w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 py-3 text-base font-medium"
+              className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 py-3"
             >
-              {isPlacingOrder ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : null}
-              {isPlacingOrder ? "Placing Order..." : (
-                selectedPayment === "cod" ? "Place Order" : `Pay with ${paymentOptions.find((p) => p.id === selectedPayment)?.label}`
-              )}
+              {selectedPayment === "cod"
+                ? "Place Order"
+                : `Pay with ${
+                    paymentOptions.find((p) => p.id === selectedPayment)?.label
+                  }`}
             </Button>
           </div>
         </div>
-      </div>
-
-      {/* Mobile Place Order Button */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t shadow-lg p-4">
-        <Button
-          onClick={handlePlaceOrder}
-          disabled={isPlacingOrder}
-          className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 py-3 text-base font-medium"
-        >
-          {isPlacingOrder ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          ) : null}
-          {isPlacingOrder ? "Placing Order..." : (
-            selectedPayment === "cod" ? "Place Order" : `Pay with ${paymentOptions.find((p) => p.id === selectedPayment)?.label}`
-          )}
-        </Button>
       </div>
     </div>
   );
