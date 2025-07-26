@@ -63,8 +63,6 @@ const Index = () => {
     (p) => p.category === "Snacks & Beverages"
   );
 
-  console.log(products, isLoading)
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
