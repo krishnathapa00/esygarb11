@@ -27,6 +27,10 @@ import DeliverySettings from "./pages/admin/DeliverySettings";
 import DeliveryDashboard from "./pages/DeliveryDashboard";
 import DeliveryProfile from "./pages/DeliveryProfile";
 import DeliveryOrderDetail from "./pages/DeliveryOrderDetail";
+import DeliveryOrders from "./pages/DeliveryOrders";
+import DeliveryEarnings from "./pages/DeliveryEarnings";
+import DeliveryHistory from "./pages/DeliveryHistory";
+import DeliveryWithdraw from "./pages/DeliveryWithdraw";
 import CartPage from "./pages/CartPage";
 import Categories from "./pages/Categories";
 import SubCategories from "./pages/SubCategories";
@@ -116,9 +120,13 @@ const App: React.FC = () => {
                 </RoleProtectedRoute>
               }
             />
-            <Route path="/delivery/dashboard" element={<DeliveryDashboard />} />
-            <Route path="/delivery/profile" element={<DeliveryProfile />} />
-            <Route path="/delivery/order/:id" element={<DeliveryOrderDetail />} />
+            <Route path="/delivery-partner/dashboard" element={<DeliveryDashboard />} />
+            <Route path="/delivery-partner/profile" element={<DeliveryProfile />} />
+            <Route path="/delivery-partner/orders" element={<DeliveryOrders />} />
+            <Route path="/delivery-partner/order/:orderId" element={<DeliveryOrderDetail />} />
+            <Route path="/delivery-partner/earnings" element={<DeliveryEarnings />} />
+            <Route path="/delivery-partner/history" element={<DeliveryHistory />} />
+            <Route path="/delivery-partner/withdraw" element={<DeliveryWithdraw />} />
           </Routes>
         </CartProvider>
       </AuthProvider>
