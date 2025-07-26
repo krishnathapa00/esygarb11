@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useReducer, useEffect } from "react";
-import { useToast } from "@/hooks/use-toast";
 
 export interface CartItem {
   id: number;
@@ -43,9 +42,12 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
     }
 
     case "UPDATE_QUANTITY":
+      if (action.payload.quantity <= 0) {
+        return state.filter((item) => item.id !== action.payload.id);
+      }
       return state.map((item) =>
         item.id === action.payload.id
-          ? { ...item, quantity: Math.max(1, action.payload.quantity) }
+          ? { ...item, quantity: action.payload.quantity }
           : item
       );
 
@@ -63,8 +65,6 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
 const CartProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const { toast } = useToast();
-  
   const [cart, dispatch] = useReducer(cartReducer, [], () => {
     try {
       const stored = localStorage.getItem("cart");
@@ -78,13 +78,8 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({
     localStorage.setItem("cart", JSON.stringify(cart));
   }, [cart]);
 
-  const addToCart = (item: CartItem) => {
+  const addToCart = (item: CartItem) =>
     dispatch({ type: "ADD_ITEM", payload: item });
-    toast({
-      title: "Added to cart",
-      description: `${item.name} has been added to your cart.`
-    });
-  };
   const updateQuantity = (id: number, quantity: number) =>
     dispatch({ type: "UPDATE_QUANTITY", payload: { id, quantity } });
   const removeItem = (id: number) =>
