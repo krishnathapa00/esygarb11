@@ -596,6 +596,33 @@ export type Database = {
         }
         Relationships: []
       }
+      waitlist: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          phone_number: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          phone_number: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          phone_number?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       withdrawals: {
         Row: {
           account_details: string
