@@ -210,17 +210,17 @@ const DeliveryDashboard = () => {
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <h1 className="text-2xl font-bold">Delivery Dashboard</h1>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Navigation Buttons */}
-            <Button variant="outline" onClick={() => navigate('/delivery-partner/orders')}>
+            <Button variant="outline" size="sm" onClick={() => navigate('/delivery-partner/orders')} className="text-xs">
               Orders
             </Button>
-            <Button variant="outline" onClick={() => navigate('/delivery-partner/earnings')}>
+            <Button variant="outline" size="sm" onClick={() => navigate('/delivery-partner/earnings')} className="text-xs">
               Earnings
             </Button>
-            <Button variant="outline" onClick={() => navigate('/delivery-partner/history')}>
+            <Button variant="outline" size="sm" onClick={() => navigate('/delivery-partner/history')} className="text-xs">
               History
             </Button>
             
@@ -230,11 +230,11 @@ const DeliveryDashboard = () => {
                 checked={isOnline}
                 onCheckedChange={toggleOnlineStatus}
               />
-              <Label htmlFor="online-status">
+              <Label htmlFor="online-status" className="text-sm">
                 {isOnline ? 'Online' : 'Offline'}
               </Label>
             </div>
-            <Button onClick={() => navigate('/delivery-partner/profile')}>
+            <Button size="sm" onClick={() => navigate('/delivery-partner/profile')} className="text-xs">
               Profile
             </Button>
           </div>

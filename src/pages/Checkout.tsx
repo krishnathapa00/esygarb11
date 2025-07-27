@@ -12,15 +12,18 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
+import { useToast } from "@/hooks/use-toast";
 import EsewaLogo from "../assets/payments/esewa.jpg";
 import KhaltiLogo from "../assets/payments/khalti.jpg";
 
 const Checkout = () => {
-  const { resetCart } = useCart();
+  const { cart, resetCart } = useCart();
   const [selectedPayment, setSelectedPayment] = useState("cod");
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
@@ -30,16 +33,21 @@ const Checkout = () => {
     state: "",
   });
 
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!authLoading && !user) {
       navigate("/login");
     }
-  }, [loading, user, navigate]);
+  }, [authLoading, user, navigate]);
 
-  const totalAmount = 160;
+  // Calculate total from cart
+  const cartItems = cart || [];
+  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const deliveryFee = 20;
+  const totalAmount = subtotal + deliveryFee;
 
   useEffect(() => {
     // Auto-fill from profile data (simulated - in real app this would come from database/context)
@@ -126,19 +134,65 @@ const Checkout = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handlePlaceOrder = () => {
-    if (selectedPayment === "cod") {
+  const handlePlaceOrder = async () => {
+    if (!user || cartItems.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please add items to cart and ensure you're logged in.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      // Create order in Supabase
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          user_id: user.id,
+          total_amount: totalAmount,
+          delivery_address: `${formData.address}, ${formData.city}, ${formData.state} ${formData.pincode}`,
+          order_number: `ORD${Date.now()}`,
+          payment_status: selectedPayment === 'cod' ? 'pending' : 'completed',
+          status: 'confirmed'
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // Create order items
+      const orderItems = cartItems.map(item => ({
+        order_id: orderData.id,
+        product_id: item.id,
+        quantity: item.quantity,
+        price: item.price
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
+
       resetCart();
-      // Direct to order confirmation for COD
-      window.location.href = "/order-confirmation";
-    } else {
-      // For now, simulate payment success for other methods
-      // In production, integrate with actual payment gateways
-      console.log(`Processing ${selectedPayment} payment...`);
-      setTimeout(() => {
-        resetCart();
-        window.location.href = "/order-confirmation";
-      }, 2000);
+      toast({
+        title: "Order placed successfully!",
+        description: "Your order has been confirmed and will be processed soon.",
+        variant: "default",
+      });
+      
+      navigate('/order-confirmation');
+    } catch (error: any) {
+      toast({
+        title: "Failed to create order",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -157,7 +211,7 @@ const Checkout = () => {
     },
   ];
 
-  if (loading) {
+  if (authLoading) {
     // Show loading while checking auth
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -223,52 +277,6 @@ const Checkout = () => {
 
               <div className="space-y-3">
                 <div>
-                  <Label htmlFor="fullName" className="text-sm">
-                    Full Name
-                  </Label>
-                  <Input
-                    id="fullName"
-                    placeholder="Enter your full name"
-                    value={formData.fullName}
-                    onChange={(e) =>
-                      handleInputChange("fullName", e.target.value)
-                    }
-                    className="mt-1"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <Label htmlFor="phone" className="text-sm">
-                      Phone Number
-                    </Label>
-                    <Input
-                      id="phone"
-                      placeholder="Enter phone number"
-                      value={formData.phone}
-                      onChange={(e) =>
-                        handleInputChange("phone", e.target.value)
-                      }
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="pincode" className="text-sm">
-                      Pincode
-                    </Label>
-                    <Input
-                      id="pincode"
-                      placeholder="Enter pincode"
-                      value={formData.pincode}
-                      onChange={(e) =>
-                        handleInputChange("pincode", e.target.value)
-                      }
-                      className="mt-1"
-                    />
-                  </div>
-                </div>
-
-                <div>
                   <Label htmlFor="address" className="text-sm">
                     Complete Address
                   </Label>
@@ -299,15 +307,15 @@ const Checkout = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="state" className="text-sm">
-                      State/Province
+                    <Label htmlFor="pincode" className="text-sm">
+                      Pincode
                     </Label>
                     <Input
-                      id="state"
-                      placeholder="Enter state"
-                      value={formData.state}
+                      id="pincode"
+                      placeholder="Enter pincode"
+                      value={formData.pincode}
                       onChange={(e) =>
-                        handleInputChange("state", e.target.value)
+                        handleInputChange("pincode", e.target.value)
                       }
                       className="mt-1"
                     />
@@ -375,8 +383,8 @@ const Checkout = () => {
 
             <div className="space-y-2 mb-4 text-sm">
               <div className="flex justify-between">
-                <span>Subtotal (3 items)</span>
-                <span>Rs 140</span>
+                <span>Subtotal ({cartItems.length} items)</span>
+                <span>Rs {subtotal}</span>
               </div>
               <div className="flex justify-between">
                 <span>Delivery Fee</span>
@@ -392,13 +400,16 @@ const Checkout = () => {
 
             <Button
               onClick={handlePlaceOrder}
+              disabled={loading || cartItems.length === 0}
               className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 py-3"
             >
-              {selectedPayment === "cod"
-                ? "Place Order"
-                : `Pay with ${
-                    paymentOptions.find((p) => p.id === selectedPayment)?.label
-                  }`}
+              {loading ? "Processing..." : (
+                selectedPayment === "cod"
+                  ? "Place Order"
+                  : `Pay with ${
+                      paymentOptions.find((p) => p.id === selectedPayment)?.label
+                    }`
+              )}
             </Button>
           </div>
         </div>

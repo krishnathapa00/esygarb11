@@ -27,6 +27,13 @@ import AssignOrder from "./pages/admin/AssignOrder";
 import NotFound from "./pages/NotFound";
 import MapLocation from "./pages/MapLocation";
 import SearchResults from "./pages/SearchResults";
+import Waitlist from './pages/Waitlist';
+import DeliveryProfile from './pages/DeliveryProfile';
+import DeliveryOrders from './pages/DeliveryOrders';
+import DeliveryOrderDetail from './pages/DeliveryOrderDetail';
+import DeliveryEarnings from './pages/DeliveryEarnings';
+import DeliveryHistory from './pages/DeliveryHistory';
+import DeliveryWithdraw from './pages/DeliveryWithdraw';
 
 const queryClient = new QueryClient();
 
@@ -58,6 +65,7 @@ function App() {
                 <Route path="/order-history" element={<OrderHistory />} />
                 <Route path="/profile" element={<UserProfile />} />
                 <Route path="/location" element={<MapLocation />} />
+                <Route path="/waitlist" element={<Waitlist />} />
 
                 {/* Delivery Partner Routes */}
                 <Route
@@ -65,16 +73,64 @@ function App() {
                   element={<DeliveryPartnerAuth />}
                 />
                 <Route
-                  path="/delivery-dashboard"
+                  path="/delivery-partner/dashboard"
                   element={
                     <RoleProtectedRoute allowedRoles={["delivery_partner"]}>
                       <DeliveryDashboard />
                     </RoleProtectedRoute>
                   }
                 />
+                <Route
+                  path="/delivery-partner/profile"
+                  element={
+                    <RoleProtectedRoute allowedRoles={["delivery_partner"]}>
+                      <DeliveryProfile />
+                    </RoleProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/delivery-partner/orders"
+                  element={
+                    <RoleProtectedRoute allowedRoles={["delivery_partner"]}>
+                      <DeliveryOrders />
+                    </RoleProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/delivery-partner/order/:orderId"
+                  element={
+                    <RoleProtectedRoute allowedRoles={["delivery_partner"]}>
+                      <DeliveryOrderDetail />
+                    </RoleProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/delivery-partner/earnings"
+                  element={
+                    <RoleProtectedRoute allowedRoles={["delivery_partner"]}>
+                      <DeliveryEarnings />
+                    </RoleProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/delivery-partner/history"
+                  element={
+                    <RoleProtectedRoute allowedRoles={["delivery_partner"]}>
+                      <DeliveryHistory />
+                    </RoleProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/delivery-partner/withdraw"
+                  element={
+                    <RoleProtectedRoute allowedRoles={["delivery_partner"]}>
+                      <DeliveryWithdraw />
+                    </RoleProtectedRoute>
+                  }
+                />
 
                 {/* Admin Routes */}
-                <Route path="/admin" element={<AdminLogin />} />
+                <Route path="/admin-login" element={<AdminLogin />} />
                 <Route
                   path="/admin/dashboard"
                   element={
