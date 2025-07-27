@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { Package, Clock, DollarSign, User, MapPin, Phone } from 'lucide-react';
+import { Package, Clock, DollarSign, User, MapPin, Phone, AlertTriangle } from 'lucide-react';
 
 const DeliveryDashboard = () => {
   const { user } = useAuth();
@@ -17,14 +17,35 @@ const DeliveryDashboard = () => {
   const [earnings, setEarnings] = useState([]);
   const [isOnline, setIsOnline] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [kycStatus, setKycStatus] = useState('pending');
 
   useEffect(() => {
     if (user) {
+      fetchKycStatus();
       fetchOrders();
       fetchEarnings();
       fetchOnlineStatus();
     }
   }, [user]);
+
+  const fetchKycStatus = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('kyc_verifications')
+        .select('verification_status')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching KYC status:', error);
+        return;
+      }
+      
+      setKycStatus(data?.verification_status || 'not_submitted');
+    } catch (error) {
+      console.error('Error fetching KYC status:', error);
+    }
+  };
 
   const fetchOrders = async () => {
     try {
@@ -219,6 +240,29 @@ const DeliveryDashboard = () => {
           </div>
         </div>
 
+        {/* KYC Notice */}
+        {(kycStatus !== 'approved') && (
+          <Card className="border-orange-200 bg-orange-50">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="h-6 w-6 text-orange-600" />
+                <div className="flex-1">
+                  <h3 className="font-semibold text-orange-800">Account Setup & KYC Verification Required</h3>
+                  <p className="text-sm text-orange-700 mt-1">
+                    Complete your profile and upload required documents to start accepting orders.
+                  </p>
+                </div>
+                <Button 
+                  onClick={() => navigate('/delivery-partner/profile')}
+                  className="bg-orange-600 hover:bg-orange-700 text-white"
+                >
+                  Complete Setup
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
@@ -270,15 +314,16 @@ const DeliveryDashboard = () => {
           </Card>
         </div>
 
-        {/* Available Orders */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Available Orders</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {availableOrders.length > 0 ? (
-              <div className="space-y-4">
-                {availableOrders.map((order) => (
+        {/* Available Orders - Only show when online and KYC approved */}
+        {isOnline && kycStatus === 'approved' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Available Orders</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {availableOrders.length > 0 ? (
+                <div className="space-y-4">
+                  {availableOrders.map((order) => (
                   <div key={order.id} className="border rounded-lg p-4 space-y-3">
                     <div className="flex justify-between items-start">
                       <div className="space-y-1">
@@ -355,6 +400,7 @@ const DeliveryDashboard = () => {
             )}
           </CardContent>
         </Card>
+        )}
 
         {/* Recent Deliveries */}
         <Card>
