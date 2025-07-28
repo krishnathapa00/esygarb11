@@ -153,7 +153,7 @@ const Checkout = () => {
         .insert({
           user_id: user.id,
           total_amount: totalAmount,
-          delivery_address: `${formData.address}, ${formData.city}, ${formData.state} ${formData.pincode}`,
+          delivery_address: "Kathmandu, Nepal",
           order_number: `ORD${Date.now()}`,
           payment_status: selectedPayment === 'cod' ? 'pending' : 'completed',
           status: 'confirmed'
@@ -244,85 +244,6 @@ const Checkout = () => {
         <div className="space-y-4 lg:grid lg:grid-cols-3 lg:gap-6 lg:space-y-0">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-4">
-            {/* Delivery Address */}
-            <div className="bg-white rounded-lg p-4 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-2">
-                  <MapPin className="h-4 w-4 lg:h-5 lg:w-5 text-green-600" />
-                  <h3 className="text-base lg:text-lg font-semibold">
-                    Delivery Address
-                  </h3>
-                </div>
-                <Button
-                  onClick={detectCurrentLocation}
-                  disabled={isDetectingLocation}
-                  variant="outline"
-                  size="sm"
-                  className="text-green-600 border-green-200 hover:bg-green-50 text-xs lg:text-sm px-2 lg:px-3"
-                >
-                  {isDetectingLocation ? (
-                    <>
-                      <Loader2 className="h-3 w-3 lg:h-4 lg:w-4 mr-1 animate-spin" />
-                      <span className="hidden sm:inline">Detecting...</span>
-                    </>
-                  ) : (
-                    <>
-                      <MapPin className="h-3 w-3 lg:h-4 lg:w-4 mr-1" />
-                      <span className="hidden sm:inline">Auto-Detect</span>
-                      <span className="sm:hidden">GPS</span>
-                    </>
-                  )}
-                </Button>
-              </div>
-
-              <div className="space-y-3">
-                <div>
-                  <Label htmlFor="address" className="text-sm">
-                    Complete Address
-                  </Label>
-                  <Input
-                    id="address"
-                    placeholder="House no, Building, Street, Area"
-                    value={formData.address}
-                    onChange={(e) =>
-                      handleInputChange("address", e.target.value)
-                    }
-                    className="mt-1"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <Label htmlFor="city" className="text-sm">
-                      City
-                    </Label>
-                    <Input
-                      id="city"
-                      placeholder="Enter city"
-                      value={formData.city}
-                      onChange={(e) =>
-                        handleInputChange("city", e.target.value)
-                      }
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="pincode" className="text-sm">
-                      Pincode
-                    </Label>
-                    <Input
-                      id="pincode"
-                      placeholder="Enter pincode"
-                      value={formData.pincode}
-                      onChange={(e) =>
-                        handleInputChange("pincode", e.target.value)
-                      }
-                      className="mt-1"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
 
             {/* Payment Method */}
             <div className="bg-white rounded-lg p-4 shadow-sm">
@@ -401,7 +322,7 @@ const Checkout = () => {
             <Button
               onClick={handlePlaceOrder}
               disabled={loading || cartItems.length === 0}
-              className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 py-3"
+              className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 py-3 text-base font-semibold"
             >
               {loading ? "Processing..." : (
                 selectedPayment === "cod"
