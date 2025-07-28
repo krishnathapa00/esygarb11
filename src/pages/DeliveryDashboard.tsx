@@ -207,11 +207,11 @@ const DeliveryDashboard = () => {
   ).slice(0, 5);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gray-50 p-2 md:p-4">
+      <div className="max-w-4xl mx-auto space-y-4 md:space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-          <h1 className="text-2xl font-bold">Delivery Dashboard</h1>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 md:gap-4">
+          <h1 className="text-xl md:text-2xl font-bold">Delivery Dashboard</h1>
           <div className="flex flex-wrap items-center gap-2">
             {/* Navigation Buttons */}
             <Button variant="outline" size="sm" onClick={() => navigate('/delivery-partner/orders')} className="text-xs">
@@ -229,8 +229,9 @@ const DeliveryDashboard = () => {
                 id="online-status"
                 checked={isOnline}
                 onCheckedChange={toggleOnlineStatus}
+                disabled={kycStatus !== 'approved'}
               />
-              <Label htmlFor="online-status" className="text-sm">
+              <Label htmlFor="online-status" className="text-xs md:text-sm">
                 {isOnline ? 'Online' : 'Offline'}
               </Label>
             </div>
@@ -264,50 +265,50 @@ const DeliveryDashboard = () => {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <Package className="h-8 w-8 text-blue-600" />
+            <CardContent className="p-3 md:p-4">
+              <div className="flex items-center gap-2 md:gap-3">
+                <Package className="h-6 w-6 md:h-8 md:w-8 text-blue-600" />
                 <div>
-                  <p className="text-sm text-muted-foreground">Today's Orders</p>
-                  <p className="text-2xl font-bold">{todayOrders.length}</p>
+                  <p className="text-xs md:text-sm text-muted-foreground">Today's Orders</p>
+                  <p className="text-lg md:text-2xl font-bold">{todayOrders.length}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <Clock className="h-8 w-8 text-green-600" />
+            <CardContent className="p-3 md:p-4">
+              <div className="flex items-center gap-2 md:gap-3">
+                <Clock className="h-6 w-6 md:h-8 md:w-8 text-green-600" />
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Deliveries</p>
-                  <p className="text-2xl font-bold">{earnings.length}</p>
+                  <p className="text-xs md:text-sm text-muted-foreground">Total Deliveries</p>
+                  <p className="text-lg md:text-2xl font-bold">{earnings.length}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <DollarSign className="h-8 w-8 text-purple-600" />
+            <CardContent className="p-3 md:p-4">
+              <div className="flex items-center gap-2 md:gap-3">
+                <DollarSign className="h-6 w-6 md:h-8 md:w-8 text-purple-600" />
                 <div>
-                  <p className="text-sm text-muted-foreground">Today's Earnings</p>
-                  <p className="text-2xl font-bold">₹{todayEarnings.toFixed(2)}</p>
+                  <p className="text-xs md:text-sm text-muted-foreground">Today's Earnings</p>
+                  <p className="text-lg md:text-2xl font-bold">Rs {todayEarnings.toFixed(2)}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <DollarSign className="h-8 w-8 text-orange-600" />
+            <CardContent className="p-3 md:p-4">
+              <div className="flex items-center gap-2 md:gap-3">
+                <DollarSign className="h-6 w-6 md:h-8 md:w-8 text-orange-600" />
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Earnings</p>
-                  <p className="text-2xl font-bold">₹{totalEarnings.toFixed(2)}</p>
+                  <p className="text-xs md:text-sm text-muted-foreground">Total Earnings</p>
+                  <p className="text-lg md:text-2xl font-bold">Rs {totalEarnings.toFixed(2)}</p>
                 </div>
               </div>
             </CardContent>
@@ -355,7 +356,7 @@ const DeliveryDashboard = () => {
                     </div>
 
                     <div className="flex justify-between items-center">
-                      <span className="font-semibold">₹{parseFloat(order.total_amount).toFixed(2)}</span>
+                      <span className="font-semibold">Rs {parseFloat(order.total_amount).toFixed(2)}</span>
                       <div className="space-x-2">
                         {order.status === 'ready_for_pickup' && !order.delivery_partner_id && (
                           <Button 
@@ -419,7 +420,7 @@ const DeliveryDashboard = () => {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-medium">₹{parseFloat(order.total_amount).toFixed(2)}</p>
+                      <p className="font-medium">Rs {parseFloat(order.total_amount).toFixed(2)}</p>
                     </div>
                   </div>
                 ))}

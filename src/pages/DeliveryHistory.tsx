@@ -102,7 +102,7 @@ const DeliveryHistory = () => {
             <IndianRupee className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹{totalEarnings.toFixed(2)}</div>
+            <div className="text-2xl font-bold">Rs {totalEarnings.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
               From all deliveries
             </p>
@@ -166,12 +166,12 @@ const DeliveryHistory = () => {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                       <div>
                         <p className="text-muted-foreground">Order Value</p>
-                        <p className="font-medium">₹{order.total_amount}</p>
+                        <p className="font-medium">Rs {order.total_amount}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Earned</p>
                         <p className="font-medium text-green-600">
-                          ₹{earning ? Number(earning.amount).toFixed(2) : '0.00'}
+                          Rs {earning ? Number(earning.amount).toFixed(2) : '0.00'}
                         </p>
                       </div>
                       <div>
@@ -194,7 +194,7 @@ const DeliveryHistory = () => {
                         <div className="space-y-1">
                           {order.order_items.map((item: any) => (
                             <div key={item.id} className="text-sm text-muted-foreground">
-                              {item.quantity}x {item.products?.name} - ₹{item.price}
+                              {item.quantity}x {item.products?.name} - Rs {item.price}
                             </div>
                           ))}
                         </div>

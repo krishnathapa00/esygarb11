@@ -84,7 +84,7 @@ const DeliveryEarnings = () => {
             <IndianRupee className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹{totalEarnings.toFixed(2)}</div>
+            <div className="text-2xl font-bold">Rs {totalEarnings.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
               From {totalDeliveries} deliveries
             </p>
@@ -97,7 +97,7 @@ const DeliveryEarnings = () => {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹{thisMonthEarnings.toFixed(2)}</div>
+            <div className="text-2xl font-bold">Rs {thisMonthEarnings.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
               Current month earnings
             </p>
@@ -110,7 +110,7 @@ const DeliveryEarnings = () => {
             <IndianRupee className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹{averageEarningPerDelivery.toFixed(2)}</div>
+            <div className="text-2xl font-bold">Rs {averageEarningPerDelivery.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
               Per delivery average
             </p>
@@ -126,7 +126,7 @@ const DeliveryEarnings = () => {
           </CardHeader>
           <CardContent>
             <div className="text-lg">
-              <span className="font-bold">₹{deliveryConfig.delivery_partner_charge}</span> per delivery
+              <span className="font-bold">Rs {deliveryConfig.delivery_partner_charge}</span> per delivery
             </div>
             <p className="text-sm text-muted-foreground mt-2">
               This is the current rate you earn for each completed delivery
@@ -174,7 +174,7 @@ const DeliveryEarnings = () => {
                   </div>
                   <div className="text-right">
                     <p className="text-lg font-bold text-green-600">
-                      +₹{Number(earning.amount).toFixed(2)}
+                      +Rs {Number(earning.amount).toFixed(2)}
                     </p>
                     <Badge variant="outline" className="text-green-600">
                       Earned

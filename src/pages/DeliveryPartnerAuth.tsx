@@ -46,7 +46,7 @@ const DeliveryPartnerAuth = () => {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/delivery-dashboard`,
+          emailRedirectTo: `${window.location.origin}/delivery-partner/dashboard`,
           data: {
             full_name: fullName,
             role: 'delivery_partner',
@@ -150,7 +150,7 @@ const DeliveryPartnerAuth = () => {
           
           // Add a small delay to ensure toast is shown
           setTimeout(() => {
-            navigate('/delivery-dashboard');
+            navigate('/delivery-partner/dashboard');
           }, 1000);
         } else {
           console.log('Access denied - not a delivery partner');

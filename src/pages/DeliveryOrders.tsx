@@ -121,7 +121,7 @@ const DeliveryOrders = () => {
                 
                 <div className="flex justify-between items-center">
                   <div className="text-sm">
-                    <p className="font-medium">Total: ₹{order.total_amount}</p>
+                    <p className="font-medium">Total: Rs {order.total_amount}</p>
                     <p className="text-muted-foreground flex items-center gap-1">
                       <Clock className="h-4 w-4" />
                       {order.estimated_delivery}
@@ -166,7 +166,7 @@ const DeliveryOrders = () => {
                 
                 <div className="flex justify-between items-center">
                   <div className="text-sm">
-                    <p className="font-medium">Total: ₹{order.total_amount}</p>
+                    <p className="font-medium">Total: Rs {order.total_amount}</p>
                     <p className="text-muted-foreground flex items-center gap-1">
                       <Clock className="h-4 w-4" />
                       {order.estimated_delivery}
