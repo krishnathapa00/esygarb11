@@ -13,7 +13,6 @@ export interface Product {
   rating: number;
   reviews: number;
   inStock: boolean;
-  benefits: string[];
   deliveryTime: string;
   category: string;
   stockQuantity?: number;
@@ -38,12 +37,6 @@ const sampleProducts: Product[] = [
     rating: 4.5,
     reviews: 128,
     inStock: true,
-    benefits: [
-      "Rich in Potassium",
-      "Natural Energy",
-      "Heart Healthy",
-      "Digestive Health",
-    ],
   },
   {
     id: 2,
@@ -61,12 +54,6 @@ const sampleProducts: Product[] = [
     rating: 4.6,
     reviews: 104,
     inStock: true,
-    benefits: [
-      "Rich in Fiber",
-      "Boosts Immunity",
-      "Heart Healthy",
-      "Antioxidant Rich",
-    ],
   },
   {
     id: 3,
@@ -84,12 +71,6 @@ const sampleProducts: Product[] = [
     rating: 4.4,
     reviews: 87,
     inStock: true,
-    benefits: [
-      "Vitamin C Rich",
-      "Lycopene Source",
-      "Heart Healthy",
-      "Good for Skin",
-    ],
   },
   {
     id: 4,
@@ -107,12 +88,6 @@ const sampleProducts: Product[] = [
     rating: 4.3,
     reviews: 76,
     inStock: true,
-    benefits: [
-      "Rich in Vitamin C",
-      "Low in Calories",
-      "Supports Vision",
-      "Boosts Immunity",
-    ],
   },
   {
     id: 5,
@@ -130,12 +105,6 @@ const sampleProducts: Product[] = [
     rating: 4.5,
     reviews: 93,
     inStock: true,
-    benefits: [
-      "High in Beta-Carotene",
-      "Good for Eyes",
-      "Supports Skin Health",
-      "Aids Digestion",
-    ],
   },
   {
     id: 6,
@@ -153,12 +122,6 @@ const sampleProducts: Product[] = [
     rating: 4.2,
     reviews: 101,
     inStock: true,
-    benefits: [
-      "Rich in Antioxidants",
-      "Heart Healthy",
-      "Boosts Immunity",
-      "Anti-inflammatory",
-    ],
   },
 
   // Dairy & Eggs
@@ -178,12 +141,6 @@ const sampleProducts: Product[] = [
     rating: 4.7,
     reviews: 88,
     inStock: true,
-    benefits: [
-      "Rich in Calcium",
-      "Good for Bones",
-      "High Protein",
-      "Supports Growth",
-    ],
   },
   {
     id: 10,
@@ -201,7 +158,6 @@ const sampleProducts: Product[] = [
     rating: 4.6,
     reviews: 70,
     inStock: true,
-    benefits: ["High Protein", "Gut Friendly", "Low Fat", "Bone Strength"],
   },
   {
     id: 11,
@@ -219,12 +175,6 @@ const sampleProducts: Product[] = [
     rating: 4.8,
     reviews: 134,
     inStock: true,
-    benefits: [
-      "Protein Packed",
-      "Rich in Omega-3",
-      "Supports Muscle",
-      "Versatile Food",
-    ],
   },
   {
     id: 12,
@@ -242,12 +192,6 @@ const sampleProducts: Product[] = [
     rating: 4.5,
     reviews: 99,
     inStock: true,
-    benefits: [
-      "High Protein",
-      "Rich in Calcium",
-      "Low Carb",
-      "Good for Muscles",
-    ],
   },
 
   // Snacks & Beverages
@@ -267,7 +211,6 @@ const sampleProducts: Product[] = [
     rating: 4.2,
     reviews: 65,
     inStock: true,
-    benefits: ["Ready to Eat", "Tasty Snack", "Convenient", "Crunchy Delight"],
   },
   {
     id: 16,
@@ -285,12 +228,6 @@ const sampleProducts: Product[] = [
     rating: 4.8,
     reviews: 112,
     inStock: true,
-    benefits: [
-      "High in Protein",
-      "Rich in Healthy Fats",
-      "Energy Booster",
-      "Brain Health",
-    ],
   },
   {
     id: 17,
@@ -308,12 +245,6 @@ const sampleProducts: Product[] = [
     rating: 4.1,
     reviews: 78,
     inStock: true,
-    benefits: [
-      "Instant Energy",
-      "Improves Alertness",
-      "Boosts Stamina",
-      "Convenient",
-    ],
   },
   {
     id: 18,
@@ -331,12 +262,6 @@ const sampleProducts: Product[] = [
     rating: 4.3,
     reviews: 89,
     inStock: true,
-    benefits: [
-      "Tasty Snack",
-      "Made with Whole Ingredients",
-      "Kids Friendly",
-      "Good Shelf Life",
-    ],
   },
 ];
 
