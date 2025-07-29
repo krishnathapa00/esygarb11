@@ -24,6 +24,8 @@ import ManageOrders from "./pages/admin/ManageOrders";
 import ManageUsers from "./pages/admin/ManageUsers";
 import Transactions from "./pages/admin/Transactions";
 import AssignOrder from "./pages/admin/AssignOrder";
+import AddProduct from "./pages/admin/AddProduct";
+import ManageKYC from "./pages/admin/ManageKYC";
 import NotFound from "./pages/NotFound";
 import MapLocation from "./pages/MapLocation";
 import SearchResults from "./pages/SearchResults";
@@ -134,7 +136,7 @@ function App() {
                 <Route
                   path="/admin/dashboard"
                   element={
-                    <RoleProtectedRoute allowedRoles={["admin"]}>
+                    <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
                       <AdminDashboard />
                     </RoleProtectedRoute>
                   }
@@ -142,7 +144,7 @@ function App() {
                 <Route
                   path="/admin/products"
                   element={
-                    <RoleProtectedRoute allowedRoles={["admin"]}>
+                    <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
                       <ManageProducts />
                     </RoleProtectedRoute>
                   }
@@ -150,7 +152,7 @@ function App() {
                 <Route
                   path="/admin/orders"
                   element={
-                    <RoleProtectedRoute allowedRoles={["admin"]}>
+                    <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
                       <ManageOrders />
                     </RoleProtectedRoute>
                   }
@@ -158,7 +160,7 @@ function App() {
                 <Route
                   path="/admin/orders/assign/:orderId"
                   element={
-                    <RoleProtectedRoute allowedRoles={["admin"]}>
+                    <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
                       <AssignOrder />
                     </RoleProtectedRoute>
                   }
@@ -166,7 +168,7 @@ function App() {
                 <Route
                   path="/admin/users"
                   element={
-                    <RoleProtectedRoute allowedRoles={["admin"]}>
+                    <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
                       <ManageUsers />
                     </RoleProtectedRoute>
                   }
@@ -174,8 +176,24 @@ function App() {
                 <Route
                   path="/admin/transactions"
                   element={
-                    <RoleProtectedRoute allowedRoles={["admin"]}>
+                    <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
                       <Transactions />
+                    </RoleProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/products/add"
+                  element={
+                    <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
+                      <AddProduct />
+                    </RoleProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/kyc"
+                  element={
+                    <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
+                      <ManageKYC />
                     </RoleProtectedRoute>
                   }
                 />

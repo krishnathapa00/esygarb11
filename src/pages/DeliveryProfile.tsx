@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { Edit, Save, X, CheckCircle, AlertCircle, DollarSign, Package, ArrowLeft } from 'lucide-react';
+import KYCUpload from '@/components/KYCUpload';
 
 const DeliveryProfile = () => {
   const { user } = useAuth();
@@ -196,6 +197,19 @@ const DeliveryProfile = () => {
           </Card>
         )}
 
+        {/* KYC Verification Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle>KYC Verification</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Upload required documents for identity verification
+            </p>
+          </CardHeader>
+          <CardContent>
+            <KYCUpload />
+          </CardContent>
+        </Card>
+
         {/* Profile Information */}
         <Card>
           <CardHeader>
@@ -342,7 +356,7 @@ const DeliveryProfile = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="text-center p-4 bg-green-50 rounded-lg">
                 <p className="text-sm text-muted-foreground">Total Earnings</p>
-                <p className="text-2xl font-bold text-green-600">₹{totalEarnings.toFixed(2)}</p>
+                <p className="text-2xl font-bold text-green-600">Rs {totalEarnings.toFixed(2)}</p>
               </div>
               <div className="text-center p-4 bg-blue-50 rounded-lg">
                 <p className="text-sm text-muted-foreground">Completed Orders</p>
@@ -372,7 +386,7 @@ const DeliveryProfile = () => {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-medium">₹{parseFloat(String(earning.amount || '0')).toFixed(2)}</p>
+                      <p className="font-medium">Rs {parseFloat(String(earning.amount || '0')).toFixed(2)}</p>
                       {earning.delivery_time_minutes && (
                         <p className="text-sm text-muted-foreground">
                           {earning.delivery_time_minutes} mins
