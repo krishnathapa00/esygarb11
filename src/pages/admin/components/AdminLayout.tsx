@@ -25,7 +25,6 @@ const AdminLayout = ({ children, onRefresh }: { children: React.ReactNode; onRef
     { icon: ShoppingCart, label: 'Orders', path: '/admin/orders' },
     { icon: Package, label: 'Products', path: '/admin/products' },
     { icon: Users, label: 'Users', path: '/admin/users' },
-    { icon: Users, label: 'Delivery Partners', path: '/admin/delivery-partners' },
     { icon: UserCheck, label: 'KYC Management', path: '/admin/kyc' },
     { icon: Store, label: 'Darkstores', path: '/admin/darkstores' },
     { icon: Settings, label: 'Delivery Settings', path: '/admin/delivery-settings' },

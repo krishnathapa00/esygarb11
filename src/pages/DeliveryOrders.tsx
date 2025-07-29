@@ -62,12 +62,12 @@ const DeliveryOrders = () => {
 
     toast({
       title: "Order Accepted",
-      description: "You have successfully accepted this order!",
+      description: "Navigate to the order details to start delivery.",
       variant: "default"
     });
 
     refetch();
-    navigate(`/delivery-partner/order/${orderId}`);
+    navigate(`/delivery-partner/navigate/${orderId}`);
   };
 
   const getStatusColor = (status: string) => {
@@ -174,9 +174,9 @@ const DeliveryOrders = () => {
                   </div>
                   <Button 
                     variant="outline"
-                    onClick={() => navigate(`/delivery-partner/order/${order.id}`)}
+                    onClick={() => navigate(`/delivery-partner/navigate/${order.id}`)}
                   >
-                    View Details
+                    Navigate
                   </Button>
                 </div>
               </div>

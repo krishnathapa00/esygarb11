@@ -36,6 +36,9 @@ import DeliveryOrderDetail from './pages/DeliveryOrderDetail';
 import DeliveryEarnings from './pages/DeliveryEarnings';
 import DeliveryHistory from './pages/DeliveryHistory';
 import DeliveryWithdraw from './pages/DeliveryWithdraw';
+import DeliveryMapNavigation from './pages/DeliveryMapNavigation';
+import ManageDarkstores from './pages/admin/ManageDarkstores';
+import DeliverySettings from './pages/admin/DeliverySettings';
 
 const queryClient = new QueryClient();
 
@@ -130,6 +133,14 @@ function App() {
                     </RoleProtectedRoute>
                   }
                 />
+                <Route
+                  path="/delivery-partner/navigate/:orderId"
+                  element={
+                    <RoleProtectedRoute allowedRoles={["delivery_partner"]}>
+                      <DeliveryMapNavigation />
+                    </RoleProtectedRoute>
+                  }
+                />
 
                 {/* Admin Routes */}
                 <Route path="/admin-login" element={<AdminLogin />} />
@@ -194,6 +205,22 @@ function App() {
                   element={
                     <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
                       <ManageKYC />
+                    </RoleProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/darkstores"
+                  element={
+                    <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
+                      <ManageDarkstores />
+                    </RoleProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/delivery-settings"
+                  element={
+                    <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
+                      <DeliverySettings />
                     </RoleProtectedRoute>
                   }
                 />
