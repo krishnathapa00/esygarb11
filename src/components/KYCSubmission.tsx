@@ -6,13 +6,13 @@ import { FileText, Upload, CheckCircle, Clock, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import SingleImageUpload from './SingleImageUpload';
 
 const KYCSubmission = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [submitting, setSubmitting] = useState(false);
+  const queryClient = useQueryClient();
   const [documents, setDocuments] = useState({
     citizenship_document_url: '',
     license_document_url: '',
@@ -49,23 +49,16 @@ const KYCSubmission = () => {
     }));
   };
 
-  const handleSubmitKYC = async () => {
-    if (!user?.id) return;
-    
-    // Check if all documents are uploaded
-    const allDocumentsUploaded = Object.values(documents).every(url => url);
-    if (!allDocumentsUploaded) {
-      toast({
-        title: "Missing Documents",
-        description: "Please upload all required documents before submitting.",
-        variant: "destructive"
-      });
-      return;
-    }
+  const submitKYCMutation = useMutation({
+    mutationFn: async () => {
+      if (!user?.id) throw new Error('User not authenticated');
+      
+      // Check if all documents are uploaded
+      const allDocumentsUploaded = Object.values(documents).every(url => url);
+      if (!allDocumentsUploaded) {
+        throw new Error('Please upload all required documents before submitting.');
+      }
 
-    setSubmitting(true);
-    
-    try {
       const { error } = await supabase
         .from('kyc_verifications')
         .insert([{
@@ -78,30 +71,29 @@ const KYCSubmission = () => {
         }]);
 
       if (error) throw error;
-
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['kyc-status', user?.id] });
       toast({
         title: "KYC Submitted Successfully!",
         description: "Your documents have been submitted for review. You'll be notified once verified."
       });
-
+      
       // Reset form
       setDocuments({
         citizenship_document_url: '',
         license_document_url: '',
         pan_document_url: ''
       });
-
-      refetch();
-    } catch (error: any) {
+    },
+    onError: (error: any) => {
       toast({
         title: "Submission Failed",
         description: error.message,
         variant: "destructive"
       });
-    } finally {
-      setSubmitting(false);
     }
-  };
+  });
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -240,11 +232,11 @@ const KYCSubmission = () => {
 
             <div className="pt-4 border-t">
               <Button
-                onClick={handleSubmitKYC}
-                disabled={submitting || !Object.values(documents).every(url => url)}
+                onClick={() => submitKYCMutation.mutate()}
+                disabled={submitKYCMutation.isPending || !Object.values(documents).every(url => url)}
                 className="w-full"
               >
-                {submitting ? (
+                {submitKYCMutation.isPending ? (
                   <div className="flex items-center gap-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                     Submitting for Review...

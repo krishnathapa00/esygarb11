@@ -59,7 +59,7 @@ const DeliveryDashboard = () => {
             products(name, image_url)
           )
         `)
-        .or(`delivery_partner_id.eq.${user.id},status.eq.ready_for_pickup`)
+        .or(`delivery_partner_id.eq.${user.id},status.in.(ready_for_pickup,confirmed,dispatched)`)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -126,17 +126,13 @@ const DeliveryDashboard = () => {
     }
   };
 
-  const updateOrderStatus = async (orderId: string, newStatus: string) => {
+  const acceptOrder = async (orderId: string) => {
     try {
-      const updateData: any = { status: newStatus };
-      
-      if (newStatus === 'accepted') {
-        updateData.accepted_at = new Date().toISOString();
-      } else if (newStatus === 'picked_up') {
-        updateData.picked_up_at = new Date().toISOString();
-      } else if (newStatus === 'delivered') {
-        updateData.delivered_at = new Date().toISOString();
-      }
+      const updateData = { 
+        status: 'dispatched' as const,
+        delivery_partner_id: user.id,
+        accepted_at: new Date().toISOString()
+      };
 
       const { error } = await supabase
         .from('orders')
@@ -146,15 +142,27 @@ const DeliveryDashboard = () => {
       if (error) throw error;
 
       toast({
-        title: "Status Updated",
-        description: `Order status updated to ${newStatus}`,
+        title: "Order Accepted",
+        description: "Order has been assigned to you. Navigate to start delivery.",
       });
 
       fetchOrders();
-      fetchEarnings();
     } catch (error) {
-      console.error('Error updating order status:', error);
+      console.error('Error accepting order:', error);
+      toast({
+        title: "Error",
+        description: "Failed to accept order.",
+        variant: "destructive",
+      });
     }
+  };
+
+  const rejectOrder = async (orderId: string) => {
+    // Optional: implement reject logic if needed
+    toast({
+      title: "Order Rejected",
+      description: "Order has been rejected.",
+    });
   };
 
   const getStatusColor = (status: string) => {
@@ -198,8 +206,11 @@ const DeliveryDashboard = () => {
   const totalEarnings = earnings.reduce((sum, earning) => sum + parseFloat(earning.amount || '0'), 0);
 
   const availableOrders = orders.filter(order => 
-    order.status === 'ready_for_pickup' || 
-    (order.delivery_partner_id === user.id && order.status !== 'delivered')
+    (order.status === 'ready_for_pickup' || order.status === 'confirmed') && !order.delivery_partner_id
+  );
+
+  const myActiveOrders = orders.filter(order => 
+    order.delivery_partner_id === user.id && !['delivered', 'cancelled'].includes(order.status)
   );
 
   const recentDeliveries = orders.filter(order => 
@@ -209,37 +220,45 @@ const DeliveryDashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-2 md:p-4">
       <div className="max-w-4xl mx-auto space-y-4 md:space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 md:gap-4">
-          <h1 className="text-xl md:text-2xl font-bold">Delivery Dashboard</h1>
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Navigation Buttons */}
-            <Button variant="outline" size="sm" onClick={() => navigate('/delivery-partner/orders')} className="text-xs">
-              Orders
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate('/delivery-partner/earnings')} className="text-xs">
-              Earnings
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate('/delivery-partner/history')} className="text-xs">
-              History
-            </Button>
-            
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="online-status"
-                checked={isOnline}
-                onCheckedChange={toggleOnlineStatus}
-                disabled={kycStatus !== 'approved'}
-              />
-              <Label htmlFor="online-status" className="text-xs md:text-sm">
-                {isOnline ? 'Online' : 'Offline'}
-              </Label>
+        {/* Modern Header with Profile Card */}
+        <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+          <CardContent className="p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+              <div className="space-y-1">
+                <h1 className="text-xl md:text-2xl font-bold text-primary">Delivery Dashboard</h1>
+                <p className="text-sm text-muted-foreground">Welcome back, manage your deliveries</p>
+              </div>
+              
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Online/Offline Toggle */}
+                <div className="flex items-center space-x-2 p-2 bg-background rounded-lg border">
+                  <Switch
+                    id="online-status"
+                    checked={isOnline}
+                    onCheckedChange={toggleOnlineStatus}
+                    disabled={kycStatus !== 'approved'}
+                  />
+                  <Label htmlFor="online-status" className="text-sm font-medium">
+                    <span className={`inline-flex items-center gap-1 ${isOnline ? 'text-green-600' : 'text-gray-500'}`}>
+                      <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                      {isOnline ? 'Online' : 'Offline'}
+                    </span>
+                  </Label>
+                </div>
+                
+                {/* Quick Actions */}
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => navigate('/delivery-partner/earnings')}>
+                    Earnings
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => navigate('/delivery-partner/profile')}>
+                    Profile
+                  </Button>
+                </div>
+              </div>
             </div>
-            <Button size="sm" onClick={() => navigate('/delivery-partner/profile')} className="text-xs">
-              Profile
-            </Button>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* KYC Notice */}
         {(kycStatus !== 'approved') && (
@@ -319,13 +338,94 @@ const DeliveryDashboard = () => {
         {isOnline && kycStatus === 'approved' && (
           <Card>
             <CardHeader>
-              <CardTitle>Available Orders</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Available Orders
+              </CardTitle>
             </CardHeader>
             <CardContent>
               {availableOrders.length > 0 ? (
                 <div className="space-y-4">
                   {availableOrders.map((order) => (
-                  <div key={order.id} className="border rounded-lg p-4 space-y-3">
+                  <div key={order.id} className="border rounded-lg p-4 space-y-3 hover:bg-gray-50 transition-colors">
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4" />
+                          <span className="font-medium">{order.profiles?.full_name}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Phone className="h-4 w-4" />
+                          <span>{order.profiles?.phone_number}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <MapPin className="h-4 w-4" />
+                          <span>{order.delivery_address}</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <Badge className={getStatusColor(order.status)}>
+                          {order.status.replace('_', ' ')}
+                        </Badge>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {order.estimated_delivery}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">Order Items:</p>
+                      {order.order_items?.map((item: any, index: number) => (
+                        <p key={index} className="text-sm text-muted-foreground">
+                          {item.quantity}x {item.products?.name}
+                        </p>
+                      ))}
+                    </div>
+
+                    <div className="flex justify-between items-center pt-2 border-t">
+                      <span className="font-semibold text-lg">Rs {parseFloat(order.total_amount).toFixed(2)}</span>
+                      <div className="flex gap-2">
+                        <Button 
+                          size="sm"
+                          variant="outline"
+                          onClick={() => rejectOrder(order.id)}
+                        >
+                          Reject
+                        </Button>
+                        <Button 
+                          size="sm"
+                          onClick={() => acceptOrder(order.id)}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          Accept Order
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-muted-foreground py-8">
+                No available orders at the moment. Turn on your status to receive orders.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+        )}
+
+        {/* My Active Orders */}
+        {myActiveOrders.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5" />
+                My Active Orders
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {myActiveOrders.map((order) => (
+                  <div key={order.id} className="border rounded-lg p-4 space-y-3 bg-blue-50 border-blue-200">
                     <div className="flex justify-between items-start">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
@@ -346,61 +446,21 @@ const DeliveryDashboard = () => {
                       </Badge>
                     </div>
 
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">Order Items:</p>
-                      {order.order_items?.map((item: any, index: number) => (
-                        <p key={index} className="text-sm text-muted-foreground">
-                          {item.quantity}x {item.products?.name}
-                        </p>
-                      ))}
-                    </div>
-
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center pt-2 border-t">
                       <span className="font-semibold">Rs {parseFloat(order.total_amount).toFixed(2)}</span>
-                      <div className="space-x-2">
-                        {order.status === 'ready_for_pickup' && !order.delivery_partner_id && (
-                          <Button 
-                            size="sm"
-                            onClick={() => updateOrderStatus(order.id, 'dispatched')}
-                          >
-                            Accept Order
-                          </Button>
-                        )}
-                        {order.delivery_partner_id === user.id && order.status === 'accepted' && (
-                          <Button 
-                            size="sm"
-                            onClick={() => updateOrderStatus(order.id, 'out_for_delivery')}
-                          >
-                            Mark Picked Up
-                          </Button>
-                        )}
-                        {order.delivery_partner_id === user.id && order.status === 'out_for_delivery' && (
-                          <Button 
-                            size="sm"
-                            onClick={() => updateOrderStatus(order.id, 'delivered')}
-                          >
-                            Mark Delivered
-                          </Button>
-                        )}
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => navigate(`/delivery-partner/order/${order.id}`)}
-                        >
-                          View Details
-                        </Button>
-                      </div>
+                      <Button 
+                        size="sm"
+                        onClick={() => navigate(`/delivery-partner/navigation/${order.id}`)}
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        Navigate
+                      </Button>
                     </div>
                   </div>
                 ))}
               </div>
-            ) : (
-              <p className="text-center text-muted-foreground py-8">
-                No available orders at the moment.
-              </p>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
         )}
 
         {/* Recent Deliveries */}

@@ -242,15 +242,84 @@ const ManageKYC = () => {
         </div>
 
         <Dialog open={reviewModalOpen} onOpenChange={setReviewModalOpen}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Review KYC Documents</DialogTitle>
             </DialogHeader>
             
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
                 <h4 className="font-semibold mb-2">Applicant: {selectedKYC?.profiles?.full_name}</h4>
                 <p className="text-sm text-muted-foreground">Role: {selectedKYC?.profiles?.role}</p>
+              </div>
+
+              {/* Document Previews */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {selectedKYC?.citizenship_document_url && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Citizenship Document</p>
+                    <div className="border rounded-lg p-2">
+                      <img 
+                        src={selectedKYC.citizenship_document_url} 
+                        alt="Citizenship Document"
+                        className="w-full h-48 object-cover rounded cursor-pointer"
+                        onClick={() => openDocument(selectedKYC.citizenship_document_url)}
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openDocument(selectedKYC.citizenship_document_url)}
+                        className="w-full mt-2"
+                      >
+                        View Full Size
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
+                {selectedKYC?.license_document_url && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">License Document</p>
+                    <div className="border rounded-lg p-2">
+                      <img 
+                        src={selectedKYC.license_document_url} 
+                        alt="License Document"
+                        className="w-full h-48 object-cover rounded cursor-pointer"
+                        onClick={() => openDocument(selectedKYC.license_document_url)}
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openDocument(selectedKYC.license_document_url)}
+                        className="w-full mt-2"
+                      >
+                        View Full Size
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
+                {selectedKYC?.pan_document_url && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">PAN Document</p>
+                    <div className="border rounded-lg p-2">
+                      <img 
+                        src={selectedKYC.pan_document_url} 
+                        alt="PAN Document"
+                        className="w-full h-48 object-cover rounded cursor-pointer"
+                        onClick={() => openDocument(selectedKYC.pan_document_url)}
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openDocument(selectedKYC.pan_document_url)}
+                        className="w-full mt-2"
+                      >
+                        View Full Size
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -266,7 +335,7 @@ const ManageKYC = () => {
               <div className="flex gap-2">
                 <Button
                   onClick={handleApprove}
-                  className="flex-1"
+                  className="flex-1 bg-green-600 hover:bg-green-700"
                   disabled={updateKYCMutation.isPending}
                 >
                   <UserCheck className="w-4 h-4 mr-1" />

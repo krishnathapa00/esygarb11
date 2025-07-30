@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Search, RefreshCw, UserCheck, UserX } from 'lucide-react';
+import { Search, RefreshCw, UserCheck, UserX, Phone, Package, Clock } from 'lucide-react';
 import AdminLayout from './components/AdminLayout';
 
 const ManageUsers = () => {
@@ -122,54 +122,77 @@ const ManageUsers = () => {
           </div>
         </div>
 
-        <div className="grid gap-4">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {isLoading ? (
-            <div>Loading users...</div>
+            <div className="col-span-full flex justify-center py-12">
+              <div className="text-center space-y-3">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <p className="text-muted-foreground">Loading users...</p>
+              </div>
+            </div>
           ) : (
             filteredUsers.map((user) => (
-              <Card key={user.id} className="p-4">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-4 mb-2">
-                      <h3 className="font-semibold">{user.full_name || 'Unknown User'}</h3>
-                      {getRoleBadge(user.role)}
-                      {user.kyc_verified && (
-                        <Badge variant="outline" className="text-green-600">
-                          <UserCheck className="w-3 h-3 mr-1" />
-                          KYC Verified
-                        </Badge>
-                      )}
+              <Card key={user.id} className="hover:shadow-md transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <h3 className="font-semibold text-lg">{user.full_name || 'Unknown User'}</h3>
+                      <div className="flex items-center gap-2">
+                        {getRoleBadge(user.role)}
+                        {user.kyc_verified && (
+                          <Badge variant="outline" className="text-green-600 border-green-200">
+                            <UserCheck className="w-3 h-3 mr-1" />
+                            Verified
+                          </Badge>
+                        )}
+                        {user.is_online && user.role === 'delivery_partner' && (
+                          <Badge variant="outline" className="text-blue-600 border-blue-200">
+                            Online
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                    <p className="text-sm text-muted-foreground mb-1">
-                      Phone: {user.phone_number || 'Not provided'}
-                    </p>
-                    {user.darkstore_id && (
-                      <p className="text-sm text-muted-foreground mb-1">
-                        Darkstore: {user.darkstore_id}
-                      </p>
-                    )}
-                    {user.vehicle_type && (
-                      <p className="text-sm text-muted-foreground mb-1">
-                        Vehicle: {user.vehicle_type}
-                      </p>
-                    )}
-                    <p className="text-sm text-muted-foreground">
-                      Joined: {new Date(user.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                  
-                  <div className="flex gap-2">
+                    
                     {user.role !== 'super_admin' && (
                       <Button
                         size="sm"
                         variant="destructive"
-                              onClick={() => deleteUserMutation.mutate(user.id)}
+                        onClick={() => deleteUserMutation.mutate(user.id)}
+                        className="shrink-0"
                       >
                         <UserX className="w-4 h-4" />
                       </Button>
                     )}
                   </div>
-                </div>
+                </CardHeader>
+                
+                <CardContent className="pt-0">
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-muted-foreground" />
+                      <span>{user.phone_number || 'Not provided'}</span>
+                    </div>
+                    
+                    {user.darkstore_id && (
+                      <div className="flex items-center gap-2">
+                        <Package className="w-4 h-4 text-muted-foreground" />
+                        <span>Darkstore: {user.darkstore_id}</span>
+                      </div>
+                    )}
+                    
+                    {user.vehicle_type && (
+                      <div className="flex items-center gap-2">
+                        <UserCheck className="w-4 h-4 text-muted-foreground" />
+                        <span>Vehicle: {user.vehicle_type}</span>
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Clock className="w-4 h-4" />
+                      <span>Joined: {new Date(user.created_at).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                </CardContent>
               </Card>
             ))
           )}

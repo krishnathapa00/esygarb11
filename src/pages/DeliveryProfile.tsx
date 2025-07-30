@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { Edit, Save, X, CheckCircle, AlertCircle, DollarSign, Package, ArrowLeft } from 'lucide-react';
-import KYCUpload from '@/components/KYCUpload';
+import KYCSubmission from '@/components/KYCSubmission';
 
 const DeliveryProfile = () => {
   const { user } = useAuth();
@@ -206,7 +206,7 @@ const DeliveryProfile = () => {
             </p>
           </CardHeader>
           <CardContent>
-            <KYCUpload />
+            <KYCSubmission />
           </CardContent>
         </Card>
 
