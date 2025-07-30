@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Check, Mail, Phone, User, Rocket, Gift, Package, Zap, ChevronRight, Users, Star, Facebook, Instagram } from 'lucide-react';
+import { Check, Mail, Phone, User, Zap, Gift, MapPin, Users, Facebook, Instagram, ShoppingCart, Clock, Target } from 'lucide-react';
 import esygrabLogo from '@/assets/esygrab-logo.png';
 
 const Waitlist = () => {
@@ -39,7 +39,7 @@ const Waitlist = () => {
 
       setSubmitted(true);
       toast({
-        title: "✅ You're on the waitlist!",
+        title: "✅ Thank you! You're officially on the EsyGrab waitlist.",
         description: "We'll notify you before launch.",
         variant: "default",
       });
@@ -56,24 +56,25 @@ const Waitlist = () => {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-white flex items-center justify-center p-4">
         <div className="w-full max-w-lg text-center">
-          <Card className="shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
+          <Card className="shadow-xl border-0 bg-white">
             <CardContent className="p-12">
               <div className="mb-8">
-                <div className="mx-auto w-24 h-24 bg-gradient-to-r from-green-100 to-emerald-100 rounded-full flex items-center justify-center mb-8">
-                  <Check className="w-12 h-12 text-green-600" />
+                <div className="mx-auto w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mb-8">
+                  <Check className="w-12 h-12" style={{ color: '#28a745' }} />
                 </div>
-                <h2 className="text-4xl font-bold text-gray-900 mb-6">
-                  ✅ You're on the waitlist!
+                <h2 className="text-3xl font-bold text-gray-900 mb-6">
+                  ✅ Thank you! You're officially on the EsyGrab waitlist.
                 </h2>
-                <p className="text-gray-600 text-xl leading-relaxed">
-                  We'll notify you before launch and give you early access to Nepal's fastest delivery service.
+                <p className="text-gray-600 text-lg leading-relaxed">
+                  We'll notify you before launch.
                 </p>
               </div>
               <Button 
                 onClick={() => window.location.href = '/'}
-                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 py-4 text-lg font-semibold"
+                className="w-full py-4 text-lg font-semibold rounded-lg"
+                style={{ backgroundColor: '#28a745' }}
                 size="lg"
               >
                 Back to Home
@@ -86,140 +87,141 @@ const Waitlist = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50">
-      {/* Hero Section */}
-      <section className="relative py-16 md:py-24">
+    <div className="min-h-screen bg-white font-sans">
+      {/* Header */}
+      <header className="py-6 bg-white border-b border-gray-100">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <div className="mb-8">
-              <img src={esygrabLogo} alt="EsyGrab" className="mx-auto h-20 w-auto" />
-            </div>
-            <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight">
-              Groceries Delivered in <span className="text-green-600">15 Minutes</span>
-            </h1>
-            <h2 className="text-xl md:text-2xl text-gray-600 mb-12 max-w-4xl mx-auto leading-relaxed">
-              Coming Soon to Nepal
-            </h2>
-            <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto mb-16">
-              Fresh produce, daily essentials, and snacks at your door — faster than ever
-            </p>
-            
-            {/* Waitlist Form */}
-            <div className="max-w-md mx-auto">
-              <Card className="shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
-                <CardHeader className="pb-6">
-                  <CardTitle className="text-2xl font-bold text-gray-900">
-                    Join the Waitlist
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                      <Label htmlFor="fullName" className="text-sm font-medium">
-                        Full Name
-                      </Label>
-                      <div className="relative mt-1">
-                        <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                        <Input
-                          id="fullName"
-                          type="text"
-                          placeholder="Enter your full name"
-                          value={formData.fullName}
-                          onChange={(e) => handleInputChange('fullName', e.target.value)}
-                          className="pl-12 py-3 text-base rounded-xl"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="phoneNumber" className="text-sm font-medium">
-                        Phone Number
-                      </Label>
-                      <div className="relative mt-1">
-                        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                        <Input
-                          id="phoneNumber"
-                          type="tel"
-                          placeholder="Enter your phone number"
-                          value={formData.phoneNumber}
-                          onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
-                          className="pl-12 py-3 text-base rounded-xl"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="email" className="text-sm font-medium">
-                        Email Address
-                      </Label>
-                      <div className="relative mt-1">
-                        <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                        <Input
-                          id="email"
-                          type="email"
-                          placeholder="Enter your email"
-                          value={formData.email}
-                          onChange={(e) => handleInputChange('email', e.target.value)}
-                          className="pl-12 py-3 text-base rounded-xl"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <Button
-                      type="submit"
-                      disabled={loading}
-                      className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 py-4 text-lg font-semibold rounded-xl"
-                      size="lg"
-                    >
-                      {loading ? "Joining..." : "Join the Waitlist"}
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
-            </div>
+          <div className="flex justify-center">
+            <img src={esygrabLogo} alt="EsyGrab" className="h-12 w-auto" />
           </div>
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <section className="py-16 md:py-24 bg-white">
+        <div className="container mx-auto px-4 max-w-4xl text-center">
+          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+            Nepal's Fastest Grocery Delivery — <span style={{ color: '#28a745' }}>Coming Soon</span>
+          </h1>
+          <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
+            Get fresh groceries, snacks, and daily essentials at your doorstep in 10-15 minutes. Be the first to experience convenience redefined.
+          </p>
+          
+          {/* Waitlist Form */}
+          <div className="max-w-md mx-auto mb-8">
+            <Card className="shadow-lg border border-gray-200 bg-white">
+              <CardContent className="p-8">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div>
+                    <Label htmlFor="fullName" className="text-left block text-sm font-medium text-gray-700 mb-2">
+                      Full Name
+                    </Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <Input
+                        id="fullName"
+                        type="text"
+                        placeholder="Enter your full name"
+                        value={formData.fullName}
+                        onChange={(e) => handleInputChange('fullName', e.target.value)}
+                        className="pl-12 py-3 text-base rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="phoneNumber" className="text-left block text-sm font-medium text-gray-700 mb-2">
+                      Phone Number
+                    </Label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <Input
+                        id="phoneNumber"
+                        type="tel"
+                        placeholder="Enter your phone number"
+                        value={formData.phoneNumber}
+                        onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+                        className="pl-12 py-3 text-base rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="email" className="text-left block text-sm font-medium text-gray-700 mb-2">
+                      Email Address
+                    </Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="Enter your email"
+                        value={formData.email}
+                        onChange={(e) => handleInputChange('email', e.target.value)}
+                        className="pl-12 py-3 text-base rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full py-4 text-lg font-semibold rounded-lg text-white"
+                    style={{ backgroundColor: '#28a745' }}
+                    size="lg"
+                  >
+                    {loading ? "Joining..." : "Join the Waitlist"}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <p className="text-sm text-gray-500">
+            No spam. Only early access, exclusive offers, and updates.
+          </p>
         </div>
       </section>
 
       {/* Benefits Section */}
-      <section className="py-16 bg-white/80">
+      <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center text-gray-900 mb-16">
-            Why Join the Waitlist?
+          <h2 className="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-12">
+            Why Join the EsyGrab Waitlist?
           </h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="text-center">
-              <div className="mx-auto w-16 h-16 bg-gradient-to-r from-green-100 to-emerald-100 rounded-2xl flex items-center justify-center mb-6">
-                <Rocket className="w-8 h-8 text-green-600" />
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
+            <div className="text-center p-6">
+              <div className="mx-auto w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mb-6">
+                <Zap className="w-8 h-8" style={{ color: '#28a745' }} />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">🚀 15-minute delivery</h3>
-              <p className="text-gray-600">Lightning-fast delivery to your doorstep in just 15 minutes</p>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">⚡ Ultra-fast 10-15 minute delivery</h3>
+              <p className="text-gray-600">Lightning-fast delivery to your doorstep in just 10-15 minutes</p>
             </div>
 
-            <div className="text-center">
-              <div className="mx-auto w-16 h-16 bg-gradient-to-r from-green-100 to-emerald-100 rounded-2xl flex items-center justify-center mb-6">
-                <Gift className="w-8 h-8 text-green-600" />
+            <div className="text-center p-6">
+              <div className="mx-auto w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mb-6">
+                <Target className="w-8 h-8" style={{ color: '#28a745' }} />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">💸 Exclusive launch offers</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">💸 Exclusive launch-day discounts</h3>
               <p className="text-gray-600">Special discounts and free delivery for early users</p>
             </div>
 
-            <div className="text-center">
-              <div className="mx-auto w-16 h-16 bg-gradient-to-r from-green-100 to-emerald-100 rounded-2xl flex items-center justify-center mb-6">
-                <Star className="w-8 h-8 text-green-600" />
+            <div className="text-center p-6">
+              <div className="mx-auto w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mb-6">
+                <Gift className="w-8 h-8" style={{ color: '#28a745' }} />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">🎁 Early user rewards</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">🎁 Early user rewards & loyalty perks</h3>
               <p className="text-gray-600">Earn points and unlock exclusive benefits</p>
             </div>
 
-            <div className="text-center">
-              <div className="mx-auto w-16 h-16 bg-gradient-to-r from-green-100 to-emerald-100 rounded-2xl flex items-center justify-center mb-6">
-                <Package className="w-8 h-8 text-green-600" />
+            <div className="text-center p-6">
+              <div className="mx-auto w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mb-6">
+                <MapPin className="w-8 h-8" style={{ color: '#28a745' }} />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">📦 Live order tracking</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">📍 Real-time order tracking in-app</h3>
               <p className="text-gray-600">Track your order in real-time from store to door</p>
             </div>
           </div>
@@ -227,33 +229,33 @@ const Waitlist = () => {
       </section>
 
       {/* How It Works */}
-      <section className="py-16">
+      <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center text-gray-900 mb-16">
-            How EsyGrab Works
+          <h2 className="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-12">
+            How It Works
           </h2>
           <div className="grid md:grid-cols-3 gap-12 max-w-4xl mx-auto">
             <div className="text-center">
-              <div className="mx-auto w-20 h-20 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mb-6 text-white font-bold text-2xl">
+              <div className="mx-auto w-20 h-20 rounded-full flex items-center justify-center mb-6 text-white font-bold text-2xl" style={{ backgroundColor: '#28a745' }}>
                 1
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Sign up now</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Sign Up</h3>
               <p className="text-gray-600">Join our waitlist to be notified when we launch in your area</p>
             </div>
 
             <div className="text-center">
-              <div className="mx-auto w-20 h-20 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mb-6 text-white font-bold text-2xl">
+              <div className="mx-auto w-20 h-20 rounded-full flex items-center justify-center mb-6 text-white font-bold text-2xl" style={{ backgroundColor: '#28a745' }}>
                 2
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Get early access before launch</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Get early access before public launch</h3>
               <p className="text-gray-600">Be among the first to experience Nepal's fastest delivery service</p>
             </div>
 
             <div className="text-center">
-              <div className="mx-auto w-20 h-20 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mb-6 text-white font-bold text-2xl">
+              <div className="mx-auto w-20 h-20 rounded-full flex items-center justify-center mb-6 text-white font-bold text-2xl" style={{ backgroundColor: '#28a745' }}>
                 3
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Order and receive groceries in 15 minutes</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Shop and receive groceries in minutes</h3>
               <p className="text-gray-600">Start ordering fresh groceries with lightning-fast delivery</p>
             </div>
           </div>
@@ -263,14 +265,11 @@ const Waitlist = () => {
       {/* Social Proof */}
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4 text-center">
-          <div className="flex items-center justify-center mb-6">
-            <Users className="w-8 h-8 text-green-600 mr-3" />
-            <h2 className="text-2xl font-bold text-gray-900">
-              Join 2,000+ early users excited for fast delivery
-            </h2>
-          </div>
-          <p className="text-gray-600 text-lg">
-            Be part of the revolution in grocery delivery across Nepal
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+            Thousands are already in line…
+          </h2>
+          <p className="text-lg text-gray-600">
+            Join 500+ early users waiting to try EsyGrab
           </p>
         </div>
       </section>
@@ -279,23 +278,29 @@ const Waitlist = () => {
       <footer className="py-12 bg-gray-900">
         <div className="container mx-auto px-4">
           <div className="flex flex-col items-center space-y-6">
-            <img src={esygrabLogo} alt="EsyGrab" className="h-12 w-auto" />
+            <img src={esygrabLogo} alt="EsyGrab" className="h-10 w-auto opacity-80" />
             
             <div className="flex space-x-6">
               <a href="#" className="text-gray-400 hover:text-green-500 transition-colors">
-                <Facebook className="w-8 h-8" />
+                <Facebook className="w-6 h-6" />
               </a>
               <a href="#" className="text-gray-400 hover:text-green-500 transition-colors">
-                <Instagram className="w-8 h-8" />
+                <Instagram className="w-6 h-6" />
               </a>
               <a href="#" className="text-gray-400 hover:text-green-500 transition-colors">
-                <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-2.08v5.73a2.89 2.89 0 01-2.88 2.88 2.89 2.89 0 01-2.88-2.88 2.89 2.89 0 012.88-2.88c.31 0 .62.05.9.15V2.8a5.06 5.06 0 00-.9-.09A5.09 5.09 0 005.8 7.78a5.09 5.09 0 005.08 5.08A5.09 5.09 0 0016 7.78v-1.09z"/>
                 </svg>
               </a>
             </div>
             
-            <p className="text-gray-400 text-center">
+            <div className="flex space-x-6 text-sm text-gray-400">
+              <a href="#" className="hover:text-green-500 transition-colors">Terms</a>
+              <a href="#" className="hover:text-green-500 transition-colors">Privacy</a>
+              <a href="#" className="hover:text-green-500 transition-colors">Contact</a>
+            </div>
+            
+            <p className="text-gray-400 text-center text-sm">
               © 2024 EsyGrab. All rights reserved.
             </p>
           </div>
