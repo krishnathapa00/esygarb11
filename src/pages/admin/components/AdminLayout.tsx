@@ -26,6 +26,7 @@ const AdminLayout = ({ children, onRefresh }: { children: React.ReactNode; onRef
     { icon: Package, label: 'Products', path: '/admin/products' },
     { icon: Users, label: 'Users', path: '/admin/users' },
     { icon: UserCheck, label: 'KYC Management', path: '/admin/kyc' },
+    { icon: UserCheck, label: 'Delivery Partners', path: '/admin/delivery-partners' },
     { icon: Store, label: 'Darkstores', path: '/admin/darkstores' },
     { icon: Settings, label: 'Delivery Settings', path: '/admin/delivery-settings' },
     { icon: CreditCard, label: 'Transactions', path: '/admin/transactions' },
@@ -38,12 +39,12 @@ const AdminLayout = ({ children, onRefresh }: { children: React.ReactNode; onRef
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <div className="w-64 bg-white shadow-lg">
+      {/* Fixed Sidebar */}
+      <div className="w-64 bg-white shadow-lg fixed h-full overflow-y-auto">
         <div className="p-6">
           <h1 className="text-xl font-bold text-gray-800">Admin Panel</h1>
         </div>
-        <nav className="mt-6">
+        <nav className="mt-6 pb-20">
           {sidebarItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
@@ -74,8 +75,8 @@ const AdminLayout = ({ children, onRefresh }: { children: React.ReactNode; onRef
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 p-8">
+      {/* Main Content with margin to account for fixed sidebar */}
+      <div className="flex-1 ml-64 p-8 overflow-y-auto">
         {children}
       </div>
     </div>

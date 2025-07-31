@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, FileText, UserCheck, UserX, Trash2 } from 'lucide-react';
+import { Eye, FileText, UserCheck, UserX, Trash2, Phone } from 'lucide-react';
 import AdminLayout from './components/AdminLayout';
 
 const ManageKYC = () => {
@@ -31,7 +31,7 @@ const ManageKYC = () => {
             role
           )
         `)
-        .order('created_at', { ascending: false });
+        .order('submitted_at', { ascending: false });
       
       if (error) throw error;
       return data;
@@ -158,39 +158,63 @@ const ManageKYC = () => {
 
         <div className="grid gap-4">
           {isLoading ? (
-            <div>Loading...</div>
+            <div className="flex justify-center py-12">
+              <div className="text-center space-y-3">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <p className="text-muted-foreground">Loading KYC verifications...</p>
+              </div>
+            </div>
+          ) : kycVerifications.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">No KYC submissions found</p>
+              <p className="text-sm text-muted-foreground mt-2">
+                KYC submissions from delivery partners will appear here
+              </p>
+            </div>
           ) : (
             kycVerifications.map((kyc) => (
-              <Card key={kyc.id} className="p-4">
+              <Card key={kyc.id} className="p-4 hover:shadow-md transition-shadow">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center gap-4 mb-2">
-                      <h3 className="font-semibold">{kyc.profiles?.full_name || 'Unknown User'}</h3>
+                      <h3 className="font-semibold text-lg">{kyc.profiles?.full_name || 'Unknown User'}</h3>
                       {getStatusBadge(kyc.verification_status)}
-                      <Badge variant="outline">{kyc.profiles?.role || 'Unknown'}</Badge>
+                      <Badge variant="outline" className="text-blue-600">{kyc.profiles?.role || 'Unknown'}</Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Phone: {kyc.profiles?.phone_number || 'Not provided'}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Submitted: {new Date(kyc.submitted_at).toLocaleDateString()}
-                    </p>
-                    {kyc.admin_comments && (
-                      <p className="text-sm mt-2 p-2 bg-muted rounded">
-                        <strong>Admin Comments:</strong> {kyc.admin_comments}
+                    <div className="space-y-1 mb-3">
+                      <p className="text-sm text-muted-foreground">
+                        <Phone className="inline w-4 h-4 mr-1" />
+                        Phone: {kyc.profiles?.phone_number || 'Not provided'}
                       </p>
+                      <p className="text-sm text-muted-foreground">
+                        Submitted: {new Date(kyc.submitted_at).toLocaleDateString()} at {new Date(kyc.submitted_at).toLocaleTimeString()}
+                      </p>
+                      {kyc.reviewed_at && (
+                        <p className="text-sm text-muted-foreground">
+                          Reviewed: {new Date(kyc.reviewed_at).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                    {kyc.admin_comments && (
+                      <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p className="text-sm">
+                          <strong className="text-blue-800">Admin Comments:</strong>
+                          <span className="ml-2 text-blue-700">{kyc.admin_comments}</span>
+                        </p>
+                      </div>
                     )}
                   </div>
                   
-                  <div className="flex flex-col gap-2">
-                    <div className="flex gap-2">
+                  <div className="flex flex-col gap-2 ml-4">
+                    <div className="flex flex-wrap gap-2">
                       {kyc.citizenship_document_url && (
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => openDocument(kyc.citizenship_document_url)}
+                          className="text-xs"
                         >
-                          <FileText className="w-4 h-4 mr-1" />
+                          <FileText className="w-3 h-3 mr-1" />
                           Citizenship
                         </Button>
                       )}
@@ -199,8 +223,9 @@ const ManageKYC = () => {
                           size="sm"
                           variant="outline"
                           onClick={() => openDocument(kyc.license_document_url)}
+                          className="text-xs"
                         >
-                          <FileText className="w-4 h-4 mr-1" />
+                          <FileText className="w-3 h-3 mr-1" />
                           License
                         </Button>
                       )}
@@ -209,29 +234,53 @@ const ManageKYC = () => {
                           size="sm"
                           variant="outline"
                           onClick={() => openDocument(kyc.pan_document_url)}
+                          className="text-xs"
                         >
-                          <FileText className="w-4 h-4 mr-1" />
+                          <FileText className="w-3 h-3 mr-1" />
                           PAN
                         </Button>
                       )}
                     </div>
                     
                     <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => handleReview(kyc)}
-                      >
-                        <Eye className="w-4 h-4 mr-1" />
-                        Review
-                      </Button>
-                      {kyc.verification_status === 'rejected' && (
+                      {kyc.verification_status === 'pending' && (
                         <Button
                           size="sm"
-                          variant="destructive"
-                          onClick={() => deleteKYCMutation.mutate(kyc.id)}
+                          onClick={() => handleReview(kyc)}
+                          className="bg-blue-600 hover:bg-blue-700"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Eye className="w-4 h-4 mr-1" />
+                          Review & Decide
                         </Button>
+                      )}
+                      {kyc.verification_status === 'approved' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleReview(kyc)}
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          View Details
+                        </Button>
+                      )}
+                      {kyc.verification_status === 'rejected' && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleReview(kyc)}
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            View
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => deleteKYCMutation.mutate(kyc.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </>
                       )}
                     </div>
                   </div>

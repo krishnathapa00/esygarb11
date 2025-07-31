@@ -26,6 +26,7 @@ import Transactions from "./pages/admin/Transactions";
 import AssignOrder from "./pages/admin/AssignOrder";
 import AddProduct from "./pages/admin/AddProduct";
 import ManageKYC from "./pages/admin/ManageKYC";
+import DeliveryPartnerManagement from "./pages/admin/DeliveryPartnerManagement";
 import NotFound from "./pages/NotFound";
 import MapLocation from "./pages/MapLocation";
 import SearchResults from "./pages/SearchResults";
@@ -205,6 +206,14 @@ function App() {
                   element={
                     <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
                       <ManageKYC />
+                    </RoleProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/delivery-partners"
+                  element={
+                    <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
+                      <DeliveryPartnerManagement />
                     </RoleProtectedRoute>
                   }
                 />

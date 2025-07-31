@@ -122,6 +122,65 @@ const ManageUsers = () => {
           </div>
         </div>
 
+        {/* Statistics Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Package className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Users</p>
+                  <p className="text-2xl font-bold">{users.length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <UserCheck className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Delivery Partners</p>
+                  <p className="text-2xl font-bold">{users.filter(u => u.role === 'delivery_partner').length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <UserCheck className="h-5 w-5 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Customers</p>
+                  <p className="text-2xl font-bold">{users.filter(u => u.role === 'customer').length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-orange-100 rounded-lg">
+                  <Clock className="h-5 w-5 text-orange-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Online Partners</p>
+                  <p className="text-2xl font-bold">{users.filter(u => u.role === 'delivery_partner' && u.is_online).length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {isLoading ? (
             <div className="col-span-full flex justify-center py-12">
@@ -130,23 +189,28 @@ const ManageUsers = () => {
                 <p className="text-muted-foreground">Loading users...</p>
               </div>
             </div>
+          ) : filteredUsers.length === 0 ? (
+            <div className="col-span-full text-center py-12">
+              <p className="text-muted-foreground">No users found matching your search.</p>
+            </div>
           ) : (
             filteredUsers.map((user) => (
-              <Card key={user.id} className="hover:shadow-md transition-shadow">
+              <Card key={user.id} className="hover:shadow-lg transition-all duration-200 border-2 hover:border-primary/20">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <h3 className="font-semibold text-lg">{user.full_name || 'Unknown User'}</h3>
-                      <div className="flex items-center gap-2">
+                    <div className="space-y-2">
+                      <h3 className="font-semibold text-lg text-gray-900">{user.full_name || 'Unknown User'}</h3>
+                      <div className="flex flex-wrap items-center gap-2">
                         {getRoleBadge(user.role)}
                         {user.kyc_verified && (
-                          <Badge variant="outline" className="text-green-600 border-green-200">
+                          <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
                             <UserCheck className="w-3 h-3 mr-1" />
-                            Verified
+                            KYC Verified
                           </Badge>
                         )}
                         {user.is_online && user.role === 'delivery_partner' && (
-                          <Badge variant="outline" className="text-blue-600 border-blue-200">
+                          <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50">
+                            <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
                             Online
                           </Badge>
                         )}
@@ -158,7 +222,7 @@ const ManageUsers = () => {
                         size="sm"
                         variant="destructive"
                         onClick={() => deleteUserMutation.mutate(user.id)}
-                        className="shrink-0"
+                        className="shrink-0 opacity-70 hover:opacity-100"
                       >
                         <UserX className="w-4 h-4" />
                       </Button>
@@ -167,27 +231,31 @@ const ManageUsers = () => {
                 </CardHeader>
                 
                 <CardContent className="pt-0">
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2">
+                  <div className="space-y-3 text-sm">
+                    <div className="flex items-center gap-2 text-gray-600">
                       <Phone className="w-4 h-4 text-muted-foreground" />
-                      <span>{user.phone_number || 'Not provided'}</span>
+                      <span className="font-medium">{user.phone_number || 'Not provided'}</span>
                     </div>
                     
-                    {user.darkstore_id && (
-                      <div className="flex items-center gap-2">
-                        <Package className="w-4 h-4 text-muted-foreground" />
-                        <span>Darkstore: {user.darkstore_id}</span>
-                      </div>
+                    {user.role === 'delivery_partner' && (
+                      <>
+                        {user.darkstore_id && (
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <Package className="w-4 h-4 text-muted-foreground" />
+                            <span>Darkstore ID: {user.darkstore_id}</span>
+                          </div>
+                        )}
+                        
+                        {user.vehicle_type && (
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <UserCheck className="w-4 h-4 text-muted-foreground" />
+                            <span>Vehicle: {user.vehicle_type}</span>
+                          </div>
+                        )}
+                      </>
                     )}
                     
-                    {user.vehicle_type && (
-                      <div className="flex items-center gap-2">
-                        <UserCheck className="w-4 h-4 text-muted-foreground" />
-                        <span>Vehicle: {user.vehicle_type}</span>
-                      </div>
-                    )}
-                    
-                    <div className="flex items-center gap-2 text-muted-foreground">
+                    <div className="flex items-center gap-2 text-muted-foreground border-t pt-2">
                       <Clock className="w-4 h-4" />
                       <span>Joined: {new Date(user.created_at).toLocaleDateString()}</span>
                     </div>

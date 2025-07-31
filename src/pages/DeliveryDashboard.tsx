@@ -237,6 +237,7 @@ const DeliveryDashboard = () => {
                     checked={isOnline}
                     onCheckedChange={toggleOnlineStatus}
                     disabled={kycStatus !== 'approved'}
+                    className="data-[state=checked]:bg-green-600"
                   />
                   <Label htmlFor="online-status" className="text-sm font-medium">
                     <span className={`inline-flex items-center gap-1 ${isOnline ? 'text-green-600' : 'text-gray-500'}`}>
