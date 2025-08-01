@@ -181,89 +181,116 @@ const ManageUsers = () => {
           </Card>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {isLoading ? (
-            <div className="col-span-full flex justify-center py-12">
-              <div className="text-center space-y-3">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                <p className="text-muted-foreground">Loading users...</p>
-              </div>
-            </div>
-          ) : filteredUsers.length === 0 ? (
-            <div className="col-span-full text-center py-12">
-              <p className="text-muted-foreground">No users found matching your search.</p>
-            </div>
-          ) : (
-            filteredUsers.map((user) => (
-              <Card key={user.id} className="hover:shadow-lg transition-all duration-200 border-2 hover:border-primary/20">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                      <h3 className="font-semibold text-lg text-gray-900">{user.full_name || 'Unknown User'}</h3>
-                      <div className="flex flex-wrap items-center gap-2">
-                        {getRoleBadge(user.role)}
-                        {user.kyc_verified && (
-                          <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
-                            <UserCheck className="w-3 h-3 mr-1" />
-                            KYC Verified
-                          </Badge>
-                        )}
-                        {user.is_online && user.role === 'delivery_partner' && (
-                          <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50">
-                            <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
-                            Online
-                          </Badge>
-                        )}
+        {/* Users Table */}
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    User
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Role
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Phone
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Joined
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center">
+                      <div className="text-center space-y-3">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                        <p className="text-muted-foreground">Loading users...</p>
                       </div>
-                    </div>
-                    
-                    {user.role !== 'super_admin' && (
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => deleteUserMutation.mutate(user.id)}
-                        className="shrink-0 opacity-70 hover:opacity-100"
-                      >
-                        <UserX className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="pt-0">
-                  <div className="space-y-3 text-sm">
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <Phone className="w-4 h-4 text-muted-foreground" />
-                      <span className="font-medium">{user.phone_number || 'Not provided'}</span>
-                    </div>
-                    
-                    {user.role === 'delivery_partner' && (
-                      <>
-                        {user.darkstore_id && (
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <Package className="w-4 h-4 text-muted-foreground" />
-                            <span>Darkstore ID: {user.darkstore_id}</span>
+                    </td>
+                  </tr>
+                ) : filteredUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center">
+                      <p className="text-muted-foreground">No users found matching your search.</p>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredUsers.map((user) => (
+                    <tr key={user.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10">
+                            <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                              <span className="text-sm font-medium text-gray-700">
+                                {user.full_name ? user.full_name.charAt(0).toUpperCase() : '?'}
+                              </span>
+                            </div>
                           </div>
-                        )}
-                        
-                        {user.vehicle_type && (
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <UserCheck className="w-4 h-4 text-muted-foreground" />
-                            <span>Vehicle: {user.vehicle_type}</span>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {user.full_name || 'Unknown User'}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              ID: {user.id.slice(0, 8)}...
+                            </div>
                           </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {getRoleBadge(user.role)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <div className="flex items-center gap-1">
+                          <Phone className="w-4 h-4 text-gray-400" />
+                          {user.phone_number || 'Not provided'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col gap-1">
+                          {user.kyc_verified && (
+                            <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 w-fit">
+                              <UserCheck className="w-3 h-3 mr-1" />
+                              KYC Verified
+                            </Badge>
+                          )}
+                          {user.is_online && user.role === 'delivery_partner' && (
+                            <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50 w-fit">
+                              <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
+                              Online
+                            </Badge>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(user.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        {user.role !== 'super_admin' && (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => deleteUserMutation.mutate(user.id)}
+                            className="opacity-70 hover:opacity-100"
+                          >
+                            <UserX className="w-4 h-4" />
+                          </Button>
                         )}
-                      </>
-                    )}
-                    
-                    <div className="flex items-center gap-2 text-muted-foreground border-t pt-2">
-                      <Clock className="w-4 h-4" />
-                      <span>Joined: {new Date(user.created_at).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </AdminLayout>

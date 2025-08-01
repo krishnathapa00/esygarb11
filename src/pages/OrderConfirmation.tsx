@@ -122,14 +122,14 @@ const OrderConfirmation = () => {
             )}
           </div>
           
-          <div className="mt-8 space-x-4">
-            <Link to={`/order-tracking/${displayData.order_number}`}>
-              <Button className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700">
+          <div className="mt-8 flex flex-col sm:flex-row gap-3 sm:gap-4">
+            <Link to={`/order-tracking/${displayData.order_number}`} className="flex-1">
+              <Button className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700">
                 Track Order
               </Button>
             </Link>
-            <Link to="/">
-              <Button variant="outline">
+            <Link to="/" className="flex-1">
+              <Button variant="outline" className="w-full">
                 Continue Shopping
               </Button>
             </Link>

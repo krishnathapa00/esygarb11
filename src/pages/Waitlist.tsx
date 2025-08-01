@@ -108,59 +108,65 @@ const Waitlist = () => {
           </p>
           
           {/* Waitlist Form */}
-          <div className="max-w-md mx-auto mb-8">
-            <Card className="shadow-lg border border-gray-200 bg-white">
+          <div className="max-w-xl mx-auto mb-8">
+            <Card className="shadow-2xl border-0 bg-white overflow-hidden">
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 border-b">
+                <h3 className="text-xl font-bold text-center text-gray-900 mb-2">Join the Waitlist</h3>
+                <p className="text-center text-gray-600 text-sm">Be among the first to experience Nepal's fastest delivery</p>
+              </div>
               <CardContent className="p-8">
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  <div>
-                    <Label htmlFor="fullName" className="text-left block text-sm font-medium text-gray-700 mb-2">
-                      Full Name
-                    </Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                      <Input
-                        id="fullName"
-                        type="text"
-                        placeholder="Enter your full name"
-                        value={formData.fullName}
-                        onChange={(e) => handleInputChange('fullName', e.target.value)}
-                        className="pl-12 py-3 text-base rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500"
-                        required
-                      />
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <Label htmlFor="fullName" className="text-left block text-sm font-semibold text-gray-800 mb-3">
+                        Full Name *
+                      </Label>
+                      <div className="relative">
+                        <User className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                        <Input
+                          id="fullName"
+                          type="text"
+                          placeholder="Your full name"
+                          value={formData.fullName}
+                          onChange={(e) => handleInputChange('fullName', e.target.value)}
+                          className="pl-12 pr-4 py-4 text-base rounded-xl border-2 border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="phoneNumber" className="text-left block text-sm font-semibold text-gray-800 mb-3">
+                        Phone Number *
+                      </Label>
+                      <div className="relative">
+                        <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                        <Input
+                          id="phoneNumber"
+                          type="tel"
+                          placeholder="Your phone number"
+                          value={formData.phoneNumber}
+                          onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+                          className="pl-12 pr-4 py-4 text-base rounded-xl border-2 border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200"
+                          required
+                        />
+                      </div>
                     </div>
                   </div>
 
                   <div>
-                    <Label htmlFor="phoneNumber" className="text-left block text-sm font-medium text-gray-700 mb-2">
-                      Phone Number
+                    <Label htmlFor="email" className="text-left block text-sm font-semibold text-gray-800 mb-3">
+                      Email Address *
                     </Label>
                     <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                      <Input
-                        id="phoneNumber"
-                        type="tel"
-                        placeholder="Enter your phone number"
-                        value={formData.phoneNumber}
-                        onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
-                        className="pl-12 py-3 text-base rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="email" className="text-left block text-sm font-medium text-gray-700 mb-2">
-                      Email Address
-                    </Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                       <Input
                         id="email"
                         type="email"
-                        placeholder="Enter your email"
+                        placeholder="Your email address"
                         value={formData.email}
                         onChange={(e) => handleInputChange('email', e.target.value)}
-                        className="pl-12 py-3 text-base rounded-lg border-gray-300 focus:border-green-500 focus:ring-green-500"
+                        className="pl-12 pr-4 py-4 text-base rounded-xl border-2 border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200 w-full"
                         required
                       />
                     </div>
@@ -169,11 +175,17 @@ const Waitlist = () => {
                   <Button
                     type="submit"
                     disabled={loading}
-                    className="w-full py-4 text-lg font-semibold rounded-lg text-white"
-                    style={{ backgroundColor: '#28a745' }}
+                    className="w-full py-4 text-lg font-bold rounded-xl text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
                     size="lg"
                   >
-                    {loading ? "Joining..." : "Join the Waitlist"}
+                    {loading ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Joining...
+                      </div>
+                    ) : (
+                      "🚀 Join the Waitlist"
+                    )}
                   </Button>
                 </form>
               </CardContent>
