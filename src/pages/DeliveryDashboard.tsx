@@ -106,6 +106,15 @@ const DeliveryDashboard = () => {
   };
 
   const toggleOnlineStatus = async () => {
+    if (kycStatus !== 'approved') {
+      toast({
+        title: "KYC Required",
+        description: "Complete your KYC verification to go online",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const newStatus = !isOnline;
       const { error } = await supabase
@@ -214,7 +223,7 @@ const DeliveryDashboard = () => {
 
   const totalEarnings = earnings.reduce((sum, earning) => sum + parseFloat(earning.amount || '0'), 0);
 
-  const availableOrders = isOnline && kycStatus === 'approved' 
+  const availableOrders = (isOnline && kycStatus === 'approved') 
     ? orders.filter(order => 
         (order.status === 'ready_for_pickup' || order.status === 'confirmed') && !order.delivery_partner_id
       )
@@ -346,8 +355,8 @@ const DeliveryDashboard = () => {
           </Card>
         </div>
 
-        {/* Available Orders - Only show when online and KYC approved */}
-        {isOnline && kycStatus === 'approved' && (
+                {/* Available Orders - Only show when online and KYC approved */}
+        {(isOnline && kycStatus === 'approved') && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -418,7 +427,12 @@ const DeliveryDashboard = () => {
               </div>
             ) : (
               <p className="text-center text-muted-foreground py-8">
-                No available orders at the moment. Turn on your status to receive orders.
+                {kycStatus !== 'approved' 
+                  ? "Complete KYC verification to see available orders."
+                  : !isOnline 
+                  ? "Turn on your status to receive orders."
+                  : "No available orders at the moment."
+                }
               </p>
             )}
           </CardContent>

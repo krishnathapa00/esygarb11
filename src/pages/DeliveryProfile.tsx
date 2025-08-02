@@ -27,19 +27,27 @@ const DeliveryProfile = () => {
   });
 
   // Fetch delivery partner profile
-  const { data: profile, isLoading: profileLoading } = useQuery({
+  const { data: profile, isLoading: profileLoading, error: profileError } = useQuery({
     queryKey: ['delivery-profile', user?.id],
     queryFn: async () => {
+      if (!user?.id) {
+        throw new Error('No user ID available');
+      }
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', user?.id)
+        .eq('id', user.id)
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Profile fetch error:', error);
+        throw error;
+      }
       return data;
     },
-    enabled: !!user?.id
+    enabled: !!user?.id,
+    retry: 3
   });
 
   // Fetch available darkstores
@@ -107,6 +115,7 @@ const DeliveryProfile = () => {
       });
     },
     onError: (error) => {
+      console.error('Profile update error:', error);
       toast({
         title: "Error",
         description: "Failed to update profile.",
@@ -157,6 +166,22 @@ const DeliveryProfile = () => {
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
             <p className="mt-4 text-muted-foreground">Loading profile...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (profileError || !user) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center py-12">
+            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <p className="text-red-600 mb-4">Failed to load profile</p>
+            <Button onClick={() => navigate('/delivery-partner/dashboard')}>
+              Back to Dashboard
+            </Button>
           </div>
         </div>
       </div>
