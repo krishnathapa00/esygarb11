@@ -49,48 +49,82 @@ const CartPage = () => {
         async (position) => {
           try {
             const { latitude, longitude } = position.coords;
+            console.log('Detected coordinates:', latitude, longitude);
+            
             const response = await fetch(
               `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
             );
 
-            const data = await response.json();
-            const address = data?.address || {};
-            const parts = [
-              address.house_number && address.road
-                ? `${address.house_number} ${address.road}`
-                : address.road,
-              address.neighbourhood || address.suburb,
-              address.city || address.town || address.village,
-              address.state,
-            ].filter(Boolean);
+            if (response.ok) {
+              const data = await response.json();
+              console.log('Geocoding response:', data);
+              
+              const address = data?.address || {};
+              const parts = [
+                address.house_number && address.road
+                  ? `${address.house_number} ${address.road}`
+                  : address.road,
+                address.neighbourhood || address.suburb,
+                address.city || address.town || address.village,
+                address.state,
+              ].filter(Boolean);
 
-            const formatted =
-              parts.join(", ") || data.display_name || "Detected Location";
-            setDeliveryLocation(formatted);
+              const formatted =
+                parts.join(", ") || data.display_name || "Detected Location";
+              
+              setDeliveryLocation(formatted);
 
-            localStorage.setItem(
-              "esygrab_user_location",
-              JSON.stringify({
-                address: formatted,
-                coordinates: { lat: latitude, lng: longitude },
-              })
-            );
+              localStorage.setItem(
+                "esygrab_user_location",
+                JSON.stringify({
+                  address: formatted,
+                  coordinates: { lat: latitude, lng: longitude },
+                })
+              );
+              
+              console.log('Location saved:', formatted);
+            } else {
+              throw new Error('Geocoding failed');
+            }
           } catch (err) {
             console.error("Geolocation failed:", err);
             const fallback = `Lat: ${position.coords.latitude.toFixed(
               4
             )}, Lng: ${position.coords.longitude.toFixed(4)}`;
             setDeliveryLocation(fallback);
+            
+            localStorage.setItem(
+              "esygrab_user_location",
+              JSON.stringify({
+                address: fallback,
+                coordinates: { lat: position.coords.latitude, lng: position.coords.longitude },
+              })
+            );
           } finally {
             setIsDetecting(false);
           }
         },
         (error) => {
           console.error("Geolocation error:", error);
-          alert(
-            "Failed to access your location. Please enable location services."
-          );
+          let errorMessage = 'Failed to access your location. Please enable location services.';
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage = 'Location access denied. Please enable location services in your browser.';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = 'Location information unavailable.';
+              break;
+            case error.TIMEOUT:
+              errorMessage = 'Location request timed out.';
+              break;
+          }
+          alert(errorMessage);
           setIsDetecting(false);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 60000
         }
       );
     } else {

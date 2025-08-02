@@ -1,17 +1,20 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Crosshair, Loader2 } from 'lucide-react';
+import { ArrowLeft, MapPin, Crosshair, Loader2, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { toast } from '@/hooks/use-toast';
 
 const MapLocation = () => {
   const navigate = useNavigate();
   const mapRef = useRef<HTMLDivElement>(null);
   const [selectedLocation, setSelectedLocation] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [isDetecting, setIsDetecting] = useState(false);
-  const [markerPosition, setMarkerPosition] = useState({ lat: 28.6139, lng: 77.2090 }); // Default to Delhi
+  const [isSearching, setIsSearching] = useState(false);
+  const [markerPosition, setMarkerPosition] = useState({ lat: 27.7172, lng: 85.3240 }); // Default to Kathmandu
   const [mapLoaded, setMapLoaded] = useState(false);
 
   // Initialize map (using a simple implementation without external map library)
@@ -118,14 +121,68 @@ const MapLocation = () => {
     }
   };
 
+  const handleSearchLocation = async () => {
+    if (!searchQuery.trim()) return;
+    
+    setIsSearching(true);
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=1`
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.length > 0) {
+          const result = data[0];
+          const lat = parseFloat(result.lat);
+          const lng = parseFloat(result.lon);
+          
+          setMarkerPosition({ lat, lng });
+          setSelectedLocation(result.display_name);
+          
+          toast({
+            title: "Location found",
+            description: "Location has been updated on the map",
+          });
+        } else {
+          toast({
+            title: "Location not found",
+            description: "Please try a different search term",
+            variant: "destructive",
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      toast({
+        title: "Search failed",
+        description: "Unable to search location. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   const handleSaveLocation = () => {
     if (selectedLocation.trim()) {
       localStorage.setItem('esygrab_user_location', JSON.stringify({
         address: selectedLocation,
         coordinates: markerPosition
       }));
-      alert('Location saved successfully!');
+      
+      toast({
+        title: "Location saved",
+        description: "Your delivery location has been saved successfully",
+      });
+      
       navigate(-1); // Go back to previous page
+    } else {
+      toast({
+        title: "No location selected",
+        description: "Please select a location first",
+        variant: "destructive",
+      });
     }
   };
 
@@ -222,16 +279,41 @@ const MapLocation = () => {
             </div>
           </div>
 
-          {/* Location Input */}
+          {/* Search Location */}
           <div className="bg-white rounded-lg p-6 shadow-sm">
             <div className="space-y-4">
+              <div>
+                <Label htmlFor="search">Search Location</Label>
+                <div className="flex space-x-2 mt-1">
+                  <Input 
+                    id="search"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search for a place (e.g., Thamel, Kathmandu)"
+                    className="flex-1"
+                    onKeyPress={(e) => e.key === 'Enter' && handleSearchLocation()}
+                  />
+                  <Button
+                    onClick={handleSearchLocation}
+                    disabled={isSearching || !searchQuery.trim()}
+                    className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                  >
+                    {isSearching ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Search className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+              
               <div>
                 <Label htmlFor="location">Selected Location</Label>
                 <Input 
                   id="location"
                   value={selectedLocation}
                   onChange={(e) => setSelectedLocation(e.target.value)}
-                  placeholder="Enter your address or click on the map"
+                  placeholder="Enter your address or search above"
                   className="mt-1"
                 />
               </div>

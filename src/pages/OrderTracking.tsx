@@ -111,7 +111,7 @@ const OrderTracking = () => {
       
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex items-center mb-6">
-          <Link to="/order-history">
+          <Link to="/">
             <Button variant="ghost" size="sm" className="mr-3">
               <ArrowLeft className="h-4 w-4" />
             </Button>

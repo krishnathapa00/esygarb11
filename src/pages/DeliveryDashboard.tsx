@@ -114,6 +114,7 @@ const DeliveryDashboard = () => {
         .eq('id', user.id);
 
       if (error) throw error;
+      
       setIsOnline(newStatus);
       toast({
         title: newStatus ? "You're now online" : "You're now offline",
@@ -121,8 +122,16 @@ const DeliveryDashboard = () => {
           ? "You'll receive new delivery requests" 
           : "You won't receive new delivery requests",
       });
+      
+      // Refetch orders to update available orders when status changes
+      fetchOrders();
     } catch (error) {
       console.error('Error updating online status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update online status",
+        variant: "destructive",
+      });
     }
   };
 
@@ -205,9 +214,11 @@ const DeliveryDashboard = () => {
 
   const totalEarnings = earnings.reduce((sum, earning) => sum + parseFloat(earning.amount || '0'), 0);
 
-  const availableOrders = orders.filter(order => 
-    (order.status === 'ready_for_pickup' || order.status === 'confirmed') && !order.delivery_partner_id
-  );
+  const availableOrders = isOnline && kycStatus === 'approved' 
+    ? orders.filter(order => 
+        (order.status === 'ready_for_pickup' || order.status === 'confirmed') && !order.delivery_partner_id
+      )
+    : [];
 
   const myActiveOrders = orders.filter(order => 
     order.delivery_partner_id === user.id && !['delivered', 'cancelled'].includes(order.status)

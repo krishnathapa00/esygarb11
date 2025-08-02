@@ -71,14 +71,6 @@ const Waitlist = () => {
                   We'll notify you before launch.
                 </p>
               </div>
-              <Button 
-                onClick={() => window.location.href = '/'}
-                className="w-full py-4 text-lg font-semibold rounded-lg"
-                style={{ backgroundColor: '#28a745' }}
-                size="lg"
-              >
-                Back to Home
-              </Button>
             </CardContent>
           </Card>
         </div>
@@ -204,37 +196,37 @@ const Waitlist = () => {
           <h2 className="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-12">
             Why Join the EsyGrab Waitlist?
           </h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
-            <div className="text-center p-6">
-              <div className="mx-auto w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mb-6">
+           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-6 max-w-6xl mx-auto">
+            <div className="text-center p-6 md:p-4">
+              <div className="mx-auto w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mb-6 md:mb-4">
                 <Zap className="w-8 h-8" style={{ color: '#28a745' }} />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">⚡ Ultra-fast 10-15 minute delivery</h3>
-              <p className="text-gray-600">Lightning-fast delivery to your doorstep in just 10-15 minutes</p>
+              <h3 className="text-xl md:text-lg font-bold text-gray-900 mb-3 md:mb-2">⚡ Ultra-fast 10-15 minute delivery</h3>
+              <p className="text-gray-600 text-sm md:text-xs">Lightning-fast delivery to your doorstep in just 10-15 minutes</p>
             </div>
 
-            <div className="text-center p-6">
-              <div className="mx-auto w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mb-6">
+            <div className="text-center p-6 md:p-4">
+              <div className="mx-auto w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mb-6 md:mb-4">
                 <Target className="w-8 h-8" style={{ color: '#28a745' }} />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">💸 Exclusive launch-day discounts</h3>
-              <p className="text-gray-600">Special discounts and free delivery for early users</p>
+              <h3 className="text-xl md:text-lg font-bold text-gray-900 mb-3 md:mb-2">💸 Exclusive launch-day discounts</h3>
+              <p className="text-gray-600 text-sm md:text-xs">Special discounts and free delivery for early users</p>
             </div>
 
-            <div className="text-center p-6">
-              <div className="mx-auto w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mb-6">
+            <div className="text-center p-6 md:p-4">
+              <div className="mx-auto w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mb-6 md:mb-4">
                 <Gift className="w-8 h-8" style={{ color: '#28a745' }} />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">🎁 Early user rewards & loyalty perks</h3>
-              <p className="text-gray-600">Earn points and unlock exclusive benefits</p>
+              <h3 className="text-xl md:text-lg font-bold text-gray-900 mb-3 md:mb-2">🎁 Early user rewards & loyalty perks</h3>
+              <p className="text-gray-600 text-sm md:text-xs">Earn points and unlock exclusive benefits</p>
             </div>
 
-            <div className="text-center p-6">
-              <div className="mx-auto w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mb-6">
+            <div className="text-center p-6 md:p-4">
+              <div className="mx-auto w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mb-6 md:mb-4">
                 <MapPin className="w-8 h-8" style={{ color: '#28a745' }} />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">📍 Real-time order tracking in-app</h3>
-              <p className="text-gray-600">Track your order in real-time from store to door</p>
+              <h3 className="text-xl md:text-lg font-bold text-gray-900 mb-3 md:mb-2">📍 Real-time order tracking in-app</h3>
+              <p className="text-gray-600 text-sm md:text-xs">Track your order in real-time from store to door</p>
             </div>
           </div>
         </div>
@@ -246,29 +238,29 @@ const Waitlist = () => {
           <h2 className="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-12">
             How It Works
           </h2>
-          <div className="grid md:grid-cols-3 gap-12 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-12 md:gap-8 max-w-4xl mx-auto">
             <div className="text-center">
-              <div className="mx-auto w-20 h-20 rounded-full flex items-center justify-center mb-6 text-white font-bold text-2xl" style={{ backgroundColor: '#28a745' }}>
+              <div className="mx-auto w-20 h-20 rounded-full flex items-center justify-center mb-6 md:mb-4 text-white font-bold text-2xl" style={{ backgroundColor: '#28a745' }}>
                 1
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Sign Up</h3>
-              <p className="text-gray-600">Join our waitlist to be notified when we launch in your area</p>
+              <h3 className="text-xl md:text-lg font-bold text-gray-900 mb-3 md:mb-2">Sign Up</h3>
+              <p className="text-gray-600 text-sm md:text-xs">Join our waitlist to be notified when we launch in your area</p>
             </div>
 
             <div className="text-center">
-              <div className="mx-auto w-20 h-20 rounded-full flex items-center justify-center mb-6 text-white font-bold text-2xl" style={{ backgroundColor: '#28a745' }}>
+              <div className="mx-auto w-20 h-20 rounded-full flex items-center justify-center mb-6 md:mb-4 text-white font-bold text-2xl" style={{ backgroundColor: '#28a745' }}>
                 2
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Get early access before public launch</h3>
-              <p className="text-gray-600">Be among the first to experience Nepal's fastest delivery service</p>
+              <h3 className="text-xl md:text-lg font-bold text-gray-900 mb-3 md:mb-2">Get early access before public launch</h3>
+              <p className="text-gray-600 text-sm md:text-xs">Be among the first to experience Nepal's fastest delivery service</p>
             </div>
 
             <div className="text-center">
-              <div className="mx-auto w-20 h-20 rounded-full flex items-center justify-center mb-6 text-white font-bold text-2xl" style={{ backgroundColor: '#28a745' }}>
+              <div className="mx-auto w-20 h-20 rounded-full flex items-center justify-center mb-6 md:mb-4 text-white font-bold text-2xl" style={{ backgroundColor: '#28a745' }}>
                 3
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Shop and receive groceries in minutes</h3>
-              <p className="text-gray-600">Start ordering fresh groceries with lightning-fast delivery</p>
+              <h3 className="text-xl md:text-lg font-bold text-gray-900 mb-3 md:mb-2">Shop and receive groceries in minutes</h3>
+              <p className="text-gray-600 text-sm md:text-xs">Start ordering fresh groceries with lightning-fast delivery</p>
             </div>
           </div>
         </div>

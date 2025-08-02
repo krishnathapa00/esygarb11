@@ -76,6 +76,12 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
+      {/* Demo Warning Banner */}
+      {!user && (
+        <div className="bg-yellow-400 text-black px-4 py-3 text-center font-bold text-sm">
+          ⚠️ This is a demo version. Some products and features may not be real. Launching soon!
+        </div>
+      )}
       <Header />
 
       {dropdownVisible && filteredProducts.length > 0 && (

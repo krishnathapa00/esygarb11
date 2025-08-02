@@ -45,6 +45,48 @@ const DeliveryMapNavigation = () => {
     enabled: !!orderId
   });
 
+  // Save timer state to localStorage for persistence
+  useEffect(() => {
+    const savedTimer = localStorage.getItem(`delivery_timer_${orderId}`);
+    const savedStatus = localStorage.getItem(`delivery_status_${orderId}`);
+    
+    if (savedTimer && savedStatus === 'running') {
+      const startTime = parseInt(savedTimer);
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      setTimer(elapsed);
+      setIsTimerRunning(true);
+    }
+  }, [orderId]);
+
+  // Timer effect with localStorage persistence
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (isTimerRunning) {
+      interval = setInterval(() => {
+        setTimer(prev => prev + 1);
+      }, 1000);
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isTimerRunning]);
+
+  // Auto-start timer if order is out_for_delivery
+  useEffect(() => {
+    if (order && order.status === 'out_for_delivery' && !isTimerRunning) {
+      const savedTimer = localStorage.getItem(`delivery_timer_${orderId}`);
+      if (!savedTimer) {
+        // Start timer for the first time
+        const startTime = Date.now();
+        localStorage.setItem(`delivery_timer_${orderId}`, startTime.toString());
+        localStorage.setItem(`delivery_status_${orderId}`, 'running');
+        setIsTimerRunning(true);
+      }
+    }
+  }, [order, orderId, isTimerRunning]);
+
   const updateOrderMutation = useMutation({
     mutationFn: async ({ status, notes }: { status: string; notes?: string }) => {
       const updateData: any = { 
@@ -81,29 +123,18 @@ const DeliveryMapNavigation = () => {
     }
   });
 
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isTimerRunning) {
-      interval = setInterval(() => {
-        setTimer(prev => prev + 1);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [isTimerRunning]);
-
-  useEffect(() => {
-    // Start timer when order is out for delivery
-    if (order?.status === 'out_for_delivery' && !isTimerRunning) {
-      setIsTimerRunning(true);
-    }
-  }, [order?.status]);
-
   const handlePickup = () => {
     updateOrderMutation.mutate({ 
       status: 'out_for_delivery',
       notes: 'Order picked up from darkstore'
     });
+    
+    // Start timer and save to localStorage
+    const startTime = Date.now();
+    localStorage.setItem(`delivery_timer_${orderId}`, startTime.toString());
+    localStorage.setItem(`delivery_status_${orderId}`, 'running');
     setIsTimerRunning(true);
+    
     toast({
       title: "Order Picked Up",
       description: "Delivery timer started. Navigate to customer location.",
@@ -115,7 +146,12 @@ const DeliveryMapNavigation = () => {
       status: 'delivered',
       notes: `Order delivered in ${formatTime(timer)}`
     });
+    
+    // Stop timer and clear localStorage
     setIsTimerRunning(false);
+    localStorage.removeItem(`delivery_timer_${orderId}`);
+    localStorage.removeItem(`delivery_status_${orderId}`);
+    
     toast({
       title: "Order Delivered",
       description: "Great job! Delivery completed successfully.",
