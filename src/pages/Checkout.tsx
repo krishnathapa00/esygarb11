@@ -46,7 +46,7 @@ const Checkout = () => {
   // Calculate total from cart
   const cartItems = cart || [];
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const deliveryFee = 20;
+  const deliveryFee = subtotal > 200 ? 0 : 20;
   const totalAmount = subtotal + deliveryFee;
 
   useEffect(() => {
@@ -177,9 +177,12 @@ const Checkout = () => {
 
       if (itemsError) throw itemsError;
 
+      // Store order ID for confirmation page
+      localStorage.setItem('latest_order_id', orderData.id);
+      
       resetCart();
       toast({
-        title: "Order placed successfully!",
+        title: "Your order is placed!",
         description: "Your order has been confirmed and will be processed soon.",
         variant: "default",
       });
@@ -307,10 +310,12 @@ const Checkout = () => {
                 <span>Subtotal ({cartItems.length} items)</span>
                 <span>Rs {subtotal}</span>
               </div>
-              <div className="flex justify-between">
-                <span>Delivery Fee</span>
-                <span>Rs 20</span>
-              </div>
+                <div className="flex justify-between">
+                  <span>Delivery Fee</span>
+                  <span className={deliveryFee === 0 ? "text-green-600 font-medium" : ""}>
+                    {deliveryFee === 0 ? "FREE" : `Rs ${deliveryFee}`}
+                  </span>
+                </div>
               <div className="border-t pt-2 mt-3">
                 <div className="flex justify-between font-semibold text-base lg:text-lg">
                   <span>Total</span>

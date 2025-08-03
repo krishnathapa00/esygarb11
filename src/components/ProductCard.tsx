@@ -74,19 +74,19 @@ const ProductCard = ({
           </div>
 
           {/* Right side - Add Button */}
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 min-w-0">
             {cartQuantity === 0 ? (
               <Button
                 onClick={(e) => {
                   e.preventDefault();
                   onAddToCart(product);
                 }}
-                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-0 text-xs font-semibold h-8 px-4 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-0 text-xs font-semibold h-8 px-3 sm:px-4 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md whitespace-nowrap"
               >
                 ADD
               </Button>
             ) : (
-              <div className="flex items-center justify-between bg-green-600 rounded-lg px-2 py-1.5">
+              <div className="flex items-center justify-between bg-green-600 rounded-lg px-1.5 sm:px-2 py-1.5 min-w-[80px]">
                 <Button
                   onClick={(e) => {
                     e.preventDefault();
@@ -94,11 +94,11 @@ const ProductCard = ({
                   }}
                   variant="ghost"
                   size="sm"
-                  className="w-5 h-5 p-0 text-white hover:bg-green-700 rounded text-sm font-medium"
+                  className="w-5 h-5 p-0 text-white hover:bg-green-700 rounded text-sm font-medium flex-shrink-0"
                 >
                   −
                 </Button>
-                <span className="font-medium text-white text-xs px-2">
+                <span className="font-medium text-white text-xs px-1 sm:px-2 min-w-[1rem] text-center">
                   {cartQuantity}
                 </span>
                 <Button
@@ -108,7 +108,7 @@ const ProductCard = ({
                   }}
                   variant="ghost"
                   size="sm"
-                  className="w-5 h-5 p-0 text-white hover:bg-green-700 rounded text-sm font-medium"
+                  className="w-5 h-5 p-0 text-white hover:bg-green-700 rounded text-sm font-medium flex-shrink-0"
                 >
                   +
                 </Button>

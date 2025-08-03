@@ -257,9 +257,12 @@ const DeliveryDashboard = () => {
                     checked={isOnline}
                     onCheckedChange={toggleOnlineStatus}
                     disabled={kycStatus !== 'approved'}
-                    className="data-[state=checked]:bg-green-600"
+                    className="data-[state=checked]:bg-green-600 cursor-pointer"
                   />
-                  <Label htmlFor="online-status" className="text-sm font-medium">
+                  <Label 
+                    htmlFor="online-status" 
+                    className={`text-sm font-medium cursor-pointer ${kycStatus !== 'approved' ? 'opacity-50' : ''}`}
+                  >
                     <span className={`inline-flex items-center gap-1 ${isOnline ? 'text-green-600' : 'text-gray-500'}`}>
                       <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}`}></div>
                       {isOnline ? 'Online' : 'Offline'}
@@ -281,7 +284,7 @@ const DeliveryDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* KYC Notice */}
+        {/* KYC Notice - Only show if KYC is not approved */}
         {(kycStatus !== 'approved') && (
           <Card className="border-orange-200 bg-orange-50">
             <CardContent className="p-4">
@@ -299,6 +302,28 @@ const DeliveryDashboard = () => {
                 >
                   Complete Setup
                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* New Orders Alert - Visual alert for new orders */}
+        {(isOnline && kycStatus === 'approved' && availableOrders.length > 0) && (
+          <Card className="border-green-200 bg-green-50 animate-pulse">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <Package className="h-6 w-6 text-green-600" />
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-bounce"></div>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-green-800">
+                    🚨 {availableOrders.length} New Order{availableOrders.length > 1 ? 's' : ''} Available!
+                  </h3>
+                  <p className="text-sm text-green-700 mt-1">
+                    Orders are waiting for pickup. Accept now to start earning!
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
