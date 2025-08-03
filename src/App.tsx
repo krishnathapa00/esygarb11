@@ -70,7 +70,7 @@ function App() {
                 <Route path="/order-tracking/:orderNumber" element={<OrderTracking />} />
                 <Route path="/order-history" element={<OrderHistory />} />
                 <Route path="/profile" element={<UserProfile />} />
-                <Route path="/location" element={<MapLocation />} />
+                <Route path="/map-location" element={<MapLocation />} />
                 <Route path="/waitlist" element={<Waitlist />} />
 
                 {/* Delivery Partner Routes */}

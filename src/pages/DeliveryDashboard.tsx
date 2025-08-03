@@ -255,13 +255,22 @@ const DeliveryDashboard = () => {
                   <Switch
                     id="online-status"
                     checked={isOnline}
-                    onCheckedChange={toggleOnlineStatus}
+                    onCheckedChange={(checked) => {
+                      console.log('Toggle clicked:', checked);
+                      toggleOnlineStatus();
+                    }}
                     disabled={kycStatus !== 'approved'}
-                    className="data-[state=checked]:bg-green-600 cursor-pointer"
+                    className="data-[state=checked]:bg-green-600"
                   />
                   <Label 
                     htmlFor="online-status" 
                     className={`text-sm font-medium cursor-pointer ${kycStatus !== 'approved' ? 'opacity-50' : ''}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (kycStatus === 'approved') {
+                        toggleOnlineStatus();
+                      }
+                    }}
                   >
                     <span className={`inline-flex items-center gap-1 ${isOnline ? 'text-green-600' : 'text-gray-500'}`}>
                       <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}`}></div>

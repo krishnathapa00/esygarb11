@@ -171,7 +171,7 @@ const CartPage = () => {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-4 order-2 lg:order-1">
+          <div className="lg:col-span-2 space-y-4 order-1 lg:order-1">
             {cartItems.length === 0 ? (
               <div className="text-center py-20 text-gray-500 font-medium">
                 Your cart is empty.
@@ -299,7 +299,7 @@ const CartPage = () => {
           </div>
 
           {/* Order Summary */}
-          <div className="bg-gradient-to-br from-green-50 via-emerald-50 to-white rounded-2xl p-6 shadow-lg h-fit border border-green-100 order-1 lg:order-2">
+          <div className="bg-gradient-to-br from-green-50 via-emerald-50 to-white rounded-2xl p-6 shadow-lg h-fit border border-green-100 order-2 lg:order-2">
             <div className="flex items-center gap-3 mb-5">
               <span className="inline-block bg-green-100 p-2 rounded-full">
                 <Clock className="h-5 w-5 text-green-600" />
