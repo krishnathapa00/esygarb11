@@ -126,7 +126,7 @@ const KYCSubmission = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-3">
-              {getStatusIcon(kycStatus.verification_status)}
+              {getStatusIcon(kycStatus.verification_status || 'pending')}
               KYC Verification Status
             </CardTitle>
           </CardHeader>
@@ -134,8 +134,8 @@ const KYCSubmission = () => {
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium">Status:</span>
-                <Badge className={getStatusColor(kycStatus.verification_status)}>
-                  {kycStatus.verification_status.toUpperCase()}
+                <Badge className={getStatusColor(kycStatus.verification_status || 'pending')}>
+                  {(kycStatus.verification_status || 'pending').toUpperCase()}
                 </Badge>
               </div>
               
@@ -165,7 +165,7 @@ const KYCSubmission = () => {
       )}
 
       {/* KYC Submission Form */}
-      {(!kycStatus || kycStatus.verification_status === 'rejected') && (
+      {(!kycStatus || (kycStatus.verification_status !== 'approved' && kycStatus.verification_status !== 'pending')) && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-3">
