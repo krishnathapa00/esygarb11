@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import SingleImageUpload from './SingleImageUpload';
+import PDFUpload from './PDFUpload';
 
 const KYCSubmission = () => {
   const { user } = useAuth();
@@ -178,54 +178,57 @@ const KYCSubmission = () => {
               {/* Citizenship Document */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-medium">Citizenship Document *</h3>
+                  <h3 className="text-sm font-medium">Citizenship Document</h3>
                   {documents.citizenship_document_url && (
                     <CheckCircle className="h-4 w-4 text-green-600" />
                   )}
                 </div>
-                <SingleImageUpload
-                  onImageUpload={(url) => handleDocumentUpload('citizenship_document_url', url)}
-                  currentImage={documents.citizenship_document_url}
+                <PDFUpload
+                  onFileUpload={(url) => handleDocumentUpload('citizenship_document_url', url)}
+                  currentFile={documents.citizenship_document_url}
                   folder="kyc-documents"
+                  label="Citizenship Document"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Upload clear photo of your citizenship certificate
+                  Upload clear PDF of your citizenship certificate
                 </p>
               </div>
 
               {/* License Document */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-medium">Driving License *</h3>
+                  <h3 className="text-sm font-medium">Driving License</h3>
                   {documents.license_document_url && (
                     <CheckCircle className="h-4 w-4 text-green-600" />
                   )}
                 </div>
-                <SingleImageUpload
-                  onImageUpload={(url) => handleDocumentUpload('license_document_url', url)}
-                  currentImage={documents.license_document_url}
+                <PDFUpload
+                  onFileUpload={(url) => handleDocumentUpload('license_document_url', url)}
+                  currentFile={documents.license_document_url}
                   folder="kyc-documents"
+                  label="Driving License"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Upload clear photo of your driving license
+                  Upload clear PDF of your driving license
                 </p>
               </div>
 
               {/* PAN Document */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-medium">PAN Card *</h3>
+                  <h3 className="text-sm font-medium">PAN Card</h3>
                   {documents.pan_document_url && (
                     <CheckCircle className="h-4 w-4 text-green-600" />
                   )}
                 </div>
-                <SingleImageUpload
-                  onImageUpload={(url) => handleDocumentUpload('pan_document_url', url)}
-                  currentImage={documents.pan_document_url}
+                <PDFUpload
+                  onFileUpload={(url) => handleDocumentUpload('pan_document_url', url)}
+                  currentFile={documents.pan_document_url}
                   folder="kyc-documents"
+                  label="PAN Card"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Upload clear photo of your PAN card
+                  Upload clear PDF of your PAN card
                 </p>
               </div>
             </div>
@@ -251,7 +254,8 @@ const KYCSubmission = () => {
             </div>
 
             <div className="text-sm text-muted-foreground space-y-1">
-              <p>• All documents must be clear and readable</p>
+              <p>• All documents must be clear and readable PDF files</p>
+              <p>• Maximum file size: 10MB per document</p>
               <p>• Review process typically takes 1-2 business days</p>
               <p>• You'll be notified via email once your KYC is verified</p>
             </div>
