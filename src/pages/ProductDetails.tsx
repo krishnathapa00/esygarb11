@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useProducts } from "@/hooks/useProducts";
 import { useCart } from "@/contexts/CartContext";
+import { toast } from "@/hooks/use-toast";
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -143,9 +144,9 @@ const ProductDetails = () => {
                 </div>
 
                 <Button
-                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-3"
+                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-3 text-base font-medium"
                   size="lg"
-                  onClick={() =>
+                  onClick={() => {
                     addToCart({
                       id: product.id,
                       name: product.name,
@@ -153,8 +154,12 @@ const ProductDetails = () => {
                       image: product.image,
                       weight: product.weight,
                       quantity,
-                    })
-                  }
+                    });
+                    toast({
+                      title: "Added to cart",
+                      description: `${quantity} x ${product.name} added to cart successfully.`,
+                    });
+                  }}
                 >
                   Add {quantity} to Cart - Rs.{product.price * quantity}
                 </Button>

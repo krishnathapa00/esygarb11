@@ -68,7 +68,7 @@ const Waitlist = () => {
                   ✅ Thank you! You're officially on the EsyGrab waitlist.
                 </h2>
                 <p className="text-gray-600 text-lg leading-relaxed">
-                  We'll notify you before launch.
+                  We'll notify you before launch. Stay tuned for updates!
                 </p>
               </div>
             </CardContent>

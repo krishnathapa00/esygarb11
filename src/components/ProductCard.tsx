@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "@/hooks/use-toast";
 
 export interface Product {
   id: number;
@@ -80,6 +81,10 @@ const ProductCard = ({
                 onClick={(e) => {
                   e.preventDefault();
                   onAddToCart(product);
+                  toast({
+                    title: "Added to cart",
+                    description: `${product.name} added to cart successfully.`,
+                  });
                 }}
                 className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-0 text-xs font-semibold h-8 px-3 sm:px-4 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md whitespace-nowrap"
               >
