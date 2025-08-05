@@ -49,6 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Set up auth state listener first
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log('Auth state changed:', event, session);
@@ -61,18 +62,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           setUser(user);
           setIsAuthenticated(true);
           localStorage.setItem("user", JSON.stringify(user));
+          localStorage.setItem("lastActivity", Date.now().toString());
         } else {
           setUser(null);
           setIsAuthenticated(false);
           localStorage.removeItem("user");
+          localStorage.removeItem("lastActivity");
         }
         setLoading(false);
       }
     );
 
+    // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log('Initial session:', session);
       if (session?.user) {
+        const lastActivity = localStorage.getItem("lastActivity");
+        const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000); // 3 days in milliseconds
+        
+        // If user was inactive for more than 3 days, log them out
+        if (lastActivity && parseInt(lastActivity) < threeDaysAgo) {
+          console.log('Session expired due to inactivity');
+          supabase.auth.signOut();
+          setLoading(false);
+          return;
+        }
+        
         const user: User = {
           id: session.user.id,
           email: session.user.email || "",
@@ -81,14 +96,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         setUser(user);
         setIsAuthenticated(true);
         localStorage.setItem("user", JSON.stringify(user));
+        localStorage.setItem("lastActivity", Date.now().toString());
       }
       setLoading(false);
     });
 
+    // Update last activity every 5 minutes when user is active
+    const activityInterval = setInterval(() => {
+      if (isAuthenticated) {
+        localStorage.setItem("lastActivity", Date.now().toString());
+      }
+    }, 5 * 60 * 1000); // 5 minutes
+
     return () => {
       authListener?.subscription.unsubscribe();
+      clearInterval(activityInterval);
     };
-  }, []);
+  }, [isAuthenticated]);
 
   const sendOtp = useCallback(async (email: string) => {
     try {

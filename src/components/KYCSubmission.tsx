@@ -47,6 +47,13 @@ const KYCSubmission = () => {
       ...prev,
       [field]: url
     }));
+    
+    if (url) {
+      toast({
+        title: "Document uploaded successfully",
+        description: "Your document has been uploaded and will be reviewed.",
+      });
+    }
   };
 
   const submitKYCMutation = useMutation({

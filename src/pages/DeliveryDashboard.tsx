@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
+import { useSetGlobalToast } from '@/components/Toast';
 import { Package, Clock, DollarSign, User, MapPin, Phone, AlertTriangle } from 'lucide-react';
 
 const DeliveryDashboard = () => {
@@ -18,6 +19,9 @@ const DeliveryDashboard = () => {
   const [isOnline, setIsOnline] = useState(false);
   const [loading, setLoading] = useState(true);
   const [kycStatus, setKycStatus] = useState('pending');
+  
+  // Initialize global toast
+  useSetGlobalToast();
 
   useEffect(() => {
     if (user) {
@@ -255,22 +259,13 @@ const DeliveryDashboard = () => {
                   <Switch
                     id="online-status"
                     checked={isOnline}
-                    onCheckedChange={(checked) => {
-                      console.log('Toggle clicked:', checked);
-                      toggleOnlineStatus();
-                    }}
+                    onCheckedChange={toggleOnlineStatus}
                     disabled={kycStatus !== 'approved'}
                     className="data-[state=checked]:bg-green-600"
                   />
                   <Label 
                     htmlFor="online-status" 
-                    className={`text-sm font-medium cursor-pointer ${kycStatus !== 'approved' ? 'opacity-50' : ''}`}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (kycStatus === 'approved') {
-                        toggleOnlineStatus();
-                      }
-                    }}
+                    className={`text-sm font-medium ${kycStatus !== 'approved' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                   >
                     <span className={`inline-flex items-center gap-1 ${isOnline ? 'text-green-600' : 'text-gray-500'}`}>
                       <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}`}></div>
@@ -510,7 +505,7 @@ const DeliveryDashboard = () => {
                       <span className="font-semibold">Rs {parseFloat(order.total_amount).toFixed(2)}</span>
                       <Button 
                         size="sm"
-                        onClick={() => navigate(`/delivery-partner/navigation/${order.id}`)}
+                        onClick={() => navigate(`/delivery-partner/navigate/${order.id}`)}
                         className="bg-blue-600 hover:bg-blue-700"
                       >
                         Navigate

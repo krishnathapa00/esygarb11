@@ -43,9 +43,13 @@ const PDFUpload = ({ onFileUpload, currentFile, folder = 'kyc-documents', label 
     setFileName(file.name);
 
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
       const fileExt = 'pdf';
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `${folder}/${fileName}`;
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('kyc-documents')
@@ -66,13 +70,17 @@ const PDFUpload = ({ onFileUpload, currentFile, folder = 'kyc-documents', label 
         description: `${label} has been uploaded.`,
       });
     } catch (error: any) {
+      console.error('Upload error:', error);
       toast({
         title: "Upload failed",
-        description: error.message,
+        description: error.message || "Failed to upload document. Please try again.",
         variant: "destructive",
       });
     } finally {
       setUploading(false);
+      // Reset file input
+      const fileInput = document.getElementById(`pdf-upload-${label}`) as HTMLInputElement;
+      if (fileInput) fileInput.value = '';
     }
   };
 
@@ -85,6 +93,9 @@ const PDFUpload = ({ onFileUpload, currentFile, folder = 'kyc-documents', label 
   const handleRemove = () => {
     onFileUpload('');
     setFileName('');
+    // Reset file input
+    const fileInput = document.getElementById(`pdf-upload-${label}`) as HTMLInputElement;
+    if (fileInput) fileInput.value = '';
   };
 
   return (
