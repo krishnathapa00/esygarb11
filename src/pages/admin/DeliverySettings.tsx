@@ -41,17 +41,29 @@ const DeliverySettings = () => {
     mutationFn: async ({ deliveryFee, partnerCharge }: { deliveryFee: string; partnerCharge: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
       
-      const { error } = await supabase
-        .from('delivery_config')
-        .update({
-          delivery_fee: parseFloat(deliveryFee),
-          delivery_partner_charge: parseFloat(partnerCharge),
-          updated_at: new Date().toISOString(),
-          updated_by: user?.id
-        })
-        .eq('id', config?.id);
-
-      if (error) throw error;
+      if (!config?.id) {
+        // Create new config if none exists
+        const { error } = await supabase
+          .from('delivery_config')
+          .insert({
+            delivery_fee: parseFloat(deliveryFee),
+            delivery_partner_charge: parseFloat(partnerCharge),
+            updated_by: user?.id
+          });
+        if (error) throw error;
+      } else {
+        // Update existing config
+        const { error } = await supabase
+          .from('delivery_config')
+          .update({
+            delivery_fee: parseFloat(deliveryFee),
+            delivery_partner_charge: parseFloat(partnerCharge),
+            updated_at: new Date().toISOString(),
+            updated_by: user?.id
+          })
+          .eq('id', config.id);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['delivery-config'] });

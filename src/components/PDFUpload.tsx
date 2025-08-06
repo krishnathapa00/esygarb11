@@ -59,11 +59,8 @@ const PDFUpload = ({ onFileUpload, currentFile, folder = 'kyc-documents', label 
         throw uploadError;
       }
 
-      const { data } = supabase.storage
-        .from('kyc-documents')
-        .getPublicUrl(filePath);
-
-      onFileUpload(data.publicUrl);
+      // Store the file path for later signed URL generation
+      onFileUpload(filePath);
       
       toast({
         title: "File uploaded successfully",
@@ -84,9 +81,23 @@ const PDFUpload = ({ onFileUpload, currentFile, folder = 'kyc-documents', label 
     }
   };
 
-  const handleView = () => {
+  const handleView = async () => {
     if (currentFile) {
-      window.open(currentFile, '_blank');
+      try {
+        const { data: signedUrlData, error } = await supabase.storage
+          .from('kyc-documents')
+          .createSignedUrl(currentFile, 3600); // 1 hour expiry
+
+        if (error) throw error;
+        window.open(signedUrlData.signedUrl, '_blank');
+      } catch (error) {
+        console.error('Error viewing file:', error);
+        toast({
+          title: "Error",
+          description: "Failed to open document",
+          variant: "destructive"
+        });
+      }
     }
   };
 

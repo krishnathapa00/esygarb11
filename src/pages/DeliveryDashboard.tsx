@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import { useSetGlobalToast } from '@/components/Toast';
+import { useRefreshOnWindowFocus } from '@/hooks/useRefreshOnWindowFocus';
 import { Package, Clock, DollarSign, User, MapPin, Phone, AlertTriangle } from 'lucide-react';
 
 const DeliveryDashboard = () => {
@@ -22,6 +23,9 @@ const DeliveryDashboard = () => {
   
   // Initialize global toast
   useSetGlobalToast();
+  
+  // Refresh data when window regains focus
+  useRefreshOnWindowFocus(['orders', 'earnings', 'kyc-status']);
 
   useEffect(() => {
     if (user) {
@@ -137,7 +141,7 @@ const DeliveryDashboard = () => {
       });
       
       // Refetch orders to update available orders when status changes
-      fetchOrders();
+      await fetchOrders();
     } catch (error) {
       console.error('Error updating online status:', error);
       toast({
@@ -168,7 +172,7 @@ const DeliveryDashboard = () => {
         description: "Order has been assigned to you. Navigate to start delivery.",
       });
 
-      fetchOrders();
+      await fetchOrders();
     } catch (error) {
       console.error('Error accepting order:', error);
       toast({
