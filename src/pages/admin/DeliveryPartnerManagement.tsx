@@ -135,79 +135,79 @@ const DeliveryPartnerManagement = () => {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="overflow-x-auto">
           {isLoading ? (
-            <div className="col-span-full flex justify-center py-12">
+            <div className="flex justify-center py-12">
               <div className="text-center space-y-3">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
                 <p className="text-muted-foreground">Loading delivery partners...</p>
               </div>
             </div>
           ) : (
-            filteredPartners.map((partner) => (
-              <Card key={partner.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <h3 className="font-semibold text-lg">{partner.full_name || 'Unknown Partner'}</h3>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-green-600 border-green-200">
-                          Verified Partner
+            <table className="w-full border-collapse border border-gray-200">
+              <thead>
+                <tr className="bg-gray-50">
+                  <th className="border border-gray-200 px-4 py-2 text-left">Name</th>
+                  <th className="border border-gray-200 px-4 py-2 text-left">Phone</th>
+                  <th className="border border-gray-200 px-4 py-2 text-left">Vehicle</th>
+                  <th className="border border-gray-200 px-4 py-2 text-left">License</th>
+                  <th className="border border-gray-200 px-4 py-2 text-left">Darkstore</th>
+                  <th className="border border-gray-200 px-4 py-2 text-left">Status</th>
+                  <th className="border border-gray-200 px-4 py-2 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredPartners.map((partner) => (
+                  <tr key={partner.id} className="hover:bg-gray-50">
+                    <td className="border border-gray-200 px-4 py-2">
+                      <div className="font-medium">{partner.full_name || 'Unknown Partner'}</div>
+                    </td>
+                    <td className="border border-gray-200 px-4 py-2">
+                      {partner.phone_number || 'Not provided'}
+                    </td>
+                    <td className="border border-gray-200 px-4 py-2">
+                      {partner.vehicle_type || 'Not specified'}
+                    </td>
+                    <td className="border border-gray-200 px-4 py-2">
+                      {partner.license_number || 'Not provided'}
+                    </td>
+                    <td className="border border-gray-200 px-4 py-2">
+                      <div className="text-sm">{getDarkstoreName(partner.darkstore_id)}</div>
+                    </td>
+                    <td className="border border-gray-200 px-4 py-2">
+                      <div className="flex flex-col gap-1">
+                        <Badge variant="outline" className="text-green-600 border-green-200 w-fit">
+                          Verified
                         </Badge>
                         {partner.is_online && (
-                          <Badge variant="outline" className="text-blue-600 border-blue-200">
+                          <Badge variant="outline" className="text-blue-600 border-blue-200 w-fit">
                             Online
                           </Badge>
                         )}
                       </div>
-                    </div>
-                    
-                    <div className="flex gap-1">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleViewDetails(partner)}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => revokePartnerMutation.mutate(partner.id)}
-                      >
-                        <UserX className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="pt-0">
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-muted-foreground" />
-                      <span>{partner.phone_number || 'Not provided'}</span>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <Car className="w-4 h-4 text-muted-foreground" />
-                      <span>{partner.vehicle_type || 'Not specified'}</span>
-                    </div>
-                    
-                    {partner.license_number && (
-                      <div className="flex items-center gap-2">
-                        <Hash className="w-4 h-4 text-muted-foreground" />
-                        <span>License: {partner.license_number}</span>
+                    </td>
+                    <td className="border border-gray-200 px-4 py-2">
+                      <div className="flex gap-1 justify-center">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleViewDetails(partner)}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => revokePartnerMutation.mutate(partner.id)}
+                        >
+                          <UserX className="w-4 h-4" />
+                        </Button>
                       </div>
-                    )}
-                    
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 w-4 text-muted-foreground" />
-                      <span className="text-xs">{getDarkstoreName(partner.darkstore_id)}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
         </div>
 

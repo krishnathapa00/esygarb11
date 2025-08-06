@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
@@ -15,10 +16,8 @@ import { Package, Clock, DollarSign, User, MapPin, Phone, AlertTriangle } from '
 const DeliveryDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [orders, setOrders] = useState([]);
-  const [earnings, setEarnings] = useState([]);
+  const queryClient = useQueryClient();
   const [isOnline, setIsOnline] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [kycStatus, setKycStatus] = useState('pending');
   
   // Initialize global toast
@@ -27,11 +26,119 @@ const DeliveryDashboard = () => {
   // Refresh data when window regains focus
   useRefreshOnWindowFocus(['orders', 'earnings', 'kyc-status']);
 
+  // Fetch orders with React Query
+  const { data: orders = [], isLoading: ordersLoading, refetch: fetchOrders } = useQuery({
+    queryKey: ['orders', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          profiles!orders_user_id_fkey(full_name, phone_number),
+          order_items(
+            *,
+            products(name, image_url)
+          )
+        `)
+        .or(`delivery_partner_id.eq.${user?.id},status.in.(ready_for_pickup,confirmed,dispatched)`)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id
+  });
+
+  // Fetch earnings with React Query
+  const { data: earnings = [] } = useQuery({
+    queryKey: ['earnings', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('delivery_earnings')
+        .select('*')
+        .eq('delivery_partner_id', user?.id);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id
+  });
+
+  // Accept order mutation
+  const acceptOrderMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      const updateData = { 
+        status: 'dispatched' as const,
+        delivery_partner_id: user?.id,
+        accepted_at: new Date().toISOString()
+      };
+
+      const { error } = await supabase
+        .from('orders')
+        .update(updateData)
+        .eq('id', orderId);
+
+      if (error) throw error;
+      return orderId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders', user?.id] });
+      toast({
+        title: "Order Accepted",
+        description: "Order has been assigned to you. Navigate to start delivery.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error accepting order:', error);
+      toast({
+        title: "Error",
+        description: "Failed to accept order.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Set up real-time subscription for new orders
+  useEffect(() => {
+    if (!user?.id || !isOnline || kycStatus !== 'approved') return;
+
+    const channel = supabase
+      .channel('order-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: 'status=eq.ready_for_pickup'
+        },
+        () => {
+          // Refetch orders when a new order becomes ready for pickup
+          fetchOrders();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'orders'
+        },
+        () => {
+          // Refetch orders when a new order is created
+          fetchOrders();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, isOnline, kycStatus, fetchOrders]);
+
   useEffect(() => {
     if (user) {
       fetchKycStatus();
-      fetchOrders();
-      fetchEarnings();
       fetchOnlineStatus();
     }
   }, [user]);
@@ -55,46 +162,6 @@ const DeliveryDashboard = () => {
     }
   };
 
-  const fetchOrders = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          profiles!orders_user_id_fkey(full_name, phone_number),
-          order_items(
-            *,
-            products(name, image_url)
-          )
-        `)
-        .or(`delivery_partner_id.eq.${user.id},status.in.(ready_for_pickup,confirmed,dispatched)`)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setOrders(data || []);
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch orders.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const fetchEarnings = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('delivery_earnings')
-        .select('*')
-        .eq('delivery_partner_id', user.id);
-
-      if (error) throw error;
-      setEarnings(data || []);
-    } catch (error) {
-      console.error('Error fetching earnings:', error);
-    }
-  };
 
   const fetchOnlineStatus = async () => {
     try {
@@ -106,10 +173,8 @@ const DeliveryDashboard = () => {
 
       if (error) throw error;
       setIsOnline(data?.is_online || false);
-      setLoading(false);
     } catch (error) {
       console.error('Error fetching online status:', error);
-      setLoading(false);
     }
   };
 
@@ -152,35 +217,8 @@ const DeliveryDashboard = () => {
     }
   };
 
-  const acceptOrder = async (orderId: string) => {
-    try {
-      const updateData = { 
-        status: 'dispatched' as const,
-        delivery_partner_id: user.id,
-        accepted_at: new Date().toISOString()
-      };
-
-      const { error } = await supabase
-        .from('orders')
-        .update(updateData)
-        .eq('id', orderId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Order Accepted",
-        description: "Order has been assigned to you. Navigate to start delivery.",
-      });
-
-      await fetchOrders();
-    } catch (error) {
-      console.error('Error accepting order:', error);
-      toast({
-        title: "Error",
-        description: "Failed to accept order.",
-        variant: "destructive",
-      });
-    }
+  const handleAcceptOrder = (orderId: string) => {
+    acceptOrderMutation.mutate(orderId);
   };
 
   const rejectOrder = async (orderId: string) => {
@@ -206,7 +244,7 @@ const DeliveryDashboard = () => {
     }
   };
 
-  if (loading) {
+  if (ordersLoading) {
     return (
       <div className="min-h-screen bg-gray-50 p-4">
         <div className="max-w-4xl mx-auto">
@@ -227,9 +265,9 @@ const DeliveryDashboard = () => {
   const todayEarnings = earnings.filter(earning => {
     const today = new Date().toDateString();
     return new Date(earning.created_at).toDateString() === today;
-  }).reduce((sum, earning) => sum + parseFloat(earning.amount || '0'), 0);
+  }).reduce((sum, earning) => sum + parseFloat(earning.amount?.toString() || '0'), 0);
 
-  const totalEarnings = earnings.reduce((sum, earning) => sum + parseFloat(earning.amount || '0'), 0);
+  const totalEarnings = earnings.reduce((sum, earning) => sum + parseFloat(earning.amount?.toString() || '0'), 0);
 
   const availableOrders = (isOnline && kycStatus === 'approved') 
     ? orders.filter(order => 
@@ -437,21 +475,22 @@ const DeliveryDashboard = () => {
                     </div>
 
                     <div className="flex justify-between items-center pt-2 border-t">
-                      <span className="font-semibold text-lg">Rs {parseFloat(order.total_amount).toFixed(2)}</span>
+                      <span className="font-semibold text-lg">Rs {parseFloat(order.total_amount?.toString() || '0').toFixed(2)}</span>
                       <div className="flex gap-2">
                         <Button 
                           size="sm"
                           variant="outline"
-                          onClick={() => rejectOrder(order.id)}
+                          onClick={() => rejectOrder(order.id.toString())}
                         >
                           Reject
                         </Button>
                         <Button 
                           size="sm"
-                          onClick={() => acceptOrder(order.id)}
+                          onClick={() => handleAcceptOrder(order.id.toString())}
+                          disabled={acceptOrderMutation.isPending}
                           className="bg-green-600 hover:bg-green-700"
                         >
-                          Accept Order
+                          {acceptOrderMutation.isPending ? 'Accepting...' : 'Accept Order'}
                         </Button>
                       </div>
                     </div>
@@ -506,14 +545,14 @@ const DeliveryDashboard = () => {
                     </div>
 
                     <div className="flex justify-between items-center pt-2 border-t">
-                      <span className="font-semibold">Rs {parseFloat(order.total_amount).toFixed(2)}</span>
-                      <Button 
-                        size="sm"
-                        onClick={() => navigate(`/delivery-partner/navigate/${order.id}`)}
-                        className="bg-blue-600 hover:bg-blue-700"
-                      >
-                        Navigate
-                      </Button>
+                      <span className="font-semibold">Rs {parseFloat(order.total_amount?.toString() || '0').toFixed(2)}</span>
+                        <Button
+                          size="sm"
+                          onClick={() => navigate(`/delivery-partner/navigate/${order.id}`)}
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          Navigate
+                        </Button>
                     </div>
                   </div>
                 ))}
@@ -539,7 +578,7 @@ const DeliveryDashboard = () => {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-medium">Rs {parseFloat(order.total_amount).toFixed(2)}</p>
+                      <p className="font-medium">Rs {parseFloat(order.total_amount?.toString() || '0').toFixed(2)}</p>
                     </div>
                   </div>
                 ))}

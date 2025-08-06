@@ -143,9 +143,24 @@ const ManageKYC = () => {
     }
   };
 
-  const openDocument = (url: string) => {
+  const openDocument = async (url: string) => {
     if (url) {
-      window.open(url, '_blank');
+      try {
+        // Create signed URL for viewing
+        const { data: signedUrlData, error } = await supabase.storage
+          .from('kyc-documents')
+          .createSignedUrl(url, 3600); // 1 hour expiry
+
+        if (error) throw error;
+        window.open(signedUrlData.signedUrl, '_blank');
+      } catch (error) {
+        console.error('Error viewing document:', error);
+        toast({
+          title: "Error",
+          description: "Failed to open document",
+          variant: "destructive"
+        });
+      }
     }
   };
 

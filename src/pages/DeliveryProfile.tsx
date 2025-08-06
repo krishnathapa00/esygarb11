@@ -205,8 +205,8 @@ const DeliveryProfile = () => {
           {getKYCStatusBadge()}
         </div>
 
-        {/* Warning if setup incomplete */}
-        {(!isProfileComplete || !isKYCApproved) && (
+        {/* Warning if setup incomplete - only show if KYC not approved */}
+        {(!isProfileComplete || !isKYCApproved) && kycStatus !== 'approved' && (
           <Card className="border-yellow-200 bg-yellow-50">
             <CardContent className="p-4">
               <div className="flex items-center gap-2">
