@@ -1,5 +1,5 @@
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +13,7 @@ const DeliveryOrders = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: orders = [], refetch } = useQuery({
     queryKey: ['delivery-orders', user?.id],
@@ -80,6 +81,7 @@ const DeliveryOrders = () => {
     }
   };
 
+
   const availableOrders = orders.filter(order => order.status === 'ready_for_pickup');
   const myOrders = orders.filter(order => order.delivery_partner_id === user?.id);
 
@@ -127,9 +129,26 @@ const DeliveryOrders = () => {
                       {order.estimated_delivery}
                     </p>
                   </div>
-                  <Button onClick={() => acceptOrder(order.id)}>
-                    Accept Order
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      size="sm"
+                      onClick={() => acceptOrder(order.id)}
+                    >
+                      Accept
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => {
+                        toast({
+                          title: "Order Passed",
+                          description: "You have passed on this order.",
+                        });
+                      }}
+                    >
+                      Pass
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))

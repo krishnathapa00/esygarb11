@@ -144,20 +144,10 @@ const Checkout = () => {
       return;
     }
 
-    // Validate required address fields
-    if (!formData.address || !formData.city) {
-      toast({
-        title: "Address Required",
-        description: "Please provide your delivery address details.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setLoading(true);
     
     try {
-      const deliveryAddress = `${formData.address}, ${formData.city}, ${formData.state} ${formData.pincode}`.trim();
+      const deliveryAddress = "Default delivery address";
       
       // Create order in Supabase
       const { data: orderData, error: orderError } = await supabase
@@ -266,65 +256,6 @@ const Checkout = () => {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-4">
             
-            {/* Delivery Address */}
-            <div className="bg-white rounded-lg p-4 shadow-sm">
-              <div className="flex items-center space-x-2 mb-4">
-                <MapPin className="h-4 w-4 lg:h-5 lg:w-5 text-green-600" />
-                <h3 className="text-base lg:text-lg font-semibold">
-                  Delivery Address
-                </h3>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <Label htmlFor="address" className="text-sm font-medium">Full Address *</Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={detectCurrentLocation}
-                    disabled={isDetectingLocation}
-                  >
-                    {isDetectingLocation ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : (
-                      <MapPin className="h-4 w-4 mr-2" />
-                    )}
-                    {isDetectingLocation ? "Detecting..." : "Use Current Location"}
-                  </Button>
-                </div>
-
-                <Input
-                  id="address"
-                  placeholder="Enter your full address"
-                  value={formData.address}
-                  onChange={(e) => handleInputChange("address", e.target.value)}
-                  required
-                />
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label htmlFor="city" className="text-sm font-medium">City *</Label>
-                    <Input
-                      id="city"
-                      placeholder="City"
-                      value={formData.city}
-                      onChange={(e) => handleInputChange("city", e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="pincode" className="text-sm font-medium">PIN Code</Label>
-                    <Input
-                      id="pincode"
-                      placeholder="PIN Code"
-                      value={formData.pincode}
-                      onChange={(e) => handleInputChange("pincode", e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
 
             {/* Payment Method */}
             <div className="bg-white rounded-lg p-4 shadow-sm">
