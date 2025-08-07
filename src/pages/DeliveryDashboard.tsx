@@ -222,11 +222,34 @@ const DeliveryDashboard = () => {
   };
 
   const rejectOrder = async (orderId: string) => {
-    // Optional: implement reject logic if needed
-    toast({
-      title: "Order Rejected",
-      description: "Order has been rejected.",
-    });
+    try {
+      // Mark order as available for other delivery partners
+      const { error } = await supabase
+        .from('orders')
+        .update({
+          delivery_partner_id: null,
+          status: 'ready_for_pickup'
+        })
+        .eq('id', orderId)
+        .eq('delivery_partner_id', user?.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Order Rejected",
+        description: "Order has been made available for other partners.",
+      });
+      
+      // Refetch orders to update the list
+      await fetchOrders();
+    } catch (error) {
+      console.error('Error rejecting order:', error);
+      toast({
+        title: "Error",
+        description: "Failed to reject order.",
+        variant: "destructive"
+      });
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -331,7 +354,7 @@ const DeliveryDashboard = () => {
         </Card>
 
         {/* KYC Notice - Only show if KYC is not approved */}
-        {(kycStatus !== 'approved') && (
+        {kycStatus !== 'approved' && (
           <Card className="border-orange-200 bg-orange-50">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">

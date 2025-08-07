@@ -144,7 +144,13 @@ const ManageDarkstores = () => {
   };
 
   const currentDarkstore = editingDarkstore || newDarkstore;
-  const setCurrentDarkstore = editingDarkstore ? setEditingDarkstore : setNewDarkstore;
+  const setCurrentDarkstore = (darkstore: any) => {
+    if (editingDarkstore) {
+      setEditingDarkstore(darkstore);
+    } else {
+      setNewDarkstore(darkstore);
+    }
+  };
 
   return (
     <AdminLayout>

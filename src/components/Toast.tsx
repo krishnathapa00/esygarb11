@@ -60,11 +60,11 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
   const getStyles = (type: ToastType) => {
     switch (type) {
       case 'success':
-        return 'bg-green-50 border-green-200 text-green-800';
+        return 'bg-green-50 border-green-200 text-green-800 shadow-green-100';
       case 'error':
-        return 'bg-red-50 border-red-200 text-red-800';
+        return 'bg-red-50 border-red-200 text-red-800 shadow-red-100';
       case 'info':
-        return 'bg-blue-50 border-blue-200 text-blue-800';
+        return 'bg-blue-50 border-blue-200 text-blue-800 shadow-blue-100';
     }
   };
 
@@ -72,28 +72,34 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
     <ToastContext.Provider value={{ showToast }}>
       {children}
       
-      {/* Toast Container */}
-      <div className="fixed bottom-4 right-4 z-50 space-y-2 max-w-sm">
+      {/* Toast Container - Mobile responsive */}
+      <div className="fixed bottom-4 right-4 z-50 space-y-2 max-w-sm w-full sm:w-auto px-4 sm:px-0">
         {toasts.map((toast) => (
           <div
             key={toast.id}
             className={`
               flex items-center gap-3 p-4 rounded-lg border shadow-lg transition-all duration-300 
               ${getStyles(toast.type)}
-              animate-in slide-in-from-bottom-5
+              animate-in slide-in-from-bottom-5 backdrop-blur-sm
+              max-w-full sm:max-w-sm
             `}
+            style={{
+              animation: 'slideInFromBottom 0.3s ease-out'
+            }}
           >
             {getIcon(toast.type)}
-            <p className="flex-1 text-sm font-medium">{toast.message}</p>
+            <p className="flex-1 text-sm font-medium break-words">{toast.message}</p>
             <button
               onClick={() => removeToast(toast.id)}
-              className="opacity-70 hover:opacity-100 transition-opacity"
+              className="opacity-70 hover:opacity-100 transition-opacity flex-shrink-0"
+              aria-label="Dismiss toast"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
         ))}
       </div>
+
     </ToastContext.Provider>
   );
 };

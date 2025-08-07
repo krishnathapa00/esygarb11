@@ -146,20 +146,26 @@ const ManageKYC = () => {
   const openDocument = async (url: string) => {
     if (url) {
       try {
+        // Extract the file path from the URL
+        const filePath = url.replace(/^.*\/storage\/v1\/object\/public\/kyc-documents\//, '');
+        
         // Create signed URL for viewing
         const { data: signedUrlData, error } = await supabase.storage
           .from('kyc-documents')
-          .createSignedUrl(url, 3600); // 1 hour expiry
+          .createSignedUrl(filePath, 3600); // 1 hour expiry
 
-        if (error) throw error;
+        if (error) {
+          console.error('Signed URL error:', error);
+          // Fallback to direct URL if signed URL fails
+          window.open(url, '_blank');
+          return;
+        }
+        
         window.open(signedUrlData.signedUrl, '_blank');
       } catch (error) {
         console.error('Error viewing document:', error);
-        toast({
-          title: "Error",
-          description: "Failed to open document",
-          variant: "destructive"
-        });
+        // Fallback to direct URL
+        window.open(url, '_blank');
       }
     }
   };
