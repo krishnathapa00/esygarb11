@@ -134,11 +134,27 @@ const DeliveryMapNavigation = () => {
         setIsTimerRunning(false);
         localStorage.removeItem(`delivery_timer_${orderId}`);
         localStorage.removeItem(`delivery_timer_running_${orderId}`);
-        toast({
-          title: "Order Delivered",
-          description: "Great job! Order has been marked as delivered.",
+        
+        // Show success modal
+        const modal = document.createElement('div');
+        modal.innerHTML = `
+          <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+            <div style="background: white; padding: 2rem; border-radius: 1rem; max-width: 400px; text-align: center; margin: 1rem;">
+              <div style="color: #10b981; font-size: 4rem; margin-bottom: 1rem;">✓</div>
+              <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1rem; color: #1f2937;">Order Delivered Successfully!</h2>
+              <p style="color: #6b7280; margin-bottom: 2rem;">Great job! The order has been marked as delivered.</p>
+              <button id="backToDashboard" style="background: #10b981; color: white; padding: 0.75rem 2rem; border: none; border-radius: 0.5rem; font-weight: 500; cursor: pointer; width: 100%;">
+                Back to Dashboard
+              </button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(modal);
+        
+        document.getElementById('backToDashboard')?.addEventListener('click', () => {
+          document.body.removeChild(modal);
+          navigate('/delivery-partner/dashboard');
         });
-        navigate('/delivery-partner/dashboard');
       }
     },
     onError: (error) => {
@@ -261,7 +277,7 @@ const DeliveryMapNavigation = () => {
                   }}
                 >
                   {isTimerRunning ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                  {isTimerRunning ? 'Pause' : 'Resume'}
+                  {isTimerRunning ? 'Pause' : 'Start'}
                 </Button>
               </div>
             </div>

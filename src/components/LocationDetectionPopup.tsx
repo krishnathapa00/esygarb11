@@ -24,6 +24,20 @@ const LocationDetectionPopup = ({ isOpen, onClose, onLocationSet }: LocationDete
           try {
             console.log('Location detected:', position.coords.latitude, position.coords.longitude);
             
+            // Check if user is within Nepal coordinates (rough bounds)
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            
+            // Nepal approximate bounds: lat 26-31, lng 80-89
+            const isInNepal = lat >= 26 && lat <= 31 && lng >= 80 && lng <= 89;
+            
+            if (!isInNepal) {
+              setIsDetecting(false);
+              alert('Sorry, we are not available in your city. EsyGrab currently serves Nepal only.');
+              onClose();
+              return;
+            }
+            
             // Using OpenStreetMap Nominatim API for reverse geocoding (free alternative)
             const response = await fetch(
               `https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}&zoom=18&addressdetails=1`

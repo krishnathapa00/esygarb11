@@ -63,12 +63,21 @@ const DeliveryOrders = () => {
 
     toast({
       title: "Order Accepted",
-      description: "Navigate to the order details to start delivery.",
+      description: "Redirecting to navigation...",
       variant: "default"
     });
 
     refetch();
     navigate(`/delivery-partner/navigate/${orderId}`);
+  };
+
+  const rejectOrder = async (orderId: string) => {
+    // Just show a toast for now - the order remains available for other partners
+    toast({
+      title: "Order Rejected",
+      description: "Order will be offered to other available partners.",
+      variant: "default"
+    });
   };
 
   const getStatusColor = (status: string) => {
@@ -139,14 +148,9 @@ const DeliveryOrders = () => {
                     <Button 
                       size="sm" 
                       variant="outline"
-                      onClick={() => {
-                        toast({
-                          title: "Order Passed",
-                          description: "You have passed on this order.",
-                        });
-                      }}
+                      onClick={() => rejectOrder(order.id)}
                     >
-                      Pass
+                      Reject
                     </Button>
                   </div>
                 </div>

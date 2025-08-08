@@ -42,6 +42,24 @@ const LocationSelector = () => {
   const handleConfirmLocation = () => {
     const finalLocation = useCustom ? customLocation : selectedLocation;
     if (finalLocation.trim()) {
+      // Check if location is in Nepal (simple check)
+      const isNepalLocation = finalLocation.toLowerCase().includes('nepal') || 
+                             finalLocation.toLowerCase().includes('kathmandu') ||
+                             finalLocation.toLowerCase().includes('lalitpur') ||
+                             finalLocation.toLowerCase().includes('bhaktapur') ||
+                             finalLocation.toLowerCase().includes('pokhara') ||
+                             finalLocation.toLowerCase().includes('chitwan') ||
+                             finalLocation.toLowerCase().includes('biratnagar') ||
+                             finalLocation.toLowerCase().includes('birgunj') ||
+                             finalLocation.toLowerCase().includes('dharan') ||
+                             finalLocation.toLowerCase().includes('hetauda') ||
+                             finalLocation.toLowerCase().includes('janakpur');
+      
+      if (!isNepalLocation && !finalLocation.toLowerCase().includes('nepal')) {
+        alert('Sorry, we are not available in your city. EsyGrab currently serves Nepal only.');
+        return;
+      }
+      
       // Save to localStorage
       try {
         localStorage.setItem(
