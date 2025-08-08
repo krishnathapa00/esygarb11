@@ -219,6 +219,8 @@ const DeliveryDashboard = () => {
 
   const handleAcceptOrder = (orderId: string) => {
     acceptOrderMutation.mutate(orderId);
+    // Navigate to delivery map navigation page
+    navigate(`/delivery-partner/navigation/${orderId}`);
   };
 
   const rejectOrder = async (orderId: string) => {
