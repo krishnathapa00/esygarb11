@@ -69,7 +69,7 @@ function App() {
                     path="/order-confirmation"
                     element={<OrderConfirmation />}
                   />
-                  <Route path="/order-tracking/:orderNumber" element={<OrderTracking />} />
+                  <Route path="/order-tracking/:orderId" element={<OrderTracking />} />
                   <Route path="/order-history" element={<OrderHistory />} />
                   <Route path="/profile" element={<UserProfile />} />
                   <Route path="/map-location" element={<MapLocation />} />

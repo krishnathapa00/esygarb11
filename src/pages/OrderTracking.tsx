@@ -1,104 +1,152 @@
-
-import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import Header from '../components/Header';
-import { ArrowLeft, CheckCircle, Clock, Truck, MapPin } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { ArrowLeft, Package, Truck, CheckCircle, Clock, MapPin, Phone } from 'lucide-react';
+import Header from '@/components/Header';
 
 const OrderTracking = () => {
-  const { id: orderId } = useParams();
-  
-  // Fetch real order data
+  const { orderId } = useParams();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [timeElapsed, setTimeElapsed] = useState(0);
+
+  // Fetch order details
   const { data: order, isLoading } = useQuery({
     queryKey: ['order-tracking', orderId],
     queryFn: async () => {
+      if (!orderId) throw new Error('Order ID is required');
+
       const { data, error } = await supabase
         .from('orders')
         .select(`
           *,
-          order_status_history(status, timestamp, notes),
-          profiles!orders_delivery_partner_id_fkey(full_name, phone_number)
+          order_items (
+            id,
+            quantity,
+            price,
+            products (
+              name,
+              image_url
+            )
+          ),
+          profiles!orders_delivery_partner_id_fkey (
+            full_name,
+            phone_number
+          )
         `)
         .eq('id', orderId)
         .single();
-      
+
       if (error) throw error;
       return data;
     },
     enabled: !!orderId,
-    refetchInterval: 10000 // Refetch every 10 seconds for real-time updates
+    refetchInterval: 5000 // Refresh every 5 seconds
   });
 
-  const getOrderSteps = () => {
-    if (!order) return [];
-    
-    const allSteps = [
-      { id: 1, title: "Order Placed", status: "pending", time: "", icon: CheckCircle },
-      { id: 2, title: "Order Confirmed", status: "confirmed", time: "", icon: CheckCircle },
-      { id: 3, title: "Ready for Pickup", status: "ready_for_pickup", time: "", icon: Clock },
-      { id: 4, title: "Order Dispatched", status: "dispatched", time: "", icon: Truck },
-      { id: 5, title: "Out for Delivery", status: "out_for_delivery", time: "", icon: Truck },
-      { id: 6, title: "Delivered", status: "delivered", time: "", icon: MapPin },
-    ];
+  // Timer for elapsed time since order placement
+  useEffect(() => {
+    if (!order?.created_at) return;
 
-    // Get status history for timestamps
-    const statusHistory = order.order_status_history || [];
-    const statusMap = new Map();
-    statusHistory.forEach(history => {
-      statusMap.set(history.status, new Date(history.timestamp).toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-      }));
-    });
-
-    // Mark steps as completed based on current status
-    const currentStatusIndex = allSteps.findIndex(step => step.status === order.status);
+    const startTime = new Date(order.created_at).getTime();
     
-    return allSteps.map((step, index) => ({
-      ...step,
-      completed: index <= currentStatusIndex,
-      time: statusMap.get(step.status) || (index === 0 ? new Date(order.created_at).toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-      }) : "")
-    }));
+    const timer = setInterval(() => {
+      const now = new Date().getTime();
+      const elapsed = Math.floor((now - startTime) / 1000);
+      setTimeElapsed(elapsed);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [order?.created_at]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const getStatusMessage = () => {
-    if (!order) return "";
-    
-    switch (order.status) {
-      case 'pending':
-        return "Your order has been placed and is being processed.";
-      case 'confirmed':
-        return "Your order has been confirmed and is being prepared.";
-      case 'ready_for_pickup':
-        return "Your order is ready and waiting for pickup by our delivery partner.";
-      case 'dispatched':
-        return `Your order has been picked up by ${order.profiles?.full_name || 'our delivery partner'} and is on the way!`;
-      case 'out_for_delivery':
-        return "Your order is reaching your location! The delivery partner is nearby.";
-      case 'delivered':
-        return "Your order has been successfully delivered. Thank you for choosing EsyGrab!";
-      default:
-        return "Tracking your order...";
+  const getOrderProgress = (status: string) => {
+    switch (status) {
+      case 'pending': return 10;
+      case 'confirmed': return 25;
+      case 'ready_for_pickup': return 40;
+      case 'dispatched': return 60;
+      case 'out_for_delivery': return 80;
+      case 'delivered': return 100;
+      default: return 0;
     }
   };
 
-  const orderSteps = getOrderSteps();
+  const getStatusIcon = (status: string, currentStatus: string) => {
+    const isCompleted = getOrderProgress(status) <= getOrderProgress(currentStatus);
+    const isCurrent = status === currentStatus;
+
+    if (status === 'delivered' && isCompleted) {
+      return <CheckCircle className="h-6 w-6 text-green-600" />;
+    }
+
+    if (isCurrent) {
+      return <Clock className="h-6 w-6 text-blue-600 animate-pulse" />;
+    }
+
+    if (isCompleted) {
+      return <CheckCircle className="h-6 w-6 text-green-600" />;
+    }
+
+    return <div className="h-6 w-6 rounded-full border-2 border-gray-300" />;
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'confirmed': return 'bg-blue-100 text-blue-800';
+      case 'ready_for_pickup': return 'bg-purple-100 text-purple-800';
+      case 'dispatched': return 'bg-orange-100 text-orange-800';
+      case 'out_for_delivery': return 'bg-indigo-100 text-indigo-800';
+      case 'delivered': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const statusSteps = [
+    { status: 'pending', label: 'Order Placed', description: 'Your order has been received' },
+    { status: 'confirmed', label: 'Processing', description: 'Order is being prepared' },
+    { status: 'ready_for_pickup', label: 'Ready', description: 'Order ready for pickup' },
+    { status: 'dispatched', label: 'Picked Up', description: 'Delivery partner assigned' },
+    { status: 'out_for_delivery', label: 'On the Way', description: 'Order is being delivered' },
+    { status: 'delivered', label: 'Delivered', description: 'Order delivered successfully' }
+  ];
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <Header />
-        <div className="max-w-4xl mx-auto px-4 py-6 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading order details...</p>
+        <div className="container mx-auto p-4">
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-muted-foreground">Loading order details...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!order) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto p-4">
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Order not found</p>
+            <Button onClick={() => navigate('/')} className="mt-4">
+              Back to Home
+            </Button>
           </div>
         </div>
       </div>
@@ -106,75 +154,136 @@ const OrderTracking = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Header />
-      
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex items-center mb-6">
-          <Link to="/">
-            <Button variant="ghost" size="sm" className="mr-3">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <h1 className="text-2xl font-bold text-gray-900">Track Order</h1>
+      <div className="container mx-auto p-4 space-y-6">
+        {/* Header */}
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="icon" onClick={() => navigate(-1)}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">Order Tracking</h1>
+            <p className="text-muted-foreground">Order #{order.order_number}</p>
+          </div>
         </div>
 
-        <div className="bg-white rounded-lg p-6 shadow-sm">
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h2 className="font-semibold text-gray-900">Order #{order?.order_number}</h2>
-              <p className="text-sm text-gray-500">Estimated delivery: {order?.estimated_delivery || '10-15 mins'}</p>
-              {order?.profiles && (
-                <p className="text-sm text-gray-600 mt-1">
-                  Delivery Partner: {order.profiles.full_name} ({order.profiles.phone_number})
+        {/* Timer and Status */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <Badge className={getStatusColor(order.status)}>
+                  {order.status.replace('_', ' ').toUpperCase()}
+                </Badge>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Estimated delivery: {order.estimated_delivery}
                 </p>
-              )}
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-bold text-primary">{formatTime(timeElapsed)}</p>
+                <p className="text-sm text-muted-foreground">Time elapsed</p>
+              </div>
             </div>
-            <div className="bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-medium">
-              {order?.status?.replace('_', ' ') || 'Processing'}
-            </div>
-          </div>
-          
-          {/* Status Message */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <p className="text-blue-800 text-sm">{getStatusMessage()}</p>
-          </div>
-          
-          <div className="space-y-6">
-            {orderSteps.map((step, index) => {
-              const IconComponent = step.icon;
-              return (
-                <div key={step.id} className="relative flex items-center">
-                  <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
-                    step.completed ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-400'
-                  } shadow-lg`}>
-                    <IconComponent className="h-5 w-5" />
+            <Progress value={getOrderProgress(order.status)} className="h-2" />
+          </CardContent>
+        </Card>
+
+        {/* Order Status Timeline */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Order Progress</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {statusSteps.map((step, index) => (
+                <div key={step.status} className="flex items-center gap-4">
+                  {getStatusIcon(step.status, order.status)}
+                  <div className="flex-1">
+                    <h3 className="font-medium">{step.label}</h3>
+                    <p className="text-sm text-muted-foreground">{step.description}</p>
                   </div>
-                  
-                  <div className="ml-4 flex-1">
-                    <h3 className={`font-semibold ${step.completed ? 'text-green-600' : 'text-gray-500'}`}>
-                      {step.title}
-                    </h3>
-                    {step.completed && step.time && (
-                      <p className="text-sm text-gray-500">{step.time}</p>
-                    )}
-                    {step.completed && !step.time && index === 0 && (
-                      <p className="text-sm text-gray-500">Just now</p>
-                    )}
-                  </div>
-                  
-                  {index < orderSteps.length - 1 && (
-                    <div className={`absolute top-10 left-5 w-0.5 h-8 ${
-                      step.completed && orderSteps[index + 1].completed 
-                        ? 'bg-green-600' 
-                        : 'bg-gray-200'
-                    }`}></div>
+                  {step.status === order.status && (
+                    <Badge variant="outline" className="text-blue-600">Current</Badge>
                   )}
                 </div>
-              );
-            })}
-          </div>
-        </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Delivery Partner Info */}
+        {order.delivery_partner_id && order.profiles && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Truck className="h-5 w-5" />
+                Delivery Partner
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center">
+                  <Truck className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium">{order.profiles.full_name}</p>
+                  <p className="text-sm text-muted-foreground flex items-center gap-1">
+                    <Phone className="h-4 w-4" />
+                    {order.profiles.phone_number}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Delivery Address */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5" />
+              Delivery Address
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm">{order.delivery_address}</p>
+          </CardContent>
+        </Card>
+
+        {/* Order Items */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Order Items
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {order.order_items?.map((item: any, index: number) => (
+                <div key={item.id} className="flex items-center gap-3 p-2 border rounded-lg">
+                  <img
+                    src={item.products?.image_url || '/placeholder.svg'}
+                    alt={item.products?.name}
+                    className="h-12 w-12 object-cover rounded"
+                  />
+                  <div className="flex-1">
+                    <p className="font-medium">{item.products?.name}</p>
+                    <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                  </div>
+                  <p className="font-medium">Rs {parseFloat(item.price).toFixed(2)}</p>
+                </div>
+              ))}
+            </div>
+            <div className="border-t pt-3 mt-3">
+              <div className="flex justify-between items-center font-medium">
+                <span>Total Amount</span>
+                <span>Rs {parseFloat(String(order.total_amount)).toFixed(2)}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

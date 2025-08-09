@@ -171,7 +171,7 @@ const KYCSubmission = () => {
         </Card>
       )}
 
-      {/* KYC Submission Form */}
+      {/* KYC Submission Form - Hide if approved */}
       {(!kycStatus || (kycStatus.verification_status !== 'approved' && kycStatus.verification_status !== 'pending')) && (
         <Card>
           <CardHeader>

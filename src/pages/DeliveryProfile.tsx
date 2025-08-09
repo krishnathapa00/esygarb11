@@ -206,7 +206,7 @@ const DeliveryProfile = () => {
         </div>
 
         {/* Warning if setup incomplete - only show if KYC not approved */}
-        {(!isProfileComplete && kycStatus !== 'approved') && (
+        {(!isProfileComplete || kycStatus !== 'approved') && (
           <Card className="border-yellow-200 bg-yellow-50">
             <CardContent className="p-4">
               <div className="flex items-center gap-2">
@@ -222,18 +222,57 @@ const DeliveryProfile = () => {
           </Card>
         )}
 
-        {/* KYC Verification Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>KYC Verification</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Upload required documents for identity verification
-            </p>
-          </CardHeader>
-          <CardContent>
-            <KYCSubmission />
-          </CardContent>
-        </Card>
+        {/* KYC Verification Section - Only show if not approved */}
+        {kycStatus !== 'approved' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>KYC Verification</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Upload required documents for identity verification
+              </p>
+            </CardHeader>
+            <CardContent>
+              <KYCSubmission />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* KYC Status Display for Approved Users */}
+        {kycStatus === 'approved' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+                KYC Verification Status
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-green-600">
+                  <CheckCircle className="w-3 h-3 mr-1" />
+                  Approved
+                </Badge>
+                <span className="text-sm text-muted-foreground">
+                  Your account is verified and ready for deliveries
+                </span>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-3"
+                onClick={() => {
+                  // Navigate to view KYC details
+                  toast({
+                    title: "KYC Documents",
+                    description: "Your documents have been approved and verified.",
+                  });
+                }}
+              >
+                View Documents
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Profile Information */}
         <Card>

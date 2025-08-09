@@ -268,6 +268,12 @@ const UserProfile: React.FC = () => {
                     >
                       Edit Profile
                     </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate('/order-history')}
+                    >
+                      Order History
+                    </Button>
                   </div>
                 </div>
               ) : (

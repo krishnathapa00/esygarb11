@@ -157,20 +157,34 @@ const AddProduct = () => {
                     />
                   </div>
 
-                  <div>
-                    <Label htmlFor="category">Category *</Label>
-                    <Select onValueChange={(value) => handleInputChange('category_id', value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map((category) => (
-                          <SelectItem key={category.id} value={category.id.toString()}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="category">Category *</Label>
+                      <Select onValueChange={(value) => handleInputChange('category_id', value)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.map((category) => (
+                            <SelectItem key={category.id} value={category.id.toString()}>
+                              {category.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="subcategory">Subcategory</Label>
+                      <Select onValueChange={(value) => handleInputChange('subcategory_id', value)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select subcategory" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">None</SelectItem>
+                          {/* Subcategories would be filtered by selected category */}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
                   <div>
