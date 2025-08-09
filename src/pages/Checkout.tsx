@@ -46,7 +46,31 @@ const Checkout = () => {
   // Calculate total from cart
   const cartItems = cart || [];
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const deliveryFee = subtotal > 200 ? 0 : 20;
+  
+  // Fetch delivery fee from admin settings
+  const [deliveryFee, setDeliveryFee] = useState(50); // Default fallback
+  
+  useEffect(() => {
+    const fetchDeliveryFee = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('delivery_config')
+          .select('delivery_fee')
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .single();
+        
+        if (data && !error) {
+          setDeliveryFee(parseFloat(data.delivery_fee.toString()));
+        }
+      } catch (error) {
+        console.error('Error fetching delivery fee:', error);
+      }
+    };
+    
+    fetchDeliveryFee();
+  }, []);
+  
   const totalAmount = subtotal + deliveryFee;
 
   useEffect(() => {

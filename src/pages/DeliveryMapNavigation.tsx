@@ -356,7 +356,17 @@ const DeliveryMapNavigation = () => {
             
             <div className="flex items-start gap-3">
               <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
-              <span className="text-sm">{order.delivery_address}</span>
+              <div className="flex-1">
+                <span className="text-sm">{order.delivery_address}</span>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={openMap}
+                  className="mt-2 w-full"
+                >
+                  View Exact Location on Map
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
