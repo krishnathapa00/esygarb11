@@ -382,6 +382,7 @@ export type Database = {
           delivered_at: string | null
           delivery_address: string
           delivery_partner_id: string | null
+          delivery_time_minutes: number | null
           estimated_delivery: string | null
           id: string
           order_number: string
@@ -399,6 +400,7 @@ export type Database = {
           delivered_at?: string | null
           delivery_address: string
           delivery_partner_id?: string | null
+          delivery_time_minutes?: number | null
           estimated_delivery?: string | null
           id?: string
           order_number: string
@@ -416,6 +418,7 @@ export type Database = {
           delivered_at?: string | null
           delivery_address?: string
           delivery_partner_id?: string | null
+          delivery_time_minutes?: number | null
           estimated_delivery?: string | null
           id?: string
           order_number?: string
