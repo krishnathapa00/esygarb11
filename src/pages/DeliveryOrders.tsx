@@ -41,43 +41,64 @@ const DeliveryOrders = () => {
     enabled: !!user
   });
 
-  const acceptOrder = async (orderId: string) => {
-    const { error } = await supabase
-      .from('orders')
-      .update({
-        delivery_partner_id: user?.id,
-        status: 'dispatched',
-        accepted_at: new Date().toISOString()
-      })
-      .eq('id', orderId)
-      .eq('status', 'ready_for_pickup'); // Only accept if still available
+  const acceptOrderMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      const { data, error } = await supabase
+        .from('orders')
+        .update({
+          delivery_partner_id: user?.id,
+          status: 'dispatched',
+          accepted_at: new Date().toISOString()
+        })
+        .eq('id', orderId)
+        .eq('status', 'ready_for_pickup')
+        .select()
+        .single();
 
-    if (error) {
+      if (error) {
+        throw new Error(error.message);
+      }
+      return data;
+    },
+    onSuccess: (data, orderId) => {
+      toast({
+        title: "Order Accepted",
+        description: "Redirecting to navigation...",
+        variant: "default"
+      });
+      queryClient.invalidateQueries({ queryKey: ['delivery-orders'] });
+      navigate(`/delivery-partner/navigate/${orderId}`);
+    },
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: "Failed to accept order. It may have been taken by another partner.",
+        description: error.message || "Failed to accept order. It may have been taken by another partner.",
         variant: "destructive"
       });
-      return;
     }
+  });
 
-    toast({
-      title: "Order Accepted",
-      description: "Redirecting to navigation...",
-      variant: "default"
-    });
+  const rejectOrderMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      // For now, just mark that this partner rejected it
+      // In a real system, you might track rejections
+      return { orderId };
+    },
+    onSuccess: () => {
+      toast({
+        title: "Order Rejected",
+        description: "Order will be offered to other available partners.",
+        variant: "default"
+      });
+    }
+  });
 
-    refetch();
-    navigate(`/delivery-partner/navigate/${orderId}`);
+  const acceptOrder = (orderId: string) => {
+    acceptOrderMutation.mutate(orderId);
   };
 
-  const rejectOrder = async (orderId: string) => {
-    // Just show a toast for now - the order remains available for other partners
-    toast({
-      title: "Order Rejected",
-      description: "Order will be offered to other available partners.",
-      variant: "default"
-    });
+  const rejectOrder = (orderId: string) => {
+    rejectOrderMutation.mutate(orderId);
   };
 
   const getStatusColor = (status: string) => {
