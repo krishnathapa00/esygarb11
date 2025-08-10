@@ -267,19 +267,9 @@ const DeliveryMapNavigation = () => {
               <div className="text-4xl font-bold text-blue-600 mb-4">
                 {formatTime(timer)}
               </div>
-              <div className="flex items-center justify-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setIsTimerRunning(!isTimerRunning);
-                    localStorage.setItem(`delivery_timer_running_${orderId}`, (!isTimerRunning).toString());
-                  }}
-                >
-                  {isTimerRunning ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                  {isTimerRunning ? 'Pause' : 'Start'}
-                </Button>
-              </div>
+              <p className="text-sm text-blue-700">
+                {isTimerRunning ? 'Timer is running...' : 'Timer will start when order is out for delivery'}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -357,15 +347,8 @@ const DeliveryMapNavigation = () => {
             <div className="flex items-start gap-3">
               <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
               <div className="flex-1">
-                <span className="text-sm">{order.delivery_address}</span>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={openMap}
-                  className="mt-2 w-full"
-                >
-                  View Exact Location on Map
-                </Button>
+                <div className="text-sm text-muted-foreground mb-1">Delivery Address:</div>
+                <span className="text-sm font-medium">{order.delivery_address}</span>
               </div>
             </div>
           </CardContent>
