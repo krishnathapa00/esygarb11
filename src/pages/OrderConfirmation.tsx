@@ -9,7 +9,10 @@ const OrderConfirmation = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const orderData = location.state;
+  const fallbackOrder = JSON.parse(
+    sessionStorage.getItem("last_order") || "{}"
+  );
+  const orderData = location.state || fallbackOrder;
 
   useEffect(() => {
     if (!orderData) {
