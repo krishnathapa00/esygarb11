@@ -83,14 +83,39 @@ const Transactions = () => {
 
   const handleDeleteTransaction = async () => {
     if (!selectedTransaction) return;
-    const { error } = await supabase.from('orders').delete().eq('id', selectedTransaction.id);
-    if (error) {
-      toast({ title: "Failed to delete transaction", description: error.message, variant: "destructive" });
-    } else {
+    
+    try {
+      // First delete related order_items
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .delete()
+        .eq('order_id', selectedTransaction.id);
+
+      if (itemsError) {
+        throw itemsError;
+      }
+
+      // Then delete the order/transaction
+      const { error } = await supabase
+        .from('orders')
+        .delete()
+        .eq('id', selectedTransaction.id);
+        
+      if (error) {
+        throw error;
+      }
+      
       toast({ title: "Transaction deleted", description: "Transaction has been permanently deleted." });
       setDeleteModalOpen(false);
       setSelectedTransaction(null);
       refetch();
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      toast({ 
+        title: "Failed to delete transaction", 
+        description: error.message || "Failed to delete transaction", 
+        variant: "destructive" 
+      });
     }
   };
 

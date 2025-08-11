@@ -13,6 +13,7 @@ import CartPage from "./pages/CartPage";
 import Checkout from "./pages/Checkout";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import OrderTracking from "./pages/OrderTracking";
+import OrderTrackingLookup from "./pages/OrderTrackingLookup";
 import OrderHistory from "./pages/OrderHistory";
 import UserProfile from "./pages/UserProfile";
 import AuthHybrid from "./pages/AuthHybrid";
@@ -69,7 +70,8 @@ function App() {
                     path="/order-confirmation"
                     element={<OrderConfirmation />}
                   />
-                  <Route path="/order-tracking/:orderId" element={<OrderTracking />} />
+            <Route path="/order-tracking/:orderId" element={<OrderTracking />} />
+            <Route path="/order-tracking" element={<OrderTrackingLookup />} />
                   <Route path="/order-history" element={<OrderHistory />} />
                   <Route path="/profile" element={<UserProfile />} />
                   <Route path="/map-location" element={<MapLocation />} />

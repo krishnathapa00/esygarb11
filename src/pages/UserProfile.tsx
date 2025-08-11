@@ -274,6 +274,12 @@ const UserProfile: React.FC = () => {
                     >
                       Order History
                     </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate('/order-tracking')}
+                    >
+                      Order Tracking
+                    </Button>
                   </div>
                 </div>
               ) : (

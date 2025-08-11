@@ -146,19 +146,37 @@ const ManageOrders = () => {
     if (!selectedOrder) return;
 
     try {
+      // First delete related order_items
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .delete()
+        .eq('order_id', selectedOrder.id);
+
+      if (itemsError) {
+        throw itemsError;
+      }
+
+      // Then delete the order
       const { error } = await supabase
         .from('orders')
         .delete()
         .eq('id', selectedOrder.id);
 
-      if (!error) {
-        toast({ title: "Success", description: "Order deleted." });
-        setDeleteModalOpen(false);
-        setSelectedOrder(null);
-        refetchOrders();
+      if (error) {
+        throw error;
       }
-    } catch (error) {
-      toast({ title: "Error", description: "Failed to delete order.", variant: "destructive" });
+
+      toast({ title: "Success", description: "Order deleted successfully." });
+      setDeleteModalOpen(false);
+      setSelectedOrder(null);
+      refetchOrders();
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to delete order.", 
+        variant: "destructive" 
+      });
     }
   };
 

@@ -171,7 +171,7 @@ const Checkout = () => {
     setLoading(true);
     
     try {
-      const deliveryAddress = "Default delivery address";
+      const deliveryAddress = `${formData.address}, ${formData.city}, ${formData.state} ${formData.pincode}`.trim();
       
       // Create order in Supabase
       const { data: orderData, error: orderError } = await supabase
