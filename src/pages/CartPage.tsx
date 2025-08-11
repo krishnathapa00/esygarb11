@@ -6,15 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useCart } from "@/contexts/CartContext";
+import { useCartActions } from "@/hooks/useCart";
 
 const CartPage = () => {
   const navigate = useNavigate();
-  const { cart: cartItems, updateQuantity, removeItem } = useCart();
+  const {
+    cart: cartItems,
+    handleUpdateQuantity,
+    handleRemoveItem,
+  } = useCartActions();
 
-  const [deliveryLocation, setDeliveryLocation] = useState(
-    "Set delivery location"
-  );
+  const [deliveryLocation, setDeliveryLocation] = useState("");
   const [isDetecting, setIsDetecting] = useState(false);
   const [buttonClicked, setButtonClicked] = useState<"auto" | "manual" | null>(
     null
@@ -49,82 +51,48 @@ const CartPage = () => {
         async (position) => {
           try {
             const { latitude, longitude } = position.coords;
-            console.log('Detected coordinates:', latitude, longitude);
-            
             const response = await fetch(
               `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
             );
 
-            if (response.ok) {
-              const data = await response.json();
-              console.log('Geocoding response:', data);
-              
-              const address = data?.address || {};
-              const parts = [
-                address.house_number && address.road
-                  ? `${address.house_number} ${address.road}`
-                  : address.road,
-                address.neighbourhood || address.suburb,
-                address.city || address.town || address.village,
-                address.state,
-              ].filter(Boolean);
+            const data = await response.json();
+            const address = data?.address || {};
+            const parts = [
+              address.house_number && address.road
+                ? `${address.house_number} ${address.road}`
+                : address.road,
+              address.neighbourhood || address.suburb,
+              address.city || address.town || address.village,
+              address.state,
+            ].filter(Boolean);
 
-              const formatted =
-                parts.join(", ") || data.display_name || "Detected Location";
-              
-              setDeliveryLocation(formatted);
+            const formatted =
+              parts.join(", ") || data.display_name || "Detected Location";
+            setDeliveryLocation(formatted);
 
-              localStorage.setItem(
-                "esygrab_user_location",
-                JSON.stringify({
-                  address: formatted,
-                  coordinates: { lat: latitude, lng: longitude },
-                })
-              );
-              
-              console.log('Location saved:', formatted);
-            } else {
-              throw new Error('Geocoding failed');
-            }
+            localStorage.setItem(
+              "esygrab_user_location",
+              JSON.stringify({
+                address: formatted,
+                coordinates: { lat: latitude, lng: longitude },
+              })
+            );
           } catch (err) {
             console.error("Geolocation failed:", err);
             const fallback = `Lat: ${position.coords.latitude.toFixed(
               4
             )}, Lng: ${position.coords.longitude.toFixed(4)}`;
             setDeliveryLocation(fallback);
-            
-            localStorage.setItem(
-              "esygrab_user_location",
-              JSON.stringify({
-                address: fallback,
-                coordinates: { lat: position.coords.latitude, lng: position.coords.longitude },
-              })
-            );
           } finally {
             setIsDetecting(false);
           }
         },
         (error) => {
           console.error("Geolocation error:", error);
-          let errorMessage = 'Failed to access your location. Please enable location services.';
-          switch (error.code) {
-            case error.PERMISSION_DENIED:
-              errorMessage = 'Location access denied. Please enable location services in your browser.';
-              break;
-            case error.POSITION_UNAVAILABLE:
-              errorMessage = 'Location information unavailable.';
-              break;
-            case error.TIMEOUT:
-              errorMessage = 'Location request timed out.';
-              break;
-          }
-          alert(errorMessage);
+          alert(
+            "Failed to access your location. Please enable location services."
+          );
           setIsDetecting(false);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 60000
         }
       );
     } else {
@@ -144,7 +112,7 @@ const CartPage = () => {
     (sum, item) => sum + item.price * item.quantity,
     0
   );
-  const deliveryFee = totalPrice > 200 ? 0 : 20;
+  const deliveryFee = totalPrice > 200 ? 0 : 100;
   const finalTotal = totalPrice + deliveryFee;
 
   return (
@@ -171,7 +139,7 @@ const CartPage = () => {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-4 order-first lg:order-1">
+          <div className="lg:col-span-2 space-y-4">
             {cartItems.length === 0 ? (
               <div className="text-center py-20 text-gray-500 font-medium">
                 Your cart is empty.
@@ -204,7 +172,7 @@ const CartPage = () => {
                     <div className="flex items-center space-x-2">
                       <Button
                         onClick={() =>
-                          updateQuantity(item.id, item.quantity - 1)
+                          handleUpdateQuantity(item.id, item.quantity - 1)
                         }
                         disabled={item.quantity <= 1}
                         variant="outline"
@@ -218,7 +186,7 @@ const CartPage = () => {
                       </span>
                       <Button
                         onClick={() =>
-                          updateQuantity(item.id, item.quantity + 1)
+                          handleUpdateQuantity(item.id, item.quantity + 1)
                         }
                         variant="outline"
                         size="sm"
@@ -230,7 +198,7 @@ const CartPage = () => {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => removeItem(item.id)}
+                      onClick={() => handleRemoveItem(item.id)}
                       className="text-red-500 hover:text-red-700"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -299,7 +267,7 @@ const CartPage = () => {
           </div>
 
           {/* Order Summary */}
-          <div className="bg-gradient-to-br from-green-50 via-emerald-50 to-white rounded-2xl p-6 shadow-lg h-fit border border-green-100 order-last lg:order-2">
+          <div className="bg-gradient-to-br from-green-50 via-emerald-50 to-white rounded-2xl p-6 shadow-lg h-fit border border-green-100">
             <div className="flex items-center gap-3 mb-5">
               <span className="inline-block bg-green-100 p-2 rounded-full">
                 <Clock className="h-5 w-5 text-green-600" />
@@ -344,9 +312,19 @@ const CartPage = () => {
                 <Truck className="h-4 w-4" />
                 <span>Delivery in 10-15 mins</span>
               </div>
-              <Link to="/checkout">
-                <Button className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 py-3 text-lg font-bold rounded-lg shadow-green-100 shadow-md transition-all">
-                  Proceed to Checkout
+              <Link
+                to={totalPrice > 0 ? "/checkout" : "#"}
+                onClick={(e) => totalPrice === 0 && e.preventDefault()}
+              >
+                <Button
+                  disabled={totalPrice === 0}
+                  className={`w-full py-3 text-lg font-bold rounded-lg shadow-md transition-all ${
+                    totalPrice === 0
+                      ? "bg-gray-300 text-gray-600 cursor-not-allowed shadow-none"
+                      : "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-green-100"
+                  }`}
+                >
+                  {totalPrice === 0 ? "Cart is empty" : "Proceed to Checkout"}
                 </Button>
               </Link>
             </div>
