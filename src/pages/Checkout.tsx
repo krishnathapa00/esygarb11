@@ -12,18 +12,24 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
-import { useToast } from "@/hooks/use-toast";
 import EsewaLogo from "../assets/payments/esewa.jpg";
 import KhaltiLogo from "../assets/payments/khalti.jpg";
 
 const Checkout = () => {
   const { cart, resetCart } = useCart();
+
+  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const totalPrice = cart.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
+  const deliveryFee = 100;
+  const totalAmount = totalPrice + deliveryFee;
+
   const [selectedPayment, setSelectedPayment] = useState("cod");
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
@@ -33,45 +39,14 @@ const Checkout = () => {
     state: "",
   });
 
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   useEffect(() => {
-    if (!authLoading && !user) {
+    if (!loading && !user) {
       navigate("/login");
     }
-  }, [authLoading, user, navigate]);
-
-  // Calculate total from cart
-  const cartItems = cart || [];
-  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  
-  // Fetch delivery fee from admin settings
-  const [deliveryFee, setDeliveryFee] = useState(50); // Default fallback
-  
-  useEffect(() => {
-    const fetchDeliveryFee = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('delivery_config')
-          .select('delivery_fee')
-          .order('updated_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        
-        if (data && !error) {
-          setDeliveryFee(parseFloat(data.delivery_fee.toString()));
-        }
-      } catch (error) {
-        console.error('Error fetching delivery fee:', error);
-      }
-    };
-    
-    fetchDeliveryFee();
-  }, []);
-  
-  const totalAmount = subtotal + deliveryFee;
+  }, [loading, user, navigate]);
 
   useEffect(() => {
     // Auto-fill from profile data (simulated - in real app this would come from database/context)
@@ -158,76 +133,19 @@ const Checkout = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handlePlaceOrder = async () => {
-    if (!user || cartItems.length === 0) {
-      toast({
-        title: "Error",
-        description: "Please add items to cart and ensure you're logged in.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoading(true);
-    
-    try {
-      const deliveryAddress = `${formData.address}, ${formData.city}, ${formData.state} ${formData.pincode}`.trim();
-      
-      // Create order in Supabase
-      const { data: orderData, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          user_id: user.id,
-          total_amount: totalAmount,
-          delivery_address: deliveryAddress,
-          order_number: `ORD${Date.now()}`,
-          payment_status: selectedPayment === 'cod' ? 'pending' : 'completed',
-          status: 'confirmed'
-        })
-        .select()
-        .single();
-
-      if (orderError) {
-        console.error('Order creation error:', orderError);
-        throw orderError;
-      }
-
-      // Create order items
-      const orderItems = cartItems.map(item => ({
-        order_id: orderData.id,
-        product_id: item.id,
-        quantity: item.quantity,
-        price: item.price
-      }));
-
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems);
-
-      if (itemsError) {
-        console.error('Order items creation error:', itemsError);
-        throw itemsError;
-      }
-
-      // Store order ID for confirmation page
-      localStorage.setItem('latest_order_id', orderData.id);
-      
+  const handlePlaceOrder = () => {
+    if (selectedPayment === "cod") {
       resetCart();
-      toast({
-        title: "Order Placed Successfully!",
-        description: "Your order has been confirmed and will be processed soon.",
-      });
-      
-      navigate('/order-confirmation');
-    } catch (error: any) {
-      console.error('Order placement error:', error);
-      toast({
-        title: "Failed to place order",
-        description: error.message || "Please try again later.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+      // Direct to order confirmation for COD
+      window.location.href = "/order-confirmation";
+    } else {
+      // For now, simulate payment success for other methods
+      // In production, integrate with actual payment gateways
+      console.log(`Processing ${selectedPayment} payment...`);
+      setTimeout(() => {
+        resetCart();
+        window.location.href = "/order-confirmation";
+      }, 2000);
     }
   };
 
@@ -246,7 +164,7 @@ const Checkout = () => {
     },
   ];
 
-  if (authLoading) {
+  if (loading) {
     // Show loading while checking auth
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -279,7 +197,131 @@ const Checkout = () => {
         <div className="space-y-4 lg:grid lg:grid-cols-3 lg:gap-6 lg:space-y-0">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-4">
-            
+            {/* Delivery Address */}
+            <div className="bg-white rounded-lg p-4 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-2">
+                  <MapPin className="h-4 w-4 lg:h-5 lg:w-5 text-green-600" />
+                  <h3 className="text-base lg:text-lg font-semibold">
+                    Delivery Address
+                  </h3>
+                </div>
+                <Button
+                  onClick={detectCurrentLocation}
+                  disabled={isDetectingLocation}
+                  variant="outline"
+                  size="sm"
+                  className="text-green-600 border-green-200 hover:bg-green-50 text-xs lg:text-sm px-2 lg:px-3"
+                >
+                  {isDetectingLocation ? (
+                    <>
+                      <Loader2 className="h-3 w-3 lg:h-4 lg:w-4 mr-1 animate-spin" />
+                      <span className="hidden sm:inline">Detecting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <MapPin className="h-3 w-3 lg:h-4 lg:w-4 mr-1" />
+                      <span className="hidden sm:inline">Auto-Detect</span>
+                      <span className="sm:hidden">GPS</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="fullName" className="text-sm">
+                    Full Name
+                  </Label>
+                  <Input
+                    id="fullName"
+                    placeholder="Enter your full name"
+                    value={formData.fullName}
+                    onChange={(e) =>
+                      handleInputChange("fullName", e.target.value)
+                    }
+                    className="mt-1"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="phone" className="text-sm">
+                      Phone Number
+                    </Label>
+                    <Input
+                      id="phone"
+                      placeholder="Enter phone number"
+                      value={formData.phone}
+                      onChange={(e) =>
+                        handleInputChange("phone", e.target.value)
+                      }
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="pincode" className="text-sm">
+                      Pincode
+                    </Label>
+                    <Input
+                      id="pincode"
+                      placeholder="Enter pincode"
+                      value={formData.pincode}
+                      onChange={(e) =>
+                        handleInputChange("pincode", e.target.value)
+                      }
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="address" className="text-sm">
+                    Complete Address
+                  </Label>
+                  <Input
+                    id="address"
+                    placeholder="House no, Building, Street, Area"
+                    value={formData.address}
+                    onChange={(e) =>
+                      handleInputChange("address", e.target.value)
+                    }
+                    className="mt-1"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="city" className="text-sm">
+                      City
+                    </Label>
+                    <Input
+                      id="city"
+                      placeholder="Enter city"
+                      value={formData.city}
+                      onChange={(e) =>
+                        handleInputChange("city", e.target.value)
+                      }
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="state" className="text-sm">
+                      State/Province
+                    </Label>
+                    <Input
+                      id="state"
+                      placeholder="Enter state"
+                      value={formData.state}
+                      onChange={(e) =>
+                        handleInputChange("state", e.target.value)
+                      }
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
 
             {/* Payment Method */}
             <div className="bg-white rounded-lg p-4 shadow-sm">
@@ -340,15 +382,15 @@ const Checkout = () => {
 
             <div className="space-y-2 mb-4 text-sm">
               <div className="flex justify-between">
-                <span>Subtotal ({cartItems.length} items)</span>
-                <span>Rs {subtotal}</span>
+                <span>
+                  Subtotal ({totalItems} {totalItems === 1 ? "item" : "items"})
+                </span>
+                <span>Rs {totalPrice}</span>
               </div>
-                <div className="flex justify-between">
-                  <span>Delivery Fee</span>
-                  <span className={deliveryFee === 0 ? "text-green-600 font-medium" : ""}>
-                    {deliveryFee === 0 ? "FREE" : `Rs ${deliveryFee}`}
-                  </span>
-                </div>
+              <div className="flex justify-between">
+                <span>Delivery Fee</span>
+                <span>Rs {deliveryFee}</span>
+              </div>
               <div className="border-t pt-2 mt-3">
                 <div className="flex justify-between font-semibold text-base lg:text-lg">
                   <span>Total</span>
@@ -359,16 +401,20 @@ const Checkout = () => {
 
             <Button
               onClick={handlePlaceOrder}
-              disabled={loading || cartItems.length === 0}
-              className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 py-3 text-base font-semibold"
+              disabled={totalItems === 0}
+              className={`w-full py-3 ${
+                totalItems === 0
+                  ? "bg-gray-300 cursor-not-allowed text-gray-600"
+                  : "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+              }`}
             >
-              {loading ? "Processing..." : (
-                selectedPayment === "cod"
-                  ? "Place Order"
-                  : `Pay with ${
-                      paymentOptions.find((p) => p.id === selectedPayment)?.label
-                    }`
-              )}
+              {totalItems === 0
+                ? "Cart is empty"
+                : selectedPayment === "cod"
+                ? "Place Order"
+                : `Pay with ${
+                    paymentOptions.find((p) => p.id === selectedPayment)?.label
+                  }`}
             </Button>
           </div>
         </div>
