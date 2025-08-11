@@ -41,7 +41,7 @@ const OrderTracking = () => {
           )
         `)
         .eq('id', orderId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;

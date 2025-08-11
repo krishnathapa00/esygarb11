@@ -23,7 +23,7 @@ const DeliverySettings = () => {
         .select('*')
         .order('updated_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
       return data;

@@ -58,7 +58,7 @@ const Checkout = () => {
           .select('delivery_fee')
           .order('updated_at', { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle();
         
         if (data && !error) {
           setDeliveryFee(parseFloat(data.delivery_fee.toString()));

@@ -15,7 +15,7 @@ const DeliveryOrders = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: orders = [], refetch } = useQuery({
+  const { data: allOrders = [], refetch } = useQuery({
     queryKey: ['delivery-orders', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -112,8 +112,10 @@ const DeliveryOrders = () => {
   };
 
 
-  const availableOrders = orders.filter(order => order.status === 'ready_for_pickup');
-  const myOrders = orders.filter(order => order.delivery_partner_id === user?.id);
+  const availableOrders = allOrders.filter(order => 
+    order.status === 'ready_for_pickup' && !order.delivery_partner_id
+  );
+  const myOrders = allOrders.filter(order => order.delivery_partner_id === user?.id);
 
   return (
     <div className="container mx-auto p-4 space-y-6">
