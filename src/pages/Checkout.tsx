@@ -134,16 +134,40 @@ const Checkout = () => {
   };
 
   const handlePlaceOrder = () => {
+    const { address, city, state } = formData;
+    if (!address.trim() || !city.trim() || !state.trim()) {
+      alert("Please fill in the complete address, city, and state/province.");
+      return;
+    }
+
+    // Prepare order details object here
+    const orderDetails = {
+      orderId: `ORD${Date.now()}`,
+      items: totalItems,
+      totalAmount,
+      deliveryAddress: `${address}, ${city}`, // excluding state as per your requirement
+      estimatedDelivery: "10-15 mins",
+      paymentMethod:
+        paymentOptions.find((p) => p.id === selectedPayment)?.label || "",
+    };
+
     if (selectedPayment === "cod") {
+      // Save order to sessionStorage as fallback
+      sessionStorage.setItem("last_order", JSON.stringify(orderDetails));
+
       resetCart();
-      // Direct to order confirmation for COD
-      window.location.href = "/order-confirmation";
+
+      navigate("/order-confirmation", { state: orderDetails });
     } else {
-      // For now, simulate payment success for other methods
-      // In production, integrate with actual payment gateways
+      // Simulate payment success for other payment methods
       console.log(`Processing ${selectedPayment} payment...`);
+
       setTimeout(() => {
+        // Save order to sessionStorage before redirect
+        sessionStorage.setItem("last_order", JSON.stringify(orderDetails));
+
         resetCart();
+
         window.location.href = "/order-confirmation";
       }, 2000);
     }
