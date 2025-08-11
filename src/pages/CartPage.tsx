@@ -1,333 +1,437 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Header from "../components/Header";
-import { ArrowLeft, Truck, Clock, MapPin, Loader2, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  MapPin,
+  CreditCard,
+  Loader2,
+  Banknote,
+  WalletIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useCartActions } from "@/hooks/useCart";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
+import EsewaLogo from "../assets/payments/esewa.jpg";
+import KhaltiLogo from "../assets/payments/khalti.jpg";
 
-const CartPage = () => {
-  const navigate = useNavigate();
-  const {
-    cart: cartItems,
-    handleUpdateQuantity,
-    handleRemoveItem,
-  } = useCartActions();
+const Checkout = () => {
+  const { cart, resetCart } = useCart();
 
-  const [deliveryLocation, setDeliveryLocation] = useState("");
-  const [isDetecting, setIsDetecting] = useState(false);
-  const [buttonClicked, setButtonClicked] = useState<"auto" | "manual" | null>(
-    null
+  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const totalPrice = cart.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
   );
+  const deliveryFee = 100;
+  const totalAmount = totalPrice + deliveryFee;
 
-  // Load delivery location from localStorage
+  const [selectedPayment, setSelectedPayment] = useState("cod");
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+  const [formData, setFormData] = useState({
+    fullName: "",
+    phone: "",
+    pincode: "",
+    address: "",
+    city: "",
+    state: "",
+  });
+
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
   useEffect(() => {
-    try {
-      const savedLocation = localStorage.getItem("esygrab_user_location");
-      if (
-        savedLocation &&
-        savedLocation !== "null" &&
-        savedLocation !== "undefined"
-      ) {
-        const parsed = JSON.parse(savedLocation);
-        if (parsed?.address) {
-          setDeliveryLocation(parsed.address);
-        }
+    if (!loading && !user) {
+      navigate("/login");
+    }
+  }, [loading, user, navigate]);
+
+  useEffect(() => {
+    // Auto-fill from profile data (simulated - in real app this would come from database/context)
+    const profileData = {
+      fullName: "John Doe",
+      phone: "+977 9876543210",
+    };
+
+    setFormData((prev) => ({
+      ...prev,
+      fullName: profileData.fullName,
+      phone: profileData.phone,
+    }));
+
+    // Auto-fill location from previous detection
+    const savedLocation = localStorage.getItem("esygrab_user_location");
+    if (savedLocation && savedLocation !== "Current Location Detected") {
+      const savedLocationData = JSON.parse(savedLocation || "{}");
+      if (savedLocationData.address) {
+        setFormData((prev) => ({
+          ...prev,
+          address: savedLocationData.address,
+          city: savedLocationData.city || "",
+          state: savedLocationData.state || "",
+          pincode: savedLocationData.pincode || "",
+        }));
       }
-    } catch (err) {
-      console.error("Failed to load location from localStorage", err);
     }
   }, []);
 
-  const handleAutoDetect = () => {
-    setButtonClicked("auto");
-    setIsDetecting(true);
-    setTimeout(() => setButtonClicked(null), 200);
+  const detectCurrentLocation = () => {
+    setIsDetectingLocation(true);
 
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           try {
-            const { latitude, longitude } = position.coords;
-            const response = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
-            );
+            // Simulate a successful geocoding response
+            const locationData = {
+              address: "Thamel, Kathmandu",
+              city: "Kathmandu",
+              state: "Bagmati",
+              pincode: "44600",
+              formatted: "Thamel, Kathmandu, Bagmati 44600",
+            };
 
-            const data = await response.json();
-            const address = data?.address || {};
-            const parts = [
-              address.house_number && address.road
-                ? `${address.house_number} ${address.road}`
-                : address.road,
-              address.neighbourhood || address.suburb,
-              address.city || address.town || address.village,
-              address.state,
-            ].filter(Boolean);
+            setFormData((prev) => ({
+              ...prev,
+              address: locationData.address,
+              city: locationData.city,
+              state: locationData.state,
+              pincode: locationData.pincode,
+            }));
 
-            const formatted =
-              parts.join(", ") || data.display_name || "Detected Location";
-            setDeliveryLocation(formatted);
-
+            // Save to localStorage
             localStorage.setItem(
               "esygrab_user_location",
-              JSON.stringify({
-                address: formatted,
-                coordinates: { lat: latitude, lng: longitude },
-              })
+              JSON.stringify(locationData)
             );
-          } catch (err) {
-            console.error("Geolocation failed:", err);
-            const fallback = `Lat: ${position.coords.latitude.toFixed(
-              4
-            )}, Lng: ${position.coords.longitude.toFixed(4)}`;
-            setDeliveryLocation(fallback);
-          } finally {
-            setIsDetecting(false);
+          } catch (error) {
+            console.log("Using fallback location");
+            const fallbackData = {
+              address: "Current location detected",
+              city: "Kathmandu",
+              state: "Bagmati",
+              pincode: "",
+            };
+            setFormData((prev) => ({ ...prev, ...fallbackData }));
           }
+          setIsDetectingLocation(false);
         },
         (error) => {
           console.error("Geolocation error:", error);
-          alert(
-            "Failed to access your location. Please enable location services."
-          );
-          setIsDetecting(false);
+          setIsDetectingLocation(false);
         }
       );
     } else {
-      alert("Geolocation not supported by this browser.");
-      setIsDetecting(false);
+      setIsDetectingLocation(false);
+      console.log("Geolocation not supported");
     }
   };
 
-  const handleSetManually = () => {
-    setButtonClicked("manual");
-    setTimeout(() => setButtonClicked(null), 200);
-    navigate("/map-location");
+  const handleInputChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
-  const deliveryFee = totalPrice > 200 ? 0 : 100;
-  const finalTotal = totalPrice + deliveryFee;
+  const handlePlaceOrder = () => {
+    const { address, city, state } = formData;
+    if (!address.trim() || !city.trim() || !state.trim()) {
+      alert("Please fill in the complete address, city, and state/province.");
+      return;
+    }
+
+    if (selectedPayment === "cod") {
+      resetCart();
+      // Direct to order confirmation for COD
+      navigate("/order-confirmation", {
+        state: {
+          orderId: `ORD${Date.now()}`,
+          items: totalItems,
+          totalAmount,
+          deliveryAddress: `${formData.address}, ${formData.city}`,
+          estimatedDelivery: "10-15 mins",
+          paymentMethod:
+            paymentOptions.find((p) => p.id === selectedPayment)?.label || "",
+        },
+      });
+    } else {
+      // For now, simulate payment success for other methods
+      // In production, integrate with actual payment gateways
+      console.log(`Processing ${selectedPayment} payment...`);
+      setTimeout(() => {
+        resetCart();
+        window.location.href = "/order-confirmation";
+      }, 2000);
+    }
+  };
+
+  const paymentOptions = [
+    {
+      id: "cod",
+      label: "Cash on Delivery (COD)",
+      icon: <WalletIcon className="h-6 w-6" />,
+    },
+    { id: "khalti", label: "Khalti", icon: KhaltiLogo },
+    { id: "esewa", label: "eSewa", icon: EsewaLogo },
+    {
+      id: "bank",
+      label: "Bank Transfer",
+      icon: <Banknote className="h-6 w-6" />,
+    },
+  ];
+
+  if (loading) {
+    // Show loading while checking auth
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto" />
+        <p className="mt-4 text-gray-600">Checking authentication...</p>
+      </div>
+    );
+  }
+
+  if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
+    <div className="min-h-screen bg-gray-50">
       <Header />
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="px-4 py-4 max-w-md mx-auto lg:max-w-4xl lg:px-8">
+        {/* Header */}
         <div className="flex items-center mb-6">
-          <Link to="/">
-            <Button variant="ghost" size="sm" className="mr-3">
-              <ArrowLeft className="h-4 w-4" />
+          <Link to="/cart">
+            <Button variant="ghost" size="sm" className="mr-3 p-2">
+              <ArrowLeft className="h-5 w-5" />
             </Button>
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900">
-            My Cart ({totalItems} items)
+          <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
+            Checkout
           </h1>
         </div>
 
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center space-x-2 mb-6">
-          <Truck className="h-4 w-4 text-green-600" />
-          <span className="text-sm font-medium text-green-700">
-            Delivery in 10-15 mins
-          </span>
-        </div>
-
-        <div className="grid lg:grid-cols-3 gap-6">
+        {/* Mobile-first layout */}
+        <div className="space-y-4 lg:grid lg:grid-cols-3 lg:gap-6 lg:space-y-0">
+          {/* Main Content */}
           <div className="lg:col-span-2 space-y-4">
-            {cartItems.length === 0 ? (
-              <div className="text-center py-20 text-gray-500 font-medium">
-                Your cart is empty.
-                <br />
-                <Link to="/" className="text-green-600 underline">
-                  Continue shopping
-                </Link>
-              </div>
-            ) : (
-              cartItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="bg-white rounded-lg p-4 shadow-sm"
-                >
-                  <div className="flex items-center space-x-4">
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="w-16 h-16 object-cover rounded-lg"
-                    />
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900">
-                        {item.name}
-                      </h3>
-                      <p className="text-sm text-gray-500">{item.weight}</p>
-                      <p className="font-semibold text-green-600">
-                        Rs.{item.price}
-                      </p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        onClick={() =>
-                          handleUpdateQuantity(item.id, item.quantity - 1)
-                        }
-                        disabled={item.quantity <= 1}
-                        variant="outline"
-                        size="sm"
-                        className="w-8 h-8 p-0"
-                      >
-                        -
-                      </Button>
-                      <span className="font-medium w-8 text-center">
-                        {item.quantity}
-                      </span>
-                      <Button
-                        onClick={() =>
-                          handleUpdateQuantity(item.id, item.quantity + 1)
-                        }
-                        variant="outline"
-                        size="sm"
-                        className="w-8 h-8 p-0"
-                      >
-                        +
-                      </Button>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleRemoveItem(item.id)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
+            {/* Delivery Address */}
+            <div className="bg-white rounded-lg p-4 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-2">
+                  <MapPin className="h-4 w-4 lg:h-5 lg:w-5 text-green-600" />
+                  <h3 className="text-base lg:text-lg font-semibold">
+                    Delivery Address
+                  </h3>
                 </div>
-              ))
-            )}
+                <Button
+                  onClick={detectCurrentLocation}
+                  disabled={isDetectingLocation}
+                  variant="outline"
+                  size="sm"
+                  className="text-green-600 border-green-200 hover:bg-green-50 text-xs lg:text-sm px-2 lg:px-3"
+                >
+                  {isDetectingLocation ? (
+                    <>
+                      <Loader2 className="h-3 w-3 lg:h-4 lg:w-4 mr-1 animate-spin" />
+                      <span className="hidden sm:inline">Detecting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <MapPin className="h-3 w-3 lg:h-4 lg:w-4 mr-1" />
+                      <span className="hidden sm:inline">Auto-Detect</span>
+                      <span className="sm:hidden">GPS</span>
+                    </>
+                  )}
+                </Button>
+              </div>
 
-            <div className="bg-white rounded-lg p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <MapPin className="h-5 w-5 mr-2 text-green-600" />
-                Delivery Location
-              </h3>
-
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div>
-                  <Label htmlFor="address">Current Location</Label>
+                  <Label htmlFor="fullName" className="text-sm">
+                    Full Name
+                  </Label>
                   <Input
-                    id="address"
-                    value={deliveryLocation}
-                    onChange={(e) => setDeliveryLocation(e.target.value)}
+                    id="fullName"
+                    placeholder="Enter your full name"
+                    value={formData.fullName}
+                    onChange={(e) =>
+                      handleInputChange("fullName", e.target.value)
+                    }
                     className="mt-1"
-                    placeholder="Enter delivery address"
                   />
                 </div>
 
-                <div className="flex space-x-3">
-                  <Button
-                    onClick={handleAutoDetect}
-                    disabled={isDetecting}
-                    variant="outline"
-                    className={`flex-1 transition-colors ${
-                      buttonClicked === "auto"
-                        ? "bg-green-500 text-white border-green-500"
-                        : "hover:bg-green-50 hover:border-green-300"
-                    }`}
-                  >
-                    {isDetecting ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Detecting...
-                      </>
-                    ) : (
-                      <>
-                        <MapPin className="h-4 w-4 mr-2" />
-                        Auto Detect
-                      </>
-                    )}
-                  </Button>
-
-                  <Button
-                    onClick={handleSetManually}
-                    variant="outline"
-                    className={`flex-1 transition-colors ${
-                      buttonClicked === "manual"
-                        ? "bg-green-500 text-white border-green-500"
-                        : "hover:bg-green-50 hover:border-green-300"
-                    }`}
-                  >
-                    Set Manually
-                  </Button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="phone" className="text-sm">
+                      Phone Number
+                    </Label>
+                    <Input
+                      id="phone"
+                      placeholder="Enter phone number"
+                      value={formData.phone}
+                      onChange={(e) =>
+                        handleInputChange("phone", e.target.value)
+                      }
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="pincode" className="text-sm">
+                      Pincode
+                    </Label>
+                    <Input
+                      id="pincode"
+                      placeholder="Enter pincode"
+                      value={formData.pincode}
+                      onChange={(e) =>
+                        handleInputChange("pincode", e.target.value)
+                      }
+                      className="mt-1"
+                    />
+                  </div>
                 </div>
+
+                <div>
+                  <Label htmlFor="address" className="text-sm">
+                    Complete Address
+                  </Label>
+                  <Input
+                    id="address"
+                    placeholder="House no, Building, Street, Area"
+                    value={formData.address}
+                    onChange={(e) =>
+                      handleInputChange("address", e.target.value)
+                    }
+                    className="mt-1"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="city" className="text-sm">
+                      City
+                    </Label>
+                    <Input
+                      id="city"
+                      placeholder="Enter city"
+                      value={formData.city}
+                      onChange={(e) =>
+                        handleInputChange("city", e.target.value)
+                      }
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="state" className="text-sm">
+                      State/Province
+                    </Label>
+                    <Input
+                      id="state"
+                      placeholder="Enter state"
+                      value={formData.state}
+                      onChange={(e) =>
+                        handleInputChange("state", e.target.value)
+                      }
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Payment Method */}
+            <div className="bg-white rounded-lg p-4 shadow-sm">
+              <div className="flex items-center space-x-2 mb-4">
+                <CreditCard className="h-4 w-4 lg:h-5 lg:w-5 text-green-600" />
+                <h3 className="text-base lg:text-lg font-semibold">
+                  Payment Method
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {paymentOptions.map((option) => (
+                  <div
+                    key={option.id}
+                    className={`border-2 rounded-lg p-3 cursor-pointer transition-all ${
+                      selectedPayment === option.id
+                        ? "border-green-500 bg-green-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                    onClick={() => setSelectedPayment(option.id)}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="radio"
+                        id={option.id}
+                        name="payment"
+                        value={option.id}
+                        checked={selectedPayment === option.id}
+                        onChange={(e) => setSelectedPayment(e.target.value)}
+                        className="text-green-600 w-4 h-4"
+                      />
+                      <div className="flex items-center space-x-2">
+                        {typeof option.icon === "string" ? (
+                          <img
+                            src={option.icon}
+                            alt={option.label}
+                            className="h-6 w-6"
+                          />
+                        ) : (
+                          <span className="text-lg">{option.icon}</span>
+                        )}
+                        <span className="text-sm font-medium">
+                          {option.label}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
 
-          {/* Order Summary */}
-          <div className="bg-gradient-to-br from-green-50 via-emerald-50 to-white rounded-2xl p-6 shadow-lg h-fit border border-green-100">
-            <div className="flex items-center gap-3 mb-5">
-              <span className="inline-block bg-green-100 p-2 rounded-full">
-                <Clock className="h-5 w-5 text-green-600" />
-              </span>
-              <h3 className="text-lg font-bold text-gray-900">Order Summary</h3>
-            </div>
-            <div className="mb-6 space-y-2 text-base">
+          {/* Order Summary - Mobile optimized */}
+          <div className="bg-white rounded-lg p-4 shadow-sm lg:h-fit">
+            <h3 className="text-base lg:text-lg font-semibold text-gray-900 mb-4">
+              Order Summary
+            </h3>
+
+            <div className="space-y-2 mb-4 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-700">Subtotal</span>
-                <span className="font-medium text-gray-900">
-                  Rs.{totalPrice}
+                <span>
+                  Subtotal ({totalItems} {totalItems === 1 ? "item" : "items"})
                 </span>
+                <span>Rs {totalPrice}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-700">Delivery Fee</span>
-                <span
-                  className={
-                    deliveryFee === 0
-                      ? "text-green-600 font-medium"
-                      : "text-gray-900 font-medium"
-                  }
-                >
-                  Rs.{deliveryFee}
-                </span>
+                <span>Delivery Fee</span>
+                <span>Rs {deliveryFee}</span>
               </div>
-              {deliveryFee === 0 && (
-                <Badge variant="secondary" className="text-xs px-2 py-1 mt-1">
-                  Free delivery on orders above Rs.200
-                </Badge>
-              )}
+              <div className="border-t pt-2 mt-3">
+                <div className="flex justify-between font-semibold text-base lg:text-lg">
+                  <span>Total</span>
+                  <span>Rs {totalAmount}</span>
+                </div>
+              </div>
             </div>
 
-            <div className="flex justify-between items-center py-4 border-t border-dashed border-green-200 mb-3">
-              <span className="font-semibold text-lg text-gray-800">Total</span>
-              <span className="font-extrabold text-2xl text-emerald-600 tracking-tight">
-                Rs.{finalTotal}
-              </span>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm text-green-600 pb-1">
-                <Truck className="h-4 w-4" />
-                <span>Delivery in 10-15 mins</span>
-              </div>
-              <Link
-                to={totalPrice > 0 ? "/checkout" : "#"}
-                onClick={(e) => totalPrice === 0 && e.preventDefault()}
-              >
-                <Button
-                  disabled={totalPrice === 0}
-                  className={`w-full py-3 text-lg font-bold rounded-lg shadow-md transition-all ${
-                    totalPrice === 0
-                      ? "bg-gray-300 text-gray-600 cursor-not-allowed shadow-none"
-                      : "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-green-100"
+            <Button
+              onClick={handlePlaceOrder}
+              disabled={totalItems === 0}
+              className={`w-full py-3 ${
+                totalItems === 0
+                  ? "bg-gray-300 cursor-not-allowed text-gray-600"
+                  : "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+              }`}
+            >
+              {totalItems === 0
+                ? "Cart is empty"
+                : selectedPayment === "cod"
+                ? "Place Order"
+                : `Pay with ${
+                    paymentOptions.find((p) => p.id === selectedPayment)?.label
                   }`}
-                >
-                  {totalPrice === 0 ? "Cart is empty" : "Proceed to Checkout"}
-                </Button>
-              </Link>
-            </div>
+            </Button>
           </div>
         </div>
       </div>
@@ -335,4 +439,4 @@ const CartPage = () => {
   );
 };
 
-export default CartPage;
+export default Checkout;
