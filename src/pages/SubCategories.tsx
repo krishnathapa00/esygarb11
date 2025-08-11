@@ -272,7 +272,7 @@ const CategoryProducts = () => {
       <Header />
 
       {/* Header Section - Fixed mobile spacing and removed sticky on mobile */}
-      <div className="bg-white border-b md:sticky md:top-[128px] z-30">
+      <div className="bg-white border-b z-30">
         <div className="px-4 py-3">
           <div className="flex items-center">
             <Link to="/categories">
