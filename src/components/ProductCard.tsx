@@ -2,7 +2,6 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "@/hooks/use-toast";
 
 export interface Product {
   id: number;
@@ -63,7 +62,7 @@ const ProductCard = ({
         {/* Price and Add Button Row */}
         <div className="flex items-center justify-between pt-1">
           {/* Left side - Price */}
-          <div className="flex items-baseline gap-1">
+          <div className="flex flex-col leading-tight">
             <span className="font-bold text-gray-900 text-sm">
               Rs{product.price}
             </span>
@@ -74,24 +73,23 @@ const ProductCard = ({
             )}
           </div>
 
-          {/* Right side - Add Button */}
-          <div className="flex-shrink-0 min-w-0">
+          {/* Right side - Add/Quantity Button */}
+          <div className="flex-shrink-0 min-w-[60px] sm:min-w-[70px]">
             {cartQuantity === 0 ? (
               <Button
                 onClick={(e) => {
                   e.preventDefault();
                   onAddToCart(product);
-                  toast({
-                    title: "Added to cart",
-                    description: `${product.name} added to cart successfully.`,
-                  });
                 }}
-                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-0 text-xs font-semibold h-8 px-3 sm:px-4 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md whitespace-nowrap"
+                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 
+                 text-white border-0 text-[10px] sm:text-xs font-semibold 
+                 h-7 sm:h-7 px-2 sm:px-2 rounded-lg 
+                 transition-all duration-200 shadow-sm hover:shadow-md w-full"
               >
                 ADD
               </Button>
             ) : (
-              <div className="flex items-center justify-between bg-green-600 rounded-lg px-1.5 sm:px-2 py-1.5 min-w-[80px]">
+              <div className="flex items-center justify-between bg-green-600 rounded-lg px-1 sm:px-2 py-1 w-full">
                 <Button
                   onClick={(e) => {
                     e.preventDefault();
@@ -99,11 +97,11 @@ const ProductCard = ({
                   }}
                   variant="ghost"
                   size="sm"
-                  className="w-5 h-5 p-0 text-white hover:bg-green-700 rounded text-sm font-medium flex-shrink-0"
+                  className="w-5 h-5 sm:w-5 sm:h-5 p-0 text-white hover:bg-green-700 rounded text-[12px] sm:text-xs font-medium"
                 >
                   −
                 </Button>
-                <span className="font-medium text-white text-xs px-1 sm:px-2 min-w-[1rem] text-center">
+                <span className="font-medium text-white text-[12px] sm:text-xs px-1">
                   {cartQuantity}
                 </span>
                 <Button
@@ -113,7 +111,7 @@ const ProductCard = ({
                   }}
                   variant="ghost"
                   size="sm"
-                  className="w-5 h-5 p-0 text-white hover:bg-green-700 rounded text-sm font-medium flex-shrink-0"
+                  className="w-5 h-5 sm:w-5 sm:h-5 p-0 text-white hover:bg-green-700 rounded text-[12px] sm:text-xs font-medium"
                 >
                   +
                 </Button>
