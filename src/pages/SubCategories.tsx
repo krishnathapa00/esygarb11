@@ -4,6 +4,7 @@ import Header from "../components/Header";
 import ProductCard, { Product } from "@/components/ProductCard";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useCart } from "@/contexts/CartContext";
 
 const subCategories = {
   1: [
@@ -219,9 +220,8 @@ const CategoryProducts = () => {
   const [selectedSubCategory, setSelectedSubCategory] = useState<number | null>(
     null
   );
-  const [cartItems, setCartItems] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
-  const [cart, setCart] = useState<Record<number, number>>({});
+  const { cart, addToCart, updateQuantity } = useCart();
 
   const categorySubCategories =
     subCategories[Number(categoryId) as keyof typeof subCategories] || [];
@@ -249,28 +249,22 @@ const CategoryProducts = () => {
   });
 
   const handleAddToCart = (product: Product) => {
-    setCart((prev) => ({
-      ...prev,
-      [product.id]: (prev[product.id] || 0) + 1,
-    }));
-    setCartItems((prev) => prev + 1);
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      weight: product.weight,
+      quantity: 1,
+    });
   };
 
   const handleUpdateQuantity = (productId: number, quantity: number) => {
-    setCart((prev) => {
-      const newCart = { ...prev };
-      const currentQty = newCart[productId] || 0;
-      const diff = quantity - currentQty;
+    updateQuantity(productId, quantity);
+  };
 
-      if (quantity <= 0) {
-        delete newCart[productId];
-      } else {
-        newCart[productId] = quantity;
-      }
-
-      setCartItems((prevTotal) => prevTotal + diff);
-      return newCart;
-    });
+  const getCartQuantity = (productId: number) => {
+    return cart.find((item) => item.id === productId)?.quantity || 0;
   };
 
   return (
@@ -358,7 +352,7 @@ const CategoryProducts = () => {
                   key={product.id}
                   product={product}
                   onAddToCart={handleAddToCart}
-                  cartQuantity={cart[product.id] || 0}
+                  cartQuantity={getCartQuantity(product.id)}
                   onUpdateQuantity={handleUpdateQuantity}
                 />
               ))}
