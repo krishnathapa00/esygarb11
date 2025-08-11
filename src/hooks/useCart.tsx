@@ -29,9 +29,11 @@ export const useCartActions = () => {
   };
 
   return {
+    cart,
     handleAddToCart,
     handleUpdateQuantity,
     handleRemoveItem,
     getCartQuantity,
   };
 };
+
