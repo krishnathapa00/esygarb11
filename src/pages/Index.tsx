@@ -7,7 +7,7 @@ import BannerCarousel from "../components/BannerCarousel";
 import Footer from "../components/Footer";
 import { useProducts } from "../hooks/useProducts";
 import { useAuth } from "../contexts/AuthContext";
-import { useCart } from "../contexts/CartContext";
+import { useCartActions } from "@/hooks/useCart";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -17,26 +17,8 @@ const Index = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const { cart, addToCart, updateQuantity } = useCart();
-
-  const handleAddToCart = (product: any) => {
-    addToCart({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image: product.image,
-      weight: product.weight,
-      quantity: 1,
-    });
-  };
-
-  const handleUpdateQuantity = (productId: number, quantity: number) => {
-    updateQuantity(productId, quantity);
-  };
-
-  const getCartQuantity = (productId: number) => {
-    return cart.find((item) => item.id === productId)?.quantity || 0;
-  };
+  const { handleAddToCart, handleUpdateQuantity, getCartQuantity } =
+    useCartActions();
 
   const handleCategorySelect = (categoryId: number) => {
     console.log("Category selected:", categoryId);
@@ -79,7 +61,8 @@ const Index = () => {
       {/* Demo Warning Banner */}
       {!user && (
         <div className="bg-yellow-400 text-black px-4 py-2 md:py-3 text-center font-bold text-xs md:text-sm">
-          ⚠️ This is a demo version. Some products and features may not be real. Launching soon!
+          ⚠️ This is a demo version. Some products and features may not be real.
+          Launching soon!
         </div>
       )}
       <Header />
