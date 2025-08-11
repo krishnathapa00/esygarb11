@@ -111,6 +111,9 @@ const Header = () => {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
+                <Package className="h-5 w-5 text-white" />
+              </div>
               <h1 className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                 EsyGrab
               </h1>
@@ -142,16 +145,33 @@ const Header = () => {
                 <span className="font-medium">10 mins</span>
               </div>
 
-              {user && !location.pathname.includes('/delivery') ? (
-                <Link to="/profile">
+              {user ? (
+                <div className="flex items-center gap-2">
+                  {/* Profile Button */}
+                  <Link to="/profile">
+                    <Button
+                      variant="outline"
+                      className="hover:bg-green-50 border-green-200"
+                    >
+                      <span className="flex items-center space-x-1">
+                        <User className="h-4 w-4" />
+                        <span className="hidden md:inline">Profile</span>
+                      </span>
+                    </Button>
+                  </Link>
+
+                  {/* Logout Button */}
                   <Button
                     variant="outline"
-                    className="hover:bg-green-50 border-green-200"
+                    className="hover:bg-red-50 border-red-200 text-red-600"
+                    onClick={logout}
                   >
-                    <User className="h-4 w-4" />
+                    <span className="flex items-center space-x-1">
+                      <span className="hidden md:inline">Logout</span>
+                    </span>
                   </Button>
-                </Link>
-              ) : user && location.pathname.includes('/delivery') ? null : (
+                </div>
+              ) : (
                 <Link to="/login">
                   <Button
                     variant="outline"
@@ -162,7 +182,7 @@ const Header = () => {
                 </Link>
               )}
 
-              <Link to={user ? "/cart" : "/login?redirect=/cart"}>
+              <Link to="/cart">
                 <Button
                   variant="outline"
                   className="relative hover:bg-green-50 border-green-200"
@@ -223,9 +243,9 @@ const Header = () => {
             label="Categories"
             isActive={location.pathname === "/categories"}
           />
-          <div className="relative">
+          <Link to="/cart" className="relative">
             <MobileNavButton
-              to={user ? "/cart" : "/login?redirect=/cart"}
+              to="/cart"
               icon={ShoppingCart}
               label="Cart"
               isActive={location.pathname === "/cart"}
@@ -235,22 +255,13 @@ const Header = () => {
                 {totalItems}
               </span>
             )}
-          </div>
-          {user && !location.pathname.includes('/delivery') ? (
-            <MobileNavButton
-              to="/profile"
-              icon={User}
-              label="Account"
-              isActive={location.pathname === "/profile"}
-            />
-          ) : user && location.pathname.includes('/delivery') ? null : (
-            <MobileNavButton
-              to="/login"
-              icon={User}
-              label="Login"
-              isActive={location.pathname === "/login"}
-            />
-          )}
+          </Link>
+          <MobileNavButton
+            to="/profile"
+            icon={User}
+            label="Account"
+            isActive={location.pathname === "/profile"}
+          />
         </div>
       </div>
     </>
