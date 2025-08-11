@@ -347,7 +347,7 @@ const DeliveryMapNavigation = () => {
             <div className="flex items-start gap-3">
               <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
               <div className="flex-1">
-                <div className="text-sm text-muted-foreground mb-1">Customer's Location:</div>
+                <div className="text-sm text-muted-foreground mb-1">Customer's Exact Location:</div>
                 <span className="text-sm font-medium">{order.delivery_address}</span>
               </div>
             </div>
