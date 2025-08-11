@@ -155,7 +155,7 @@ const Header = () => {
                     >
                       <span className="flex items-center space-x-1">
                         <User className="h-4 w-4" />
-                        <span className="hidden md:inline">Profile</span>
+                        <span className="hidden md:inline">My Profile</span>
                       </span>
                     </Button>
                   </Link>
@@ -178,6 +178,7 @@ const Header = () => {
                     className="hover:bg-green-50 border-green-200"
                   >
                     <User className="h-4 w-4" />
+                    <span className="hidden md:inline">Login</span>
                   </Button>
                 </Link>
               )}
