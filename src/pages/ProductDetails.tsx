@@ -5,12 +5,12 @@ import { ArrowLeft, Star, Truck, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useProducts } from "@/hooks/useProducts";
-import { useCart } from "@/contexts/CartContext";
+import { useCartActions } from "@/hooks/useCart";
 import { toast } from "@/hooks/use-toast";
 
 const ProductDetails = () => {
   const { id } = useParams();
-  const { addToCart, cart } = useCart();
+  const { cart, handleAddToCart } = useCartActions();
 
   const { data: products } = useProducts();
 
@@ -147,7 +147,7 @@ const ProductDetails = () => {
                   className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-3 text-base font-medium"
                   size="lg"
                   onClick={() => {
-                    addToCart({
+                    handleAddToCart({
                       id: product.id,
                       name: product.name,
                       price: product.price,
