@@ -4,7 +4,7 @@ import Header from "../components/Header";
 import ProductCard, { Product } from "@/components/ProductCard";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useCart } from "@/contexts/CartContext";
+import { useCartActions } from "@/hooks/useCart";
 
 const subCategories = {
   1: [
@@ -221,7 +221,8 @@ const CategoryProducts = () => {
     null
   );
   const [searchQuery, setSearchQuery] = useState("");
-  const { cart, addToCart, updateQuantity } = useCart();
+  const { handleAddToCart, handleUpdateQuantity, getCartQuantity } =
+    useCartActions();
 
   const categorySubCategories =
     subCategories[Number(categoryId) as keyof typeof subCategories] || [];
@@ -248,30 +249,12 @@ const CategoryProducts = () => {
     return true;
   });
 
-  const handleAddToCart = (product: Product) => {
-    addToCart({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image: product.image,
-      weight: product.weight,
-      quantity: 1,
-    });
-  };
-
-  const handleUpdateQuantity = (productId: number, quantity: number) => {
-    updateQuantity(productId, quantity);
-  };
-
-  const getCartQuantity = (productId: number) => {
-    return cart.find((item) => item.id === productId)?.quantity || 0;
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
 
       {/* Header Section - Fixed mobile spacing and removed sticky on mobile */}
+      {/* <div className="bg-white border-b md:sticky md:top-[128px] z-30"> */}
       <div className="bg-white border-b z-30">
         <div className="px-4 py-3">
           <div className="flex items-center">
