@@ -9,7 +9,6 @@ interface InputFieldProps {
   required?: boolean;
   pattern?: { value: RegExp; message: string };
   error?: FieldError | null;
-  inputProps?: React.InputHTMLAttributes<HTMLInputElement>;
 }
 
 const InputField: React.FC<InputFieldProps> = ({

@@ -5,19 +5,21 @@ import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
 import InputField from "@/components/InputField";
 import TextAreaField from "@/components/TextAreaField";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import {
   fetchUserProfile,
   updateUserProfile,
   ProfileFormValues,
 } from "@/services/profileService";
-import { supabase } from "@/integrations/supabase/client";
-import { getAvatarSignedUrl } from "@/services/profileService";
+import SingleImageUpload from "@/components/SingleImageUpload";
 
 const UserProfile: React.FC = () => {
-  const [signedAvatarUrl, setSignedAvatarUrl] = useState<string | null>(null);
-
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, logout } = useAuth();
+  const { toast } = useToast();
 
   const [profile, setProfile] = useState<ProfileFormValues | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
@@ -26,7 +28,7 @@ const UserProfile: React.FC = () => {
   const [updating, setUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
 
-  const { register, handleSubmit, reset, watch } = useForm<ProfileFormValues>({
+  const { register, handleSubmit, reset, watch, setValue } = useForm<ProfileFormValues>({
     defaultValues: {
       full_name: "",
       phone: "",
@@ -45,9 +47,15 @@ const UserProfile: React.FC = () => {
       .then((data) => {
         setProfile(data);
         reset(data);
+        // If user has no profile data, automatically enter edit mode
+        if (!data?.full_name || !data?.phone) {
+          setIsEditing(true);
+        }
       })
       .catch((err) => {
         setError(err.message || "Failed to load profile");
+        // If profile doesn't exist, enter edit mode for new user
+        setIsEditing(true);
       })
       .finally(() => {
         setLoadingProfile(false);
@@ -60,50 +68,26 @@ const UserProfile: React.FC = () => {
     }
   }, [authLoading, user, navigate]);
 
-  useEffect(() => {
-    if (!profile?.avatar_url) {
-      setSignedAvatarUrl(null);
-      return;
-    }
-
-    async function fetchSignedUrl() {
-      const url = await getAvatarSignedUrl(profile.avatar_url);
-      setSignedAvatarUrl(url);
-    }
-
-    fetchSignedUrl();
-  }, [profile?.avatar_url]);
-
   const avatarUrl = watch("avatar_url");
 
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!user) return;
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleImageUpload = (url: string) => {
+    setValue("avatar_url", url);
+  };
 
-    const fileExt = file.name.split(".").pop();
-    const filePath = `avatars/${user.id}/avatar.${fileExt}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("user-avatars")
-      .upload(filePath, file, { upsert: true });
-
-    if (uploadError) {
-      console.error("Avatar upload error:", uploadError.message);
-      return;
-    }
-
-    // Save file path (not public URL) to profile DB
+  const handleLogout = async () => {
     try {
-      await updateUserProfile({
-        ...profile,
-        avatar_url: filePath, // save path like "avatars/userid/avatar.png"
-      } as ProfileFormValues);
-
-      reset({ ...watch(), avatar_url: filePath });
-      setProfile((prev) => (prev ? { ...prev, avatar_url: filePath } : null));
-    } catch (err) {
-      console.error("Failed to update profile avatar:", err);
+      await logout();
+      toast({
+        title: "Logged out successfully",
+        description: "You have been logged out of your account"
+      });
+      navigate("/");
+    } catch (error) {
+      toast({
+        title: "Logout failed",
+        description: "There was an error logging you out",
+        variant: "destructive"
+      });
     }
   };
 
@@ -116,8 +100,18 @@ const UserProfile: React.FC = () => {
       setProfile(updatedProfile);
       reset(updatedProfile);
       setIsEditing(false);
+      
+      toast({
+        title: "Profile updated successfully",
+        description: "Your profile information has been saved"
+      });
     } catch (err: any) {
       setUpdateError(err.message || "Failed to update profile");
+      toast({
+        title: "Update failed",
+        description: err.message || "Failed to update profile",
+        variant: "destructive"
+      });
     } finally {
       setUpdating(false);
     }
@@ -125,131 +119,237 @@ const UserProfile: React.FC = () => {
 
   if (authLoading || loadingProfile) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="animate-spin h-12 w-12 rounded-full border-b-2 border-green-600 mx-auto" />
-          <p className="mt-4 text-gray-600">Loading profile...</p>
+          <div className="animate-spin h-12 w-12 rounded-full border-b-2 border-primary mx-auto" />
+          <p className="mt-4 text-muted-foreground">Loading profile...</p>
         </div>
       </div>
     );
   }
 
-  if (error) {
-    return <p className="text-red-600">Error loading profile: {error}</p>;
+  if (error && !isEditing) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="max-w-4xl mx-auto px-4 py-10">
+          <div className="text-center">
+            <p className="text-destructive mb-4">Error loading profile: {error}</p>
+            <Button onClick={() => setIsEditing(true)}>Create Profile</Button>
+          </div>
+        </main>
+      </div>
+    );
   }
 
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Header />
       <main className="max-w-4xl mx-auto px-4 py-10">
         <h1 className="text-3xl font-semibold mb-6">My Account</h1>
-        <div className="bg-white shadow-sm rounded-lg p-6 md:flex gap-10">
-          <aside className="w-full md:w-1/3 text-center mb-6 md:mb-0">
-            <img
-              src={
-                avatarUrl && avatarUrl.startsWith("http")
-                  ? avatarUrl
-                  : signedAvatarUrl || "/images/avatar.jpg"
-              }
-              alt="Avatar"
-              className="w-24 h-24 rounded-full border mx-auto"
-            />
-            <h2 className="mt-4 text-lg font-medium">{watch("full_name")}</h2>
-            <p className="text-sm text-gray-500">{user.email}</p>
-          </aside>
-          <section className="flex-1">
-            {!isEditing ? (
-              <div className="space-y-4 text-sm text-gray-700">
-                <div>
-                  <p className="font-medium">Full Name</p>
-                  <p>{profile?.full_name || "-"}</p>
-                </div>
-                <div>
-                  <p className="font-medium">Phone</p>
-                  <p>{profile?.phone || "-"}</p>
-                </div>
-                <div>
-                  <p className="font-medium">Address</p>
-                  <p>{profile?.address || "-"}</p>
-                </div>
-                <button
-                  className="mt-4 bg-green-600 text-white px-5 py-2 rounded hover:bg-green-700"
-                  onClick={() => setIsEditing(true)}
-                >
-                  Edit Profile
-                </button>
-              </div>
-            ) : (
-              <form
-                onSubmit={handleSubmit(onSubmit)}
-                className="space-y-5"
-                noValidate
-              >
-                <InputField
-                  label="Full Name"
-                  name="full_name"
-                  register={register}
-                  required
-                />
-                <InputField
-                  label="Phone Number"
-                  name="phone"
-                  register={register}
-                  required
-                  pattern={{
-                    value: /^[0-9]{10}$/,
-                    message: "Phone number must be exactly 10 digits",
-                  }}
-                  inputProps={{
-                    maxLength: 10,
-                    inputMode: "numeric",
-                  }}
-                />
+        <div className="bg-card shadow-sm rounded-lg p-6">
+          <div className="md:flex gap-10">
+            <aside className="w-full md:w-1/3 text-center mb-6 md:mb-0">
+              <div className="w-24 h-24 mx-auto mb-4 relative group">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  id="avatar-upload"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
 
-                <TextAreaField
-                  label="Address"
-                  name="address"
-                  register={register}
-                  rows={3}
+                    // Validate file type
+                    if (!file.type.startsWith('image/')) {
+                      toast({
+                        title: "Invalid file type",
+                        description: "Please select an image file",
+                        variant: "destructive"
+                      });
+                      return;
+                    }
+
+                    // Validate file size (max 5MB)
+                    if (file.size > 5 * 1024 * 1024) {
+                      toast({
+                        title: "File too large",
+                        description: "Please select an image smaller than 5MB",
+                        variant: "destructive"
+                      });
+                      return;
+                    }
+
+                    try {
+                      const fileExt = file.name.split('.').pop();
+                      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+                      const filePath = `avatars/${fileName}`;
+
+                      const { error: uploadError } = await supabase.storage
+                        .from('user-avatars')
+                        .upload(filePath, file);
+
+                      if (uploadError) {
+                        throw uploadError;
+                      }
+
+                      const { data: { publicUrl } } = supabase.storage
+                        .from('user-avatars')
+                        .getPublicUrl(filePath);
+
+                      const newAvatarUrl = `${publicUrl}?t=${Date.now()}`;
+                      setValue("avatar_url", newAvatarUrl);
+                      
+                      // Update the profile immediately in the database
+                      await supabase
+                        .from('profiles')
+                        .update({ avatar_url: newAvatarUrl })
+                        .eq('id', user.id);
+                      
+                      toast({
+                        title: "Image uploaded successfully",
+                        description: "Your avatar has been updated"
+                      });
+
+                    } catch (error: any) {
+                      toast({
+                        title: "Upload failed",
+                        description: error.message || "Failed to upload image",
+                        variant: "destructive"
+                      });
+                    }
+                  }}
                 />
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Profile Photo
-                  </label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarUpload}
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
-                  />
-                </div>
-                <div className="flex gap-4">
-                  <button
-                    type="submit"
-                    disabled={updating}
-                    className="bg-green-600 text-white px-5 py-2 rounded hover:bg-green-700 disabled:opacity-60"
-                  >
-                    {updating ? "Saving..." : "Save"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      reset(profile || {});
-                      setIsEditing(false);
+                <label 
+                  htmlFor="avatar-upload" 
+                  className="cursor-pointer block w-full h-full"
+                >
+                  <img
+                    src={avatarUrl || profile?.avatar_url || "/images/avatar.jpg"}
+                    alt="Avatar"
+                    className="w-full h-full rounded-full border object-cover group-hover:opacity-75 transition-opacity"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "/images/avatar.jpg";
                     }}
-                    className="text-gray-600 hover:underline"
-                  >
-                    Cancel
-                  </button>
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span className="text-white text-xs">Change Photo</span>
+                  </div>
+                </label>
+              </div>
+              <h2 className="text-lg font-medium">{profile?.full_name || "Your Name"}</h2>
+              <p className="text-sm text-muted-foreground">{user.email}</p>
+            </aside>
+
+            <section className="flex-1">
+              {!isEditing ? (
+                <div className="space-y-6">
+                  <div className="space-y-4 text-sm">
+                    <div>
+                      <p className="font-medium text-foreground">Full Name</p>
+                      <p className="text-muted-foreground">{profile?.full_name || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">Phone</p>
+                      <p className="text-muted-foreground">{profile?.phone || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">Address</p>
+                      <p className="text-muted-foreground">{profile?.address || "-"}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-4">
+                    <Button
+                      onClick={() => setIsEditing(true)}
+                      className="bg-primary hover:bg-primary/90"
+                    >
+                      Edit Profile
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate('/order-history')}
+                    >
+                      Order History
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate('/order-tracking')}
+                    >
+                      Order Tracking
+                    </Button>
+                  </div>
                 </div>
-                {updateError && (
-                  <p className="text-red-600 mt-2">{updateError}</p>
-                )}
-              </form>
-            )}
-          </section>
+              ) : (
+                <form
+                  onSubmit={handleSubmit(onSubmit)}
+                  className="space-y-6"
+                  noValidate
+                >
+                  <InputField
+                    label="Full Name"
+                    name="full_name"
+                    register={register}
+                    required
+                  />
+                  <InputField
+                    label="Phone Number"
+                    name="phone"
+                    register={register}
+                    required
+                    pattern={{
+                      value: /^\+?[0-9\s\-]{7,15}$/,
+                      message: "Invalid phone number",
+                    }}
+                  />
+                  <TextAreaField
+                    label="Address"
+                    name="address"
+                    register={register}
+                    rows={3}
+                  />
+
+                  <div className="flex gap-4">
+                    <Button
+                      type="submit"
+                      disabled={updating}
+                      className="bg-primary hover:bg-primary/90"
+                    >
+                      {updating ? "Saving..." : "Save Profile"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        reset(profile || {});
+                        setIsEditing(false);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                  
+                  {updateError && (
+                    <p className="text-destructive text-sm">{updateError}</p>
+                  )}
+                </form>
+              )}
+            </section>
+          </div>
+
+          {/* Sign Out Button at the bottom center */}
+          <div className="mt-8 pt-6 border-t border-border flex justify-center">
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              className="flex items-center gap-2 text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground px-8"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign Out
+            </Button>
+          </div>
         </div>
       </main>
     </div>
