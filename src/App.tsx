@@ -52,7 +52,7 @@ function App() {
         <AuthProvider>
           <CartProvider>
             <Router>
-              <div className="min-h-screen bg-background">
+              <div className="min-h-screen bg-background overflow-x-hidden">
                 <Routes>
                   {/* Customer & Admin Hybrid Auth Routes */}
                   <Route path="/login" element={<AuthHybrid />} />

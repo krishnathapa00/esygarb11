@@ -57,7 +57,7 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
+    <div className="min-h-screen bg-gray-50 pb-20 md:pb-0 relative overflow-x-hidden">
       {/* Demo Warning Banner */}
       {!user && (
         <div className="bg-yellow-400 text-black px-4 py-2 md:py-3 text-center font-bold text-xs md:text-sm">
