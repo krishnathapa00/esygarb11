@@ -30,6 +30,33 @@ const Header = () => {
 
   const [showLocationPopup, setShowLocationPopup] = useState(false);
 
+  // Safety mechanism to ensure no stuck dialogs and force close on page interaction
+  useEffect(() => {
+    const handleInteraction = () => {
+      // If user clicks anywhere and there's no location set, just dismiss the popup
+      if (showLocationPopup && !userLocation) {
+        console.log('Force closing popup due to user interaction');
+        setShowLocationPopup(false);
+        sessionStorage.setItem("locationPopupDismissed", "true");
+      }
+    };
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowLocationPopup(false);
+        sessionStorage.setItem("locationPopupDismissed", "true");
+      }
+    };
+
+    document.addEventListener('click', handleInteraction);
+    document.addEventListener('keydown', handleEscape);
+    
+    return () => {
+      document.removeEventListener('click', handleInteraction);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [showLocationPopup, userLocation]);
+
   const location = useLocation();
   const isMobile = useIsMobile();
   const { user, logout } = useAuth();
@@ -41,12 +68,19 @@ const Header = () => {
   useEffect(() => {
     const hasLocation = !!userLocation;
     const alreadyHandled = sessionStorage.getItem("locationPopupHandled");
+    const dismissed = sessionStorage.getItem("locationPopupDismissed");
 
-    if (!hasLocation && !alreadyHandled) {
+    console.log('Location popup logic:', { hasLocation, alreadyHandled, dismissed, userLocation });
+
+    if (!hasLocation && !alreadyHandled && !dismissed) {
+      console.log('Setting showLocationPopup to true');
       setShowLocationPopup(true);
       sessionStorage.setItem("locationPopupHandled", "true");
+    } else {
+      console.log('Not showing location popup');
+      setShowLocationPopup(false);
     }
-  }, []);
+  }, [userLocation]);
 
   const handleLocationSet = (location: string) => {
     let simplifiedLocation = location;
@@ -205,7 +239,7 @@ const Header = () => {
         </div>
       )}
 
-      {/* Location Detection Popup */}
+      {/* Location Detection Popup - Force close if blocking interactions */}
       <LocationDetectionPopup
         isOpen={showLocationPopup}
         onClose={handleDismissPopup}
