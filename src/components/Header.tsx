@@ -146,31 +146,14 @@ const Header = () => {
               </div>
 
               {user ? (
-                <div className="flex items-center gap-2">
-                  {/* Profile Button */}
-                  <Link to="/profile">
-                    <Button
-                      variant="outline"
-                      className="hover:bg-green-50 border-green-200"
-                    >
-                      <span className="flex items-center space-x-1">
-                        <User className="h-4 w-4" />
-                        <span className="hidden md:inline">My Profile</span>
-                      </span>
-                    </Button>
-                  </Link>
-
-                  {/* Logout Button */}
+                <Link to="/profile">
                   <Button
                     variant="outline"
-                    className="hover:bg-red-50 border-red-200 text-red-600"
-                    onClick={logout}
+                    className="hover:bg-green-50 border-green-200"
                   >
-                    <span className="flex items-center space-x-1">
-                      <span className="hidden md:inline">Logout</span>
-                    </span>
+                    <User className="h-4 w-4" />
                   </Button>
-                </div>
+                </Link>
               ) : (
                 <Link to="/login">
                   <Button

@@ -254,49 +254,18 @@ const Checkout = () => {
 
               <div className="space-y-3">
                 <div>
-                  <Label htmlFor="fullName" className="text-sm">
-                    Full Name
+                  <Label htmlFor="pincode" className="text-sm">
+                    Pincode
                   </Label>
                   <Input
-                    id="fullName"
-                    placeholder="Enter your full name"
-                    value={formData.fullName}
+                    id="pincode"
+                    placeholder="Enter pincode"
+                    value={formData.pincode}
                     onChange={(e) =>
-                      handleInputChange("fullName", e.target.value)
+                      handleInputChange("pincode", e.target.value)
                     }
                     className="mt-1"
                   />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <Label htmlFor="phone" className="text-sm">
-                      Phone Number
-                    </Label>
-                    <Input
-                      id="phone"
-                      placeholder="Enter phone number"
-                      value={formData.phone}
-                      onChange={(e) =>
-                        handleInputChange("phone", e.target.value)
-                      }
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="pincode" className="text-sm">
-                      Pincode
-                    </Label>
-                    <Input
-                      id="pincode"
-                      placeholder="Enter pincode"
-                      value={formData.pincode}
-                      onChange={(e) =>
-                        handleInputChange("pincode", e.target.value)
-                      }
-                      className="mt-1"
-                    />
-                  </div>
                 </div>
 
                 <div>
@@ -426,10 +395,10 @@ const Checkout = () => {
             <Button
               onClick={handlePlaceOrder}
               disabled={totalItems === 0}
-              className={`w-full py-3 ${
+              className={`w-full py-3 text-base font-medium ${
                 totalItems === 0
                   ? "bg-gray-300 cursor-not-allowed text-gray-600"
-                  : "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                  : "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white"
               }`}
             >
               {totalItems === 0
