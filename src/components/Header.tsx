@@ -227,7 +227,7 @@ const Header = () => {
             label="Categories"
             isActive={location.pathname === "/categories"}
           />
-          <Link to="/cart" className="relative">
+          <div className="relative">
             <MobileNavButton
               to="/cart"
               icon={ShoppingCart}
@@ -239,7 +239,7 @@ const Header = () => {
                 {totalItems}
               </span>
             )}
-          </Link>
+          </div>
           <MobileNavButton
             to="/profile"
             icon={User}
