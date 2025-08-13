@@ -3,15 +3,11 @@ import { Link, useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import {
   ArrowLeft,
-  MapPin,
   CreditCard,
-  Loader2,
   Banknote,
   WalletIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import EsewaLogo from "../assets/payments/esewa.jpg";
@@ -29,147 +25,57 @@ const Checkout = () => {
   const totalAmount = totalPrice + deliveryFee;
 
   const [selectedPayment, setSelectedPayment] = useState("cod");
-  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
-  const [formData, setFormData] = useState({
-    fullName: "",
-    phone: "",
-    pincode: "",
-    address: "",
-    city: "",
-    state: "",
-  });
 
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!loading && !user) {
-      navigate("/login");
+      navigate("/auth");
     }
   }, [loading, user, navigate]);
 
-  useEffect(() => {
-    // Auto-fill from profile data (simulated - in real app this would come from database/context)
-    const profileData = {
-      fullName: "John Doe",
-      phone: "+977 9876543210",
-    };
-
-    setFormData((prev) => ({
-      ...prev,
-      fullName: profileData.fullName,
-      phone: profileData.phone,
-    }));
-
-    // Auto-fill location from previous detection
-    const savedLocation = localStorage.getItem("esygrab_user_location");
-    if (savedLocation && savedLocation !== "Current Location Detected") {
-      const savedLocationData = JSON.parse(savedLocation || "{}");
-      if (savedLocationData.address) {
-        setFormData((prev) => ({
-          ...prev,
-          address: savedLocationData.address,
-          city: savedLocationData.city || "",
-          state: savedLocationData.state || "",
-          pincode: savedLocationData.pincode || "",
-        }));
-      }
-    }
-  }, []);
-
-  const detectCurrentLocation = () => {
-    setIsDetectingLocation(true);
-
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          try {
-            // Simulate a successful geocoding response
-            const locationData = {
-              address: "Thamel, Kathmandu",
-              city: "Kathmandu",
-              state: "Bagmati",
-              pincode: "44600",
-              formatted: "Thamel, Kathmandu, Bagmati 44600",
-            };
-
-            setFormData((prev) => ({
-              ...prev,
-              address: locationData.address,
-              city: locationData.city,
-              state: locationData.state,
-              pincode: locationData.pincode,
-            }));
-
-            // Save to localStorage
-            localStorage.setItem(
-              "esygrab_user_location",
-              JSON.stringify(locationData)
-            );
-          } catch (error) {
-            console.log("Using fallback location");
-            const fallbackData = {
-              address: "Current location detected",
-              city: "Kathmandu",
-              state: "Bagmati",
-              pincode: "",
-            };
-            setFormData((prev) => ({ ...prev, ...fallbackData }));
-          }
-          setIsDetectingLocation(false);
-        },
-        (error) => {
-          console.error("Geolocation error:", error);
-          setIsDetectingLocation(false);
-        }
-      );
-    } else {
-      setIsDetectingLocation(false);
-      console.log("Geolocation not supported");
-    }
-  };
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handlePlaceOrder = () => {
-    const { address, city, state } = formData;
-    if (!address.trim() || !city.trim() || !state.trim()) {
-      alert("Please fill in the complete address, city, and state/province.");
+  const handlePlaceOrder = async () => {
+    if (!user) {
+      alert("Please log in to place an order.");
       return;
     }
 
-    // Prepare order details object here
-    const orderDetails = {
-      orderId: `ORD${Date.now()}`,
-      items: totalItems,
-      totalAmount,
-      deliveryAddress: `${address}, ${city}`, // excluding state as per your requirement
-      estimatedDelivery: "10-15 mins",
-      paymentMethod:
-        paymentOptions.find((p) => p.id === selectedPayment)?.label || "",
-    };
+    try {
+      // Get user profile for delivery address
+      const savedLocation = localStorage.getItem("esygrab_user_location");
+      let deliveryAddress = "Default Address";
+      
+      if (savedLocation) {
+        const locationData = JSON.parse(savedLocation);
+        deliveryAddress = locationData.formatted || locationData.address || deliveryAddress;
+      }
 
-    if (selectedPayment === "cod") {
-      // Save order to sessionStorage as fallback
-      sessionStorage.setItem("last_order", JSON.stringify(orderDetails));
+      const orderDetails = {
+        orderId: `ORD${Date.now()}`,
+        items: cart,
+        totalItems,
+        totalAmount,
+        deliveryAddress,
+        estimatedDelivery: "10-15 mins",
+        paymentMethod: paymentOptions.find((p) => p.id === selectedPayment)?.label || "",
+        status: "confirmed"
+      };
+
+      // Save order to localStorage for now (in production, save to database)
+      const existingOrders = JSON.parse(localStorage.getItem("user_orders") || "[]");
+      existingOrders.push({
+        ...orderDetails,
+        userId: user.id,
+        createdAt: new Date().toISOString()
+      });
+      localStorage.setItem("user_orders", JSON.stringify(existingOrders));
 
       resetCart();
-
       navigate("/order-confirmation", { state: orderDetails });
-    } else {
-      // Simulate payment success for other payment methods
-      console.log(`Processing ${selectedPayment} payment...`);
-
-      setTimeout(() => {
-        // Save order to sessionStorage before redirect
-        sessionStorage.setItem("last_order", JSON.stringify(orderDetails));
-
-        resetCart();
-
-        window.location.href = "/order-confirmation";
-      }, 2000);
+    } catch (error) {
+      console.error("Error placing order:", error);
+      alert("Failed to place order. Please try again.");
     }
   };
 
@@ -189,7 +95,6 @@ const Checkout = () => {
   ];
 
   if (loading) {
-    // Show loading while checking auth
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto" />
@@ -221,101 +126,6 @@ const Checkout = () => {
         <div className="space-y-4 lg:grid lg:grid-cols-3 lg:gap-6 lg:space-y-0">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-4">
-            {/* Delivery Address */}
-            <div className="bg-white rounded-lg p-4 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-2">
-                  <MapPin className="h-4 w-4 lg:h-5 lg:w-5 text-green-600" />
-                  <h3 className="text-base lg:text-lg font-semibold">
-                    Delivery Address
-                  </h3>
-                </div>
-                <Button
-                  onClick={detectCurrentLocation}
-                  disabled={isDetectingLocation}
-                  variant="outline"
-                  size="sm"
-                  className="text-green-600 border-green-200 hover:bg-green-50 text-xs lg:text-sm px-2 lg:px-3"
-                >
-                  {isDetectingLocation ? (
-                    <>
-                      <Loader2 className="h-3 w-3 lg:h-4 lg:w-4 mr-1 animate-spin" />
-                      <span className="hidden sm:inline">Detecting...</span>
-                    </>
-                  ) : (
-                    <>
-                      <MapPin className="h-3 w-3 lg:h-4 lg:w-4 mr-1" />
-                      <span className="hidden sm:inline">Auto-Detect</span>
-                      <span className="sm:hidden">GPS</span>
-                    </>
-                  )}
-                </Button>
-              </div>
-
-              <div className="space-y-3">
-                <div>
-                  <Label htmlFor="pincode" className="text-sm">
-                    Pincode
-                  </Label>
-                  <Input
-                    id="pincode"
-                    placeholder="Enter pincode"
-                    value={formData.pincode}
-                    onChange={(e) =>
-                      handleInputChange("pincode", e.target.value)
-                    }
-                    className="mt-1"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="address" className="text-sm">
-                    Complete Address
-                  </Label>
-                  <Input
-                    id="address"
-                    placeholder="House no, Building, Street, Area"
-                    value={formData.address}
-                    onChange={(e) =>
-                      handleInputChange("address", e.target.value)
-                    }
-                    className="mt-1"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <Label htmlFor="city" className="text-sm">
-                      City
-                    </Label>
-                    <Input
-                      id="city"
-                      placeholder="Enter city"
-                      value={formData.city}
-                      onChange={(e) =>
-                        handleInputChange("city", e.target.value)
-                      }
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="state" className="text-sm">
-                      State/Province
-                    </Label>
-                    <Input
-                      id="state"
-                      placeholder="Enter state"
-                      value={formData.state}
-                      onChange={(e) =>
-                        handleInputChange("state", e.target.value)
-                      }
-                      className="mt-1"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
             {/* Payment Method */}
             <div className="bg-white rounded-lg p-4 shadow-sm">
               <div className="flex items-center space-x-2 mb-4">

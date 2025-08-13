@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
 import InputField from "@/components/InputField";
 import TextAreaField from "@/components/TextAreaField";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { LogOut, History, Package, HelpCircle, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   fetchUserProfile,
@@ -15,6 +15,7 @@ import {
   ProfileFormValues,
 } from "@/services/profileService";
 import SingleImageUpload from "@/components/SingleImageUpload";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const UserProfile: React.FC = () => {
   const navigate = useNavigate();
@@ -261,25 +262,55 @@ const UserProfile: React.FC = () => {
                     </div>
                   </div>
                   
-                  <div className="flex gap-4">
-                    <Button
-                      onClick={() => setIsEditing(true)}
-                      className="bg-primary hover:bg-primary/90"
-                    >
-                      Edit Profile
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => navigate('/order-history')}
-                    >
-                      Order History
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => navigate('/order-tracking')}
-                    >
-                      Order Tracking
-                    </Button>
+                  {/* Profile Actions */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                    <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => setIsEditing(true)}>
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 bg-green-100 rounded-lg">
+                          <Package className="h-5 w-5 text-green-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium">Edit Profile</h3>
+                          <p className="text-sm text-gray-500">Update your information</p>
+                        </div>
+                      </div>
+                    </Card>
+
+                    <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/order-history')}>
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 bg-blue-100 rounded-lg">
+                          <History className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium">Order History</h3>
+                          <p className="text-sm text-gray-500">View past orders</p>
+                        </div>
+                      </div>
+                    </Card>
+
+                    <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/order-tracking-lookup')}>
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 bg-orange-100 rounded-lg">
+                          <MapPin className="h-5 w-5 text-orange-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium">Track Orders</h3>
+                          <p className="text-sm text-gray-500">Track current orders</p>
+                        </div>
+                      </div>
+                    </Card>
+
+                    <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/support')}>
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 bg-purple-100 rounded-lg">
+                          <HelpCircle className="h-5 w-5 text-purple-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium">Support</h3>
+                          <p className="text-sm text-gray-500">Get help & support</p>
+                        </div>
+                      </div>
+                    </Card>
                   </div>
                 </div>
               ) : (

@@ -106,6 +106,11 @@ const LocationDetectionPopup = ({ isOpen, onClose, onLocationSet }: LocationDete
           }
           
           alert(errorMessage);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000
         }
       );
     } else {

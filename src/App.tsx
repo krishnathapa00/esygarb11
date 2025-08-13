@@ -72,7 +72,8 @@ function App() {
                   />
             <Route path="/order-tracking/:orderId" element={<OrderTracking />} />
             <Route path="/order-tracking" element={<OrderTrackingLookup />} />
-                  <Route path="/order-history" element={<OrderHistory />} />
+        <Route path="/order-history" element={<OrderHistory />} />
+        <Route path="/profile" element={<UserProfile />} />
                   <Route path="/profile" element={<UserProfile />} />
                   <Route path="/map-location" element={<MapLocation />} />
                   <Route path="/waitlist" element={<Waitlist />} />
