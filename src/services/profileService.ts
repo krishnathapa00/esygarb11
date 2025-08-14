@@ -44,15 +44,15 @@ export const updateUserProfile = async (
 
   const userId = userData.user.id;
 
-  const { error } = await supabase.from("profiles").upsert({
+  const { data, error } = await supabase.from("profiles").upsert({
     id: userId,
     ...profile,
     updated_at: new Date().toISOString(),
-  });
+  }).select().single();
 
   if (error) {
     throw new Error(error.message);
   }
 
-  return profile;
+  return data || profile;
 };

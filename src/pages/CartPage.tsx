@@ -178,8 +178,8 @@ const CartPage = () => {
               </div>
             </div>
 
-            <Link to="/checkout">
-              <Button className="w-full py-3 text-base font-medium bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white mb-4 md:mb-0">
+            <Link to="/checkout" className="block">
+              <Button className="w-full py-3 text-base font-medium bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white fixed bottom-20 left-4 right-4 md:relative md:bottom-auto md:left-auto md:right-auto z-50 md:mb-0">
                 Proceed to Checkout
               </Button>
             </Link>
