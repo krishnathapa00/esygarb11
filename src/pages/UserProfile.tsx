@@ -97,7 +97,16 @@ const UserProfile: React.FC = () => {
     setUpdateError(null);
 
     try {
-      const updatedProfile = await updateUserProfile(data);
+      // Ensure all required fields are strings
+      const profileData: ProfileFormValues = {
+        full_name: data.full_name || "",
+        phone: data.phone || "", 
+        address: data.address || "",
+        location: data.location || "",
+        avatar_url: data.avatar_url || ""
+      };
+
+      const updatedProfile = await updateUserProfile(profileData);
       setProfile(updatedProfile);
       reset(updatedProfile);
       setIsEditing(false);
@@ -107,10 +116,12 @@ const UserProfile: React.FC = () => {
         description: "Your profile information has been saved"
       });
     } catch (err: any) {
-      setUpdateError(err.message || "Failed to update profile");
+      console.error("Profile update error:", err);
+      const errorMessage = err?.message || "Failed to update profile";
+      setUpdateError(errorMessage);
       toast({
         title: "Update failed",
-        description: err.message || "Failed to update profile",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {

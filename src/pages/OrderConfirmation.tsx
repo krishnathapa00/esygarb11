@@ -63,13 +63,34 @@ const OrderConfirmation = () => {
           <div className="space-y-6 text-left">
             <div className="border-b pb-4">
               <h3 className="font-semibold mb-2">Order Summary</h3>
-              <p className="text-gray-600">Items: {orderData.items}</p>
-              <p className="text-gray-600">Total: Rs.{orderData.totalAmount}</p>
+              {orderData.items && Array.isArray(orderData.items) ? (
+                <div className="space-y-2">
+                  {orderData.items.map((item: any, index: number) => (
+                    <div key={index} className="flex justify-between text-sm">
+                      <span>{item.name} x {item.quantity}</span>
+                      <span>Rs {item.price * item.quantity}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-600">Items: {orderData.totalItems || 0}</p>
+              )}
+              <div className="mt-2 pt-2 border-t">
+                <div className="flex justify-between font-semibold">
+                  <span>Total Amount:</span>
+                  <span>Rs {orderData.totalAmount}</span>
+                </div>
+              </div>
             </div>
 
             <div>
               <h3 className="font-semibold mb-2">Delivery Address</h3>
               <p className="text-gray-600">{orderData.deliveryAddress}</p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-2">Payment Method</h3>
+              <p className="text-gray-600">{orderData.paymentMethod}</p>
             </div>
           </div>
 
