@@ -310,6 +310,9 @@ export const useProducts = () => {
           deliveryTime: product.delivery_time || "10-15 mins",
           category: product.categories?.name || "Unknown",
           stockQuantity: product.stock_quantity,
+          rating: 4.5,
+          reviews: 50,
+          inStock: product.stock_quantity > 0,
         })) as Product[];
       } catch (error) {
         console.log("Query error:", error);
@@ -381,6 +384,9 @@ export const useProductsByCategory = (categoryId: number) => {
           deliveryTime: product.delivery_time || "10-15 mins",
           category: product.categories?.name || "Unknown",
           stockQuantity: product.stock_quantity,
+          rating: 4.5,
+          reviews: 50,
+          inStock: product.stock_quantity > 0,
           isActive: product.is_active,
         })) as Product[];
       } catch (error) {
