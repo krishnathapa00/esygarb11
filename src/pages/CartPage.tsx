@@ -60,49 +60,6 @@ const CartPage = () => {
         </div>
 
         <div className="space-y-4 lg:grid lg:grid-cols-3 lg:gap-6 lg:space-y-0">
-          {/* Delivery Address Section */}
-          <div className="lg:col-span-3 bg-white rounded-lg p-4 shadow-sm mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Delivery Address</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Button
-                variant="outline" 
-                className="flex items-center justify-center gap-2 p-3 h-auto border-green-200 hover:bg-green-50"
-                onClick={() => {
-                  if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                      (position) => {
-                        const { latitude, longitude } = position.coords;
-                        localStorage.setItem("esygrab_user_location", JSON.stringify({
-                          address: `${latitude}, ${longitude}`,
-                          lat: latitude,
-                          lng: longitude
-                        }));
-                        alert("Location detected successfully!");
-                      },
-                      (error) => {
-                        console.error("Geolocation error:", error);
-                        alert("Unable to detect location. Please try manual selection.");
-                      }
-                    );
-                  } else {
-                    alert("Geolocation is not supported by this browser.");
-                  }
-                }}
-              >
-                <MapPin className="h-4 w-4 text-green-600" />
-                Auto-detect Location
-              </Button>
-              <Button 
-                variant="outline"
-                className="flex items-center justify-center gap-2 p-3 h-auto border-green-200 hover:bg-green-50"
-                onClick={() => window.open('/location-selector', '_blank')}
-              >
-                <Edit className="h-4 w-4 text-green-600" />
-                Set Manually
-              </Button>
-            </div>
-          </div>
-
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-4">
             {cart.map((item) => (
@@ -148,6 +105,49 @@ const CartPage = () => {
                 </div>
               </div>
             ))}
+
+            {/* Delivery Address Section */}
+            <div className="bg-white rounded-lg p-4 shadow-sm">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Delivery Address</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Button
+                  variant="outline" 
+                  className="flex items-center justify-center gap-2 p-3 h-auto border-green-200 hover:bg-green-50"
+                  onClick={() => {
+                    if (navigator.geolocation) {
+                      navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                          const { latitude, longitude } = position.coords;
+                          localStorage.setItem("esygrab_user_location", JSON.stringify({
+                            address: `${latitude}, ${longitude}`,
+                            lat: latitude,
+                            lng: longitude
+                          }));
+                          alert("Location detected successfully!");
+                        },
+                        (error) => {
+                          console.error("Geolocation error:", error);
+                          alert("Unable to detect location. Please try manual selection.");
+                        }
+                      );
+                    } else {
+                      alert("Geolocation is not supported by this browser.");
+                    }
+                  }}
+                >
+                  <MapPin className="h-4 w-4 text-green-600" />
+                  Auto-detect Location
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="flex items-center justify-center gap-2 p-3 h-auto border-green-200 hover:bg-green-50"
+                  onClick={() => window.open('/location-selector', '_blank')}
+                >
+                  <Edit className="h-4 w-4 text-green-600" />
+                  Set Manually
+                </Button>
+              </div>
+            </div>
           </div>
 
           {/* Order Summary */}
