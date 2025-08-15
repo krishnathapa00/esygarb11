@@ -62,10 +62,10 @@ const AdminDashboard = () => {
   const { data: dashboardData, refetch } = useQuery({
     queryKey: ['admin-dashboard-simple'],
     queryFn: fetchDashboardData,
-    staleTime: 30 * 1000, // 30 seconds for more frequent updates
+    staleTime: 0, // Always consider data stale for immediate updates
     refetchOnWindowFocus: true,
     refetchOnMount: true,
-    refetchInterval: 60 * 1000 // Auto-refresh every minute
+    refetchInterval: 5 * 1000 // Auto-refresh every 5 seconds for real-time feel
   });
 
   const handleRefund = async (orderId: string) => {

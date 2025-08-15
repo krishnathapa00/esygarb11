@@ -38,7 +38,11 @@ const DeliveryOrders = () => {
       if (error) throw error;
       return data;
     },
-    enabled: !!user
+    enabled: !!user,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    refetchInterval: 5 * 1000 // Auto-refresh every 5 seconds
   });
 
   const acceptOrderMutation = useMutation({

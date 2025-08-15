@@ -15,44 +15,83 @@ export const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
 }) => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [shouldRedirect, setShouldRedirect] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
+    
+    const checkUserRole = async () => {
+      try {
+        // First check if user is authenticated
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session?.user) {
+          if (mounted) {
+            setIsAuthenticated(false);
+            setLoading(false);
+          }
+          return;
+        }
+
+        if (mounted) {
+          setIsAuthenticated(true);
+        }
+
+        // Get user role from profiles table
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+
+        if (error) {
+          console.error('Error fetching user role:', error);
+          if (mounted) {
+            setUserRole('customer'); // Default fallback role
+            setLoading(false);
+          }
+          return;
+        }
+
+        if (mounted) {
+          setUserRole(profile?.role || 'customer');
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        if (mounted) {
+          setIsAuthenticated(false);
+          setLoading(false);
+        }
+      }
+    };
+
     checkUserRole();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_OUT' || !session) {
+          if (mounted) {
+            setIsAuthenticated(false);
+            setUserRole(null);
+            setLoading(false);
+          }
+        } else if (event === 'SIGNED_IN' && session?.user) {
+          if (mounted) {
+            setIsAuthenticated(true);
+            // Re-fetch role when user signs in
+            checkUserRole();
+          }
+        }
+      }
+    );
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
-
-  const checkUserRole = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        setShouldRedirect(true);
-        setLoading(false);
-        return;
-      }
-
-      // Get user role from profiles table
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-
-      if (error) {
-        console.error('Error fetching user role:', error);
-        setShouldRedirect(true);
-        setLoading(false);
-        return;
-      }
-
-      setUserRole(profile?.role || null);
-      setLoading(false);
-    } catch (error) {
-      console.error('Auth check failed:', error);
-      setShouldRedirect(true);
-      setLoading(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -65,18 +104,29 @@ export const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
     );
   }
 
-  if (shouldRedirect || !userRole) {
+  if (!isAuthenticated) {
     return <Navigate to={redirectTo} replace />;
   }
 
+  if (!userRole) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p>Loading user data...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!allowedRoles.includes(userRole)) {
-    // Admin/delivery users should stay on their appropriate pages, not redirect to customer side
+    // Redirect based on actual user role to prevent wrong redirects
     if (userRole === 'admin' || userRole === 'super_admin') {
       return <Navigate to="/admin/dashboard" replace />;
     } else if (userRole === 'delivery_partner') {
       return <Navigate to="/delivery-partner/dashboard" replace />;
     }
-    // Don't redirect customer users to main page from admin/delivery routes
+    // Customer users trying to access admin/delivery routes get unauthorized
     return <Navigate to="/unauthorized" replace />;
   }
 
