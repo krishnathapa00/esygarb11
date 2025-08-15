@@ -157,14 +157,20 @@ const UserProfile: React.FC = () => {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50">
       <Header />
-      <main className="max-w-4xl mx-auto px-4 py-10">
-        <h1 className="text-3xl font-semibold mb-6">My Account</h1>
-        <div className="bg-card shadow-sm rounded-lg p-6">
-          <div className="md:flex gap-10">
-            <aside className="w-full md:w-1/3 text-center mb-6 md:mb-0">
-              <div className="w-24 h-24 mx-auto mb-4 relative group">
+      <main className="max-w-6xl mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2">My Profile</h1>
+          <p className="text-gray-600">Manage your account settings and preferences</p>
+        </div>
+        
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Profile Card */}
+          <div className="lg:col-span-1">
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
+              <CardContent className="p-8 text-center">
+                <div className="w-32 h-32 mx-auto mb-6 relative group">
                 <input
                   type="file"
                   accept="image/*"
@@ -241,111 +247,160 @@ const UserProfile: React.FC = () => {
                   <img
                     src={avatarUrl || profile?.avatar_url || "/images/avatar.jpg"}
                     alt="Avatar"
-                    className="w-full h-full rounded-full border object-cover group-hover:opacity-75 transition-opacity"
+                    className="w-full h-full rounded-full border-4 border-green-100 object-cover group-hover:opacity-75 transition-all shadow-lg"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = "/images/avatar.jpg";
                     }}
                   />
                   <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span className="text-white text-xs">Change Photo</span>
+                    <span className="text-white text-sm font-medium">Change Photo</span>
                   </div>
                 </label>
               </div>
-              <h2 className="text-lg font-medium">{profile?.full_name || "Your Name"}</h2>
-              <p className="text-sm text-muted-foreground">{user.email}</p>
-            </aside>
-
-            <section className="flex-1">
-              {!isEditing ? (
-                <div className="space-y-6">
-                  <div className="space-y-4 text-sm">
-                    <div>
-                      <p className="font-medium text-foreground">Full Name</p>
-                      <p className="text-muted-foreground">{profile?.full_name || "-"}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground">Phone</p>
-                      <p className="text-muted-foreground">{profile?.phone || "-"}</p>
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground">Address</p>
-                      <p className="text-muted-foreground">{profile?.address || "-"}</p>
-                    </div>
-                  </div>
-                  
-                  {/* Profile Actions */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                    <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => setIsEditing(true)}>
-                      <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-green-100 rounded-lg">
-                          <Package className="h-5 w-5 text-green-600" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium">Edit Profile</h3>
-                          <p className="text-sm text-gray-500">Update your information</p>
-                        </div>
-                      </div>
-                    </Card>
-
-                    <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/order-history')}>
-                      <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-blue-100 rounded-lg">
-                          <History className="h-5 w-5 text-blue-600" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium">Order History</h3>
-                          <p className="text-sm text-gray-500">View past orders</p>
-                        </div>
-                      </div>
-                    </Card>
-
-                    <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/order-tracking-lookup')}>
-                      <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-orange-100 rounded-lg">
-                          <MapPin className="h-5 w-5 text-orange-600" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium">Track Orders</h3>
-                          <p className="text-sm text-gray-500">Track current orders</p>
-                        </div>
-                      </div>
-                    </Card>
-
-                    <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/support')}>
-                      <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-purple-100 rounded-lg">
-                          <HelpCircle className="h-5 w-5 text-purple-600" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium">Support</h3>
-                          <p className="text-sm text-gray-500">Get help & support</p>
-                        </div>
-                      </div>
-                    </Card>
-                  </div>
+              <div className="space-y-2">
+                <h2 className="text-2xl font-bold text-gray-900">{profile?.full_name || "Your Name"}</h2>
+                <p className="text-green-600 font-medium">{user.email}</p>
+                <div className="inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm font-medium">
+                  ✓ Verified Account
                 </div>
-              ) : (
-                <form
-                  onSubmit={handleSubmit(onSubmit)}
-                  className="space-y-6"
-                  noValidate
+              </div>
+            </CardContent>
+          </Card>
+          </div>
+
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-6">
+            {!isEditing ? (
+            <>
+              {/* Personal Information Card */}
+              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
+                <CardHeader className="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-t-lg">
+                  <CardTitle className="text-xl">Personal Information</CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="space-y-6">
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Full Name</label>
+                        <p className="text-lg font-medium text-gray-900 bg-gray-50 p-3 rounded-lg">
+                          {profile?.full_name || "Not provided"}
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Phone Number</label>
+                        <p className="text-lg font-medium text-gray-900 bg-gray-50 p-3 rounded-lg">
+                          {profile?.phone || "Not provided"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Address</label>
+                      <p className="text-lg font-medium text-gray-900 bg-gray-50 p-3 rounded-lg">
+                        {profile?.address || "Not provided"}
+                      </p>
+                    </div>
+                    <Button 
+                      onClick={() => setIsEditing(true)}
+                      className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-3 rounded-lg font-medium text-lg shadow-lg hover:shadow-xl transition-all"
+                    >
+                      Edit Profile Information
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Quick Actions Grid */}
+              <div className="grid md:grid-cols-2 gap-6">
+                <Card 
+                  className="bg-white/80 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all cursor-pointer group hover:scale-105"
+                  onClick={() => navigate('/order-history')}
                 >
-                  <InputField
-                    label="Full Name"
-                    name="full_name"
-                    register={register}
-                    required
-                  />
-                  <InputField
-                    label="Phone Number"
-                    name="phone"
-                    register={register}
-                    required
-                    pattern={{
-                      value: /^\+?[0-9\s\-]{7,15}$/,
-                      message: "Invalid phone number",
-                    }}
-                  />
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-4">
+                      <div className="p-4 bg-blue-100 rounded-full group-hover:bg-blue-200 transition-colors">
+                        <History className="h-8 w-8 text-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-semibold text-gray-900">Order History</h3>
+                        <p className="text-gray-600">View your past orders and purchases</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card 
+                  className="bg-white/80 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all cursor-pointer group hover:scale-105"
+                  onClick={() => navigate('/order-tracking-lookup')}
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-4">
+                      <div className="p-4 bg-orange-100 rounded-full group-hover:bg-orange-200 transition-colors">
+                        <MapPin className="h-8 w-8 text-orange-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-semibold text-gray-900">Track Orders</h3>
+                        <p className="text-gray-600">Track your current orders in real-time</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card 
+                  className="bg-white/80 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all cursor-pointer group hover:scale-105"
+                  onClick={() => navigate('/support')}
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-4">
+                      <div className="p-4 bg-purple-100 rounded-full group-hover:bg-purple-200 transition-colors">
+                        <HelpCircle className="h-8 w-8 text-purple-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-semibold text-gray-900">Support</h3>
+                        <p className="text-gray-600">Get help and customer support</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-4">
+                      <div className="p-4 bg-green-100 rounded-full">
+                        <Package className="h-8 w-8 text-green-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-semibold text-gray-900">Account Status</h3>
+                        <p className="text-green-600 font-medium">Active & Verified</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </>) : (
+            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
+              <CardHeader className="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-t-lg">
+                <CardTitle className="text-xl">Edit Profile Information</CardTitle>
+              </CardHeader>
+              <CardContent className="p-6">
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <InputField
+                      label="Full Name"
+                      name="full_name"
+                      register={register}
+                      required
+                    />
+                    <InputField
+                      label="Phone Number"
+                      name="phone"
+                      register={register}
+                      required
+                      pattern={{
+                        value: /^\+?[0-9\s\-]{7,15}$/,
+                        message: "Invalid phone number",
+                      }}
+                    />
+                  </div>
                   <TextAreaField
                     label="Address"
                     name="address"
@@ -357,9 +412,9 @@ const UserProfile: React.FC = () => {
                     <Button
                       type="submit"
                       disabled={updating}
-                      className="bg-primary hover:bg-primary/90"
+                      className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-3 rounded-lg font-medium text-lg shadow-lg hover:shadow-xl transition-all"
                     >
-                      {updating ? "Saving..." : "Save Profile"}
+                      {updating ? "Saving..." : "Save Changes"}
                     </Button>
                     <Button
                       type="button"
@@ -368,30 +423,40 @@ const UserProfile: React.FC = () => {
                         reset(profile || {});
                         setIsEditing(false);
                       }}
+                      className="flex-1 border-2 border-gray-300 hover:border-gray-400 py-3 rounded-lg font-medium text-lg"
                     >
                       Cancel
                     </Button>
                   </div>
                   
                   {updateError && (
-                    <p className="text-destructive text-sm">{updateError}</p>
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                      <p className="text-red-600 text-sm">{updateError}</p>
+                    </div>
                   )}
                 </form>
-              )}
-            </section>
+              </CardContent>
+            </Card>
+            )}
           </div>
+        </div>
 
-          {/* Sign Out Button at the bottom center */}
-          <div className="mt-8 pt-6 border-t border-border flex justify-center">
-            <Button
-              onClick={handleLogout}
-              variant="outline"
-              className="flex items-center gap-2 text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground px-8"
-            >
-              <LogOut className="h-4 w-4" />
-              Sign Out
-            </Button>
-          </div>
+        {/* Sign Out Section */}
+        <div className="mt-8">
+          <Card className="bg-red-50 border-red-200 shadow-xl">
+            <CardContent className="p-6 text-center">
+              <h3 className="text-lg font-semibold text-red-800 mb-2">Account Management</h3>
+              <p className="text-red-600 mb-4">Securely sign out of your account</p>
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                className="bg-white border-2 border-red-500 text-red-600 hover:bg-red-500 hover:text-white px-8 py-3 rounded-lg font-medium text-lg shadow-lg hover:shadow-xl transition-all"
+              >
+                <LogOut className="h-5 w-5 mr-2" />
+                Sign Out
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>

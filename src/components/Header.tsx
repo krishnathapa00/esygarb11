@@ -140,8 +140,7 @@ const Header = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b shadow-sm relative"
-        style={{ position: 'sticky' }}>
+      <header className="md:sticky md:top-0 z-50 bg-white/95 backdrop-blur-sm border-b shadow-sm relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
@@ -196,7 +195,6 @@ const Header = () => {
                     className="hover:bg-green-50 border-green-200"
                   >
                     <User className="h-4 w-4" />
-                    <span className="hidden md:inline">Login</span>
                   </Button>
                 </Link>
               )}

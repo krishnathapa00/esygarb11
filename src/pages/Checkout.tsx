@@ -107,7 +107,9 @@ const Checkout = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      <div className="md:block hidden">
+        <Header />
+      </div>
 
       <div className="px-4 py-4 max-w-md mx-auto lg:max-w-4xl lg:px-8">
         {/* Header */}
@@ -205,10 +207,10 @@ const Checkout = () => {
             <Button
               onClick={handlePlaceOrder}
               disabled={totalItems === 0}
-              className={`w-full py-3 text-base font-medium ${
+              className={`w-full py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all ${
                 totalItems === 0
                   ? "bg-gray-300 cursor-not-allowed text-gray-600"
-                  : "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white"
+                  : "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white hover:scale-105"
               }`}
             >
               {totalItems === 0
