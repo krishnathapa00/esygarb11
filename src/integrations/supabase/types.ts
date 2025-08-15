@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -680,10 +680,10 @@ export type Database = {
       get_available_darkstores: {
         Args: Record<PropertyKey, never>
         Returns: {
-          id: number
-          name: string
           address: string
           city: string
+          id: number
+          name: string
           state: string
           zip_code: string
         }[]
@@ -691,8 +691,8 @@ export type Database = {
       get_delivery_partners: {
         Args: Record<PropertyKey, never> | { _darkstore_id?: number }
         Returns: {
-          id: string
           full_name: string
+          id: string
           phone_number: string
         }[]
       }
