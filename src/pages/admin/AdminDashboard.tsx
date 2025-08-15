@@ -58,13 +58,14 @@ const AdminDashboard = () => {
     }
   }, []);
 
-  // Query with fixed key
+  // Query with real-time updates
   const { data: dashboardData, refetch } = useQuery({
     queryKey: ['admin-dashboard-simple'],
     queryFn: fetchDashboardData,
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: true
+    staleTime: 30 * 1000, // 30 seconds for more frequent updates
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    refetchInterval: 60 * 1000 // Auto-refresh every minute
   });
 
   const handleRefund = async (orderId: string) => {

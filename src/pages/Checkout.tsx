@@ -34,7 +34,7 @@ const Checkout = () => {
   const [showUserDetails, setShowUserDetails] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
 
-  // Check if user needs to complete profile - but first check if they already have location from homepage
+  // Check if user needs to complete profile - be smarter about existing data
   const storedLocation = localStorage.getItem("esygrab_user_location");
   const hasLocationFromHomepage = storedLocation ? JSON.parse(storedLocation) : null;
   

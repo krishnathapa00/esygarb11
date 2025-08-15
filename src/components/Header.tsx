@@ -153,12 +153,12 @@ const Header = () => {
               </h1>
             </Link>
 
-            {/* Location - Desktop */}
+            {/* Location and Search Bar - Desktop */}
             <div className="hidden md:flex items-center space-x-4 text-sm text-gray-600 ml-8 flex-1">
               <Button
                 variant="ghost"
                 onClick={() => setShowLocationPopup(true)}
-                className="flex items-center space-x-2 hover:bg-green-50"
+                className="flex items-center space-x-2 hover:bg-green-50 shrink-0"
               >
                 <MapPin className="h-4 w-4 text-green-600" />
                 <div className="text-left">
@@ -170,6 +170,13 @@ const Header = () => {
                   </span>
                 </div>
               </Button>
+              
+              {/* Desktop Search Bar */}
+              {shouldShowSearchBar && (
+                <div className="flex-1 max-w-md">
+                  <SearchBar />
+                </div>
+              )}
             </div>
 
             {/* Right side actions - Desktop */}
@@ -229,9 +236,9 @@ const Header = () => {
         </div>
       </header>
 
-      {/* Search Bar Section - ONLY show on homepage */}
+      {/* Mobile Search Bar Section - ONLY show on homepage */}
       {shouldShowSearchBar && (
-        <div className="fixed top-16 left-0 right-0 z-40 bg-white border-b border-gray-100">
+        <div className="md:hidden fixed top-16 left-0 right-0 z-40 bg-white border-b border-gray-100">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
             <SearchBar />
           </div>

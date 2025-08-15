@@ -30,6 +30,7 @@ import AddProduct from "./pages/admin/AddProduct";
 import ManageKYC from "./pages/admin/ManageKYC";
 import DeliveryPartnerManagement from "./pages/admin/DeliveryPartnerManagement";
 import NotFound from "./pages/NotFound";
+import Unauthorized from "./pages/Unauthorized";
 import MapLocation from "./pages/MapLocation";
 import SearchResults from "./pages/SearchResults";
 import Waitlist from './pages/Waitlist';
@@ -256,7 +257,8 @@ function App() {
                     }
                   />
 
-                  <Route path="*" element={<NotFound />} />
+                   <Route path="/unauthorized" element={<Unauthorized />} />
+                   <Route path="*" element={<NotFound />} />
                 </Routes>
                 <Toaster />
               </div>

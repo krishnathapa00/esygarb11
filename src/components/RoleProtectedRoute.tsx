@@ -76,7 +76,8 @@ export const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
     } else if (userRole === 'delivery_partner') {
       return <Navigate to="/delivery-partner/dashboard" replace />;
     }
-    return <Navigate to="/" replace />;
+    // Don't redirect customer users to main page from admin/delivery routes
+    return <Navigate to="/unauthorized" replace />;
   }
 
   return <>{children}</>;

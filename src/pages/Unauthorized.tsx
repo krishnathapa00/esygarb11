@@ -1,28 +1,39 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { AlertTriangle, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { AlertCircle } from 'lucide-react';
 
-export const Unauthorized: React.FC = () => {
+const Unauthorized = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center space-y-6 p-8">
-        <AlertCircle className="w-16 h-16 text-destructive mx-auto" />
-        <div className="space-y-2">
-          <h1 className="text-2xl font-bold text-foreground">Access Denied</h1>
-          <p className="text-muted-foreground">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+      <div className="max-w-md w-full text-center">
+        <div className="mb-8">
+          <AlertTriangle className="mx-auto h-16 w-16 text-red-500 mb-4" />
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Access Denied
+          </h1>
+          <p className="text-gray-600">
             You don't have permission to access this page.
           </p>
         </div>
-        <div className="space-x-4">
-          <Button asChild>
-            <Link to="/">Go Home</Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link to="/auth">Login</Link>
-          </Button>
+        
+        <div className="space-y-4">
+          <Link to="/">
+            <Button className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700">
+              <Home className="h-4 w-4 mr-2" />
+              Go to Homepage
+            </Button>
+          </Link>
+          
+          <Link to="/auth">
+            <Button variant="outline" className="w-full">
+              Login as Different User
+            </Button>
+          </Link>
         </div>
       </div>
     </div>
   );
 };
+
+export default Unauthorized;
