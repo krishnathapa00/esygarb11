@@ -148,10 +148,10 @@ const DeliveryPartnerAuth = () => {
             description: "You have successfully logged in to your delivery partner account.",
           });
           
-          // Add a small delay to ensure toast is shown
-          setTimeout(() => {
-            navigate('/delivery-partner/dashboard');
-          }, 1000);
+          // Don't manually navigate - let AuthContext handle it
+          // setTimeout(() => {
+          //   navigate('/delivery-partner/dashboard');
+          // }, 1000);
         } else {
           console.log('Access denied - not a delivery partner');
           toast({

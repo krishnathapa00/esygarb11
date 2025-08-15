@@ -93,12 +93,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             localStorage.removeItem("guest_cart");
           }
           
-          // Only redirect on SIGNED_IN event and if there's a redirect URL
-          if (event === 'SIGNED_IN' && redirectUrl) {
-            localStorage.removeItem("auth_redirect_url");
-            setTimeout(() => {
-              window.location.href = redirectUrl;
-            }, 100);
+          // Role-based auto-redirect on SIGNED_IN
+          if (event === 'SIGNED_IN') {
+            if (redirectUrl) {
+              localStorage.removeItem("auth_redirect_url");
+              setTimeout(() => {
+                window.location.href = redirectUrl;
+              }, 100);
+            } else {
+              // Auto-redirect based on role
+              setTimeout(() => {
+                const role = user.role || 'customer';
+                if (role === 'admin' || role === 'super_admin') {
+                  window.location.href = '/admin/dashboard';
+                } else if (role === 'delivery_partner') {
+                  window.location.href = '/delivery-partner/dashboard';
+                } else {
+                  window.location.href = '/';
+                }
+              }, 500);
+            }
           }
           
           // Start activity tracking
