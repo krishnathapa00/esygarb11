@@ -154,7 +154,7 @@ const Header = () => {
             </Link>
 
             {/* Location and Search Bar - Desktop */}
-            <div className="hidden md:flex items-center space-x-6 text-sm text-gray-600 ml-6 flex-1">
+            <div className="hidden md:flex items-center space-x-4 text-sm text-gray-600 ml-8 flex-1 justify-between">
               <Button
                 variant="ghost"
                 onClick={() => setShowLocationPopup(true)}
@@ -171,9 +171,9 @@ const Header = () => {
                 </div>
               </Button>
               
-              {/* Desktop Search Bar - moved left */}
+              {/* Desktop Search Bar - centered with proper spacing */}
               {shouldShowSearchBar && (
-                <div className="flex-1 max-w-lg ml-4">
+                <div className="flex-1 max-w-md mx-auto px-8">
                   <SearchBar />
                 </div>
               )}

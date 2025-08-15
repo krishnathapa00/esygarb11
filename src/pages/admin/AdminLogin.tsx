@@ -80,8 +80,8 @@ const AdminLogin = () => {
       description: "Welcome to the admin panel.",
     });
     
-    // Don't set loading false here - let AuthContext handle the redirect
-    // navigate("/admin/dashboard");
+    // Let AuthContext handle the redirect - don't set loading false
+    setLoading(false);
   };
 
   const handlePasswordReset = async () => {
