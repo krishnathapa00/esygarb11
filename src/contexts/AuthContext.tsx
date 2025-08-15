@@ -101,17 +101,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                 window.location.href = redirectUrl;
               }, 100);
             } else {
-              // Auto-redirect based on role
-              setTimeout(() => {
-                const role = user.role || 'customer';
-                if (role === 'admin' || role === 'super_admin') {
-                  window.location.href = '/admin/dashboard';
-                } else if (role === 'delivery_partner') {
-                  window.location.href = '/delivery-partner/dashboard';
-                } else {
-                  window.location.href = '/';
-                }
-              }, 500);
+              // Auto-redirect based on role immediately
+              const role = user.role || 'customer';
+              if (role === 'admin' || role === 'super_admin') {
+                window.location.href = '/admin/dashboard';
+              } else if (role === 'delivery_partner') {
+                window.location.href = '/delivery-partner/dashboard';
+              } else {
+                window.location.href = '/';
+              }
             }
           }
           

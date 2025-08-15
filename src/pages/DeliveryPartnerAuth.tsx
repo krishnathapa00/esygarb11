@@ -148,8 +148,7 @@ const DeliveryPartnerAuth = () => {
             description: "You have successfully logged in to your delivery partner account.",
           });
           
-          // Let AuthContext handle redirect
-          setLoading(false);
+          // Let AuthContext handle redirect via onAuthStateChange
         } else {
           console.log('Access denied - not a delivery partner');
           toast({
