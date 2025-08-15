@@ -61,12 +61,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         if (!mounted) return;
 
         if (session?.user && event !== 'TOKEN_REFRESHED') {
+          console.log('Processing auth for user:', session.user.id, 'Event:', event);
+          
           // Fetch user role from profiles table
-          const { data: profile } = await supabase
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('role')
             .eq('id', session.user.id)
             .single();
+
+          console.log('Profile data:', profile, 'Error:', profileError);
 
           const user: User = {
             id: session.user.id,
@@ -74,6 +78,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             isVerified: true,
             role: profile?.role || 'customer',
           };
+          
+          console.log('Setting user with role:', user.role);
           setUser(user);
           setIsAuthenticated(true);
           
@@ -95,19 +101,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           
           // Role-based auto-redirect on SIGNED_IN
           if (event === 'SIGNED_IN') {
+            console.log('Handling SIGNED_IN event, role:', user.role);
             if (redirectUrl) {
+              console.log('Redirecting to stored URL:', redirectUrl);
               localStorage.removeItem("auth_redirect_url");
-              setTimeout(() => {
-                window.location.href = redirectUrl;
-              }, 100);
+              window.location.href = redirectUrl;
             } else {
               // Auto-redirect based on role immediately
               const role = user.role || 'customer';
+              console.log('Auto-redirecting based on role:', role);
               if (role === 'admin' || role === 'super_admin') {
+                console.log('Redirecting to admin dashboard');
                 window.location.href = '/admin/dashboard';
               } else if (role === 'delivery_partner') {
+                console.log('Redirecting to delivery dashboard');
                 window.location.href = '/delivery-partner/dashboard';
               } else {
+                console.log('Redirecting to home');
                 window.location.href = '/';
               }
             }
