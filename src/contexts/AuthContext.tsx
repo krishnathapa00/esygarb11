@@ -85,7 +85,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           };
           localStorage.setItem("esygrab_session", JSON.stringify(sessionData));
           
-          // Handle guest cart merge and redirect after login
+          // Handle guest cart merge
           const guestCart = localStorage.getItem("guest_cart");
           const redirectUrl = localStorage.getItem("auth_redirect_url");
           
@@ -93,26 +93,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             localStorage.removeItem("guest_cart");
           }
           
-          // Role-based redirection after login
-          if (event === 'SIGNED_IN') {
-            if (redirectUrl) {
-              localStorage.removeItem("auth_redirect_url");
-              setTimeout(() => {
-                window.location.href = redirectUrl;
-              }, 100);
-            } else {
-              // Auto-redirect based on role
-              setTimeout(() => {
-                const role = user.role || 'customer';
-                if (role === 'admin' || role === 'super_admin') {
-                  window.location.href = '/admin/dashboard';
-                } else if (role === 'delivery_partner') {
-                  window.location.href = '/delivery-partner/dashboard';
-                } else {
-                  window.location.href = '/';
-                }
-              }, 100);
-            }
+          // Only redirect on SIGNED_IN event and if there's a redirect URL
+          if (event === 'SIGNED_IN' && redirectUrl) {
+            localStorage.removeItem("auth_redirect_url");
+            setTimeout(() => {
+              window.location.href = redirectUrl;
+            }, 100);
           }
           
           // Start activity tracking
@@ -212,26 +198,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
               lastActivity: Date.now()
             };
             localStorage.setItem("esygrab_session", JSON.stringify(sessionData));
-
-            // Auto-redirect based on role if on wrong page
-            const currentPath = window.location.pathname;
-            const role = user.role || 'customer';
-            
-            // Redirect logic for different roles
-            if (role === 'admin' || role === 'super_admin') {
-              if (!currentPath.startsWith('/admin') && currentPath !== '/unauthorized') {
-                setTimeout(() => window.location.href = '/admin/dashboard', 100);
-              }
-            } else if (role === 'delivery_partner') {
-              if (!currentPath.startsWith('/delivery-partner') && currentPath !== '/unauthorized') {
-                setTimeout(() => window.location.href = '/delivery-partner/dashboard', 100);
-              }
-            } else {
-              // Customer role - redirect away from admin/delivery pages
-              if (currentPath.startsWith('/admin') || currentPath.startsWith('/delivery-partner')) {
-                setTimeout(() => window.location.href = '/', 100);
-              }
-            }
           }
         }
         
