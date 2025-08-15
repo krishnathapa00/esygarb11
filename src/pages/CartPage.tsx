@@ -1,12 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import Header from "../components/Header";
 import { ArrowLeft, ShoppingCart, Plus, Minus, Trash2, MapPin, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
+import { useToast } from "@/hooks/use-toast";
 
 const CartPage = () => {
   const { cart, updateQuantity, removeItem } = useCart();
+  const { toast } = useToast();
+  const [deliveryAddress, setDeliveryAddress] = useState("");
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = cart.reduce(
@@ -109,29 +112,49 @@ const CartPage = () => {
             {/* Delivery Address Section */}
             <div className="bg-white rounded-lg p-4 shadow-sm">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Delivery Address</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                 <Button
                   variant="outline" 
                   className="flex items-center justify-center gap-2 p-3 h-auto border-green-200 hover:bg-green-50"
                   onClick={() => {
                     if (navigator.geolocation) {
                       navigator.geolocation.getCurrentPosition(
-                        (position) => {
+                        async (position) => {
                           const { latitude, longitude } = position.coords;
-                          localStorage.setItem("esygrab_user_location", JSON.stringify({
-                            address: `${latitude}, ${longitude}`,
-                            lat: latitude,
-                            lng: longitude
-                          }));
-                          alert("Location detected successfully!");
+                          try {
+                            // Reverse geocode to get actual address
+                            const response = await fetch(
+                              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
+                            );
+                            const data = await response.json();
+                            const address = data.display_name || `${latitude}, ${longitude}`;
+                            
+                            localStorage.setItem("esygrab_user_location", JSON.stringify({
+                              address: address,
+                              lat: latitude,
+                              lng: longitude
+                            }));
+                            setDeliveryAddress(address);
+                            toast({ title: "Location detected successfully!" });
+                          } catch (error) {
+                            console.error("Geocoding error:", error);
+                            const coords = `${latitude}, ${longitude}`;
+                            localStorage.setItem("esygrab_user_location", JSON.stringify({
+                              address: coords,
+                              lat: latitude,
+                              lng: longitude
+                            }));
+                            setDeliveryAddress(coords);
+                            toast({ title: "Location detected successfully!" });
+                          }
                         },
                         (error) => {
                           console.error("Geolocation error:", error);
-                          alert("Unable to detect location. Please try manual selection.");
+                          toast({ title: "Unable to detect location. Please try manual selection.", variant: "destructive" });
                         }
                       );
                     } else {
-                      alert("Geolocation is not supported by this browser.");
+                      toast({ title: "Geolocation is not supported by this browser.", variant: "destructive" });
                     }
                   }}
                 >
@@ -147,6 +170,13 @@ const CartPage = () => {
                   Set Manually
                 </Button>
               </div>
+              {deliveryAddress && (
+                <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                  <p className="text-sm text-green-800">
+                    <strong>Selected Address:</strong> {deliveryAddress}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 

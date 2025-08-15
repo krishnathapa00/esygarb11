@@ -42,6 +42,8 @@ import DeliveryWithdraw from './pages/DeliveryWithdraw';
 import DeliveryMapNavigation from './pages/DeliveryMapNavigation';
 import ManageDarkstores from './pages/admin/ManageDarkstores';
 import DeliverySettings from './pages/admin/DeliverySettings';
+import ManageCategories from './pages/admin/ManageCategories';
+import AddProductNew from './pages/admin/AddProductNew';
 
 const queryClient = new QueryClient();
 
@@ -235,6 +237,22 @@ function App() {
                     element={
                       <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
                         <DeliverySettings />
+                      </RoleProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/categories"
+                    element={
+                      <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
+                        <ManageCategories />
+                      </RoleProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/products/add-new"
+                    element={
+                      <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
+                        <AddProductNew />
                       </RoleProtectedRoute>
                     }
                   />

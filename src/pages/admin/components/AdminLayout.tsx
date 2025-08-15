@@ -11,7 +11,8 @@ import {
   Settings,
   Store,
   CreditCard,
-  LogOut
+  LogOut,
+  Grid3X3
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -24,6 +25,7 @@ const AdminLayout = ({ children, onRefresh }: { children: React.ReactNode; onRef
     { icon: Home, label: 'Dashboard', path: '/admin/dashboard' },
     { icon: ShoppingCart, label: 'Orders', path: '/admin/orders' },
     { icon: Package, label: 'Products', path: '/admin/products' },
+    { icon: Grid3X3, label: 'Categories', path: '/admin/categories' },
     { icon: Users, label: 'Users', path: '/admin/users' },
     { icon: UserCheck, label: 'KYC Management', path: '/admin/kyc' },
     { icon: UserCheck, label: 'Delivery Partners', path: '/admin/delivery-partners' },
