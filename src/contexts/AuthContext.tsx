@@ -52,25 +52,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     let mounted = true;
     let activityInterval: NodeJS.Timeout;
+    let hasRedirected = false;
 
     // Set up auth state listener first
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session);
+        console.log('Auth state changed:', event, session?.user?.id);
         
         if (!mounted) return;
 
-        if (session?.user && event !== 'TOKEN_REFRESHED') {
-          console.log('Processing auth for user:', session.user.id, 'Event:', event);
-          
+        if (session?.user) {
           // Fetch user role from profiles table
-          const { data: profile, error: profileError } = await supabase
+          const { data: profile } = await supabase
             .from('profiles')
             .select('role')
             .eq('id', session.user.id)
             .single();
-
-          console.log('Profile data:', profile, 'Error:', profileError);
 
           const user: User = {
             id: session.user.id,
@@ -79,75 +76,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             role: profile?.role || 'customer',
           };
           
-          console.log('Setting user with role:', user.role);
           setUser(user);
           setIsAuthenticated(true);
           
-          // Store session info with 7-day expiry
+          // Store session info
           const sessionData = {
             user,
-            expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000), // 7 days
+            expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000),
             lastActivity: Date.now()
           };
           localStorage.setItem("esygrab_session", JSON.stringify(sessionData));
           
-          // Handle guest cart merge
-          const guestCart = localStorage.getItem("guest_cart");
-          const redirectUrl = localStorage.getItem("auth_redirect_url");
-          
-          if (guestCart) {
-            localStorage.removeItem("guest_cart");
-          }
-          
-          // Role-based auto-redirect on SIGNED_IN
-          if (event === 'SIGNED_IN') {
-            console.log('Handling SIGNED_IN event, role:', user.role);
+          // Handle redirects only on SIGNED_IN event and prevent multiple redirects
+          if (event === 'SIGNED_IN' && !hasRedirected) {
+            hasRedirected = true;
+            const redirectUrl = localStorage.getItem("auth_redirect_url");
+            
             if (redirectUrl) {
-              console.log('Redirecting to stored URL:', redirectUrl);
               localStorage.removeItem("auth_redirect_url");
-              window.location.replace(redirectUrl);
+              setTimeout(() => window.location.replace(redirectUrl), 100);
             } else {
-              // Auto-redirect based on role immediately
               const role = user.role || 'customer';
-              console.log('Auto-redirecting based on role:', role);
-              if (role === 'admin' || role === 'super_admin') {
-                console.log('Redirecting to admin dashboard');
-                window.location.replace('/admin/dashboard');
-              } else if (role === 'delivery_partner') {
-                console.log('Redirecting to delivery dashboard');
-                window.location.replace('/delivery-partner/dashboard');
-              } else {
-                console.log('Redirecting to home');
-                window.location.replace('/');
-              }
+              setTimeout(() => {
+                if (role === 'admin' || role === 'super_admin') {
+                  window.location.replace('/admin/dashboard');
+                } else if (role === 'delivery_partner') {
+                  window.location.replace('/delivery-partner/dashboard');
+                } else {
+                  window.location.replace('/');
+                }
+              }, 100);
             }
           }
           
-          // Start activity tracking
-          if (activityInterval) clearInterval(activityInterval);
-          activityInterval = setInterval(() => {
-            if (mounted) {
-              const currentSession = localStorage.getItem("esygrab_session");
-              if (currentSession) {
-                const sessionData = JSON.parse(currentSession);
-                sessionData.lastActivity = Date.now();
-                localStorage.setItem("esygrab_session", JSON.stringify(sessionData));
-              }
-            }
-          }, 5 * 60 * 1000); // Update every 5 minutes
+          // Clean up guest cart
+          localStorage.removeItem("guest_cart");
           
-        } else if (!session || event === 'SIGNED_OUT') {
+        } else {
           setUser(null);
           setIsAuthenticated(false);
           localStorage.removeItem("esygrab_session");
-          localStorage.removeItem("user");
-          localStorage.removeItem("lastActivity");
-          if (activityInterval) clearInterval(activityInterval);
+          hasRedirected = false;
         }
         
-        if (event !== 'TOKEN_REFRESHED') {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     );
 
