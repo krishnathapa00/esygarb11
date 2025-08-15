@@ -51,123 +51,90 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     let mounted = true;
-    let activityInterval: NodeJS.Timeout;
-    let hasRedirected = false;
+    let hasProcessedSignIn = false;
 
-    // Set up auth state listener first
+    // Set up auth state listener
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.id);
+        console.log('Auth event:', event, 'Session exists:', !!session);
         
         if (!mounted) return;
 
         if (session?.user) {
-          // Fetch user role from profiles table
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', session.user.id)
-            .single();
-
-          const user: User = {
-            id: session.user.id,
-            email: session.user.email || "",
-            isVerified: true,
-            role: profile?.role || 'customer',
-          };
-          
-          setUser(user);
-          setIsAuthenticated(true);
-          
-          // Store session info
-          const sessionData = {
-            user,
-            expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000),
-            lastActivity: Date.now()
-          };
-          localStorage.setItem("esygrab_session", JSON.stringify(sessionData));
-          
-          // Handle redirects only on SIGNED_IN event and prevent multiple redirects
-          if (event === 'SIGNED_IN' && !hasRedirected) {
-            hasRedirected = true;
-            const redirectUrl = localStorage.getItem("auth_redirect_url");
+          // Only process role and redirect on SIGNED_IN, not TOKEN_REFRESHED
+          if (event === 'SIGNED_IN' && !hasProcessedSignIn) {
+            hasProcessedSignIn = true;
             
-            if (redirectUrl) {
-              localStorage.removeItem("auth_redirect_url");
-              setTimeout(() => window.location.replace(redirectUrl), 100);
+            // Fetch user role
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', session.user.id)
+              .single();
+
+            const user: User = {
+              id: session.user.id,
+              email: session.user.email || "",
+              isVerified: true,
+              role: profile?.role || 'customer',
+            };
+            
+            console.log('User logged in with role:', user.role);
+            setUser(user);
+            setIsAuthenticated(true);
+            
+            // Store session
+            localStorage.setItem("esygrab_session", JSON.stringify({
+              user,
+              expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000),
+              lastActivity: Date.now()
+            }));
+            
+            // Immediate redirect based on role
+            const role = user.role;
+            if (role === 'admin' || role === 'super_admin') {
+              window.location.href = '/admin/dashboard';
+            } else if (role === 'delivery_partner') {
+              window.location.href = '/delivery-partner/dashboard';
             } else {
-              const role = user.role || 'customer';
-              setTimeout(() => {
-                if (role === 'admin' || role === 'super_admin') {
-                  window.location.replace('/admin/dashboard');
-                } else if (role === 'delivery_partner') {
-                  window.location.replace('/delivery-partner/dashboard');
-                } else {
-                  window.location.replace('/');
-                }
-              }, 100);
+              window.location.href = '/';
             }
+          } else if (event !== 'SIGNED_IN') {
+            // For other events, just update user state without redirect
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', session.user.id)
+              .single();
+
+            const user: User = {
+              id: session.user.id,
+              email: session.user.email || "",
+              isVerified: true,
+              role: profile?.role || 'customer',
+            };
+            
+            setUser(user);
+            setIsAuthenticated(true);
           }
-          
-          // Clean up guest cart
-          localStorage.removeItem("guest_cart");
-          
         } else {
+          // No session
           setUser(null);
           setIsAuthenticated(false);
           localStorage.removeItem("esygrab_session");
-          hasRedirected = false;
+          hasProcessedSignIn = false;
         }
         
         setLoading(false);
       }
     );
 
-    // Check for existing session with enhanced validation
+    // Check for existing session
     const initializeAuth = async () => {
       try {
-        // Check stored session first
-        const storedSession = localStorage.getItem("esygrab_session");
-        if (storedSession) {
-          const sessionData = JSON.parse(storedSession);
-          const now = Date.now();
-          
-          // Check if session is expired (7 days) or inactive (1 day)
-          const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
-          const oneDayAgo = now - (24 * 60 * 60 * 1000);
-          
-          if (sessionData.expiresAt < now || sessionData.lastActivity < sevenDaysAgo) {
-            console.log('Session expired - removing stored session');
-            localStorage.removeItem("esygrab_session");
-            await supabase.auth.signOut();
-            if (mounted) setLoading(false);
-            return;
-          }
-          
-          // Check for inactivity (1 day)
-          if (sessionData.lastActivity < oneDayAgo) {
-            console.log('Session expired due to inactivity');
-            localStorage.removeItem("esygrab_session");
-            await supabase.auth.signOut();
-            if (mounted) setLoading(false);
-            return;
-          }
-        }
-
-        // Get current Supabase session
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const { data: { session } } = await supabase.auth.getSession();
         
-        if (error) {
-          console.error('Session check error:', error);
-          localStorage.removeItem("esygrab_session");
-          if (mounted) setLoading(false);
-          return;
-        }
-
         if (session?.user) {
-          console.log('Valid session found, restoring auth state');
-          
-          // Fetch user role from profiles table
           const { data: profile } = await supabase
             .from('profiles')
             .select('role')
@@ -184,21 +151,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           if (mounted) {
             setUser(user);
             setIsAuthenticated(true);
-            
-            // Update stored session
-            const sessionData = {
-              user,
-              expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000),
-              lastActivity: Date.now()
-            };
-            localStorage.setItem("esygrab_session", JSON.stringify(sessionData));
           }
         }
         
         if (mounted) setLoading(false);
       } catch (error) {
         console.error('Auth initialization error:', error);
-        localStorage.removeItem("esygrab_session");
         if (mounted) setLoading(false);
       }
     };
@@ -207,7 +165,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     return () => {
       mounted = false;
-      if (activityInterval) clearInterval(activityInterval);
       authListener?.subscription.unsubscribe();
     };
   }, []);
