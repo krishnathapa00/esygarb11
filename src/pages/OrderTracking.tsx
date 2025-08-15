@@ -22,6 +22,10 @@ const OrderTracking = () => {
     queryFn: async () => {
       if (!orderId) throw new Error('Order ID is required');
 
+      // Check if orderId is an order number (starts with "ORD") or a UUID
+      const isOrderNumber = orderId.startsWith('ORD');
+      const queryField = isOrderNumber ? 'order_number' : 'id';
+
       const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -40,7 +44,7 @@ const OrderTracking = () => {
             phone_number
           )
         `)
-        .eq('id', orderId)
+        .eq(queryField, orderId)
         .maybeSingle();
 
       if (error) throw error;
