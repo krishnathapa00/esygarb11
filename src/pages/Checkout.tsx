@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
+import { supabase } from "@/integrations/supabase/client";
 import EsewaLogo from "../assets/payments/esewa.jpg";
 import KhaltiLogo from "../assets/payments/khalti.jpg";
 
@@ -51,8 +52,44 @@ const Checkout = () => {
         deliveryAddress = locationData.formatted || locationData.address || deliveryAddress;
       }
 
+      const orderNumber = `ORD${Date.now()}`;
+
+      // Save order to Supabase database
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          order_number: orderNumber,
+          user_id: user.id,
+          total_amount: totalAmount,
+          delivery_address: deliveryAddress,
+          estimated_delivery: "10-15 mins",
+          status: 'confirmed'
+        })
+        .select()
+        .single();
+
+      if (orderError) {
+        throw orderError;
+      }
+
+      // Save order items
+      const orderItems = cart.map(item => ({
+        order_id: order.id,
+        product_id: item.id,
+        quantity: item.quantity,
+        price: item.price
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItems);
+
+      if (itemsError) {
+        throw itemsError;
+      }
+
       const orderDetails = {
-        orderId: `ORD${Date.now()}`,
+        orderId: orderNumber,
         items: cart,
         totalItems,
         totalAmount,
@@ -61,15 +98,6 @@ const Checkout = () => {
         paymentMethod: paymentOptions.find((p) => p.id === selectedPayment)?.label || "",
         status: "confirmed"
       };
-
-      // Save order to localStorage for now (in production, save to database)
-      const existingOrders = JSON.parse(localStorage.getItem("user_orders") || "[]");
-      existingOrders.push({
-        ...orderDetails,
-        userId: user.id,
-        createdAt: new Date().toISOString()
-      });
-      localStorage.setItem("user_orders", JSON.stringify(existingOrders));
 
       resetCart();
       navigate("/order-confirmation", { state: orderDetails });

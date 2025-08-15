@@ -146,17 +146,7 @@ const ManageOrders = () => {
     if (!selectedOrder) return;
 
     try {
-      // First delete related order_items
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .delete()
-        .eq('order_id', selectedOrder.id);
-
-      if (itemsError) {
-        throw itemsError;
-      }
-
-      // Then delete the order
+      // Use CASCADE delete - just delete the order and let foreign key constraints handle order_items
       const { error } = await supabase
         .from('orders')
         .delete()
@@ -172,6 +162,31 @@ const ManageOrders = () => {
       refetchOrders();
     } catch (error: any) {
       console.error('Delete error:', error);
+      
+      // If foreign key constraint error, handle it specifically
+      if (error.message?.includes('violates foreign key constraint')) {
+        try {
+          // First delete order items manually
+          await supabase.from('order_items').delete().eq('order_id', selectedOrder.id);
+          
+          // Then delete the order
+          const { error: orderError } = await supabase
+            .from('orders')
+            .delete()
+            .eq('id', selectedOrder.id);
+            
+          if (!orderError) {
+            toast({ title: "Success", description: "Order deleted successfully." });
+            setDeleteModalOpen(false);
+            setSelectedOrder(null);
+            refetchOrders();
+            return;
+          }
+        } catch (retryError) {
+          console.error('Retry delete error:', retryError);
+        }
+      }
+      
       toast({ 
         title: "Error", 
         description: error.message || "Failed to delete order.", 

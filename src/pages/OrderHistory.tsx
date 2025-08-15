@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
 
 interface OrderItem {
-  id: number;
+  id: string;
   name: string;
   price: number;
   quantity: number;
@@ -40,14 +41,55 @@ const OrderHistory = () => {
       return;
     }
 
-    // Load orders from localStorage (in production, fetch from database)
-    const userOrders = JSON.parse(localStorage.getItem("user_orders") || "[]");
-    const filteredOrders = userOrders
-      .filter((order: Order) => order.userId === user.id)
-      .sort((a: Order, b: Order) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    
-    setOrders(filteredOrders);
+    fetchUserOrders();
   }, [user, navigate]);
+
+  const fetchUserOrders = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          order_items (
+            id,
+            quantity,
+            price,
+            products (
+              name,
+              image_url
+            )
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Transform data to match existing interface
+      const transformedOrders = data.map(order => ({
+        orderId: order.order_number,
+        items: order.order_items.map(item => ({
+          id: String(item.id),
+          name: item.products?.name || 'Unknown Product',
+          price: parseFloat(String(item.price)),
+          quantity: item.quantity,
+          image: item.products?.image_url || '/placeholder.svg'
+        })),
+        totalItems: order.order_items.reduce((sum, item) => sum + item.quantity, 0),
+        totalAmount: parseFloat(String(order.total_amount)),
+        deliveryAddress: order.delivery_address,
+        estimatedDelivery: order.estimated_delivery,
+        paymentMethod: 'Cash on Delivery',
+        status: order.status,
+        userId: order.user_id,
+        createdAt: order.created_at
+      }));
+
+      setOrders(transformedOrders);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -80,17 +122,25 @@ const OrderHistory = () => {
     }
   };
 
-  const handleDeleteOrder = (orderId: string) => {
+  const handleDeleteOrder = async (orderId: string) => {
     if (confirm("Are you sure you want to delete this order?")) {
-      const updatedOrders = orders.filter(order => order.orderId !== orderId);
-      setOrders(updatedOrders);
-      
-      // Update localStorage
-      const allOrders = JSON.parse(localStorage.getItem("user_orders") || "[]");
-      const filteredAllOrders = allOrders.filter((order: Order) => order.orderId !== orderId);
-      localStorage.setItem("user_orders", JSON.stringify(filteredAllOrders));
-      
-      setSelectedOrder(null);
+      try {
+        // Delete from database
+        const { error } = await supabase
+          .from('orders')
+          .delete()
+          .eq('order_number', orderId);
+
+        if (error) throw error;
+
+        // Update local state
+        const updatedOrders = orders.filter(order => order.orderId !== orderId);
+        setOrders(updatedOrders);
+        setSelectedOrder(null);
+      } catch (error) {
+        console.error('Error deleting order:', error);
+        alert('Failed to delete order. Please try again.');
+      }
     }
   };
 
@@ -261,14 +311,25 @@ const OrderHistory = () => {
                       </p>
                       <p className="font-semibold text-lg">Rs {order.totalAmount}</p>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedOrder(order)}
-                    >
-                      <Eye className="h-4 w-4 mr-1" />
-                      View Details
-                    </Button>
+                    <div className="flex gap-2">
+                      <Link to={`/order-tracking/${order.orderId}`}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-green-600 hover:bg-green-50"
+                        >
+                          Track Order
+                        </Button>
+                      </Link>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedOrder(order)}
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        View Details
+                      </Button>
+                    </div>
                   </div>
                   
                   <div className="text-sm text-gray-500">
