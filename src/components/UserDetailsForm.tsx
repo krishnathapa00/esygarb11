@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +22,25 @@ const UserDetailsForm: React.FC<UserDetailsFormProps> = ({
   const [detectingLocation, setDetectingLocation] = useState(false);
   const [showGPSPopup, setShowGPSPopup] = useState(false);
   const { toast } = useToast();
+
+  // Check if user already has location from homepage on component mount
+  useEffect(() => {
+    const storedLocation = localStorage.getItem("esygrab_user_location");
+    if (storedLocation) {
+      try {
+        const locationData = JSON.parse(storedLocation);
+        if (locationData.formatted && !deliveryAddress) {
+          setDeliveryAddress(locationData.formatted);
+          toast({
+            title: "Location auto-filled",
+            description: "Your previously detected location has been used",
+          });
+        }
+      } catch (error) {
+        console.error("Error parsing stored location:", error);
+      }
+    }
+  }, []);
 
   const detectLocation = () => {
     if (!navigator.geolocation) {

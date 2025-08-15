@@ -34,8 +34,14 @@ const Checkout = () => {
   const [showUserDetails, setShowUserDetails] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
 
-  // Check if user needs to complete profile
-  const needsProfileCompletion = user && (!profile.full_name || !profile.address);
+  // Check if user needs to complete profile - but first check if they already have location from homepage
+  const storedLocation = localStorage.getItem("esygrab_user_location");
+  const hasLocationFromHomepage = storedLocation ? JSON.parse(storedLocation) : null;
+  
+  const needsProfileCompletion = user && (
+    !profile.full_name || 
+    (!profile.address && !hasLocationFromHomepage?.formatted)
+  );
 
   useEffect(() => {
     if (!loading && !user) {
@@ -69,9 +75,12 @@ const Checkout = () => {
   const handleUserDetailsComplete = async (details: { fullName: string; deliveryAddress: string }) => {
     setSavingProfile(true);
     try {
+      // If user already has address in profile but no deliveryAddress from form, use existing address
+      const finalAddress = details.deliveryAddress || profile.address || hasLocationFromHomepage?.formatted;
+      
       await updateProfile({
         full_name: details.fullName,
-        address: details.deliveryAddress,
+        address: finalAddress,
       });
       setShowUserDetails(false);
     } catch (error) {
@@ -94,7 +103,7 @@ const Checkout = () => {
     }
 
     try {
-      const deliveryAddress = profile.address || "Default Address";
+      const deliveryAddress = profile.address || hasLocationFromHomepage?.formatted || "Default Address";
       const orderNumber = `ORD${Date.now()}`;
 
       // Save order to Supabase database
@@ -106,7 +115,7 @@ const Checkout = () => {
           total_amount: totalAmount,
           delivery_address: deliveryAddress,
           estimated_delivery: "10-15 mins",
-          status: 'confirmed'
+          status: 'pending'
         })
         .select()
         .single();

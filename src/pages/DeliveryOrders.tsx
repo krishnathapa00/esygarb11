@@ -32,7 +32,7 @@ const DeliveryOrders = () => {
             )
           )
         `)
-        .in('status', ['ready_for_pickup', 'confirmed', 'dispatched', 'out_for_delivery'])
+        .in('status', ['ready_for_pickup', 'pending', 'confirmed', 'dispatched', 'out_for_delivery'])
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -51,7 +51,7 @@ const DeliveryOrders = () => {
           accepted_at: new Date().toISOString()
         })
         .eq('id', orderId)
-        .eq('status', 'ready_for_pickup')
+        .in('status', ['pending', 'confirmed', 'ready_for_pickup'])
         .select()
         .single();
 
@@ -103,6 +103,7 @@ const DeliveryOrders = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
       case 'ready_for_pickup': return 'bg-blue-100 text-blue-800';
       case 'confirmed': return 'bg-green-100 text-green-800';
       case 'dispatched': return 'bg-yellow-100 text-yellow-800';
@@ -113,7 +114,7 @@ const DeliveryOrders = () => {
 
 
   const availableOrders = allOrders.filter(order => 
-    order.status === 'ready_for_pickup' && !order.delivery_partner_id
+    (order.status === 'pending' || order.status === 'confirmed' || order.status === 'ready_for_pickup') && !order.delivery_partner_id
   );
   const myOrders = allOrders.filter(order => order.delivery_partner_id === user?.id);
 

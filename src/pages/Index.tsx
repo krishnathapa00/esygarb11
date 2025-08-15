@@ -5,6 +5,7 @@ import CategoryGrid from "../components/CategoryGrid";
 import ProductSection from "../components/ProductSection";
 import BannerCarousel from "../components/BannerCarousel";
 import Footer from "../components/Footer";
+import LocationDetectionPopup from "../components/LocationDetectionPopup";
 import { useProducts } from "../hooks/useProducts";
 import { useAuth } from "../contexts/AuthContext";
 import { useCartActions } from "@/hooks/useCart";
@@ -12,6 +13,7 @@ import { useCartActions } from "@/hooks/useCart";
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [dropdownVisible, setDropdownVisible] = useState(false);
+  const [showLocationPopup, setShowLocationPopup] = useState(false);
 
   const { data: products = [], isLoading } = useProducts();
   const { user } = useAuth();
@@ -19,6 +21,28 @@ const Index = () => {
 
   const { handleAddToCart, handleUpdateQuantity, getCartQuantity } =
     useCartActions();
+
+  // Add class to body for search bar styling and handle location detection
+  useEffect(() => {
+    document.body.classList.add('with-search-bar');
+    
+    // Check if user has location set, if not show location popup after a delay
+    const storedLocation = localStorage.getItem("esygrab_user_location");
+    if (!storedLocation && !user) {
+      // For new users, show location popup after 3 seconds
+      const timer = setTimeout(() => {
+        setShowLocationPopup(true);
+      }, 3000);
+      return () => {
+        clearTimeout(timer);
+        document.body.classList.remove('with-search-bar');
+      };
+    }
+    
+    return () => {
+      document.body.classList.remove('with-search-bar');
+    };
+  }, [user]);
 
   const handleCategorySelect = (categoryId: number) => {
     console.log("Category selected:", categoryId);
@@ -128,6 +152,15 @@ const Index = () => {
       <div className="hidden md:block">
         <Footer />
       </div>
+
+      <LocationDetectionPopup
+        isOpen={showLocationPopup}
+        onClose={() => setShowLocationPopup(false)}
+        onLocationSet={(location) => {
+          console.log('Location set:', location);
+          setShowLocationPopup(false);
+        }}
+      />
     </div>
   );
 };

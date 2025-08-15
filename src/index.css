@@ -80,7 +80,7 @@
   }
   
   /* Add extra padding for pages with search bar */
-  .with-search-bar {
+  body.with-search-bar {
     padding-top: 120px; /* Space for header + search bar */
   }
 }
