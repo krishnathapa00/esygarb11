@@ -38,12 +38,20 @@ export const useSessionPersistence = () => {
         if (event === 'TOKEN_REFRESHED' && session) {
           console.log('Token refreshed successfully');
           
-          // Update stored session data
+          // Fetch user role for refreshed session
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', session.user.id)
+            .single();
+          
+          // Update stored session data with role
           const sessionData = {
             user: {
               id: session.user.id,
               email: session.user.email || "",
               isVerified: true,
+              role: profile?.role || 'customer',
             },
             expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000), // 7 days
             lastActivity: Date.now()

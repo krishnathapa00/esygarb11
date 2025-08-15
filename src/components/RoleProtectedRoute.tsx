@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface RoleProtectedRouteProps {
   children: React.ReactNode;
@@ -13,85 +13,7 @@ export const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
   allowedRoles,
   redirectTo = '/auth'
 }) => {
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  useEffect(() => {
-    let mounted = true;
-    
-    const checkUserRole = async () => {
-      try {
-        // First check if user is authenticated
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session?.user) {
-          if (mounted) {
-            setIsAuthenticated(false);
-            setLoading(false);
-          }
-          return;
-        }
-
-        if (mounted) {
-          setIsAuthenticated(true);
-        }
-
-        // Get user role from profiles table
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
-
-        if (error) {
-          console.error('Error fetching user role:', error);
-          if (mounted) {
-            setUserRole('customer'); // Default fallback role
-            setLoading(false);
-          }
-          return;
-        }
-
-        if (mounted) {
-          setUserRole(profile?.role || 'customer');
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error('Auth check failed:', error);
-        if (mounted) {
-          setIsAuthenticated(false);
-          setLoading(false);
-        }
-      }
-    };
-
-    checkUserRole();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_OUT' || !session) {
-          if (mounted) {
-            setIsAuthenticated(false);
-            setUserRole(null);
-            setLoading(false);
-          }
-        } else if (event === 'SIGNED_IN' && session?.user) {
-          if (mounted) {
-            setIsAuthenticated(true);
-            // Re-fetch role when user signs in
-            checkUserRole();
-          }
-        }
-      }
-    );
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
+  const { user, isAuthenticated, loading } = useAuth();
 
   if (loading) {
     return (
@@ -108,7 +30,7 @@ export const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
     return <Navigate to={redirectTo} replace />;
   }
 
-  if (!userRole) {
+  if (!user?.role) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -118,6 +40,8 @@ export const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
       </div>
     );
   }
+
+  const userRole = user.role;
 
   if (!allowedRoles.includes(userRole)) {
     // Redirect based on actual user role to prevent wrong redirects

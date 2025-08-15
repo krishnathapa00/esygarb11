@@ -11,6 +11,7 @@ interface User {
   id: string;
   email: string;
   isVerified: boolean;
+  role?: string;
   fullName?: string;
   phone?: string;
   address?: string;
@@ -60,10 +61,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         if (!mounted) return;
 
         if (session?.user && event !== 'TOKEN_REFRESHED') {
+          // Fetch user role from profiles table
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', session.user.id)
+            .single();
+
           const user: User = {
             id: session.user.id,
             email: session.user.email || "",
             isVerified: true,
+            role: profile?.role || 'customer',
           };
           setUser(user);
           setIsAuthenticated(true);
@@ -84,11 +93,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             localStorage.removeItem("guest_cart");
           }
           
-          if (redirectUrl && event === 'SIGNED_IN') {
-            localStorage.removeItem("auth_redirect_url");
-            setTimeout(() => {
-              window.location.href = redirectUrl;
-            }, 100);
+          // Role-based redirection after login
+          if (event === 'SIGNED_IN') {
+            if (redirectUrl) {
+              localStorage.removeItem("auth_redirect_url");
+              setTimeout(() => {
+                window.location.href = redirectUrl;
+              }, 100);
+            } else {
+              // Auto-redirect based on role
+              setTimeout(() => {
+                const role = user.role || 'customer';
+                if (role === 'admin' || role === 'super_admin') {
+                  window.location.href = '/admin/dashboard';
+                } else if (role === 'delivery_partner') {
+                  window.location.href = '/delivery-partner/dashboard';
+                } else {
+                  window.location.href = '/';
+                }
+              }, 100);
+            }
           }
           
           // Start activity tracking
@@ -162,10 +186,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
         if (session?.user) {
           console.log('Valid session found, restoring auth state');
+          
+          // Fetch user role from profiles table
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', session.user.id)
+            .single();
+
           const user: User = {
             id: session.user.id,
             email: session.user.email || "",
             isVerified: true,
+            role: profile?.role || 'customer',
           };
           
           if (mounted) {
@@ -179,6 +212,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
               lastActivity: Date.now()
             };
             localStorage.setItem("esygrab_session", JSON.stringify(sessionData));
+
+            // Auto-redirect based on role if on wrong page
+            const currentPath = window.location.pathname;
+            const role = user.role || 'customer';
+            
+            // Redirect logic for different roles
+            if (role === 'admin' || role === 'super_admin') {
+              if (!currentPath.startsWith('/admin') && currentPath !== '/unauthorized') {
+                setTimeout(() => window.location.href = '/admin/dashboard', 100);
+              }
+            } else if (role === 'delivery_partner') {
+              if (!currentPath.startsWith('/delivery-partner') && currentPath !== '/unauthorized') {
+                setTimeout(() => window.location.href = '/delivery-partner/dashboard', 100);
+              }
+            } else {
+              // Customer role - redirect away from admin/delivery pages
+              if (currentPath.startsWith('/admin') || currentPath.startsWith('/delivery-partner')) {
+                setTimeout(() => window.location.href = '/', 100);
+              }
+            }
           }
         }
         
@@ -246,10 +299,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         };
       }
 
+      // Fetch user role from profiles table
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', data.user.id)
+        .single();
+
       const newUser: User = {
         id: data.user.id,
         email: email,
         isVerified: true,
+        role: profile?.role || 'customer',
       };
 
       setUser(newUser);
