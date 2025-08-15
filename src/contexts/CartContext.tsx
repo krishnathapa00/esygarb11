@@ -15,7 +15,8 @@ type CartAction =
   | { type: "ADD_ITEM"; payload: CartItem }
   | { type: "UPDATE_QUANTITY"; payload: { id: number; quantity: number } }
   | { type: "REMOVE_ITEM"; payload: number }
-  | { type: "RESET_CART" };
+  | { type: "RESET_CART" }
+  | { type: "MERGE_CART"; payload: CartItem[] };
 
 interface CartContextType {
   cart: CartItem[];
@@ -23,6 +24,7 @@ interface CartContextType {
   updateQuantity: (id: number, quantity: number) => void;
   removeItem: (id: number) => void;
   resetCart: () => void;
+  mergeGuestCart: (guestCart: CartItem[]) => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -57,6 +59,19 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
     case "RESET_CART":
       return [];
 
+    case "MERGE_CART": {
+      const merged = [...state];
+      action.payload.forEach(guestItem => {
+        const existing = merged.find(item => item.id === guestItem.id);
+        if (existing) {
+          existing.quantity += guestItem.quantity;
+        } else {
+          merged.push(guestItem);
+        }
+      });
+      return merged;
+    }
+
     default:
       return state;
   }
@@ -85,10 +100,12 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({
   const removeItem = (id: number) =>
     dispatch({ type: "REMOVE_ITEM", payload: id });
   const resetCart = () => dispatch({ type: "RESET_CART" });
+  const mergeGuestCart = (guestCart: CartItem[]) =>
+    dispatch({ type: "MERGE_CART", payload: guestCart });
 
   return (
     <CartContext.Provider
-      value={{ cart, addToCart, updateQuantity, removeItem, resetCart }}
+      value={{ cart, addToCart, updateQuantity, removeItem, resetCart, mergeGuestCart }}
     >
       {children}
     </CartContext.Provider>

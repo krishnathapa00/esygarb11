@@ -73,7 +73,15 @@ const AuthHybrid = () => {
         description: "Welcome to Esygrab!",
       });
       setIsOtpModalOpen(false);
-      navigate("/");
+      
+      // Check if there's a redirect URL stored
+      const redirectUrl = localStorage.getItem("auth_redirect_url");
+      if (redirectUrl) {
+        localStorage.removeItem("auth_redirect_url");
+        navigate(redirectUrl);
+      } else {
+        navigate("/");
+      }
     }
   };
 

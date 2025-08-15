@@ -63,6 +63,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           setIsAuthenticated(true);
           localStorage.setItem("user", JSON.stringify(user));
           localStorage.setItem("lastActivity", Date.now().toString());
+          
+          // Handle guest cart merge and redirect after login
+          const guestCart = localStorage.getItem("guest_cart");
+          const redirectUrl = localStorage.getItem("auth_redirect_url");
+          
+          if (guestCart) {
+            // This will be handled by the cart context
+            localStorage.removeItem("guest_cart");
+          }
+          
+          if (redirectUrl) {
+            localStorage.removeItem("auth_redirect_url");
+            setTimeout(() => {
+              window.location.href = redirectUrl;
+            }, 100);
+          }
         } else {
           setUser(null);
           setIsAuthenticated(false);
