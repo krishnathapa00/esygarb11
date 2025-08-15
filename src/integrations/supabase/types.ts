@@ -673,6 +673,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_expired_user_sessions: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       generate_order_number: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -703,6 +707,10 @@ export type Database = {
       is_super_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      update_user_activity: {
+        Args: { user_id: string }
+        Returns: undefined
       }
     }
     Enums: {
