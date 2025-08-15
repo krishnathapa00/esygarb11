@@ -13,8 +13,9 @@ export const supabase = createClient<Database>(
       persistSession: true,
       autoRefreshToken: true,
       storage: window.localStorage,
-      storageKey: 'supabase.auth.token',
-      detectSessionInUrl: true
+      storageKey: 'esygrab.auth.token',
+      detectSessionInUrl: true,
+      flowType: 'pkce'
     }
   }
 );

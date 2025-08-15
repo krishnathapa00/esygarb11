@@ -49,11 +49,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+    let activityInterval: NodeJS.Timeout;
+
     // Set up auth state listener first
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log('Auth state changed:', event, session);
-        if (session?.user) {
+        
+        if (!mounted) return;
+
+        if (session?.user && event !== 'TOKEN_REFRESHED') {
           const user: User = {
             id: session.user.id,
             email: session.user.email || "",
@@ -61,74 +67,137 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           };
           setUser(user);
           setIsAuthenticated(true);
-          localStorage.setItem("user", JSON.stringify(user));
-          localStorage.setItem("lastActivity", Date.now().toString());
+          
+          // Store session info with 7-day expiry
+          const sessionData = {
+            user,
+            expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000), // 7 days
+            lastActivity: Date.now()
+          };
+          localStorage.setItem("esygrab_session", JSON.stringify(sessionData));
           
           // Handle guest cart merge and redirect after login
           const guestCart = localStorage.getItem("guest_cart");
           const redirectUrl = localStorage.getItem("auth_redirect_url");
           
           if (guestCart) {
-            // This will be handled by the cart context
             localStorage.removeItem("guest_cart");
           }
           
-          if (redirectUrl) {
+          if (redirectUrl && event === 'SIGNED_IN') {
             localStorage.removeItem("auth_redirect_url");
             setTimeout(() => {
               window.location.href = redirectUrl;
             }, 100);
           }
-        } else {
+          
+          // Start activity tracking
+          if (activityInterval) clearInterval(activityInterval);
+          activityInterval = setInterval(() => {
+            if (mounted) {
+              const currentSession = localStorage.getItem("esygrab_session");
+              if (currentSession) {
+                const sessionData = JSON.parse(currentSession);
+                sessionData.lastActivity = Date.now();
+                localStorage.setItem("esygrab_session", JSON.stringify(sessionData));
+              }
+            }
+          }, 5 * 60 * 1000); // Update every 5 minutes
+          
+        } else if (!session || event === 'SIGNED_OUT') {
           setUser(null);
           setIsAuthenticated(false);
+          localStorage.removeItem("esygrab_session");
           localStorage.removeItem("user");
           localStorage.removeItem("lastActivity");
+          if (activityInterval) clearInterval(activityInterval);
         }
-        setLoading(false);
+        
+        if (event !== 'TOKEN_REFRESHED') {
+          setLoading(false);
+        }
       }
     );
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial session:', session);
-      if (session?.user) {
-        const lastActivity = localStorage.getItem("lastActivity");
-        const threeDaysAgo = Date.now() - (3 * 24 * 60 * 60 * 1000); // 3 days in milliseconds
+    // Check for existing session with enhanced validation
+    const initializeAuth = async () => {
+      try {
+        // Check stored session first
+        const storedSession = localStorage.getItem("esygrab_session");
+        if (storedSession) {
+          const sessionData = JSON.parse(storedSession);
+          const now = Date.now();
+          
+          // Check if session is expired (7 days) or inactive (1 day)
+          const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
+          const oneDayAgo = now - (24 * 60 * 60 * 1000);
+          
+          if (sessionData.expiresAt < now || sessionData.lastActivity < sevenDaysAgo) {
+            console.log('Session expired - removing stored session');
+            localStorage.removeItem("esygrab_session");
+            await supabase.auth.signOut();
+            if (mounted) setLoading(false);
+            return;
+          }
+          
+          // Check for inactivity (1 day)
+          if (sessionData.lastActivity < oneDayAgo) {
+            console.log('Session expired due to inactivity');
+            localStorage.removeItem("esygrab_session");
+            await supabase.auth.signOut();
+            if (mounted) setLoading(false);
+            return;
+          }
+        }
+
+        // Get current Supabase session
+        const { data: { session }, error } = await supabase.auth.getSession();
         
-        // If user was inactive for more than 3 days, log them out
-        if (lastActivity && parseInt(lastActivity) < threeDaysAgo) {
-          console.log('Session expired due to inactivity');
-          supabase.auth.signOut();
-          setLoading(false);
+        if (error) {
+          console.error('Session check error:', error);
+          localStorage.removeItem("esygrab_session");
+          if (mounted) setLoading(false);
           return;
         }
-        
-        const user: User = {
-          id: session.user.id,
-          email: session.user.email || "",
-          isVerified: true,
-        };
-        setUser(user);
-        setIsAuthenticated(true);
-        localStorage.setItem("user", JSON.stringify(user));
-        localStorage.setItem("lastActivity", Date.now().toString());
-      }
-      setLoading(false);
-    });
 
-    // Update last activity every 5 minutes when user is active
-    const activityInterval = setInterval(() => {
-      if (isAuthenticated) {
-        localStorage.setItem("lastActivity", Date.now().toString());
+        if (session?.user) {
+          console.log('Valid session found, restoring auth state');
+          const user: User = {
+            id: session.user.id,
+            email: session.user.email || "",
+            isVerified: true,
+          };
+          
+          if (mounted) {
+            setUser(user);
+            setIsAuthenticated(true);
+            
+            // Update stored session
+            const sessionData = {
+              user,
+              expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000),
+              lastActivity: Date.now()
+            };
+            localStorage.setItem("esygrab_session", JSON.stringify(sessionData));
+          }
+        }
+        
+        if (mounted) setLoading(false);
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+        localStorage.removeItem("esygrab_session");
+        if (mounted) setLoading(false);
       }
-    }, 5 * 60 * 1000); // 5 minutes
+    };
+
+    initializeAuth();
 
     return () => {
+      mounted = false;
+      if (activityInterval) clearInterval(activityInterval);
       authListener?.subscription.unsubscribe();
-      clearInterval(activityInterval);
     };
-  }, [isAuthenticated]);
+  }, []);
 
   const sendOtp = useCallback(async (email: string) => {
     try {
@@ -197,10 +266,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const logout = useCallback(async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setIsAuthenticated(false);
-    localStorage.removeItem("user");
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      setIsAuthenticated(false);
+      
+      // Clear all auth-related storage
+      localStorage.removeItem("esygrab_session");
+      localStorage.removeItem("user");
+      localStorage.removeItem("lastActivity");
+      localStorage.removeItem("guest_cart");
+      localStorage.removeItem("auth_redirect_url");
+      
+      console.log('User logged out successfully');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   }, []);
 
   const value: AuthContextType = {
