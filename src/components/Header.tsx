@@ -140,7 +140,7 @@ const Header = () => {
 
   return (
     <>
-      <header className="md:sticky md:top-0 z-50 bg-white/95 backdrop-blur-sm border-b shadow-sm relative">
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
@@ -189,7 +189,7 @@ const Header = () => {
                   </Button>
                 </Link>
               ) : (
-                <Link to="/login">
+                <Link to="/auth">
                   <Button
                     variant="outline"
                     className="hover:bg-green-50 border-green-200"
@@ -231,7 +231,7 @@ const Header = () => {
 
       {/* Search Bar Section - ONLY show on homepage */}
       {shouldShowSearchBar && (
-        <div className="sticky top-16 z-40 bg-white border-b border-gray-100">
+        <div className="md:sticky md:top-16 z-40 bg-white border-b border-gray-100">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
             <SearchBar />
           </div>

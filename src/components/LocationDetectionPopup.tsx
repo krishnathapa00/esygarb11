@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { MapPin, Loader2 } from 'lucide-react';
+import GPSPermissionPopup from './GPSPermissionPopup';
 
 interface LocationDetectionPopupProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ interface LocationDetectionPopupProps {
 const LocationDetectionPopup = ({ isOpen, onClose, onLocationSet }: LocationDetectionPopupProps) => {
   const navigate = useNavigate();
   const [isDetecting, setIsDetecting] = useState(false);
+  const [showGPSPopup, setShowGPSPopup] = useState(false);
 
   const detectLocation = () => {
     setIsDetecting(true);
@@ -92,25 +94,18 @@ const LocationDetectionPopup = ({ isOpen, onClose, onLocationSet }: LocationDete
           console.error('Geolocation error:', error);
           setIsDetecting(false);
           
-          let errorMessage = 'Location access denied';
-          switch (error.code) {
-            case error.PERMISSION_DENIED:
-              errorMessage = 'Location access denied. Please enable location services.';
-              break;
-            case error.POSITION_UNAVAILABLE:
-              errorMessage = 'Location information unavailable.';
-              break;
-            case error.TIMEOUT:
-              errorMessage = 'Location request timed out.';
-              break;
+          // Show GPS permission popup for denied or unavailable GPS
+          if (error.code === error.PERMISSION_DENIED || error.code === error.POSITION_UNAVAILABLE) {
+            setShowGPSPopup(true);
+          } else {
+            let errorMessage = 'Location request timed out. Please try again.';
+            alert(errorMessage);
           }
-          
-          alert(errorMessage);
         },
         {
           enableHighAccuracy: true,
           timeout: 10000,
-          maximumAge: 300000
+          maximumAge: 0
         }
       );
     } else {
@@ -124,53 +119,71 @@ const LocationDetectionPopup = ({ isOpen, onClose, onLocationSet }: LocationDete
     navigate('/map-location');
   };
 
+  const handleGPSPopupClose = () => {
+    setShowGPSPopup(false);
+    handleSetManually();
+  };
+
+  const handleGPSRetry = () => {
+    setShowGPSPopup(false);
+    detectLocation();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md rounded-2xl">
-        <DialogHeader>
-          <DialogTitle className="text-center text-xl font-bold text-gray-900">
-            Welcome to EsyGrab!
-          </DialogTitle>
-        </DialogHeader>
-        
-        <div className="space-y-6 p-4">
-          <div className="text-center">
-            <MapPin className="h-12 w-12 text-green-600 mx-auto mb-3" />
-            <p className="text-gray-600">
-              To provide you with the best delivery experience, please set your location.
-            </p>
-          </div>
+    <>
+      <Dialog open={isOpen && !showGPSPopup} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-center text-xl font-bold text-gray-900">
+              Welcome to EsyGrab!
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6 p-4">
+            <div className="text-center">
+              <MapPin className="h-12 w-12 text-green-600 mx-auto mb-3" />
+              <p className="text-gray-600">
+                To provide you with the best delivery experience, please set your location with high accuracy GPS.
+              </p>
+            </div>
 
-          <div className="space-y-4">
-            <Button
-              onClick={detectLocation}
-              disabled={isDetecting}
-              className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 rounded-xl"
-            >
-              {isDetecting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Detecting Location...
-                </>
-              ) : (
-                <>
-                  <MapPin className="h-4 w-4 mr-2" />
-                  Auto Detect
-                </>
-              )}
-            </Button>
+            <div className="space-y-4">
+              <Button
+                onClick={detectLocation}
+                disabled={isDetecting}
+                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 rounded-xl"
+              >
+                {isDetecting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Detecting High-Accuracy GPS...
+                  </>
+                ) : (
+                  <>
+                    <MapPin className="h-4 w-4 mr-2" />
+                    Auto Detect with GPS
+                  </>
+                )}
+              </Button>
 
-            <Button
-              onClick={handleSetManually}
-              variant="outline"
-              className="w-full rounded-xl"
-            >
-              Set Manually
-            </Button>
+              <Button
+                onClick={handleSetManually}
+                variant="outline"
+                className="w-full rounded-xl"
+              >
+                Set Manually on Map
+              </Button>
+            </div>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+
+      <GPSPermissionPopup
+        isOpen={showGPSPopup}
+        onClose={handleGPSPopupClose}
+        onRetry={handleGPSRetry}
+      />
+    </>
   );
 };
 

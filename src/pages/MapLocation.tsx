@@ -17,7 +17,7 @@ const MapLocation = () => {
   const [markerPosition, setMarkerPosition] = useState({ lat: 27.7172, lng: 85.3240 }); // Default to Kathmandu
   const [mapLoaded, setMapLoaded] = useState(false);
 
-  // Initialize map (using a simple implementation without external map library)
+  // Initialize map and attempt high-accuracy GPS on load
   useEffect(() => {
     // Load user's saved location if available
     const savedLocation = localStorage.getItem('esygrab_user_location');
@@ -25,11 +25,18 @@ const MapLocation = () => {
       try {
         const location = JSON.parse(savedLocation);
         setSelectedLocation(location.address || '');
+        if (location.coordinates) {
+          setMarkerPosition(location.coordinates);
+        }
       } catch (error) {
         console.error('Error parsing saved location:', error);
       }
     }
+    
     setMapLoaded(true);
+    
+    // Attempt high-accuracy GPS on page load
+    handleAutoDetect();
   }, []);
 
   const handleAutoDetect = () => {
@@ -99,20 +106,16 @@ const MapLocation = () => {
           console.error('Geolocation error:', error);
           setIsDetecting(false);
           
-          let errorMessage = 'Location access denied';
-          switch (error.code) {
-            case error.PERMISSION_DENIED:
-              errorMessage = 'Location access denied. Please enable location services.';
-              break;
-            case error.POSITION_UNAVAILABLE:
-              errorMessage = 'Location information unavailable.';
-              break;
-            case error.TIMEOUT:
-              errorMessage = 'Location request timed out.';
-              break;
+          if (error.code === error.PERMISSION_DENIED || error.code === error.POSITION_UNAVAILABLE) {
+            alert('Please turn on GPS and allow location access for accurate delivery.');
+          } else {
+            alert('Location request timed out. Please try again or set location manually.');
           }
-          
-          alert(errorMessage);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
         }
       );
     } else {

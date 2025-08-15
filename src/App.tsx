@@ -57,7 +57,7 @@ function App() {
               <div className="min-h-screen bg-background overflow-x-hidden">
                 <Routes>
                   {/* Customer & Admin Hybrid Auth Routes */}
-                  <Route path="/login" element={<AuthHybrid />} />
+                  <Route path="/auth" element={<AuthHybrid />} />
                   <Route path="/" element={<Index />} />
                   <Route path="/categories" element={<AllCategories />} />
                   <Route
