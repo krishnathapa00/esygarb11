@@ -27,6 +27,7 @@ interface Order {
   status: string;
   userId: string;
   createdAt: string;
+  deliveredAt?: string;
 }
 
 const OrderHistory = () => {
@@ -82,7 +83,8 @@ const OrderHistory = () => {
         paymentMethod: 'Cash on Delivery',
         status: order.status,
         userId: order.user_id,
-        createdAt: order.created_at
+        createdAt: order.created_at,
+        deliveredAt: order.delivered_at
       }));
 
       setOrders(transformedOrders);
@@ -141,6 +143,23 @@ const OrderHistory = () => {
         console.error('Error deleting order:', error);
         alert('Failed to delete order. Please try again.');
       }
+    }
+  };
+
+  const calculateDeliveryTime = (order: any) => {
+    if (!order.deliveredAt) return 'Not delivered yet';
+    
+    const createdAt = new Date(order.createdAt);
+    const deliveredAt = new Date(order.deliveredAt);
+    const diffMs = deliveredAt.getTime() - createdAt.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    
+    if (diffMins < 60) {
+      return `${diffMins} mins`;
+    } else {
+      const hours = Math.floor(diffMins / 60);
+      const mins = diffMins % 60;
+      return `${hours}h ${mins}m`;
     }
   };
 
@@ -297,6 +316,11 @@ const OrderHistory = () => {
                       <p className="text-sm text-gray-500">
                         {formatDate(order.createdAt)}
                       </p>
+                      {order.status === 'delivered' && (
+                        <p className="text-xs text-green-600 font-medium">
+                          Delivered in {calculateDeliveryTime(order)}
+                        </p>
+                      )}
                     </div>
                     <Badge className={getStatusColor(order.status)}>
                       {getStatusIcon(order.status)}

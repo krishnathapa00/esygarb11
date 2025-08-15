@@ -70,6 +70,12 @@ export const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
   }
 
   if (!allowedRoles.includes(userRole)) {
+    // Admin/delivery users should stay on their appropriate pages, not redirect to customer side
+    if (userRole === 'admin' || userRole === 'super_admin') {
+      return <Navigate to="/admin/dashboard" replace />;
+    } else if (userRole === 'delivery_partner') {
+      return <Navigate to="/delivery-partner/dashboard" replace />;
+    }
     return <Navigate to="/" replace />;
   }
 
