@@ -105,20 +105,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             if (redirectUrl) {
               console.log('Redirecting to stored URL:', redirectUrl);
               localStorage.removeItem("auth_redirect_url");
-              window.location.href = redirectUrl;
+              window.location.replace(redirectUrl);
             } else {
               // Auto-redirect based on role immediately
               const role = user.role || 'customer';
               console.log('Auto-redirecting based on role:', role);
               if (role === 'admin' || role === 'super_admin') {
                 console.log('Redirecting to admin dashboard');
-                window.location.href = '/admin/dashboard';
+                window.location.replace('/admin/dashboard');
               } else if (role === 'delivery_partner') {
                 console.log('Redirecting to delivery dashboard');
-                window.location.href = '/delivery-partner/dashboard';
+                window.location.replace('/delivery-partner/dashboard');
               } else {
                 console.log('Redirecting to home');
-                window.location.href = '/';
+                window.location.replace('/');
               }
             }
           }
