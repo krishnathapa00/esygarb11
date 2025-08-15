@@ -79,9 +79,16 @@
     padding-top: 64px; /* Space for fixed header (h-16 = 64px) */
   }
   
-  /* Add extra padding for pages with search bar */
+  /* Add extra padding for mobile pages with search bar */
   body.with-search-bar {
-    padding-top: 120px; /* Space for header + search bar */
+    padding-top: 120px; /* Space for header + search bar on mobile */
+  }
+  
+  /* Desktop with search bar */
+  @media (min-width: 768px) {
+    body.with-search-bar {
+      padding-top: 112px; /* Less padding on desktop since search is inline */
+    }
   }
 }
 
