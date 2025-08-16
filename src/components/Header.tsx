@@ -4,7 +4,7 @@ import { ShoppingCart, MapPin, Clock, User, Home, Grid3X3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LocationDetectionPopup from "./LocationDetectionPopup";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuthContext } from "@/contexts/AuthProvider";
 import SearchBar from "./SearchBar";
 import { useCart } from "@/contexts/CartContext";
 
@@ -59,7 +59,7 @@ const Header = () => {
 
   const location = useLocation();
   const isMobile = useIsMobile();
-  const { user, logout } = useAuth();
+  const { user, signOut } = useAuthContext();
   const { cart } = useCart();
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);

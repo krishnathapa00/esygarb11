@@ -19,7 +19,7 @@ import { useAuth } from '@/contexts/AuthContext';
 const AdminLayout = ({ children, onRefresh }: { children: React.ReactNode; onRefresh?: () => void }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { signOut } = useAuth();
 
   const sidebarItems = [
     { icon: Home, label: 'Dashboard', path: '/admin/dashboard' },
@@ -35,8 +35,8 @@ const AdminLayout = ({ children, onRefresh }: { children: React.ReactNode; onRef
   ];
 
   const handleLogout = async () => {
-    await logout();
-    navigate('/admin/login');
+    await signOut();
+    navigate('/auth');
   };
 
   return (

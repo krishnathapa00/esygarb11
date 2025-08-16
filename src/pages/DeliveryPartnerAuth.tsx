@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { SessionManager } from '@/utils/sessionManager';
+import { useAuthContext } from '@/contexts/AuthProvider';
 
 const DeliveryPartnerAuth = () => {
   const [email, setEmail] = useState('');
@@ -20,6 +20,7 @@ const DeliveryPartnerAuth = () => {
   
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { signInWithPassword } = useAuthContext();
   
   const handleSignUp = async () => {
     if (!email || !password || !fullName || !vehicleType || !licenseNumber) {
@@ -102,14 +103,8 @@ const DeliveryPartnerAuth = () => {
     setLoading(true);
     console.log('Starting login process...', { email });
     
-    // Clear all existing sessions before login
-    SessionManager.clearAllSessions();
-    
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { data, error } = await signInWithPassword(email, password);
       
       console.log('Auth result:', { data: !!data, error: error?.message });
       
@@ -148,21 +143,13 @@ const DeliveryPartnerAuth = () => {
         } else if (profile?.role === 'delivery_partner') {
           console.log('Access granted, navigating to dashboard...');
           
-          // Store delivery partner session with role validation
-          SessionManager.storeSession({
-            id: data.user.id,
-            email: email,
-            role: profile.role,
-            isVerified: true
-          }, profile.role);
-          
           toast({
             title: "Welcome Back!",
             description: "You have successfully logged in to your delivery partner account.",
           });
           
           // Redirect to delivery dashboard
-          window.location.href = '/delivery-partner/dashboard';
+          navigate('/delivery-partner/dashboard');
         } else {
           console.log('Access denied - not a delivery partner');
           toast({

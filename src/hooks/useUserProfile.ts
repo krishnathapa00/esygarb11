@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuthContext } from "@/contexts/AuthProvider";
 import { Database } from "@/integrations/supabase/types";
 
 type ProfileInsert = Database["public"]["Tables"]["profiles"]["Insert"];
@@ -15,7 +15,7 @@ interface Profile {
 }
 
 export function useUserProfile() {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [profile, setProfile] = useState<Profile>({});
   const [loading, setLoading] = useState(true);
 

@@ -7,7 +7,7 @@ import BannerCarousel from "../components/BannerCarousel";
 import Footer from "../components/Footer";
 import LocationDetectionPopup from "../components/LocationDetectionPopup";
 import { useProducts } from "../hooks/useProducts";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuthContext } from "@/contexts/AuthProvider";
 import { useCartActions } from "@/hooks/useCart";
 
 const Index = () => {
@@ -16,7 +16,7 @@ const Index = () => {
   const [showLocationPopup, setShowLocationPopup] = useState(false);
 
   const { data: products = [], isLoading } = useProducts();
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const navigate = useNavigate();
 
   const { handleAddToCart, handleUpdateQuantity, getCartQuantity } =
