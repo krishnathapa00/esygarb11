@@ -88,8 +88,8 @@ const AuthHybrid = () => {
       });
       setIsOtpModalOpen(false);
       
-      // Redirect to home page - let AuthContext handle role-based routing
-      navigate("/");
+      // Store user session and redirect to home
+      window.location.href = "/";
     }
   };
 

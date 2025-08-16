@@ -143,13 +143,32 @@ const DeliveryPartnerAuth = () => {
           });
         } else if (profile?.role === 'delivery_partner') {
           console.log('Access granted, navigating to dashboard...');
+          
+          // Store delivery partner session
+          const deliverySessionData = {
+            user: {
+              id: data.user.id,
+              email: email,
+              role: profile.role,
+              isVerified: true
+            },
+            role: profile.role,
+            expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000),
+            lastActivity: Date.now()
+          };
+          
+          // Clear other sessions and store delivery session
+          localStorage.removeItem("esygrab_admin_session");
+          localStorage.removeItem("esygrab_user_session");
+          localStorage.setItem("esygrab_delivery_session", JSON.stringify(deliverySessionData));
+          
           toast({
             title: "Welcome Back!",
             description: "You have successfully logged in to your delivery partner account.",
           });
           
           // Redirect to delivery dashboard
-          navigate('/delivery-partner/dashboard');
+          window.location.href = '/delivery-partner/dashboard';
         } else {
           console.log('Access denied - not a delivery partner');
           toast({

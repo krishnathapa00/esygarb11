@@ -49,6 +49,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Clear all role-based sessions
+  const clearAllSessions = () => {
+    localStorage.removeItem("esygrab_admin_session");
+    localStorage.removeItem("esygrab_delivery_session");
+    localStorage.removeItem("esygrab_user_session");
+    localStorage.removeItem("esygrab_session");
+    localStorage.removeItem("user");
+    localStorage.removeItem("lastActivity");
+    localStorage.removeItem("guest_cart");
+    localStorage.removeItem("auth_redirect_url");
+  };
+
+  // Store role-specific session
+  const storeRoleSession = (user: User, role: string) => {
+    const sessionData = {
+      user,
+      role,
+      expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000),
+      lastActivity: Date.now()
+    };
+    
+    // Clear other role sessions first
+    clearAllSessions();
+    
+    // Store in role-specific key
+    const sessionKey = `esygrab_${role}_session`;
+    localStorage.setItem(sessionKey, JSON.stringify(sessionData));
+  };
+
   useEffect(() => {
     let mounted = true;
 
@@ -57,7 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       try {
         const { data: { session } } = await supabase.auth.getSession();
         
-        if (session?.user) {
+        if (session?.user && mounted) {
           const { data: profile } = await supabase
             .from('profiles')
             .select('role')
@@ -71,10 +100,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             role: profile?.role || 'customer',
           };
           
-          if (mounted) {
-            setUser(user);
-            setIsAuthenticated(true);
-          }
+          setUser(user);
+          setIsAuthenticated(true);
+          storeRoleSession(user, profile?.role || 'customer');
         }
         
         if (mounted) setLoading(false);
@@ -84,7 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     };
 
-    // Set up auth state listener
+    // Set up auth state listener - NO AUTO REDIRECTS
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return;
@@ -105,18 +133,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           
           setUser(user);
           setIsAuthenticated(true);
-          
-          // Store session
-          localStorage.setItem("esygrab_session", JSON.stringify({
-            user,
-            expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000),
-            lastActivity: Date.now()
-          }));
-          
+          storeRoleSession(user, profile?.role || 'customer');
         } else {
           setUser(null);
           setIsAuthenticated(false);
-          localStorage.removeItem("esygrab_session");
+          clearAllSessions();
         }
         
         setLoading(false);
@@ -211,7 +232,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setUser(null);
       setIsAuthenticated(false);
       
-      // Clear all auth-related storage
+      // Clear all role-based sessions
+      localStorage.removeItem("esygrab_admin_session");
+      localStorage.removeItem("esygrab_delivery_session");
+      localStorage.removeItem("esygrab_user_session");
       localStorage.removeItem("esygrab_session");
       localStorage.removeItem("user");
       localStorage.removeItem("lastActivity");

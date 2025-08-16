@@ -75,13 +75,31 @@ const AdminLogin = () => {
       return;
     }
 
+    // Store admin session
+    const adminSessionData = {
+      user: {
+        id: userId,
+        email: email,
+        role: profile.role,
+        isVerified: true
+      },
+      role: profile.role,
+      expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000),
+      lastActivity: Date.now()
+    };
+    
+    // Clear other sessions and store admin session
+    localStorage.removeItem("esygrab_user_session");
+    localStorage.removeItem("esygrab_delivery_session");
+    localStorage.setItem("esygrab_admin_session", JSON.stringify(adminSessionData));
+
     toast({
       title: "Login successful!",
       description: "Welcome to the admin panel.",
     });
     
     // Redirect to admin dashboard
-    navigate('/admin/dashboard');
+    window.location.href = '/admin/dashboard';
   };
 
   const handlePasswordReset = async () => {
