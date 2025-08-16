@@ -51,7 +51,7 @@ const AdminLayout = ({ children, onRefresh }: { children: React.ReactNode; onRef
         <div className="p-6">
           <h1 className="text-xl font-bold text-gray-800">Admin Panel</h1>
         </div>
-        <nav className="mt-6 pb-20">
+        <nav className="mt-6">
           {sidebarItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
@@ -68,18 +68,20 @@ const AdminLayout = ({ children, onRefresh }: { children: React.ReactNode; onRef
               </Link>
             );
           })}
+          
+          {/* Logout button moved here, below all nav items */}
+          <div className="px-6 py-3 mt-4 border-t">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              className="flex items-center w-full justify-center"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
+          </div>
         </nav>
-        <div className="absolute bottom-6 left-6 right-6">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleLogout}
-            className="flex items-center w-full justify-center"
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Logout
-          </Button>
-        </div>
       </div>
 
       {/* Main Content with margin to account for fixed sidebar */}

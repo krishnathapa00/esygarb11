@@ -296,7 +296,8 @@ const DeliveryDashboard = () => {
 
   const availableOrders = (isOnline && kycStatus === 'approved') 
     ? orders.filter(order => 
-        (order.status === 'ready_for_pickup' || order.status === 'confirmed') && !order.delivery_partner_id
+        (order.status === 'ready_for_pickup' || order.status === 'confirmed' || order.status === 'dispatched') && 
+        (!order.delivery_partner_id || order.delivery_partner_id === user?.id)
       )
     : [];
 

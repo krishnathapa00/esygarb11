@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDeliveryTimer } from '@/hooks/useDeliveryTimer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -27,8 +28,6 @@ const DeliveryMapNavigation = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   
-  const [timer, setTimer] = useState(0);
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
 
   // Fetch order details
   const { data: order, isLoading } = useQuery({
@@ -38,7 +37,7 @@ const DeliveryMapNavigation = () => {
         .from('orders')
         .select(`
           *,
-          profiles!orders_user_id_fkey(full_name, phone_number),
+          profiles!orders_user_id_fkey(full_name, phone_number, address),
           order_items(
             *,
             products(name, image_url, price)
@@ -53,43 +52,24 @@ const DeliveryMapNavigation = () => {
     enabled: !!orderId
   });
 
-  // Timer effects
-  useEffect(() => {
-    const savedTimer = localStorage.getItem(`delivery_timer_${orderId}`);
-    const savedTimerRunning = localStorage.getItem(`delivery_timer_running_${orderId}`);
-    
-    if (savedTimer) {
-      setTimer(parseInt(savedTimer));
+  // Use persistent delivery timer
+  const { timer, isTimerRunning, formatTime, startTimer, stopTimer } = useDeliveryTimer({
+    orderId: orderId || '',
+    orderStatus: order?.status || '',
+    onTimerStart: () => {
+      toast({
+        title: "Timer Started",
+        description: "Delivery timer is now running.",
+      });
+    },
+    onTimerStop: () => {
+      toast({
+        title: "Timer Stopped",
+        description: "Delivery completed.",
+      });
     }
-    
-    if (savedTimerRunning === 'true') {
-      setIsTimerRunning(true);
-    }
-    
-    // Auto-start timer when order is out for delivery
-    if (order?.status === 'out_for_delivery' && !savedTimerRunning) {
-      setIsTimerRunning(true);
-      localStorage.setItem(`delivery_timer_running_${orderId}`, 'true');
-    }
-  }, [orderId, order?.status]);
+  });
 
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    
-    if (isTimerRunning) {
-      interval = setInterval(() => {
-        setTimer(prev => {
-          const newTime = prev + 1;
-          localStorage.setItem(`delivery_timer_${orderId}`, newTime.toString());
-          return newTime;
-        });
-      }, 1000);
-    }
-    
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isTimerRunning, orderId]);
 
   // Update order status mutation
   const updateOrderMutation = useMutation({
@@ -122,18 +102,16 @@ const DeliveryMapNavigation = () => {
     },
     onSuccess: (_, { status }) => {
       queryClient.invalidateQueries({ queryKey: ['order-details', orderId] });
+      queryClient.invalidateQueries({ queryKey: ['orders', user?.id] });
       
       if (status === 'out_for_delivery') {
-        setIsTimerRunning(true);
-        localStorage.setItem(`delivery_timer_running_${orderId}`, 'true');
+        startTimer();
         toast({
           title: "Order Picked Up",
           description: "Timer started. Navigate to customer location.",
         });
       } else if (status === 'delivered') {
-        setIsTimerRunning(false);
-        localStorage.removeItem(`delivery_timer_${orderId}`);
-        localStorage.removeItem(`delivery_timer_running_${orderId}`);
+        stopTimer();
         
         // Show success modal
         const modal = document.createElement('div');
@@ -189,11 +167,6 @@ const DeliveryMapNavigation = () => {
     }
   };
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -265,7 +238,7 @@ const DeliveryMapNavigation = () => {
                 <h3 className="text-lg font-semibold text-blue-900">Delivery Timer</h3>
               </div>
               <div className="text-4xl font-bold text-blue-600 mb-4">
-                {formatTime(timer)}
+                {formatTime()}
               </div>
               <p className="text-sm text-blue-700">
                 {isTimerRunning ? 'Timer is running...' : 'Timer will start when order is out for delivery'}
@@ -347,10 +320,20 @@ const DeliveryMapNavigation = () => {
             <div className="flex items-start gap-3">
               <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
               <div className="flex-1">
-                <div className="text-sm text-muted-foreground mb-1">Customer's Exact Location:</div>
+                <div className="text-sm text-muted-foreground mb-1">Delivery Address:</div>
                 <span className="text-sm font-medium">{order.delivery_address}</span>
               </div>
             </div>
+            
+            {order.profiles?.address && (
+              <div className="flex items-start gap-3">
+                <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
+                <div className="flex-1">
+                  <div className="text-sm text-muted-foreground mb-1">Customer Address:</div>
+                  <span className="text-sm font-medium">{order.profiles.address}</span>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
