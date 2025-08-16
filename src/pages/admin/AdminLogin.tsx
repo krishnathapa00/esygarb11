@@ -20,12 +20,21 @@ const AdminLogin = () => {
     e.preventDefault();
     setLoading(true);
 
+    console.log('AdminLogin: Starting login for email:', email);
+    
     // Clear all existing sessions before login
     SessionManager.clearAllSessions();
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
+    });
+
+    console.log('AdminLogin: Auth result:', { 
+      hasData: !!data, 
+      hasUser: !!data?.user, 
+      userId: data?.user?.id,
+      error: error?.message 
     });
 
     if (error) {
@@ -57,9 +66,16 @@ const AdminLogin = () => {
       .eq("id", userId)
       .single();
 
+    console.log('AdminLogin: Profile result:', { 
+      profile, 
+      profileError: profileError?.message,
+      role: profile?.role 
+    });
+
     setLoading(false);
 
     if (profileError || !profile) {
+      console.error('AdminLogin: Profile fetch failed:', profileError);
       toast({
         title: "Profile Not Found",
         description: "Could not retrieve your profile or role information.",
@@ -69,6 +85,7 @@ const AdminLogin = () => {
     }
 
     if (profile.role !== "admin" && profile.role !== "super_admin") {
+      console.log('AdminLogin: Access denied for role:', profile.role);
       // User is not admin or super_admin, sign out and show error
       await supabase.auth.signOut();
       toast({
@@ -79,6 +96,8 @@ const AdminLogin = () => {
       return;
     }
 
+    console.log('AdminLogin: Access granted for role:', profile.role);
+
     // Store admin session with role validation
     SessionManager.storeSession({
       id: userId,
@@ -87,13 +106,18 @@ const AdminLogin = () => {
       isVerified: true
     }, profile.role);
 
+    console.log('AdminLogin: Storing session and redirecting...');
+    
     toast({
       title: "Login successful!",
       description: "Welcome to the admin panel.",
     });
     
     // Redirect to admin dashboard
-    window.location.href = '/admin/dashboard';
+    setTimeout(() => {
+      console.log('AdminLogin: Redirecting to admin dashboard');
+      window.location.href = '/admin/dashboard';
+    }, 500);
   };
 
   const handlePasswordReset = async () => {

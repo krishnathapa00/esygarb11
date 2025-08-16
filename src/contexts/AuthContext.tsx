@@ -181,12 +181,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         };
       }
 
-      // Fetch user role from profiles table
-      const { data: profile } = await supabase
+      // CRITICAL: Fetch user role from profiles table after OTP verification
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', data.user.id)
         .single();
+
+      if (profileError) {
+        console.error("Failed to fetch user profile:", profileError);
+        return {
+          error: { message: "Failed to fetch user profile information." },
+        };
+      }
 
       const newUser: User = {
         id: data.user.id,
@@ -197,8 +204,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       setUser(newUser);
       setIsAuthenticated(true);
-      localStorage.setItem("user", JSON.stringify(newUser));
+      
+      // Store session using SessionManager with proper role
+      SessionManager.storeSession(newUser, profile?.role || 'customer');
 
+      console.log('OTP verification successful, user role:', profile?.role);
       return {};
     } catch (err: any) {
       console.error("Unexpected error verifying OTP:", err.message);

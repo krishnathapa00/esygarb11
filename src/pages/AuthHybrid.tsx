@@ -93,8 +93,15 @@ const AuthHybrid = () => {
       });
       setIsOtpModalOpen(false);
       
-      // User session will be handled by AuthContext
-      window.location.href = "/";
+      // Give AuthContext time to process, then redirect based on role
+      setTimeout(() => {
+        const session = SessionManager.getCurrentSession();
+        if (session) {
+          SessionManager.redirectToRoleDashboard(session.role);
+        } else {
+          window.location.href = "/";
+        }
+      }, 100);
     }
   };
 
