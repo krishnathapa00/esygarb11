@@ -211,6 +211,14 @@ const AppContent = () => {
           }
         />
         <Route
+          path="/admin/add-product-new"
+          element={
+            <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
+              <AddProductNew />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
           path="/admin/kyc"
           element={
             <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>

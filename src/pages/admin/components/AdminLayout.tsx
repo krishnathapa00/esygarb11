@@ -47,13 +47,14 @@ const AdminLayout = ({ children, onRefresh }: { children: React.ReactNode; onRef
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Fixed Sidebar */}
-      <div className="w-64 bg-white shadow-lg fixed h-full overflow-y-auto">
-        <div className="flex flex-col h-full">
-        <div className="p-6">
+      <div className="w-64 bg-white shadow-lg fixed h-full flex flex-col">
+        <div className="p-6 flex-shrink-0">
           <h1 className="text-xl font-bold text-gray-800">Admin Panel</h1>
         </div>
-        <nav className="mt-6 flex-1 flex flex-col">
-          <div className="flex-1">
+        
+        {/* Scrollable Navigation Area */}
+        <div className="flex-1 overflow-y-auto">
+          <nav className="pb-4">
             {sidebarItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
@@ -70,21 +71,20 @@ const AdminLayout = ({ children, onRefresh }: { children: React.ReactNode; onRef
                 </Link>
               );
             })}
-          </div>
-          
-          {/* Logout button at bottom */}
-          <div className="px-6 py-3 mt-auto border-t">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLogout}
-              className="flex items-center w-full justify-center"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
-            </Button>
-          </div>
-        </nav>
+          </nav>
+        </div>
+        
+        {/* Fixed Logout button at bottom */}
+        <div className="px-6 py-3 border-t bg-white flex-shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleLogout}
+            className="flex items-center w-full justify-center"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Logout
+          </Button>
         </div>
       </div>
 

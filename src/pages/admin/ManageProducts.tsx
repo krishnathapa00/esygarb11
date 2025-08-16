@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, Plus, Edit2, Trash2, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,7 @@ type ProductRow = {
 };
 
 const ManageProducts = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductRow | null>(null);
@@ -77,7 +79,7 @@ const ManageProducts = () => {
   );
 
   // Handle add product modal show/hide
-  const handleAddProduct = () => setShowAddProduct(true);
+  const handleAddProduct = () => navigate('/admin/add-product-new');
   const handleCloseModal = () => {
     setShowAddProduct(false);
     setEditingProduct(null);
