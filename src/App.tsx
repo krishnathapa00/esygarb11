@@ -18,9 +18,9 @@ import OrderTracking from "./pages/OrderTracking";
 import OrderTrackingLookup from "./pages/OrderTrackingLookup";
 import OrderHistory from "./pages/OrderHistory";
 import UserProfile from "./pages/UserProfile";
-import LoginPage from "./pages/auth/LoginPage";
-import ClearCache from "./components/ClearCache";
+import AuthHybrid from "./pages/AuthHybrid";
 import DeliveryPartnerAuth from "./pages/DeliveryPartnerAuth";
+import AdminLogin from "./pages/admin/AdminLogin";
 import DeliveryDashboard from "./pages/DeliveryDashboard";
 
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -59,10 +59,8 @@ const AppContent = () => {
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
       <Routes>
-        {/* Public Auth Routes */}
-        <Route path="/auth" element={<LoginPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/clear-cache" element={<ClearCache />} />
+        {/* Public Routes */}
+        <Route path="/auth" element={<AuthHybrid />} />
         <Route path="/" element={<Index />} />
         <Route path="/categories" element={<AllCategories />} />
         <Route path="/categories/:categoryId" element={<CategoryProducts />} />
@@ -146,6 +144,7 @@ const AppContent = () => {
         />
 
         {/* Admin Routes */}
+        <Route path="/admin-login" element={<AdminLogin />} />
         <Route
           path="/admin/dashboard"
           element={

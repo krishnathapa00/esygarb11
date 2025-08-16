@@ -20,7 +20,7 @@ const DeliveryPartnerAuth = () => {
   
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { signInWithPassword } = useAuthContext();
+  const { signInWithPassword, signUp } = useAuthContext();
   
   const handleSignUp = async () => {
     if (!email || !password || !fullName || !vehicleType || !licenseNumber) {
