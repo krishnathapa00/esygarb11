@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,11 @@ const LoginPage = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Debug: Ensure auth context is available
+  useEffect(() => {
+    console.log('LoginPage mounted with auth context available');
+  }, []);
 
   const redirectToRole = (role: string) => {
     const from = location.state?.from?.pathname || '/';
