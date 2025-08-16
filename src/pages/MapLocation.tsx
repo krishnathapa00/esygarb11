@@ -17,27 +17,85 @@ const MapLocation = () => {
   const [markerPosition, setMarkerPosition] = useState({ lat: 27.7172, lng: 85.3240 }); // Default to Kathmandu
   const [mapLoaded, setMapLoaded] = useState(false);
 
-  // Initialize map and attempt high-accuracy GPS on load
+  // Initialize map and load detected location if available
   useEffect(() => {
-    // Load user's saved location if available
-    const savedLocation = localStorage.getItem('esygrab_user_location');
-    if (savedLocation) {
+    // Check for temporarily stored detected location first
+    const tempLocation = localStorage.getItem('esygrab_temp_location');
+    if (tempLocation) {
       try {
-        const location = JSON.parse(savedLocation);
-        setSelectedLocation(location.address || '');
-        if (location.coordinates) {
+        const location = JSON.parse(tempLocation);
+        if (location.detected && location.coordinates) {
           setMarkerPosition(location.coordinates);
+          // Auto-reverse geocode the detected location
+          reverseGeocode(location.coordinates.lat, location.coordinates.lng);
         }
+        // Clear temp location after use
+        localStorage.removeItem('esygrab_temp_location');
       } catch (error) {
-        console.error('Error parsing saved location:', error);
+        console.error('Error parsing temp location:', error);
+      }
+    } else {
+      // Load user's saved location if available
+      const savedLocation = localStorage.getItem('esygrab_user_location');
+      if (savedLocation) {
+        try {
+          const location = JSON.parse(savedLocation);
+          setSelectedLocation(location.address || '');
+          if (location.coordinates) {
+            setMarkerPosition(location.coordinates);
+          }
+        } catch (error) {
+          console.error('Error parsing saved location:', error);
+        }
       }
     }
     
     setMapLoaded(true);
-    
-    // Attempt high-accuracy GPS on page load
-    handleAutoDetect();
   }, []);
+
+  // Helper function for reverse geocoding
+  const reverseGeocode = async (lat: number, lng: number) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        const address = data.address || {};
+        const locationParts = [];
+        
+        if (address.house_number && address.road) {
+          locationParts.push(`${address.house_number} ${address.road}`);
+        } else if (address.road) {
+          locationParts.push(address.road);
+        }
+        
+        if (address.neighbourhood || address.suburb) {
+          locationParts.push(address.neighbourhood || address.suburb);
+        }
+        
+        if (address.city || address.town || address.village) {
+          locationParts.push(address.city || address.town || address.village);
+        }
+        
+        if (address.state) {
+          locationParts.push(address.state);
+        }
+        
+        const formattedLocation = locationParts.length > 0 
+          ? locationParts.join(', ')
+          : data.display_name || 'Location detected successfully';
+        
+        setSelectedLocation(formattedLocation);
+      } else {
+        setSelectedLocation(`Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`);
+      }
+    } catch (error) {
+      console.error('Reverse geocoding error:', error);
+      setSelectedLocation(`Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`);
+    }
+  };
 
   const handleAutoDetect = () => {
     setIsDetecting(true);
@@ -45,61 +103,11 @@ const MapLocation = () => {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
-          try {
-            console.log('Location detected:', position.coords.latitude, position.coords.longitude);
-            
-            setMarkerPosition({
-              lat: position.coords.latitude,
-              lng: position.coords.longitude
-            });
-
-            // Using OpenStreetMap Nominatim API for reverse geocoding
-            const response = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}&zoom=18&addressdetails=1`
-            );
-            
-            if (response.ok) {
-              const data = await response.json();
-              console.log('Geocoding response:', data);
-              
-              // Extract meaningful address components
-              const address = data.address || {};
-              const locationParts = [];
-              
-              if (address.house_number && address.road) {
-                locationParts.push(`${address.house_number} ${address.road}`);
-              } else if (address.road) {
-                locationParts.push(address.road);
-              }
-              
-              if (address.neighbourhood || address.suburb) {
-                locationParts.push(address.neighbourhood || address.suburb);
-              }
-              
-              if (address.city || address.town || address.village) {
-                locationParts.push(address.city || address.town || address.village);
-              }
-              
-              if (address.state) {
-                locationParts.push(address.state);
-              }
-              
-              const formattedLocation = locationParts.length > 0 
-                ? locationParts.join(', ')
-                : data.display_name || 'Location detected successfully';
-              
-              console.log('Formatted location:', formattedLocation);
-              setSelectedLocation(formattedLocation);
-            } else {
-              console.log('Geocoding failed, using coordinates');
-              const fallbackLocation = `Lat: ${position.coords.latitude.toFixed(4)}, Lng: ${position.coords.longitude.toFixed(4)}`;
-              setSelectedLocation(fallbackLocation);
-            }
-          } catch (error) {
-            console.error('Geocoding error:', error);
-            const fallbackLocation = `Lat: ${position.coords.latitude.toFixed(4)}, Lng: ${position.coords.longitude.toFixed(4)}`;
-            setSelectedLocation(fallbackLocation);
-          }
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          
+          setMarkerPosition({ lat, lng });
+          await reverseGeocode(lat, lng);
           setIsDetecting(false);
         },
         (error) => {
@@ -167,19 +175,37 @@ const MapLocation = () => {
     }
   };
 
+  // Service availability check
+  const checkServiceAvailability = (lat: number, lng: number) => {
+    // Nepal approximate bounds: lat 26-31, lng 80-89
+    const isInNepal = lat >= 26 && lat <= 31 && lng >= 80 && lng <= 89;
+    return isInNepal;
+  };
+
   const handleSaveLocation = () => {
     if (selectedLocation.trim()) {
+      const isServiceAvailable = checkServiceAvailability(markerPosition.lat, markerPosition.lng);
+      
       localStorage.setItem('esygrab_user_location', JSON.stringify({
         address: selectedLocation,
-        coordinates: markerPosition
+        coordinates: markerPosition,
+        serviceAvailable: isServiceAvailable
       }));
       
-      toast({
-        title: "Location saved",
-        description: "Your delivery location has been saved successfully",
-      });
-      
-      navigate(-1); // Go back to previous page
+      if (isServiceAvailable) {
+        toast({
+          title: "Location saved",
+          description: "Your delivery location has been saved successfully",
+        });
+        navigate('/'); // Go to homepage
+      } else {
+        toast({
+          title: "Service unavailable",
+          description: "Sorry, we are not available at your location. EsyGrab currently serves Nepal only.",
+          variant: "destructive",
+        });
+        navigate('/'); // Still navigate to homepage but with unavailable message
+      }
     } else {
       toast({
         title: "No location selected",
@@ -189,7 +215,7 @@ const MapLocation = () => {
     }
   };
 
-  const handleMapClick = (event: React.MouseEvent<HTMLDivElement>) => {
+  const handleMapClick = async (event: React.MouseEvent<HTMLDivElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
@@ -199,7 +225,7 @@ const MapLocation = () => {
     const lng = markerPosition.lng + (x - rect.width / 2) * 0.0001;
     
     setMarkerPosition({ lat, lng });
-    setSelectedLocation(`Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`);
+    await reverseGeocode(lat, lng);
   };
 
   return (

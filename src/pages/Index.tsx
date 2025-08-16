@@ -6,6 +6,7 @@ import ProductSection from "../components/ProductSection";
 import BannerCarousel from "../components/BannerCarousel";
 import Footer from "../components/Footer";
 import LocationDetectionPopup from "../components/LocationDetectionPopup";
+import ServiceUnavailableMessage from "../components/ServiceUnavailableMessage";
 import { useProducts } from "../hooks/useProducts";
 import { useAuthContext } from "@/contexts/AuthProvider";
 import { useCartActions } from "@/hooks/useCart";
@@ -14,6 +15,7 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [showLocationPopup, setShowLocationPopup] = useState(false);
+  const [serviceAvailable, setServiceAvailable] = useState(true);
 
   const { data: products = [], isLoading } = useProducts();
   const { user } = useAuthContext();
@@ -26,9 +28,17 @@ const Index = () => {
   useEffect(() => {
     document.body.classList.add('with-search-bar');
     
-    // Check if user has location set, if not show location popup after a delay
+    // Check if user has location set and service availability
     const storedLocation = localStorage.getItem("esygrab_user_location");
-    if (!storedLocation && !user) {
+    if (storedLocation) {
+      try {
+        const location = JSON.parse(storedLocation);
+        setServiceAvailable(location.serviceAvailable !== false);
+      } catch (error) {
+        console.error('Error parsing stored location:', error);
+        setServiceAvailable(true);
+      }
+    } else if (!user) {
       // For new users, show location popup after 3 seconds
       const timer = setTimeout(() => {
         setShowLocationPopup(true);
@@ -98,6 +108,8 @@ const Index = () => {
       )}
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {!serviceAvailable && <ServiceUnavailableMessage />}
+        
         <BannerCarousel />
 
         <section className="mb-8">

@@ -26,69 +26,25 @@ const LocationDetectionPopup = ({ isOpen, onClose, onLocationSet }: LocationDete
           try {
             console.log('Location detected:', position.coords.latitude, position.coords.longitude);
             
-            // Check if user is within Nepal coordinates (rough bounds)
             const lat = position.coords.latitude;
             const lng = position.coords.longitude;
             
-            // Nepal approximate bounds: lat 26-31, lng 80-89
-            const isInNepal = lat >= 26 && lat <= 31 && lng >= 80 && lng <= 89;
+            // Store coordinates temporarily for map page
+            localStorage.setItem('esygrab_temp_location', JSON.stringify({
+              coordinates: { lat, lng },
+              detected: true
+            }));
             
-            if (!isInNepal) {
-              setIsDetecting(false);
-              alert('Sorry, we are not available in your city. EsyGrab currently serves Nepal only.');
-              onClose();
-              return;
-            }
+            setIsDetecting(false);
+            onClose();
             
-            // Using OpenStreetMap Nominatim API for reverse geocoding (free alternative)
-            const response = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.coords.latitude}&lon=${position.coords.longitude}&zoom=18&addressdetails=1`
-            );
-            
-            if (response.ok) {
-              const data = await response.json();
-              console.log('Geocoding response:', data);
-              
-              // Extract meaningful address components
-              const address = data.address || {};
-              const locationParts = [];
-              
-              if (address.house_number && address.road) {
-                locationParts.push(`${address.house_number} ${address.road}`);
-              } else if (address.road) {
-                locationParts.push(address.road);
-              }
-              
-              if (address.neighbourhood || address.suburb) {
-                locationParts.push(address.neighbourhood || address.suburb);
-              }
-              
-              if (address.city || address.town || address.village) {
-                locationParts.push(address.city || address.town || address.village);
-              }
-              
-              if (address.state) {
-                locationParts.push(address.state);
-              }
-              
-              const formattedLocation = locationParts.length > 0 
-                ? locationParts.join(', ')
-                : data.display_name || 'Location detected successfully';
-              
-              console.log('Formatted location:', formattedLocation);
-              onLocationSet(formattedLocation);
-            } else {
-              console.log('Geocoding failed, using coordinates');
-              const fallbackLocation = `Lat: ${position.coords.latitude.toFixed(4)}, Lng: ${position.coords.longitude.toFixed(4)}`;
-              onLocationSet(fallbackLocation);
-            }
+            // Redirect to map page to show detected location
+            navigate('/map-location');
           } catch (error) {
             console.error('Geocoding error:', error);
-            const fallbackLocation = `Lat: ${position.coords.latitude.toFixed(4)}, Lng: ${position.coords.longitude.toFixed(4)}`;
-            onLocationSet(fallbackLocation);
+            setIsDetecting(false);
+            navigate('/map-location');
           }
-          setIsDetecting(false);
-          onClose();
         },
         (error) => {
           console.error('Geolocation error:', error);
