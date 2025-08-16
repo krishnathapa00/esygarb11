@@ -51,85 +51,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     let mounted = true;
-    let hasProcessedSignIn = false;
 
-    // Set up auth state listener
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth event:', event, 'Session exists:', !!session);
-        
-        if (!mounted) return;
-
-        if (session?.user) {
-          // Only process role and redirect on SIGNED_IN, not TOKEN_REFRESHED
-          if (event === 'SIGNED_IN' && !hasProcessedSignIn) {
-            hasProcessedSignIn = true;
-            
-            // Fetch user role
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('role')
-              .eq('id', session.user.id)
-              .single();
-
-            const user: User = {
-              id: session.user.id,
-              email: session.user.email || "",
-              isVerified: true,
-              role: profile?.role || 'customer',
-            };
-            
-            console.log('User logged in with role:', user.role);
-            setUser(user);
-            setIsAuthenticated(true);
-            
-            // Store session
-            localStorage.setItem("esygrab_session", JSON.stringify({
-              user,
-              expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000),
-              lastActivity: Date.now()
-            }));
-            
-            // Immediate redirect based on role
-            const role = user.role;
-            if (role === 'admin' || role === 'super_admin') {
-              window.location.href = '/admin/dashboard';
-            } else if (role === 'delivery_partner') {
-              window.location.href = '/delivery-partner/dashboard';
-            } else {
-              window.location.href = '/';
-            }
-          } else if (event !== 'SIGNED_IN') {
-            // For other events, just update user state without redirect
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('role')
-              .eq('id', session.user.id)
-              .single();
-
-            const user: User = {
-              id: session.user.id,
-              email: session.user.email || "",
-              isVerified: true,
-              role: profile?.role || 'customer',
-            };
-            
-            setUser(user);
-            setIsAuthenticated(true);
-          }
-        } else {
-          // No session
-          setUser(null);
-          setIsAuthenticated(false);
-          localStorage.removeItem("esygrab_session");
-          hasProcessedSignIn = false;
-        }
-        
-        setLoading(false);
-      }
-    );
-
-    // Check for existing session
+    // Initialize auth state
     const initializeAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -160,6 +83,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         if (mounted) setLoading(false);
       }
     };
+
+    // Set up auth state listener
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!mounted) return;
+
+        if (session?.user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', session.user.id)
+            .single();
+
+          const user: User = {
+            id: session.user.id,
+            email: session.user.email || "",
+            isVerified: true,
+            role: profile?.role || 'customer',
+          };
+          
+          setUser(user);
+          setIsAuthenticated(true);
+          
+          // Store session
+          localStorage.setItem("esygrab_session", JSON.stringify({
+            user,
+            expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000),
+            lastActivity: Date.now()
+          }));
+          
+        } else {
+          setUser(null);
+          setIsAuthenticated(false);
+          localStorage.removeItem("esygrab_session");
+        }
+        
+        setLoading(false);
+      }
+    );
 
     initializeAuth();
 

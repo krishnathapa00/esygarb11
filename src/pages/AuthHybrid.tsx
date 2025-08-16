@@ -27,14 +27,28 @@ const AuthHybrid = () => {
       return;
     }
 
+    // Check cooldown before sending
+    if (cooldown > 0) {
+      toast({
+        title: "Please Wait",
+        description: `Please wait ${cooldown} seconds before requesting another OTP`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     const { error } = await sendOtp(email);
     setLoading(false);
 
     if (error) {
+      let errorMessage = error.message || "Could not send OTP";
+      if (error.message.includes("after 1 seconds")) {
+        errorMessage = "Please wait before requesting another OTP";
+      }
       toast({
         title: "OTP Error",
-        description: error.message || "Could not send OTP",
+        description: errorMessage,
         variant: "destructive",
       });
     } else {
@@ -74,14 +88,8 @@ const AuthHybrid = () => {
       });
       setIsOtpModalOpen(false);
       
-      // Check if there's a redirect URL stored
-      const redirectUrl = localStorage.getItem("auth_redirect_url");
-      if (redirectUrl) {
-        localStorage.removeItem("auth_redirect_url");
-        navigate(redirectUrl);
-      } else {
-        navigate("/");
-      }
+      // Redirect to home page - let AuthContext handle role-based routing
+      navigate("/");
     }
   };
 

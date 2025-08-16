@@ -80,7 +80,8 @@ const AdminLogin = () => {
       description: "Welcome to the admin panel.",
     });
     
-    // Let AuthContext handle the redirect via onAuthStateChange
+    // Redirect to admin dashboard
+    navigate('/admin/dashboard');
   };
 
   const handlePasswordReset = async () => {
