@@ -155,8 +155,9 @@ const ManageCategories = () => {
       }
 
       setCategoryModalOpen(false);
-      refetchCategories();
+      await refetchCategories();
       queryClient.invalidateQueries({ queryKey: ['categories'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-categories'] });
     } catch (error: any) {
       toast({
         title: "Failed to save category",
@@ -182,8 +183,9 @@ const ManageCategories = () => {
       if (error) throw error;
 
       toast({ title: "Category deleted successfully!" });
-      refetchCategories();
+      await refetchCategories();
       queryClient.invalidateQueries({ queryKey: ['categories'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-categories'] });
     } catch (error: any) {
       toast({
         title: "Failed to delete category",

@@ -266,13 +266,13 @@ const ManageOrders = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                        <div className="flex gap-1 justify-end">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => {
-                            window.location.href = `/admin/orders/${order.id}`;
-                          }}
-                        >
+                         <Button 
+                           variant="ghost" 
+                           size="sm"
+                           onClick={() => {
+                             window.open(`/admin/orders/${order.id}`, '_blank');
+                           }}
+                         >
                           <Eye className="h-4 w-4 mr-1" />
                           View
                         </Button>

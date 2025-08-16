@@ -35,8 +35,13 @@ const AdminLayout = ({ children, onRefresh }: { children: React.ReactNode; onRef
   ];
 
   const handleLogout = async () => {
-    await signOut();
-    navigate('/auth');
+    try {
+      await signOut();
+      navigate('/admin-login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      navigate('/admin-login');
+    }
   };
 
   return (
@@ -64,12 +69,12 @@ const AdminLayout = ({ children, onRefresh }: { children: React.ReactNode; onRef
             );
           })}
         </nav>
-        <div className="absolute bottom-6 left-6">
+        <div className="absolute bottom-6 left-6 right-6">
           <Button
             variant="outline"
             size="sm"
             onClick={handleLogout}
-            className="flex items-center"
+            className="flex items-center w-full justify-center"
           >
             <LogOut className="w-4 h-4 mr-2" />
             Logout

@@ -48,6 +48,7 @@ import ManageDarkstores from './pages/admin/ManageDarkstores';
 import DeliverySettings from './pages/admin/DeliverySettings';
 import ManageCategories from './pages/admin/ManageCategories';
 import AddProductNew from './pages/admin/AddProductNew';
+import OrderDetails from './pages/admin/OrderDetails';
 
 const queryClient = new QueryClient();
 
@@ -166,6 +167,14 @@ const AppContent = () => {
           element={
             <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
               <ManageOrders />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/orders/:orderId"
+          element={
+            <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
+              <OrderDetails />
             </RoleProtectedRoute>
           }
         />
