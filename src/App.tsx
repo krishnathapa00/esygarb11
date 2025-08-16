@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider } from "@/contexts/AuthProvider";
 import { CartProvider } from "@/contexts/CartContext";
 import { ToastProvider } from "@/components/Toast";
 import { useActivityTracker } from '@/hooks/useActivityTracker';
@@ -19,6 +19,7 @@ import OrderTrackingLookup from "./pages/OrderTrackingLookup";
 import OrderHistory from "./pages/OrderHistory";
 import UserProfile from "./pages/UserProfile";
 import AuthHybrid from "./pages/AuthHybrid";
+import LoginPage from "./pages/auth/LoginPage";
 import DeliveryPartnerAuth from "./pages/DeliveryPartnerAuth";
 import DeliveryDashboard from "./pages/DeliveryDashboard";
 import AdminLogin from "./pages/admin/AdminLogin";
@@ -60,6 +61,7 @@ const AppContent = () => {
       <Routes>
         {/* Public Routes */}
         <Route path="/auth" element={<AuthHybrid />} />
+        <Route path="/auth/login" element={<LoginPage />} />
         <Route path="/" element={<Index />} />
         <Route path="/categories" element={<AllCategories />} />
         <Route path="/categories/:categoryId" element={<CategoryProducts />} />
