@@ -34,13 +34,17 @@ const Checkout = () => {
   const [showUserDetails, setShowUserDetails] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
 
-  // Check if user needs to complete profile - be smarter about existing data
+  // Check if user needs to complete profile - only for truly new users
   const storedLocation = localStorage.getItem("esygrab_user_location");
   const hasLocationFromHomepage = storedLocation ? JSON.parse(storedLocation) : null;
   
+  // Only ask new users (no full_name AND no address/location) to complete profile
+  // If they have either name OR address/location, they're existing users
   const needsProfileCompletion = user && (
-    !profile.full_name || 
-    (!profile.address && !hasLocationFromHomepage?.formatted)
+    !profile.full_name && 
+    !profile.address && 
+    !hasLocationFromHomepage?.formatted &&
+    !profile.phone // Additional check - if they have phone, they're not completely new
   );
 
   useEffect(() => {

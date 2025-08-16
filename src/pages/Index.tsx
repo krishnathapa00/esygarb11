@@ -77,7 +77,8 @@ const Index = () => {
       {!user && (
         <div className="bg-yellow-400 text-black px-4 py-2 md:py-3 text-center font-bold text-xs md:text-sm">
           ⚠️ This is a demo version. Some products and features may not be real.
-          Launching soon!
+          Launching soon! | 
+          <a href="/admin-login" className="underline ml-2 font-semibold">Admin Login</a>
         </div>
       )}
       <Header />
