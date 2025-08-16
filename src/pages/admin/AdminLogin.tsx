@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { SessionManager } from "@/utils/sessionManager";
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
@@ -18,6 +19,9 @@ const AdminLogin = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
+    // Clear all existing sessions before login
+    SessionManager.clearAllSessions();
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -75,23 +79,13 @@ const AdminLogin = () => {
       return;
     }
 
-    // Store admin session
-    const adminSessionData = {
-      user: {
-        id: userId,
-        email: email,
-        role: profile.role,
-        isVerified: true
-      },
+    // Store admin session with role validation
+    SessionManager.storeSession({
+      id: userId,
+      email: email,
       role: profile.role,
-      expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000),
-      lastActivity: Date.now()
-    };
-    
-    // Clear other sessions and store admin session
-    localStorage.removeItem("esygrab_user_session");
-    localStorage.removeItem("esygrab_delivery_session");
-    localStorage.setItem("esygrab_admin_session", JSON.stringify(adminSessionData));
+      isVerified: true
+    }, profile.role);
 
     toast({
       title: "Login successful!",

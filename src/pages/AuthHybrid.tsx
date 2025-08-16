@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import OTPVerificationModal from "@/components/OTPVerificationModal";
 import { Input } from "@/components/ui/input";
+import { SessionManager } from "@/utils/sessionManager";
 
 const AuthHybrid = () => {
   const [email, setEmail] = useState("");
@@ -72,6 +73,10 @@ const AuthHybrid = () => {
     }
 
     setLoading(true);
+    
+    // Clear all existing sessions before verification
+    SessionManager.clearAllSessions();
+    
     const { error } = await verifyOtp(email, otp);
     setLoading(false);
 
@@ -88,7 +93,7 @@ const AuthHybrid = () => {
       });
       setIsOtpModalOpen(false);
       
-      // Store user session and redirect to home
+      // User session will be handled by AuthContext
       window.location.href = "/";
     }
   };

@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { SessionManager } from '@/utils/sessionManager';
 
 const DeliveryPartnerAuth = () => {
   const [email, setEmail] = useState('');
@@ -101,6 +102,9 @@ const DeliveryPartnerAuth = () => {
     setLoading(true);
     console.log('Starting login process...', { email });
     
+    // Clear all existing sessions before login
+    SessionManager.clearAllSessions();
+    
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -144,23 +148,13 @@ const DeliveryPartnerAuth = () => {
         } else if (profile?.role === 'delivery_partner') {
           console.log('Access granted, navigating to dashboard...');
           
-          // Store delivery partner session
-          const deliverySessionData = {
-            user: {
-              id: data.user.id,
-              email: email,
-              role: profile.role,
-              isVerified: true
-            },
+          // Store delivery partner session with role validation
+          SessionManager.storeSession({
+            id: data.user.id,
+            email: email,
             role: profile.role,
-            expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000),
-            lastActivity: Date.now()
-          };
-          
-          // Clear other sessions and store delivery session
-          localStorage.removeItem("esygrab_admin_session");
-          localStorage.removeItem("esygrab_user_session");
-          localStorage.setItem("esygrab_delivery_session", JSON.stringify(deliverySessionData));
+            isVerified: true
+          }, profile.role);
           
           toast({
             title: "Welcome Back!",

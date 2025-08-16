@@ -6,6 +6,7 @@ import React, {
   useCallback,
 } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { SessionManager } from "@/utils/sessionManager";
 
 interface User {
   id: string;
@@ -51,31 +52,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Clear all role-based sessions
   const clearAllSessions = () => {
-    localStorage.removeItem("esygrab_admin_session");
-    localStorage.removeItem("esygrab_delivery_session");
-    localStorage.removeItem("esygrab_user_session");
-    localStorage.removeItem("esygrab_session");
-    localStorage.removeItem("user");
-    localStorage.removeItem("lastActivity");
-    localStorage.removeItem("guest_cart");
-    localStorage.removeItem("auth_redirect_url");
+    SessionManager.clearAllSessions();
   };
 
   // Store role-specific session
   const storeRoleSession = (user: User, role: string) => {
-    const sessionData = {
-      user,
-      role,
-      expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000),
-      lastActivity: Date.now()
-    };
-    
-    // Clear other role sessions first
-    clearAllSessions();
-    
-    // Store in role-specific key
-    const sessionKey = `esygrab_${role}_session`;
-    localStorage.setItem(sessionKey, JSON.stringify(sessionData));
+    SessionManager.storeSession(user, role);
   };
 
   useEffect(() => {
@@ -233,14 +215,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setIsAuthenticated(false);
       
       // Clear all role-based sessions
-      localStorage.removeItem("esygrab_admin_session");
-      localStorage.removeItem("esygrab_delivery_session");
-      localStorage.removeItem("esygrab_user_session");
-      localStorage.removeItem("esygrab_session");
-      localStorage.removeItem("user");
-      localStorage.removeItem("lastActivity");
-      localStorage.removeItem("guest_cart");
-      localStorage.removeItem("auth_redirect_url");
+      SessionManager.clearAllSessions();
       
       console.log('User logged out successfully');
     } catch (error) {

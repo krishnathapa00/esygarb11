@@ -712,6 +712,10 @@ export type Database = {
         Args: { user_id: string }
         Returns: undefined
       }
+      validate_user_role: {
+        Args: { expected_role: string; user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       order_status:
