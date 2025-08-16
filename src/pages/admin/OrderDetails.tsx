@@ -15,32 +15,44 @@ const OrderDetails = () => {
   const queryClient = useQueryClient();
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // Fetch order data
+  // Fetch order data with delivery config
   const { data: order, isLoading } = useQuery({
     queryKey: ['order-details', orderId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          profiles!orders_user_id_fkey ( full_name, phone_number, address ),
-          order_items ( *, products:product_id ( name, price, image_url ) ),
-          delivery_partner:profiles!orders_delivery_partner_id_fkey ( full_name, phone_number )
-        `)
-        .eq('id', orderId)
-        .single();
+      const [orderResponse, configResponse] = await Promise.all([
+        supabase
+          .from('orders')
+          .select(`
+            *,
+            profiles!orders_user_id_fkey ( full_name, phone_number, address ),
+            order_items ( *, products:product_id ( name, price, image_url ) ),
+            delivery_partner:profiles!orders_delivery_partner_id_fkey ( full_name, phone_number )
+          `)
+          .eq('id', orderId)
+          .single(),
+        supabase
+          .from('delivery_config')
+          .select('delivery_fee')
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .single()
+      ]);
 
-      if (error) {
+      if (orderResponse.error) {
         toast({
           title: "Failed to load order",
-          description: error.message,
+          description: orderResponse.error.message,
           variant: "destructive"
         });
         return null;
       }
-      return data;
+
+      const deliveryFee = configResponse.data?.delivery_fee || 50;
+      return { ...orderResponse.data, delivery_fee: deliveryFee } as any;
     },
-    enabled: !!orderId
+    enabled: !!orderId,
+    staleTime: 30000, // Cache for 30 seconds for faster loading
+    gcTime: 60000     // Keep in cache for 1 minute
   });
 
   // Update order status mutation
@@ -261,10 +273,29 @@ const OrderDetails = () => {
                       {order.status?.replace('_', ' ') || 'pending'}
                     </Badge>
                   </div>
+                  
+                  {/* Items Subtotal */}
+                  {order.order_items && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Items Subtotal</span>
+                      <span className="font-medium">
+                        Rs {order.order_items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0).toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Delivery Fee */}
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Total Amount</span>
-                    <span className="font-medium text-lg">Rs {order.total_amount}</span>
+                    <span className="text-gray-600">Delivery Fee</span>
+                    <span className="font-medium">Rs {order.delivery_fee?.toFixed(2) || '50.00'}</span>
                   </div>
+                  
+                  {/* Total Amount */}
+                  <div className="flex justify-between border-t pt-2">
+                    <span className="text-gray-600 font-semibold">Total Amount</span>
+                    <span className="font-bold text-lg">Rs {order.total_amount}</span>
+                  </div>
+                  
                   <div className="flex justify-between">
                     <span className="text-gray-600">Payment Status</span>
                     <Badge variant={order.payment_status === 'completed' ? 'default' : 'secondary'}>

@@ -48,29 +48,32 @@ const AdminLayout = ({ children, onRefresh }: { children: React.ReactNode; onRef
     <div className="min-h-screen bg-gray-50 flex">
       {/* Fixed Sidebar */}
       <div className="w-64 bg-white shadow-lg fixed h-full overflow-y-auto">
+        <div className="flex flex-col h-full">
         <div className="p-6">
           <h1 className="text-xl font-bold text-gray-800">Admin Panel</h1>
         </div>
-        <nav className="mt-6">
-          {sidebarItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.path;
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100 ${
-                  isActive ? 'bg-gray-100 border-r-2 border-green-500' : ''
-                }`}
-              >
-                <Icon className="w-5 h-5 mr-3" />
-                {item.label}
-              </Link>
-            );
-          })}
+        <nav className="mt-6 flex-1 flex flex-col">
+          <div className="flex-1">
+            {sidebarItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.path;
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100 ${
+                    isActive ? 'bg-gray-100 border-r-2 border-green-500' : ''
+                  }`}
+                >
+                  <Icon className="w-5 h-5 mr-3" />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
           
-          {/* Logout button moved here, below all nav items */}
-          <div className="px-6 py-3 mt-4 border-t">
+          {/* Logout button at bottom */}
+          <div className="px-6 py-3 mt-auto border-t">
             <Button
               variant="outline"
               size="sm"
@@ -82,6 +85,7 @@ const AdminLayout = ({ children, onRefresh }: { children: React.ReactNode; onRef
             </Button>
           </div>
         </nav>
+        </div>
       </div>
 
       {/* Main Content with margin to account for fixed sidebar */}

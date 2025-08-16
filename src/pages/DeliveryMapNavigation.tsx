@@ -29,25 +29,35 @@ const DeliveryMapNavigation = () => {
   const queryClient = useQueryClient();
   
 
-  // Fetch order details
+  // Fetch order details with delivery config
   const { data: order, isLoading } = useQuery({
     queryKey: ['order-details', orderId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          profiles!orders_user_id_fkey(full_name, phone_number, address),
-          order_items(
+      const [orderResponse, configResponse] = await Promise.all([
+        supabase
+          .from('orders')
+          .select(`
             *,
-            products(name, image_url, price)
-          )
-        `)
-        .eq('id', orderId)
-        .single();
+            profiles!orders_user_id_fkey(full_name, phone_number, address),
+            order_items(
+              *,
+              products(name, image_url, price)
+            )
+          `)
+          .eq('id', orderId)
+          .single(),
+        supabase
+          .from('delivery_config')
+          .select('delivery_fee')
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .single()
+      ]);
 
-      if (error) throw error;
-      return data;
+      if (orderResponse.error) throw orderResponse.error;
+      
+      const deliveryFee = configResponse.data?.delivery_fee || 50;
+      return { ...orderResponse.data, delivery_fee: deliveryFee };
     },
     enabled: !!orderId
   });
@@ -304,16 +314,16 @@ const DeliveryMapNavigation = () => {
           <CardContent className="space-y-4">
             <div className="flex items-center gap-3">
               <User className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">{order.profiles?.full_name}</span>
+              <span className="font-medium">{order.profiles?.full_name || 'N/A'}</span>
             </div>
             
             <div className="flex items-center gap-3">
               <Phone className="h-4 w-4 text-muted-foreground" />
               <a 
-                href={`tel:${order.profiles?.phone_number}`}
+                href={`tel:${order.profiles?.phone_number || ''}`}
                 className="text-blue-600 hover:underline"
               >
-                {order.profiles?.phone_number}
+                {order.profiles?.phone_number || 'N/A'}
               </a>
             </div>
             
@@ -321,7 +331,7 @@ const DeliveryMapNavigation = () => {
               <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
               <div className="flex-1">
                 <div className="text-sm text-muted-foreground mb-1">Delivery Address:</div>
-                <span className="text-sm font-medium">{order.delivery_address}</span>
+                <span className="text-sm font-medium">{order.delivery_address || 'N/A'}</span>
               </div>
             </div>
             
@@ -359,8 +369,23 @@ const DeliveryMapNavigation = () => {
                 </div>
               ))}
               
-              <div className="border-t pt-3 mt-3">
-                <div className="flex justify-between items-center font-semibold text-lg">
+              <div className="border-t pt-3 mt-3 space-y-2">
+                {/* Items Subtotal */}
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Items Subtotal</span>
+                  <span className="font-medium">
+                    Rs {order.order_items?.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0).toFixed(2) || '0.00'}
+                  </span>
+                </div>
+                
+                {/* Delivery Fee */}
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Delivery Fee</span>
+                  <span className="font-medium">Rs {order.delivery_fee?.toFixed(2) || '50.00'}</span>
+                </div>
+                
+                {/* Total */}
+                <div className="flex justify-between items-center font-semibold text-lg border-t pt-2">
                   <span>Total Amount</span>
                   <span>Rs {parseFloat(order.total_amount?.toString() || '0').toFixed(2)}</span>
                 </div>
