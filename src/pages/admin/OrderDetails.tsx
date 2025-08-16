@@ -1,17 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Package, User, MapPin, Clock, CreditCard } from 'lucide-react';
+import { ArrowLeft, Package, User, MapPin, Clock, CreditCard, CheckCircle, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AdminLayout from './components/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
 
 const OrderDetails = () => {
   const { orderId } = useParams();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isUpdating, setIsUpdating] = useState(false);
 
   // Fetch order data
   const { data: order, isLoading } = useQuery({
@@ -41,16 +43,135 @@ const OrderDetails = () => {
     enabled: !!orderId
   });
 
+  // Update order status mutation
+  const updateOrderMutation = useMutation({
+    mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
+      const updateData: any = { status };
+      
+      if (status === 'ready_for_pickup') {
+        // When marking ready, also log to status history
+        await supabase.from('order_status_history').insert({
+          order_id: orderId,
+          status: 'ready_for_pickup',
+          notes: 'Order prepared and ready for pickup'
+        });
+      }
+      
+      const { data, error } = await supabase
+        .from('orders')
+        .update(updateData)
+        .eq('id', orderId)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Order status updated successfully" });
+      queryClient.invalidateQueries({ queryKey: ['order-details', orderId] });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
+
+  // Dispatch order to available delivery partners
+  const dispatchOrderMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      // Find an available online delivery partner
+      const { data: availablePartners, error: partnerError } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .eq('role', 'delivery_partner')
+        .eq('is_online', true)
+        .eq('kyc_verified', true);
+        
+      if (partnerError) throw partnerError;
+      
+      if (!availablePartners || availablePartners.length === 0) {
+        // No partners available, just mark as ready for pickup
+        const { error } = await supabase
+          .from('orders')
+          .update({ status: 'ready_for_pickup' })
+          .eq('id', orderId);
+          
+        if (error) throw error;
+        
+        await supabase.from('order_status_history').insert({
+          order_id: orderId,
+          status: 'ready_for_pickup', 
+          notes: 'Order dispatched - awaiting delivery partner acceptance'
+        });
+        
+        return { autoAssigned: false };
+      }
+      
+      // Auto-assign to first available partner
+      const selectedPartner = availablePartners[0];
+      const { data, error } = await supabase
+        .from('orders')
+        .update({ 
+          delivery_partner_id: selectedPartner.id,
+          status: 'dispatched',
+          accepted_at: new Date().toISOString()
+        })
+        .eq('id', orderId)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      await supabase.from('order_status_history').insert({
+        order_id: orderId,
+        status: 'dispatched',
+        notes: `Order auto-assigned to ${selectedPartner.full_name}`
+      });
+      
+      return { autoAssigned: true, partnerName: selectedPartner.full_name };
+    },
+    onSuccess: (result) => {
+      if (result.autoAssigned) {
+        toast({ 
+          title: "Order Dispatched", 
+          description: `Order automatically assigned to ${result.partnerName}` 
+        });
+      } else {
+        toast({ 
+          title: "Order Ready", 
+          description: "Order is now available for delivery partners to accept" 
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ['order-details', orderId] });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
+
   const getStatusColor = (status: string) => {
     switch(status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800';
       case 'confirmed': return 'bg-blue-100 text-blue-800';
+      case 'ready_for_pickup': return 'bg-cyan-100 text-cyan-800';
       case 'dispatched': return 'bg-indigo-100 text-indigo-800';
       case 'out_for_delivery': return 'bg-purple-100 text-purple-800';
       case 'delivered': return 'bg-green-100 text-green-800';
       case 'cancelled': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const handleMarkReady = () => {
+    setIsUpdating(true);
+    updateOrderMutation.mutate({ orderId: orderId!, status: 'ready_for_pickup' });
+    setIsUpdating(false);
+  };
+
+  const handleDispatchOrder = () => {
+    setIsUpdating(true);
+    dispatchOrderMutation.mutate(orderId!);
+    setIsUpdating(false);
   };
 
   if (isLoading) {
@@ -80,15 +201,41 @@ const OrderDetails = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex items-center mb-6">
-          <Link to="/admin/orders">
-            <Button variant="ghost" size="sm" className="mr-3">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold">Order Details #{order.order_number}</h1>
-            <p className="text-gray-500">Order placed on {new Date(order.created_at).toLocaleDateString()}</p>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center">
+            <Link to="/admin/orders">
+              <Button variant="ghost" size="sm" className="mr-3">
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold">Order Details #{order.order_number}</h1>
+              <p className="text-gray-500">Order placed on {new Date(order.created_at).toLocaleDateString()}</p>
+            </div>
+          </div>
+          
+          {/* Action Buttons */}
+          <div className="flex gap-2">
+            {(order.status === 'pending' || order.status === 'confirmed') && (
+              <Button 
+                onClick={handleMarkReady}
+                disabled={isUpdating}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Mark Ready
+              </Button>
+            )}
+            {order.status === 'ready_for_pickup' && (
+              <Button 
+                onClick={handleDispatchOrder}
+                disabled={isUpdating}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <Truck className="h-4 w-4 mr-2" />
+                Dispatch Order
+              </Button>
+            )}
           </div>
         </div>
 
