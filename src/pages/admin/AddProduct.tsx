@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AdminLayout from './components/AdminLayout';
-import SingleImageUpload from '@/components/SingleImageUpload';
+import ImageUpload from '@/components/ImageUpload';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
@@ -370,13 +370,13 @@ const AddProduct = () => {
                   <CardTitle>Product Images</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <SingleImageUpload
+                  <ImageUpload
                     onImageUpload={(url) => handleInputChange('image_url', url)}
                     currentImage={productData.image_url}
                     folder="products"
                   />
                   <p className="text-xs text-gray-500 mt-2">
-                    Upload 1-4 product images. First image will be the main display.
+                    Upload product images directly. First image will be the main display.
                   </p>
                 </CardContent>
               </Card>

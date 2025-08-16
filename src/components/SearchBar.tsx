@@ -36,7 +36,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ initialQuery = "" }) => {
 
     setSuggestions(filtered);
     setHighlightedIndex(-1); // reset when query changes
-  }, [searchQuery, products]);
+  }, [searchQuery, products.length]); // Fix: Only depend on products.length to avoid infinite loop
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "ArrowDown") {

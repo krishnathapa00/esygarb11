@@ -21,6 +21,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import AdminLayout from './components/AdminLayout';
+import ImageUpload from '@/components/ImageUpload';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
@@ -202,6 +203,38 @@ const ManageCategories = () => {
     setSubCategoryModalOpen(true);
   };
 
+  const handleSubCategorySubmit = async () => {
+    setLoading(true);
+    try {
+      if (!subCategoryForm.name.trim() || !subCategoryForm.category_id) {
+        throw new Error('Subcategory name and category are required');
+      }
+
+      const payload = {
+        name: subCategoryForm.name.trim(),
+        category_id: parseInt(subCategoryForm.category_id),
+        description: subCategoryForm.description || null
+      };
+
+      // Since subcategories table doesn't exist yet, create it first
+      toast({ 
+        title: "Feature Coming Soon", 
+        description: "Subcategories functionality will be available soon.",
+        variant: "default"
+      });
+      
+      setSubCategoryModalOpen(false);
+    } catch (error: any) {
+      toast({
+        title: "Failed to create subcategory",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <AdminLayout onRefresh={() => { refetchCategories(); refetchSubCategories(); }}>
       <div className="space-y-6">
@@ -348,12 +381,11 @@ const ManageCategories = () => {
                 />
               </div>
               <div>
-                <Label htmlFor="category-image">Image URL</Label>
-                <Input
-                  id="category-image"
-                  value={categoryForm.image_url}
-                  onChange={(e) => setCategoryForm(prev => ({ ...prev, image_url: e.target.value }))}
-                  placeholder="https://example.com/image.jpg"
+                <Label htmlFor="category-image">Category Image</Label>
+                <ImageUpload
+                  onImageUpload={(url) => setCategoryForm(prev => ({ ...prev, image_url: url }))}
+                  currentImage={categoryForm.image_url}
+                  folder="categories"
                 />
               </div>
               <div>
@@ -442,8 +474,8 @@ const ManageCategories = () => {
               <Button variant="outline" onClick={() => setSubCategoryModalOpen(false)}>
                 Cancel
               </Button>
-              <Button disabled={true}>
-                Coming Soon
+              <Button onClick={handleSubCategorySubmit} disabled={loading}>
+                {loading ? 'Creating...' : 'Create'}
               </Button>
             </DialogFooter>
           </DialogContent>
