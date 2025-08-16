@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useDeliveryTimer } from '@/hooks/useDeliveryTimer';
+import { useOrderTimer } from '@/hooks/useOrderTimer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,13 +13,12 @@ import {
   MapPin, 
   Phone, 
   User, 
-  Clock, 
+  Timer, 
   Package,
   Navigation,
   CheckCircle,
   Truck,
-  Play,
-  Pause
+  AlertCircle
 } from 'lucide-react';
 
 const DeliveryMapNavigation = () => {
@@ -42,7 +41,8 @@ const DeliveryMapNavigation = () => {
             order_items(
               *,
               products(name, image_url, price)
-            )
+            ),
+            user_profile:profiles!orders_user_id_fkey ( full_name, phone_number, address )
           `)
           .eq('id', orderId)
           .single(),
@@ -62,22 +62,13 @@ const DeliveryMapNavigation = () => {
     enabled: !!orderId
   });
 
-  // Use persistent delivery timer
-  const { timer, isTimerRunning, formatTime, startTimer, stopTimer } = useDeliveryTimer({
+  // Order timer for delivery partner tracking
+  const orderTimer = useOrderTimer({
     orderId: orderId || '',
-    orderStatus: order?.status || '',
-    onTimerStart: () => {
-      toast({
-        title: "Timer Started",
-        description: "Delivery timer is now running.",
-      });
-    },
-    onTimerStop: () => {
-      toast({
-        title: "Timer Stopped",
-        description: "Delivery completed.",
-      });
-    }
+    orderStatus: order?.status || 'pending',
+    orderCreatedAt: order?.created_at || '',
+    acceptedAt: order?.accepted_at,
+    deliveredAt: order?.delivered_at
   });
 
 
@@ -115,13 +106,11 @@ const DeliveryMapNavigation = () => {
       queryClient.invalidateQueries({ queryKey: ['orders', user?.id] });
       
       if (status === 'out_for_delivery') {
-        startTimer();
         toast({
           title: "Order Picked Up",
-          description: "Timer started. Navigate to customer location.",
+          description: "Navigate to customer location.",
         });
       } else if (status === 'delivered') {
-        stopTimer();
         
         // Show success modal
         const modal = document.createElement('div');
@@ -163,10 +152,9 @@ const DeliveryMapNavigation = () => {
   };
 
   const handleDelivered = () => {
-    const deliveryTimeMinutes = Math.floor(timer / 60);
     updateOrderMutation.mutate({ 
       status: 'delivered', 
-      notes: `Order delivered in ${deliveryTimeMinutes} minutes` 
+      notes: `Order delivered successfully` 
     });
   };
 
@@ -240,19 +228,29 @@ const DeliveryMapNavigation = () => {
         </div>
 
         {/* Timer Card */}
-        <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
-          <CardContent className="p-6">
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <Clock className="h-6 w-6 text-blue-600" />
-                <h3 className="text-lg font-semibold text-blue-900">Delivery Timer</h3>
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Timer className="h-5 w-5 text-primary" />
+                <span className="font-medium">Delivery Timer</span>
               </div>
-              <div className="text-4xl font-bold text-blue-600 mb-4">
-                {formatTime()}
+              <div className="text-right">
+                <div className={`text-2xl font-bold ${orderTimer.isOverdue ? 'text-red-600' : 'text-primary'}`}>
+                  {orderTimer.deliveryPartnerRemaining !== null 
+                    ? orderTimer.formatDeliveryPartnerRemaining() 
+                    : orderTimer.formatRemaining()}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {orderTimer.deliveryPartnerRemaining !== null ? 'Your remaining time' : 'Total remaining'}
+                </div>
+                {orderTimer.isOverdue && (
+                  <div className="flex items-center gap-1 text-red-600">
+                    <AlertCircle className="h-3 w-3" />
+                    <span className="text-xs">Overdue</span>
+                  </div>
+                )}
               </div>
-              <p className="text-sm text-blue-700">
-                {isTimerRunning ? 'Timer is running...' : 'Timer will start when order is out for delivery'}
-              </p>
             </div>
           </CardContent>
         </Card>
@@ -314,17 +312,25 @@ const DeliveryMapNavigation = () => {
           <CardContent className="space-y-4">
             <div className="flex items-center gap-3">
               <User className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">{order.profiles?.full_name || 'N/A'}</span>
+              <span className="font-medium">{order.profiles?.full_name || order.user_profile?.full_name || 'Not available'}</span>
             </div>
             
             <div className="flex items-center gap-3">
               <Phone className="h-4 w-4 text-muted-foreground" />
               <a 
-                href={`tel:${order.profiles?.phone_number || ''}`}
+                href={`tel:${order.profiles?.phone_number || order.user_profile?.phone_number || ''}`}
                 className="text-blue-600 hover:underline"
               >
-                {order.profiles?.phone_number || 'N/A'}
+                {order.profiles?.phone_number || order.user_profile?.phone_number || 'Not available'}
               </a>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
+              <div className="flex-1">
+                <div className="text-sm text-muted-foreground mb-1">Customer Address:</div>
+                <span className="text-sm font-medium">{order.profiles?.address || order.user_profile?.address || order.delivery_address}</span>
+              </div>
             </div>
             
             <div className="flex items-start gap-3">
@@ -334,16 +340,6 @@ const DeliveryMapNavigation = () => {
                 <span className="text-sm font-medium">{order.delivery_address || 'N/A'}</span>
               </div>
             </div>
-            
-            {order.profiles?.address && (
-              <div className="flex items-start gap-3">
-                <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
-                <div className="flex-1">
-                  <div className="text-sm text-muted-foreground mb-1">Customer Address:</div>
-                  <span className="text-sm font-medium">{order.profiles.address}</span>
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
 
@@ -389,6 +385,14 @@ const DeliveryMapNavigation = () => {
                   <span>Total Amount</span>
                   <span>Rs {parseFloat(order.total_amount?.toString() || '0').toFixed(2)}</span>
                 </div>
+                
+                {/* Timer Info */}
+                {order.status === 'delivered' && order.delivery_time_minutes && (
+                  <div className="flex justify-between text-sm text-muted-foreground border-t pt-2">
+                    <span>Actual Delivery Time</span>
+                    <span>{Math.floor(order.delivery_time_minutes)} minutes</span>
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>

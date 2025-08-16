@@ -7,14 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Package, Truck, CheckCircle, Clock, MapPin, Phone } from 'lucide-react';
+import { ArrowLeft, Package, Truck, CheckCircle, Clock, MapPin, Phone, Timer, AlertCircle } from 'lucide-react';
 import Header from '@/components/Header';
+import { useOrderTimer } from '@/hooks/useOrderTimer';
 
 const OrderTracking = () => {
   const { orderId } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [timeElapsed, setTimeElapsed] = useState(0);
 
   // Fetch order details
   const { data: order, isLoading } = useQuery({
@@ -54,26 +54,14 @@ const OrderTracking = () => {
     refetchInterval: 5000 // Refresh every 5 seconds
   });
 
-  // Timer for elapsed time since order placement
-  useEffect(() => {
-    if (!order?.created_at) return;
-
-    const startTime = new Date(order.created_at).getTime();
-    
-    const timer = setInterval(() => {
-      const now = new Date().getTime();
-      const elapsed = Math.floor((now - startTime) / 1000);
-      setTimeElapsed(elapsed);
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [order?.created_at]);
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+  // Order timer for 15-minute delivery tracking
+  const orderTimer = useOrderTimer({
+    orderId: orderId || '',
+    orderStatus: order?.status || 'pending',
+    orderCreatedAt: order?.created_at || '',
+    acceptedAt: order?.accepted_at,
+    deliveredAt: order?.delivered_at
+  });
 
   const getOrderProgress = (status: string) => {
     switch (status) {
@@ -184,10 +172,25 @@ const OrderTracking = () => {
                   Estimated delivery: {order.estimated_delivery}
                 </p>
               </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold text-primary">{formatTime(timeElapsed)}</p>
-                <p className="text-sm text-muted-foreground">Time elapsed</p>
+              <div className="text-right space-y-1">
+                <div className="flex items-center gap-2 justify-end">
+                  <Timer className="h-4 w-4 text-primary" />
+                  <p className="text-2xl font-bold text-primary">{orderTimer.formatRemaining()}</p>
+                </div>
+                <p className="text-sm text-muted-foreground">Remaining time</p>
+                {orderTimer.isOverdue && (
+                  <div className="flex items-center gap-1 text-red-600">
+                    <AlertCircle className="h-3 w-3" />
+                    <span className="text-xs">Overdue</span>
+                  </div>
+                )}
               </div>
+            </div>
+            <div className="flex justify-between text-sm text-muted-foreground mb-2">
+              <span>Time elapsed: {orderTimer.formatElapsed()}</span>
+              {order.status === 'delivered' && order.delivery_time_minutes && (
+                <span>Total delivery time: {Math.floor(order.delivery_time_minutes)} minutes</span>
+              )}
             </div>
             <Progress value={getOrderProgress(order.status)} className="h-2" />
           </CardContent>

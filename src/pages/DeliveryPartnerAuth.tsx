@@ -122,9 +122,9 @@ const DeliveryPartnerAuth = () => {
           description: "You have successfully logged in to your delivery partner account.",
         });
         
-        // Let the auth context and route protection handle role validation
-        // Redirect to delivery dashboard - AuthGuard will validate role
-        navigate('/delivery-partner/dashboard');
+        // For delivery partners, navigate to their dashboard
+        // AuthGuard will validate the role
+        window.location.href = '/delivery-partner/dashboard';
       } else {
         console.error('No user data received');
         toast({

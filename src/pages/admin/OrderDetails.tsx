@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Package, User, MapPin, Clock, CreditCard, CheckCircle, Truck } from 'lucide-react';
+import { ArrowLeft, Package, User, MapPin, Clock, CreditCard, CheckCircle, Truck, Timer, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +8,7 @@ import AdminLayout from './components/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
+import { useOrderTimer } from '@/hooks/useOrderTimer';
 
 const OrderDetails = () => {
   const { orderId } = useParams();
@@ -53,6 +54,15 @@ const OrderDetails = () => {
     enabled: !!orderId,
     staleTime: 30000, // Cache for 30 seconds for faster loading
     gcTime: 60000     // Keep in cache for 1 minute
+  });
+
+  // Order timer for admin tracking
+  const orderTimer = useOrderTimer({
+    orderId: orderId || '',
+    orderStatus: order?.status || 'pending',
+    orderCreatedAt: order?.created_at || '',
+    acceptedAt: order?.accepted_at,
+    deliveredAt: order?.delivered_at
   });
 
   // Update order status mutation
@@ -305,6 +315,37 @@ const OrderDetails = () => {
                   <div className="flex justify-between">
                     <span className="text-gray-600">Estimated Delivery</span>
                     <span>{order.estimated_delivery || 'N/A'}</span>
+                  </div>
+                  
+                  {/* Timer Display */}
+                  <div className="border-t pt-3 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 flex items-center gap-1">
+                        <Timer className="h-4 w-4" />
+                        Remaining Time
+                      </span>
+                      <div className="text-right">
+                        <span className={`font-bold text-lg ${orderTimer.isOverdue ? 'text-red-600' : 'text-primary'}`}>
+                          {orderTimer.formatRemaining()}
+                        </span>
+                        {orderTimer.isOverdue && (
+                          <div className="flex items-center gap-1 text-red-600">
+                            <AlertCircle className="h-3 w-3" />
+                            <span className="text-xs">Overdue</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Time Elapsed</span>
+                      <span>{orderTimer.formatElapsed()}</span>
+                    </div>
+                    {order.status === 'delivered' && order.delivery_time_minutes && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Total Delivery Time</span>
+                        <span className="font-medium">{Math.floor(order.delivery_time_minutes)} minutes</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>
