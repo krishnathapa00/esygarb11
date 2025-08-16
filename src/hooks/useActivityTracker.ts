@@ -28,12 +28,29 @@ export const useActivityTracker = () => {
     // Update activity immediately
     updateActivity();
 
+    // Update session activity in localStorage on user interactions
+    const updateSessionActivity = () => {
+      const storedSession = localStorage.getItem('esygrab_session');
+      if (storedSession) {
+        try {
+          const sessionData = JSON.parse(storedSession);
+          sessionData.lastActivity = Date.now();
+          localStorage.setItem('esygrab_session', JSON.stringify(sessionData));
+        } catch (error) {
+          console.error('Failed to update session activity:', error);
+        }
+      }
+    };
+
     // Set up activity tracking based on user interaction
     const trackActivity = () => {
       // Clear existing timer
       if (activityTimer) clearTimeout(activityTimer);
       
-      // Update activity after a short delay to avoid too frequent calls
+      // Update session activity immediately on interaction
+      updateSessionActivity();
+      
+      // Update database activity after a short delay to avoid too frequent calls
       activityTimer = setTimeout(updateActivity, 60000); // 1 minute delay
     };
 
@@ -45,7 +62,10 @@ export const useActivityTracker = () => {
     });
 
     // Update activity every 5 minutes
-    const intervalId = setInterval(updateActivity, 5 * 60 * 1000);
+    const intervalId = setInterval(() => {
+      updateActivity();
+      updateSessionActivity();
+    }, 5 * 60 * 1000);
 
     return () => {
       events.forEach(event => {

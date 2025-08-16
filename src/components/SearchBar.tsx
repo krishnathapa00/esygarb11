@@ -23,6 +23,10 @@ const SearchBar: React.FC<SearchBarProps> = ({ initialQuery = "" }) => {
       return;
     }
 
+    if (!products || products.length === 0) {
+      return;
+    }
+
     const filtered = products
       .filter((product) =>
         product.name.toLowerCase().includes(searchQuery.toLowerCase())

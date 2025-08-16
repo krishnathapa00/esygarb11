@@ -1,8 +1,27 @@
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuthContext } from '@/contexts/AuthProvider';
 
 export const useSessionPersistence = () => {
+  const { user } = useAuthContext();
+
   useEffect(() => {
+    // Update user activity in session storage
+    const updateActivity = () => {
+      if (user) {
+        const storedSession = localStorage.getItem('esygrab_session');
+        if (storedSession) {
+          try {
+            const sessionData = JSON.parse(storedSession);
+            sessionData.lastActivity = Date.now();
+            localStorage.setItem('esygrab_session', JSON.stringify(sessionData));
+          } catch (error) {
+            console.error('Failed to update session activity:', error);
+          }
+        }
+      }
+    };
+
     // Check if we need to refresh the session on page load
     const checkAndRefreshSession = async () => {
       try {
@@ -23,6 +42,9 @@ export const useSessionPersistence = () => {
             console.log('Token expiring soon, refreshing...');
             await supabase.auth.refreshSession();
           }
+          
+          // Update activity on session check
+          updateActivity();
         }
       } catch (error) {
         console.error('Session refresh error:', error);
@@ -32,35 +54,22 @@ export const useSessionPersistence = () => {
     // Check session on mount
     checkAndRefreshSession();
 
+    // Set up periodic activity updates (every 5 minutes when user is active)
+    const activityInterval = setInterval(updateActivity, 5 * 60 * 1000);
+
     // Set up automatic token refresh 5 minutes before expiry
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (event === 'TOKEN_REFRESHED' && session) {
+        if (event === 'TOKEN_REFRESHED' && session && user) {
           console.log('Token refreshed successfully');
-          
-          // Fetch user role for refreshed session
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', session.user.id)
-            .single();
-          
-          // Update stored session data with role
-          const sessionData = {
-            user: {
-              id: session.user.id,
-              email: session.user.email || "",
-              isVerified: true,
-              role: profile?.role || 'customer',
-            },
-            expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000), // 7 days
-            lastActivity: Date.now()
-          };
-          localStorage.setItem("esygrab_session", JSON.stringify(sessionData));
+          updateActivity();
         }
       }
     );
 
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => {
+      clearInterval(activityInterval);
+      subscription.unsubscribe();
+    };
+  }, [user]);
 };
