@@ -35,6 +35,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
   if (requiredRole) {
     const roles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
     if (!roles.includes(user.role)) {
+      console.log(`AuthGuard: Access denied. User role: ${user.role}, Required: ${roles.join(', ')}`);
       // Redirect based on user's actual role
       const redirectPath = getRoleRedirectPath(user.role);
       return <Navigate to={redirectPath} replace />;

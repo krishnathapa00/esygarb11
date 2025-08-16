@@ -44,18 +44,11 @@ const DeliveryPartnerAuth = () => {
     setLoading(true);
     
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/delivery-partner/dashboard`,
-          data: {
-            full_name: fullName,
-            role: 'delivery_partner',
-            vehicle_type: vehicleType,
-            license_number: licenseNumber,
-          }
-        }
+      const { data, error } = await signUp(email, password, {
+        full_name: fullName,
+        role: 'delivery_partner',
+        vehicle_type: vehicleType,
+        license_number: licenseNumber,
       });
       
       if (error) {
@@ -122,43 +115,16 @@ const DeliveryPartnerAuth = () => {
           variant: "destructive",
         });
       } else if (data?.user) {
-        console.log('Login successful, checking profile...');
+        console.log('Login successful, auth context will handle role validation');
         
-        // Check if user is delivery partner
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', data.user.id)
-          .single();
+        toast({
+          title: "Welcome Back!",
+          description: "You have successfully logged in to your delivery partner account.",
+        });
         
-        console.log('Profile check:', { profile, profileError });
-        
-        if (profileError) {
-          console.error('Profile fetch error:', profileError);
-          toast({
-            title: "Profile Error",
-            description: "Could not fetch profile information",
-            variant: "destructive",
-          });
-        } else if (profile?.role === 'delivery_partner') {
-          console.log('Access granted, navigating to dashboard...');
-          
-          toast({
-            title: "Welcome Back!",
-            description: "You have successfully logged in to your delivery partner account.",
-          });
-          
-          // Redirect to delivery dashboard
-          navigate('/delivery-partner/dashboard');
-        } else {
-          console.log('Access denied - not a delivery partner');
-          toast({
-            title: "Access Denied",
-            description: "This account is not registered as a delivery partner.",
-            variant: "destructive",
-          });
-          await supabase.auth.signOut();
-        }
+        // Let the auth context and route protection handle role validation
+        // Redirect to delivery dashboard - AuthGuard will validate role
+        navigate('/delivery-partner/dashboard');
       } else {
         console.error('No user data received');
         toast({

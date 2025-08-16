@@ -44,6 +44,7 @@ export const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
   const userRole = user.role;
 
   if (!allowedRoles.includes(userRole)) {
+    console.log(`RoleProtectedRoute: Access denied. User role: ${userRole}, Allowed roles: ${allowedRoles.join(', ')}`);
     // Redirect based on actual user role to prevent wrong redirects
     if (userRole === 'admin' || userRole === 'super_admin') {
       return <Navigate to="/admin/dashboard" replace />;

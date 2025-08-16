@@ -34,31 +34,25 @@ const AdminLogin = () => {
       return;
     }
 
-    // Check if user has admin role
     if (data?.user) {
-      // Get the stored user from localStorage to check role
-      setTimeout(() => {
-        const storedUser = JSON.parse(localStorage.getItem('esygrab_auth_user') || '{}');
-        
-        if (storedUser.role === "admin" || storedUser.role === "super_admin") {
-          console.log('AdminLogin: Access granted for role:', storedUser.role);
-          toast({
-            title: "Login successful!",
-            description: "Welcome to the admin panel.",
-          });
-          navigate('/admin/dashboard');
-        } else {
-          console.log('AdminLogin: Access denied for role:', storedUser.role);
-          toast({
-            title: "Access Denied",
-            description: "You are not an admin. Please use a valid admin account to log in.",
-            variant: "destructive",
-          });
-        }
-        setLoading(false);
-      }, 100);
+      console.log('AdminLogin: Login successful, checking user role...');
+      setLoading(false);
+      
+      toast({
+        title: "Login successful!",
+        description: "Welcome to the admin panel.",
+      });
+      
+      // Let the auth context handle role-based navigation
+      // The AuthGuard will redirect to appropriate dashboard
+      navigate('/admin/dashboard');
     } else {
       setLoading(false);
+      toast({
+        title: "Login Error",
+        description: "Authentication failed. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
