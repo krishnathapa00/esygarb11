@@ -97,16 +97,6 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
               Delivery Partners
             </NavLink>
             
-            <NavLink to="/admin/transactions" className={({ isActive }) => 
-              `flex items-center px-4 py-3 rounded-lg transition-colors ${
-                isActive 
-                  ? 'bg-blue-600 text-white' 
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`
-            }>
-              <CreditCard className="h-5 w-5 mr-3" />
-              Transactions
-            </NavLink>
 
             <NavLink to="/admin/kyc" className={({ isActive }) => 
               `flex items-center px-4 py-3 rounded-lg transition-colors ${
@@ -128,6 +118,17 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             }>
               <Truck className="h-5 w-5 mr-3" />
               Delivery Settings
+            </NavLink>
+
+            <NavLink to="/admin/transactions" className={({ isActive }) => 
+              `flex items-center px-4 py-3 rounded-lg transition-colors ${
+                isActive 
+                  ? 'bg-blue-600 text-white' 
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`
+            }>
+              <CreditCard className="h-5 w-5 mr-3" />
+              Transactions
             </NavLink>
             
             <button 

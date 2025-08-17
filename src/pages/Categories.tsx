@@ -3,19 +3,46 @@ import { Link } from 'react-router-dom';
 import Header from '../components/Header';
 import { ArrowLeft, Clock, Package, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
-const categories = [
-  { id: 1, name: 'Fruits & Vegetables', image: 'https://images.unsplash.com/photo-1518843875459-f738682238a6?w=400&h=400&fit=crop', color: 'bg-green-100', textColor: 'text-green-700', productCount: 150 },
-  { id: 2, name: 'Dairy & Eggs', image: 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=400&h=400&fit=crop', color: 'bg-blue-100', textColor: 'text-blue-700', productCount: 85 },
-  { id: 3, name: 'Snacks & Beverages', image: 'https://images.unsplash.com/photo-1560963689-ba5f0c9ca2f8?w=400&h=400&fit=crop', color: 'bg-orange-100', textColor: 'text-orange-700', productCount: 200 },
-  { id: 4, name: 'Personal Care', image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&h=400&fit=crop', color: 'bg-pink-100', textColor: 'text-pink-700', productCount: 120 },
-  { id: 5, name: 'Home & Kitchen', image: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=400&fit=crop', color: 'bg-purple-100', textColor: 'text-purple-700', productCount: 180 },
-  { id: 6, name: 'Baby Care', image: 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=400&h=400&fit=crop', color: 'bg-yellow-100', textColor: 'text-yellow-700', productCount: 95 },
-];
+interface Category {
+  id: number;
+  name: string;
+  image_url?: string;
+  color_gradient?: string;
+  product_count?: number;
+}
 
 const AllCategories = () => {
-  const [cartItems, setCartItems] = useState(0);
-  const [searchQuery, setSearchQuery] = useState('');
+  // Fetch categories from database
+  const { data: categories = [], isLoading } = useQuery<Category[]>({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  const totalProducts = categories.reduce((sum, cat) => sum + (cat.product_count || 0), 0);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="text-center py-12">
+            <div className="text-lg text-gray-600">Loading categories...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -37,7 +64,7 @@ const AllCategories = () => {
         <div className="grid grid-cols-3 gap-4 mb-8">
           <div className="bg-green-50 rounded-2xl p-4 text-center">
             <Package className="h-6 w-6 text-green-600 mx-auto mb-2" />
-            <div className="text-lg font-bold text-green-700">{categories.reduce((sum, cat) => sum + cat.productCount, 0)}</div>
+            <div className="text-lg font-bold text-green-700">{totalProducts}</div>
             <div className="text-xs text-green-600">Products</div>
           </div>
           <div className="bg-blue-50 rounded-2xl p-4 text-center">
@@ -61,11 +88,17 @@ const AllCategories = () => {
             >
               <div className="bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-lg transition-all duration-200 hover:-translate-y-1">
                 <div className="flex items-center justify-center mb-3">
-                  <img
-                    src={category.image}
-                    alt={category.name}
-                    className="w-24 h-24 object-cover rounded-xl"
-                  />
+                  {category.image_url ? (
+                    <img
+                      src={category.image_url}
+                      alt={category.name}
+                      className="w-24 h-24 object-cover rounded-xl"
+                    />
+                  ) : (
+                    <div className={`w-24 h-24 rounded-xl bg-gradient-to-br ${category.color_gradient || 'from-blue-400 to-blue-600'} flex items-center justify-center`}>
+                      <Package className="h-8 w-8 text-white" />
+                    </div>
+                  )}
                 </div>
                 
                 <div className="text-center">
@@ -73,13 +106,21 @@ const AllCategories = () => {
                     {category.name}
                   </h3>
                   <p className="text-gray-500 text-xs">
-                    {category.productCount} items
+                    {category.product_count || 0} items
                   </p>
                 </div>
               </div>
             </Link>
           ))}
         </div>
+
+        {categories.length === 0 && (
+          <div className="text-center py-12">
+            <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No categories available</h3>
+            <p className="text-gray-500">Categories will appear here once they are added by the admin.</p>
+          </div>
+        )}
       </div>
       
       <div className="h-20 md:hidden"></div>

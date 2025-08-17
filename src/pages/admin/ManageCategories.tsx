@@ -119,6 +119,7 @@ const ManageCategories = () => {
     setEditingCategory(null);
     setCategoryForm({ name: '', image_url: '', color_gradient: 'from-blue-400 to-blue-600' });
     setCategoryModalOpen(true);
+    setCategoryModalOpen(true);
   };
 
   const handleEditCategory = (category: Category) => {
@@ -356,16 +357,86 @@ const ManageCategories = () => {
                     {expandedCategories.has(category.id) && (
                       <tr>
                         <td colSpan={4} className="px-6 py-2 bg-gray-50">
-                          <div className="text-sm text-gray-600">
-                            Subcategories for this category will appear here when implemented.
-                            <Button 
-                              variant="link" 
-                              size="sm" 
-                              className="ml-2"
-                              onClick={handleAddSubCategory}
-                            >
-                              Add subcategory
-                            </Button>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <h4 className="text-sm font-medium text-gray-800">Subcategories</h4>
+                              <Button 
+                                variant="outline"
+                                size="sm" 
+                                onClick={() => {
+                                  setSubCategoryForm({ name: '', category_id: category.id.toString(), description: '' });
+                                  setSubCategoryModalOpen(true);
+                                }}
+                              >
+                                <Plus className="h-3 w-3 mr-1" />
+                                Add Subcategory
+                              </Button>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                              {subCategories
+                                .filter(sub => sub.category_id === category.id)
+                                .map((subCategory) => (
+                                  <div 
+                                    key={subCategory.id} 
+                                    className="flex items-center justify-between bg-white p-2 rounded border"
+                                  >
+                                    <div>
+                                      <div className="text-xs font-medium">{subCategory.name}</div>
+                                      {subCategory.description && (
+                                        <div className="text-xs text-gray-500 truncate">{subCategory.description}</div>
+                                      )}
+                                    </div>
+                                    <div className="flex gap-1">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 w-6 p-0"
+                                        onClick={() => {
+                                          setEditingSubCategory(subCategory);
+                                          setSubCategoryForm({
+                                            name: subCategory.name,
+                                            category_id: subCategory.category_id.toString(),
+                                            description: subCategory.description || ''
+                                          });
+                                          setSubCategoryModalOpen(true);
+                                        }}
+                                      >
+                                        <Edit2 className="h-3 w-3" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 w-6 p-0 text-red-600 hover:text-red-800"
+                                        onClick={async () => {
+                                          if (confirm('Delete this subcategory?')) {
+                                            try {
+                                              const { error } = await supabase
+                                                .from('subcategories')
+                                                .delete()
+                                                .eq('id', subCategory.id);
+                                              
+                                              if (error) throw error;
+                                              toast({ title: "Subcategory deleted successfully!" });
+                                              refetchSubCategories();
+                                            } catch (error: any) {
+                                              toast({
+                                                title: "Failed to delete subcategory",
+                                                description: error.message,
+                                                variant: "destructive"
+                                              });
+                                            }
+                                          }
+                                        }}
+                                      >
+                                        <Trash2 className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ))}
+                              {subCategories.filter(sub => sub.category_id === category.id).length === 0 && (
+                                <div className="text-xs text-gray-500 col-span-full">No subcategories yet</div>
+                              )}
+                            </div>
                           </div>
                         </td>
                       </tr>
