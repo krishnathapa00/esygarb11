@@ -87,8 +87,8 @@ const LocationDetectionPopup = ({ isOpen, onClose, onLocationSet }: LocationDete
 
   return (
     <>
-      <Dialog open={isOpen && !showGPSPopup} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-md rounded-2xl">
+      <Dialog open={isOpen && !showGPSPopup} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-md rounded-2xl" onPointerDownOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle className="text-center text-xl font-bold text-gray-900">
               Welcome to EsyGrab!

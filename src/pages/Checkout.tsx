@@ -6,6 +6,7 @@ import {
   CreditCard,
   Banknote,
   WalletIcon,
+  MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -33,6 +34,8 @@ const Checkout = () => {
   const [selectedPayment, setSelectedPayment] = useState("cod");
   const [showUserDetails, setShowUserDetails] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [showAddressConfirmation, setShowAddressConfirmation] = useState(false);
 
   // Check if user needs to complete profile - only for truly new users
   const storedLocation = localStorage.getItem("esygrab_user_location");
@@ -47,12 +50,21 @@ const Checkout = () => {
     !profile.phone // Additional check - if they have phone, they're not completely new
   );
 
+  // Load delivery address from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem("esygrab_user_location");
+    if (stored) {
+      const location = JSON.parse(stored);
+      setDeliveryAddress(location.address || "");
+    }
+  }, []);
+
   useEffect(() => {
     if (!loading && !user) {
       // Store current cart as guest cart and redirect to auth
       localStorage.setItem("guest_cart", JSON.stringify(cart));
       localStorage.setItem("auth_redirect_url", "/checkout");
-      navigate("/auth");
+      navigate("/auth-hybrid");
       return;
     }
 
@@ -73,8 +85,10 @@ const Checkout = () => {
     // Show user details form if profile is incomplete
     if (user && needsProfileCompletion) {
       setShowUserDetails(true);
+    } else if (user && !needsProfileCompletion && deliveryAddress) {
+      setShowAddressConfirmation(true);
     }
-  }, [loading, user, navigate, cart, mergeGuestCart, needsProfileCompletion]);
+  }, [loading, user, navigate, cart, mergeGuestCart, needsProfileCompletion, deliveryAddress]);
 
   const handleUserDetailsComplete = async (details: { fullName: string; deliveryAddress: string }) => {
     setSavingProfile(true);
@@ -87,12 +101,22 @@ const Checkout = () => {
         address: finalAddress,
       });
       setShowUserDetails(false);
+      setDeliveryAddress(finalAddress);
+      setShowAddressConfirmation(true);
     } catch (error) {
       console.error("Error saving profile:", error);
       alert("Failed to save profile. Please try again.");
     } finally {
       setSavingProfile(false);
     }
+  };
+
+  const handleAddressConfirm = () => {
+    setShowAddressConfirmation(false);
+  };
+
+  const handleAddressChange = () => {
+    window.open('/location-selector', '_blank');
   };
 
   const handlePlaceOrder = async () => {
@@ -106,8 +130,12 @@ const Checkout = () => {
       return;
     }
 
+    if (!deliveryAddress) {
+      alert("Please set your delivery address.");
+      return;
+    }
+
     try {
-      const deliveryAddress = profile.address || hasLocationFromHomepage?.formatted || "Default Address";
       const orderNumber = `ORD${Date.now()}`;
 
       // Save order to Supabase database
@@ -217,11 +245,62 @@ const Checkout = () => {
               loading={savingProfile}
             />
           </div>
+        ) : showAddressConfirmation ? (
+          <div className="max-w-md mx-auto">
+            <div className="bg-white rounded-lg p-4 shadow-sm mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Confirm Delivery Address</h3>
+              <div className="bg-green-50 p-3 rounded-lg border border-green-200 mb-4">
+                <div className="flex items-start gap-2">
+                  <MapPin className="h-5 w-5 text-green-600 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-green-800 font-medium">Current Address:</p>
+                    <p className="text-sm text-green-700">{deliveryAddress}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex gap-3">
+                <Button 
+                  onClick={handleAddressConfirm}
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                >
+                  Confirm Address
+                </Button>
+                <Button 
+                  onClick={handleAddressChange}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Change Address
+                </Button>
+              </div>
+            </div>
+          </div>
         ) : (
           /* Mobile-first layout */
           <div className="space-y-4 lg:grid lg:grid-cols-3 lg:gap-6 lg:space-y-0">
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-4">
+              {/* Delivery Address Section */}
+              <div className="bg-white rounded-lg p-4 shadow-sm">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Delivery Address</h3>
+                <div className="bg-green-50 p-3 rounded-lg border border-green-200 mb-4">
+                  <div className="flex items-start gap-2">
+                    <MapPin className="h-5 w-5 text-green-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm text-green-800 font-medium">Delivering to:</p>
+                      <p className="text-sm text-green-700">{deliveryAddress}</p>
+                    </div>
+                  </div>
+                </div>
+                <Button 
+                  onClick={handleAddressChange}
+                  variant="outline"
+                  size="sm"
+                >
+                  Change Address
+                </Button>
+              </div>
               {/* Payment Method */}
               <div className="bg-white rounded-lg p-4 shadow-sm">
                 <div className="flex items-center space-x-2 mb-4">

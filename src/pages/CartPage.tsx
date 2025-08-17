@@ -9,7 +9,14 @@ import { useToast } from "@/hooks/use-toast";
 const CartPage = () => {
   const { cart, updateQuantity, removeItem } = useCart();
   const { toast } = useToast();
-  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [deliveryAddress, setDeliveryAddress] = useState(() => {
+    const stored = localStorage.getItem("esygrab_user_location");
+    if (stored) {
+      const location = JSON.parse(stored);
+      return location.address || "";
+    }
+    return "";
+  });
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = cart.reduce(
@@ -112,6 +119,13 @@ const CartPage = () => {
             {/* Delivery Address Section */}
             <div className="bg-white rounded-lg p-4 shadow-sm">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Delivery Address</h3>
+              {deliveryAddress ? (
+                <div className="bg-green-50 p-3 rounded-lg border border-green-200 mb-4">
+                  <p className="text-sm text-green-800">
+                    <strong>Current Delivery Address:</strong> {deliveryAddress}
+                  </p>
+                </div>
+              ) : null}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                 <Button
                   variant="outline" 
@@ -167,16 +181,9 @@ const CartPage = () => {
                   onClick={() => window.open('/location-selector', '_blank')}
                 >
                   <Edit className="h-4 w-4 text-green-600" />
-                  Set Manually
+                  {deliveryAddress ? "Change Location" : "Set Manually"}
                 </Button>
               </div>
-              {deliveryAddress && (
-                <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-                  <p className="text-sm text-green-800">
-                    <strong>Selected Address:</strong> {deliveryAddress}
-                  </p>
-                </div>
-              )}
             </div>
           </div>
 

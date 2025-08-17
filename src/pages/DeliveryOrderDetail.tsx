@@ -22,7 +22,7 @@ const DeliveryOrderDetail = () => {
         .from('orders')
         .select(`
           *,
-          profiles!orders_user_id_fkey(full_name, phone_number),
+          profiles!orders_user_id_fkey(full_name, phone_number, phone),
           order_items(
             *,
             products(name, image_url, price)
@@ -79,12 +79,19 @@ const DeliveryOrderDetail = () => {
     return () => clearInterval(interval);
   }, [isTimerRunning]);
 
+  const handleAccept = () => {
+    updateOrderStatusMutation.mutate({ 
+      status: 'dispatched', 
+      timestamp_field: 'accepted_at' 
+    });
+    setIsTimerRunning(true);
+  };
+
   const handlePickup = () => {
     updateOrderStatusMutation.mutate({ 
       status: 'out_for_delivery', 
       timestamp_field: 'picked_up_at' 
     });
-    setIsTimerRunning(true);
   };
 
   const handleDelivered = () => {
@@ -182,13 +189,16 @@ const DeliveryOrderDetail = () => {
               <div>
                 <p className="text-sm text-muted-foreground">Customer</p>
                 <div className="flex items-center gap-2">
-                  <p className="font-medium">{order.profiles?.full_name}</p>
+                  <p className="font-medium">{order.profiles?.full_name || 'Customer'}</p>
                   <Button size="sm" variant="outline" asChild>
-                    <a href={`tel:${order.profiles?.phone_number}`}>
+                    <a href={`tel:${order.profiles?.phone_number || order.profiles?.phone}`}>
                       <Phone className="w-4 h-4" />
                     </a>
                   </Button>
                 </div>
+                <p className="text-sm text-muted-foreground">
+                  Contact: {order.profiles?.phone_number || order.profiles?.phone || 'N/A'}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Amount</p>
@@ -255,6 +265,16 @@ const DeliveryOrderDetail = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
+              {(order.status === 'pending' || order.status === 'confirmed' || order.status === 'ready_for_pickup') && !order.delivery_partner_id && (
+                <Button 
+                  onClick={handleAccept}
+                  className="w-full"
+                  disabled={updateOrderStatusMutation.isPending}
+                >
+                  Accept Order
+                </Button>
+              )}
+
               {order.status === 'dispatched' && (
                 <Button 
                   onClick={handlePickup}
