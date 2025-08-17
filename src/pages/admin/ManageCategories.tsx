@@ -83,13 +83,20 @@ const ManageCategories = () => {
     }
   });
 
-  // Fetch subcategories (simulated with existing data structure)
+  // Fetch subcategories
   const { data: subCategories = [], refetch: refetchSubCategories } = useQuery<SubCategory[]>({
     queryKey: ['admin-subcategories'],
     queryFn: async () => {
-      // For now, return empty array as subcategories table doesn't exist
-      // This would be implemented when subcategories table is created
-      return [];
+      const { data, error } = await supabase
+        .from('subcategories')
+        .select(`
+          id, name, category_id, description, created_at,
+          categories:category_id ( name )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
     }
   });
 
@@ -216,17 +223,29 @@ const ManageCategories = () => {
         description: subCategoryForm.description || null
       };
 
-      // Since subcategories table doesn't exist yet, create it first
-      toast({ 
-        title: "Feature Coming Soon", 
-        description: "Subcategories functionality will be available soon.",
-        variant: "default"
-      });
-      
+      if (editingSubCategory) {
+        const { error } = await supabase
+          .from('subcategories')
+          .update(payload)
+          .eq('id', editingSubCategory.id);
+        
+        if (error) throw error;
+        toast({ title: "Subcategory updated successfully!" });
+      } else {
+        const { error } = await supabase
+          .from('subcategories')
+          .insert([payload]);
+        
+        if (error) throw error;
+        toast({ title: "Subcategory added successfully!" });
+      }
+
       setSubCategoryModalOpen(false);
+      await refetchSubCategories();
+      queryClient.invalidateQueries({ queryKey: ['subcategories'] });
     } catch (error: any) {
       toast({
-        title: "Failed to create subcategory",
+        title: "Failed to save subcategory",
         description: error.message,
         variant: "destructive"
       });

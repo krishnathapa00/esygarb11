@@ -20,6 +20,12 @@ interface Category {
   name: string;
 }
 
+interface SubCategory {
+  id: number;
+  name: string;
+  category_id: number;
+}
+
 const AddProductNew = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -30,6 +36,7 @@ const AddProductNew = () => {
   const [productData, setProductData] = useState({
     name: '',
     category_id: '',
+    subcategory_id: '',
     description: '',
     price: '',
     original_price: '',
@@ -53,6 +60,25 @@ const AddProductNew = () => {
       if (error) throw error;
       return data || [];
     }
+  });
+
+  // Fetch subcategories based on selected category
+  const { data: subCategories = [] } = useQuery<SubCategory[]>({
+    queryKey: ['subcategories', productData.category_id],
+    queryFn: async () => {
+      if (!productData.category_id) return [];
+      
+      const { data, error } = await supabase
+        .from('subcategories')
+        .select('id, name, category_id')
+        .eq('category_id', parseInt(productData.category_id))
+        .eq('is_active', true)
+        .order('name');
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!productData.category_id
   });
 
   const handleInputChange = (field: string, value: string | boolean) => {
@@ -88,6 +114,7 @@ const AddProductNew = () => {
         original_price: productData.original_price ? Number(productData.original_price) : null,
         stock_quantity: productData.stock_quantity ? Number(productData.stock_quantity) : 0,
         category_id: Number(productData.category_id),
+        subcategory_id: productData.subcategory_id ? Number(productData.subcategory_id) : null,
         image_url: selectedImages[mainImageIndex], // Main image
         weight: productData.weight || null,
         delivery_time: productData.delivery_time,
@@ -123,6 +150,7 @@ const AddProductNew = () => {
     setProductData({
       name: '',
       category_id: '',
+      subcategory_id: '',
       description: '',
       price: '',
       original_price: '',
@@ -181,25 +209,52 @@ const AddProductNew = () => {
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="category" className="text-sm font-medium">
-                    Category <span className="text-destructive">*</span>
-                  </Label>
-                  <Select 
-                    onValueChange={(value) => handleInputChange('category_id', value)} 
-                    value={productData.category_id}
-                  >
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id.toString()}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="category" className="text-sm font-medium">
+                      Category <span className="text-destructive">*</span>
+                    </Label>
+                    <Select 
+                      onValueChange={(value) => {
+                        handleInputChange('category_id', value);
+                        handleInputChange('subcategory_id', ''); // Reset subcategory when category changes
+                      }} 
+                      value={productData.category_id}
+                    >
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((category) => (
+                          <SelectItem key={category.id} value={category.id.toString()}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="subcategory" className="text-sm font-medium">
+                      Subcategory
+                    </Label>
+                    <Select 
+                      onValueChange={(value) => handleInputChange('subcategory_id', value)} 
+                      value={productData.subcategory_id}
+                      disabled={!productData.category_id}
+                    >
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder={!productData.category_id ? "Select category first" : "Select subcategory"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {subCategories.map((subCategory) => (
+                          <SelectItem key={subCategory.id} value={subCategory.id.toString()}>
+                            {subCategory.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <div>
@@ -439,10 +494,10 @@ const AddProductNew = () => {
                   </Label>
                   <div className="space-y-2">
                     <Badge variant="secondary" className="bg-green-100 text-green-800">
-                      Nepalgunj (Default)
+                      New-Baneshwor (Default)
                     </Badge>
                     <p className="text-xs text-muted-foreground">
-                      Currently only available in Nepalgunj
+                      Currently only available in New-Baneshwor
                     </p>
                   </div>
                 </div>

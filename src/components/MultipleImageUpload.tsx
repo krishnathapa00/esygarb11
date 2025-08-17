@@ -63,7 +63,7 @@ const MultipleImageUpload: React.FC<MultipleImageUploadProps> = ({
         const filePath = `${folder}/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
-          .from('user-avatars')
+          .from('product-images')
           .upload(filePath, file);
 
         if (uploadError) {
@@ -71,7 +71,7 @@ const MultipleImageUpload: React.FC<MultipleImageUploadProps> = ({
         }
 
         const { data: { publicUrl } } = supabase.storage
-          .from('user-avatars')
+          .from('product-images')
           .getPublicUrl(filePath);
 
         newUrls.push(publicUrl);

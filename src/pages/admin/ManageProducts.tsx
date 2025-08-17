@@ -56,7 +56,7 @@ const ManageProducts = () => {
       const { data, error } = await supabase
         .from('products')
         .select(`
-          id, name, price, category_id, discount, offer, image_url, stock_quantity, weight, delivery_time, description,
+          id, name, price, category_id, discount, offer, image_url, stock_quantity, weight, delivery_time, description, is_active,
           categories:category_id ( name )
         `)
         .order('created_at', { ascending: false });

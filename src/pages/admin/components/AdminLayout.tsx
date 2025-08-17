@@ -1,91 +1,125 @@
-
 import React from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { 
-  Home, 
-  Package, 
+  BarChart3, 
   ShoppingCart, 
+  Package, 
   Users, 
-  UserCheck, 
-  Settings,
-  Store,
-  CreditCard,
-  LogOut,
-  Grid3X3
+  Truck, 
+  CreditCard, 
+  Tag,
+  LogOut 
 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 
-const AdminLayout = ({ children, onRefresh }: { children: React.ReactNode; onRefresh?: () => void }) => {
-  const location = useLocation();
-  const navigate = useNavigate();
+interface AdminLayoutProps {
+  children: React.ReactNode;
+  onRefresh?: () => void;
+}
+
+const AdminLayout = ({ children }: AdminLayoutProps) => {
   const { signOut } = useAuth();
-
-  const sidebarItems = [
-    { icon: Home, label: 'Dashboard', path: '/admin/dashboard' },
-    { icon: ShoppingCart, label: 'Orders', path: '/admin/orders' },
-    { icon: Package, label: 'Products', path: '/admin/products' },
-    { icon: Grid3X3, label: 'Categories', path: '/admin/categories' },
-    { icon: Users, label: 'Users', path: '/admin/users' },
-    { icon: UserCheck, label: 'KYC Management', path: '/admin/kyc' },
-    { icon: UserCheck, label: 'Delivery Partners', path: '/admin/delivery-partners' },
-    { icon: Store, label: 'Darkstores', path: '/admin/darkstores' },
-    { icon: Settings, label: 'Delivery Settings', path: '/admin/delivery-settings' },
-    { icon: CreditCard, label: 'Transactions', path: '/admin/transactions' },
-  ];
-
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      navigate('/admin-login');
-    } catch (error) {
-      console.error('Logout error:', error);
-      navigate('/admin-login');
-    }
-  };
+  const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-100 flex">
       {/* Fixed Sidebar */}
-      <div className="w-64 bg-white shadow-lg fixed h-full flex flex-col">
-        <div className="p-6 flex-shrink-0">
-          <h1 className="text-xl font-bold text-gray-800">Admin Panel</h1>
+      <div className="fixed left-0 top-0 h-full w-64 bg-gray-900 text-white shadow-lg z-40 overflow-y-auto">
+        <div className="p-6 border-b border-gray-700">
+          <h1 className="text-xl font-bold">Admin Panel</h1>
         </div>
         
-        {/* Scrollable Navigation Area */}
-        <div className="flex-1 overflow-y-auto">
-          <nav className="pb-4">
-            {sidebarItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = location.pathname === item.path;
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100 ${
-                    isActive ? 'bg-gray-100 border-r-2 border-green-500' : ''
-                  }`}
-                >
-                  <Icon className="w-5 h-5 mr-3" />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-        
-        {/* Fixed Logout button at bottom */}
-        <div className="px-6 py-3 border-t bg-white flex-shrink-0">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleLogout}
-            className="flex items-center w-full justify-center"
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Logout
-          </Button>
-        </div>
+        <nav className="mt-6 pb-20">
+          <div className="px-4 space-y-2">
+            <NavLink to="/admin/dashboard" className={({ isActive }) => 
+              `flex items-center px-4 py-3 rounded-lg transition-colors ${
+                isActive 
+                  ? 'bg-blue-600 text-white' 
+                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+              }`
+            }>
+              <BarChart3 className="h-5 w-5 mr-3" />
+              Dashboard
+            </NavLink>
+            
+            <NavLink to="/admin/orders" className={({ isActive }) => 
+              `flex items-center px-4 py-3 rounded-lg transition-colors ${
+                isActive 
+                  ? 'bg-blue-600 text-white' 
+                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+              }`
+            }>
+              <ShoppingCart className="h-5 w-5 mr-3" />
+              Orders
+            </NavLink>
+            
+            <NavLink to="/admin/products" className={({ isActive }) => 
+              `flex items-center px-4 py-3 rounded-lg transition-colors ${
+                isActive 
+                  ? 'bg-blue-600 text-white' 
+                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+              }`
+            }>
+              <Package className="h-5 w-5 mr-3" />
+              Products
+            </NavLink>
+            
+            <NavLink to="/admin/categories" className={({ isActive }) => 
+              `flex items-center px-4 py-3 rounded-lg transition-colors ${
+                isActive 
+                  ? 'bg-blue-600 text-white' 
+                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+              }`
+            }>
+              <Tag className="h-5 w-5 mr-3" />
+              Categories
+            </NavLink>
+            
+            <NavLink to="/admin/users" className={({ isActive }) => 
+              `flex items-center px-4 py-3 rounded-lg transition-colors ${
+                isActive 
+                  ? 'bg-blue-600 text-white' 
+                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+              }`
+            }>
+              <Users className="h-5 w-5 mr-3" />
+              Users
+            </NavLink>
+            
+            <NavLink to="/admin/delivery-partners" className={({ isActive }) => 
+              `flex items-center px-4 py-3 rounded-lg transition-colors ${
+                isActive 
+                  ? 'bg-blue-600 text-white' 
+                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+              }`
+            }>
+              <Truck className="h-5 w-5 mr-3" />
+              Delivery Partners
+            </NavLink>
+            
+            <NavLink to="/admin/transactions" className={({ isActive }) => 
+              `flex items-center px-4 py-3 rounded-lg transition-colors ${
+                isActive 
+                  ? 'bg-blue-600 text-white' 
+                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+              }`
+            }>
+              <CreditCard className="h-5 w-5 mr-3" />
+              Transactions
+            </NavLink>
+            
+            <button 
+              onClick={() => {
+                signOut();
+                navigate('/admin/login');
+              }}
+              className="flex items-center px-4 py-3 rounded-lg transition-colors text-gray-300 hover:bg-red-600 hover:text-white w-full mt-4"
+            >
+              <LogOut className="h-5 w-5 mr-3" />
+              Logout
+            </button>
+          </div>
+        </nav>
       </div>
 
       {/* Main Content with margin to account for fixed sidebar */}
