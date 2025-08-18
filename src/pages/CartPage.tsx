@@ -5,6 +5,8 @@ import { ArrowLeft, ShoppingCart, Plus, Minus, Trash2, MapPin, Edit } from "luci
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Tag } from "lucide-react";
 
 const CartPage = () => {
   const { cart, updateQuantity, removeItem } = useCart();
@@ -18,13 +20,18 @@ const CartPage = () => {
     return "";
   });
 
+  const [promoCode, setPromoCode] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState<any>(null);
+  const [promoDiscount, setPromoDiscount] = useState(0);
+  
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = cart.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
   const deliveryFee = totalPrice > 200 ? 0 : 20;
-  const totalAmount = totalPrice + deliveryFee;
+  const discountAmount = promoDiscount;
+  const totalAmount = totalPrice + deliveryFee - discountAmount;
 
   const handleUpdateQuantity = (productId: number, newQuantity: number) => {
     if (newQuantity <= 0) {
@@ -32,6 +39,72 @@ const CartPage = () => {
     } else {
       updateQuantity(productId, newQuantity);
     }
+  };
+
+  const handleApplyPromo = async () => {
+    if (!promoCode.trim()) {
+      toast({ title: "Please enter a promo code", variant: "destructive" });
+      return;
+    }
+
+    try {
+      const { data: promo, error } = await supabase
+        .from('promo_codes')
+        .select('*')
+        .eq('code', promoCode.toUpperCase())
+        .eq('is_active', true)
+        .single();
+
+      if (error || !promo) {
+        toast({ title: "Invalid promo code", variant: "destructive" });
+        return;
+      }
+
+      // Check if promo is expired
+      if (promo.expires_at && new Date(promo.expires_at) < new Date()) {
+        toast({ title: "Promo code has expired", variant: "destructive" });
+        return;
+      }
+
+      // Check usage limit
+      if (promo.usage_limit && promo.used_count >= promo.usage_limit) {
+        toast({ title: "Promo code usage limit reached", variant: "destructive" });
+        return;
+      }
+
+      // Check minimum order amount
+      if (promo.min_order_amount && totalPrice < promo.min_order_amount) {
+        toast({ 
+          title: `Minimum order amount is Rs ${promo.min_order_amount}`, 
+          variant: "destructive" 
+        });
+        return;
+      }
+
+      let discount = 0;
+      if (promo.discount_type === 'percentage') {
+        discount = (totalPrice * promo.discount_value) / 100;
+        if (promo.max_discount_amount && discount > promo.max_discount_amount) {
+          discount = promo.max_discount_amount;
+        }
+      } else {
+        discount = promo.discount_value;
+      }
+
+      setAppliedPromo(promo);
+      setPromoDiscount(discount);
+      toast({ title: `Promo code applied! Saved Rs ${discount}` });
+    } catch (error) {
+      console.error('Error applying promo:', error);
+      toast({ title: "Error applying promo code", variant: "destructive" });
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setAppliedPromo(null);
+    setPromoDiscount(0);
+    setPromoCode('');
+    toast({ title: "Promo code removed" });
   };
 
   if (cart.length === 0) {
@@ -116,75 +189,51 @@ const CartPage = () => {
               </div>
             ))}
 
-            {/* Delivery Address Section */}
-            <div className="bg-white rounded-lg p-4 shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Delivery Address</h3>
-              {deliveryAddress ? (
-                <div className="bg-green-50 p-3 rounded-lg border border-green-200 mb-4">
-                  <p className="text-sm text-green-800">
-                    <strong>Current Delivery Address:</strong> {deliveryAddress}
-                  </p>
+          </div>
+
+          {/* Promo Code Section */}
+          <div className="bg-white rounded-lg p-4 shadow-sm">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <Tag className="h-5 w-5 text-green-600" />
+              Promo Code
+            </h3>
+            
+            {appliedPromo ? (
+              <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-green-800">{appliedPromo.name}</p>
+                    <p className="text-xs text-green-600">Code: {appliedPromo.code}</p>
+                    <p className="text-xs text-green-600">Discount: Rs {promoDiscount}</p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleRemovePromo}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    Remove
+                  </Button>
                 </div>
-              ) : null}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                <Button
-                  variant="outline" 
-                  className="flex items-center justify-center gap-2 p-3 h-auto border-green-200 hover:bg-green-50"
-                  onClick={() => {
-                    if (navigator.geolocation) {
-                      navigator.geolocation.getCurrentPosition(
-                        async (position) => {
-                          const { latitude, longitude } = position.coords;
-                          try {
-                            // Reverse geocode to get actual address
-                            const response = await fetch(
-                              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
-                            );
-                            const data = await response.json();
-                            const address = data.display_name || `${latitude}, ${longitude}`;
-                            
-                            localStorage.setItem("esygrab_user_location", JSON.stringify({
-                              address: address,
-                              lat: latitude,
-                              lng: longitude
-                            }));
-                            setDeliveryAddress(address);
-                            toast({ title: "Location detected successfully!" });
-                          } catch (error) {
-                            console.error("Geocoding error:", error);
-                            const coords = `${latitude}, ${longitude}`;
-                            localStorage.setItem("esygrab_user_location", JSON.stringify({
-                              address: coords,
-                              lat: latitude,
-                              lng: longitude
-                            }));
-                            setDeliveryAddress(coords);
-                            toast({ title: "Location detected successfully!" });
-                          }
-                        },
-                        (error) => {
-                          console.error("Geolocation error:", error);
-                          toast({ title: "Unable to detect location. Please try manual selection.", variant: "destructive" });
-                        }
-                      );
-                    } else {
-                      toast({ title: "Geolocation is not supported by this browser.", variant: "destructive" });
-                    }
-                  }}
-                >
-                  <MapPin className="h-4 w-4 text-green-600" />
-                  Auto-detect Location
-                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Enter promo code"
+                  value={promoCode}
+                  onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
                 <Button 
+                  onClick={handleApplyPromo}
                   variant="outline"
-                  className="flex items-center justify-center gap-2 p-3 h-auto border-green-200 hover:bg-green-50"
-                  onClick={() => window.open('/location-selector', '_blank')}
+                  className="px-4 py-2 border-green-200 hover:bg-green-50"
                 >
-                  <Edit className="h-4 w-4 text-green-600" />
-                  {deliveryAddress ? "Change Location" : "Set Manually"}
+                  Apply
                 </Button>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Order Summary */}
@@ -204,6 +253,12 @@ const CartPage = () => {
                 <span>Delivery Fee</span>
                 <span>Rs {deliveryFee}</span>
               </div>
+              {appliedPromo && (
+                <div className="flex justify-between text-green-600">
+                  <span>Promo Discount</span>
+                  <span>-Rs {promoDiscount}</span>
+                </div>
+              )}
               {deliveryFee === 0 && (
                 <p className="text-xs text-green-600">Free delivery on orders over Rs 200!</p>
               )}

@@ -41,13 +41,10 @@ const Checkout = () => {
   const storedLocation = localStorage.getItem("esygrab_user_location");
   const hasLocationFromHomepage = storedLocation ? JSON.parse(storedLocation) : null;
   
-  // Only ask new users (no full_name AND no address/location) to complete profile
-  // If they have either name OR address/location, they're existing users
+  // Only ask new users who have never completed profile
   const needsProfileCompletion = user && (
     !profile.full_name && 
-    !profile.address && 
-    !hasLocationFromHomepage?.formatted &&
-    !profile.phone // Additional check - if they have phone, they're not completely new
+    !profile.phone
   );
 
   // Load delivery address from localStorage

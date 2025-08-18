@@ -388,6 +388,8 @@ export type Database = {
           order_number: string
           payment_status: Database["public"]["Enums"]["payment_status"] | null
           picked_up_at: string | null
+          promo_code_id: string | null
+          promo_discount: number | null
           status: Database["public"]["Enums"]["order_status"] | null
           total_amount: number
           updated_at: string | null
@@ -406,6 +408,8 @@ export type Database = {
           order_number: string
           payment_status?: Database["public"]["Enums"]["payment_status"] | null
           picked_up_at?: string | null
+          promo_code_id?: string | null
+          promo_discount?: number | null
           status?: Database["public"]["Enums"]["order_status"] | null
           total_amount: number
           updated_at?: string | null
@@ -424,6 +428,8 @@ export type Database = {
           order_number?: string
           payment_status?: Database["public"]["Enums"]["payment_status"] | null
           picked_up_at?: string | null
+          promo_code_id?: string | null
+          promo_discount?: number | null
           status?: Database["public"]["Enums"]["order_status"] | null
           total_amount?: number
           updated_at?: string | null
@@ -442,6 +448,13 @@ export type Database = {
             columns: ["delivery_partner_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_promo_code_id_fkey"
+            columns: ["promo_code_id"]
+            isOneToOne: false
+            referencedRelation: "promo_codes"
             referencedColumns: ["id"]
           },
           {
@@ -561,6 +574,7 @@ export type Database = {
           avatar_url: string | null
           created_at: string | null
           darkstore_id: string | null
+          delivery_order_count: number | null
           full_name: string | null
           id: string
           is_online: boolean | null
@@ -578,6 +592,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string | null
           darkstore_id?: string | null
+          delivery_order_count?: number | null
           full_name?: string | null
           id: string
           is_online?: boolean | null
@@ -595,6 +610,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string | null
           darkstore_id?: string | null
+          delivery_order_count?: number | null
           full_name?: string | null
           id?: string
           is_online?: boolean | null
@@ -606,6 +622,102 @@ export type Database = {
           role?: Database["public"]["Enums"]["user_role"] | null
           updated_at?: string | null
           vehicle_type?: string | null
+        }
+        Relationships: []
+      }
+      promo_code_usage: {
+        Row: {
+          discount_amount: number
+          id: string
+          order_id: string | null
+          promo_code_id: string | null
+          used_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          discount_amount: number
+          id?: string
+          order_id?: string | null
+          promo_code_id?: string | null
+          used_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          discount_amount?: number
+          id?: string
+          order_id?: string | null
+          promo_code_id?: string | null
+          used_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promo_code_usage_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promo_code_usage_promo_code_id_fkey"
+            columns: ["promo_code_id"]
+            isOneToOne: false
+            referencedRelation: "promo_codes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promo_codes: {
+        Row: {
+          code: string
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          discount_type: string
+          discount_value: number
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          max_discount_amount: number | null
+          min_order_amount: number | null
+          name: string
+          updated_at: string | null
+          usage_limit: number | null
+          used_count: number | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          discount_type: string
+          discount_value: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_discount_amount?: number | null
+          min_order_amount?: number | null
+          name: string
+          updated_at?: string | null
+          usage_limit?: number | null
+          used_count?: number | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_discount_amount?: number | null
+          min_order_amount?: number | null
+          name?: string
+          updated_at?: string | null
+          usage_limit?: number | null
+          used_count?: number | null
         }
         Relationships: []
       }
