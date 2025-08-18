@@ -22,11 +22,11 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gray-100 flex">
+    <div className="min-h-screen bg-background flex">
       {/* Fixed Sidebar */}
-      <div className="fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 shadow-lg z-40 overflow-y-auto">
-        <div className="p-6 border-b border-gray-200">
-          <h1 className="text-xl font-bold text-gray-900">Admin Panel</h1>
+      <div className="fixed left-0 top-0 h-full w-64 bg-card border-r border-border shadow-lg z-40 overflow-y-auto">
+        <div className="p-6 border-b border-border">
+          <h1 className="text-xl font-bold text-foreground">Admin Panel</h1>
         </div>
         
         <nav className="mt-6 pb-20">
@@ -34,8 +34,8 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             <NavLink to="/admin/dashboard" className={({ isActive }) => 
               `flex items-center px-4 py-3 rounded-lg transition-colors ${
                 isActive 
-                  ? 'bg-blue-600 text-white' 
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'text-foreground hover:bg-muted'
               }`
             }>
               <BarChart3 className="h-5 w-5 mr-3" />
@@ -45,8 +45,8 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             <NavLink to="/admin/orders" className={({ isActive }) => 
               `flex items-center px-4 py-3 rounded-lg transition-colors ${
                 isActive 
-                  ? 'bg-blue-600 text-white' 
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'text-foreground hover:bg-muted'
               }`
             }>
               <ShoppingCart className="h-5 w-5 mr-3" />
@@ -56,8 +56,8 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             <NavLink to="/admin/products" className={({ isActive }) => 
               `flex items-center px-4 py-3 rounded-lg transition-colors ${
                 isActive 
-                  ? 'bg-blue-600 text-white' 
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'text-foreground hover:bg-muted'
               }`
             }>
               <Package className="h-5 w-5 mr-3" />
@@ -67,8 +67,8 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             <NavLink to="/admin/categories" className={({ isActive }) => 
               `flex items-center px-4 py-3 rounded-lg transition-colors ${
                 isActive 
-                  ? 'bg-blue-600 text-white' 
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'text-foreground hover:bg-muted'
               }`
             }>
               <Tag className="h-5 w-5 mr-3" />
@@ -78,42 +78,52 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             <NavLink to="/admin/users" className={({ isActive }) => 
               `flex items-center px-4 py-3 rounded-lg transition-colors ${
                 isActive 
-                  ? 'bg-blue-600 text-white' 
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'text-foreground hover:bg-muted'
               }`
             }>
               <Users className="h-5 w-5 mr-3" />
               Users
             </NavLink>
             
-            <NavLink to="/admin/delivery-partners" className={({ isActive }) => 
-              `flex items-center px-4 py-3 rounded-lg transition-colors ${
-                isActive 
-                  ? 'bg-blue-600 text-white' 
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`
-            }>
-              <Truck className="h-5 w-5 mr-3" />
-              Delivery Partners
-            </NavLink>
-            
-
             <NavLink to="/admin/kyc" className={({ isActive }) => 
               `flex items-center px-4 py-3 rounded-lg transition-colors ${
                 isActive 
-                  ? 'bg-blue-600 text-white' 
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'text-foreground hover:bg-muted'
               }`
             }>
               <Users className="h-5 w-5 mr-3" />
               KYC Verification
             </NavLink>
 
+            <NavLink to="/admin/delivery-partners" className={({ isActive }) => 
+              `flex items-center px-4 py-3 rounded-lg transition-colors ${
+                isActive 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'text-foreground hover:bg-muted'
+              }`
+            }>
+              <Truck className="h-5 w-5 mr-3" />
+              Delivery Partners
+            </NavLink>
+
+            <NavLink to="/admin/promo-codes" className={({ isActive }) => 
+              `flex items-center px-4 py-3 rounded-lg transition-colors ${
+                isActive 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'text-foreground hover:bg-muted'
+              }`
+            }>
+              <Tag className="h-5 w-5 mr-3" />
+              Promo Codes
+            </NavLink>
+
             <NavLink to="/admin/delivery-settings" className={({ isActive }) => 
               `flex items-center px-4 py-3 rounded-lg transition-colors ${
                 isActive 
-                  ? 'bg-blue-600 text-white' 
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'text-foreground hover:bg-muted'
               }`
             }>
               <Truck className="h-5 w-5 mr-3" />
@@ -123,8 +133,8 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             <NavLink to="/admin/transactions" className={({ isActive }) => 
               `flex items-center px-4 py-3 rounded-lg transition-colors ${
                 isActive 
-                  ? 'bg-blue-600 text-white' 
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'text-foreground hover:bg-muted'
               }`
             }>
               <CreditCard className="h-5 w-5 mr-3" />
@@ -136,7 +146,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                 signOut();
                 navigate('/admin/login');
               }}
-              className="flex items-center px-4 py-3 rounded-lg transition-colors text-gray-700 hover:bg-red-600 hover:text-white w-full mt-4"
+              className="flex items-center px-4 py-3 rounded-lg transition-colors text-foreground hover:bg-destructive hover:text-destructive-foreground w-full mt-4"
             >
               <LogOut className="h-5 w-5 mr-3" />
               Logout
@@ -146,7 +156,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       </div>
 
       {/* Main Content with margin to account for fixed sidebar */}
-      <div className="flex-1 ml-64 p-8 overflow-y-auto bg-gray-50">
+      <div className="flex-1 ml-64 p-8 overflow-y-auto bg-background">
         {children}
       </div>
     </div>
