@@ -281,10 +281,10 @@ const Header = () => {
             )}
           </div>
           <MobileNavButton
-            to="/profile"
+            to={user ? "/profile" : "/auth"}
             icon={User}
             label="Account"
-            isActive={location.pathname === "/profile"}
+            isActive={location.pathname === "/profile" || location.pathname === "/auth"}
           />
         </div>
       </div>

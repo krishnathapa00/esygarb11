@@ -82,7 +82,7 @@ const Checkout = () => {
     // Show user details form if profile is incomplete
     if (user && needsProfileCompletion) {
       setShowUserDetails(true);
-    } else if (user && !needsProfileCompletion && deliveryAddress) {
+    } else if (user && !needsProfileCompletion && deliveryAddress && !showAddressConfirmation) {
       setShowAddressConfirmation(true);
     }
   }, [loading, user, navigate, cart, mergeGuestCart, needsProfileCompletion, deliveryAddress]);

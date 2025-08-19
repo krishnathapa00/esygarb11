@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
+import MobileUserProfile from "@/components/MobileUserProfile";
 import InputField from "@/components/InputField";
 import TextAreaField from "@/components/TextAreaField";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,11 +17,18 @@ import {
 } from "@/services/profileService";
 import SingleImageUpload from "@/components/SingleImageUpload";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const UserProfile: React.FC = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading, signOut } = useAuth();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
+
+  // Use mobile component on mobile devices
+  if (isMobile) {
+    return <MobileUserProfile />;
+  }
 
   const [profile, setProfile] = useState<ProfileFormValues | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);

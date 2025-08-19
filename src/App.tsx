@@ -55,6 +55,11 @@ import ReturnsRefunds from './pages/ReturnsRefunds';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import SubCategories from './pages/SubCategories';
+import AboutUs from './pages/AboutUs';
+import HowItWorks from './pages/HowItWorks';
+import Careers from './pages/Careers';
+import ContactUs from './pages/ContactUs';
+import SupportPage from './pages/SupportPage';
 
 const queryClient = new QueryClient();
 
@@ -82,11 +87,16 @@ const AppContent = () => {
         <Route path="/profile" element={<UserProfile />} />
         <Route path="/map-location" element={<MapLocation />} />
         <Route path="/waitlist" element={<Waitlist />} />
-          <Route path="/help-center" element={<HelpCenter />} />
-          <Route path="/returns-refunds" element={<ReturnsRefunds />} />
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-          <Route path="/terms-of-service" element={<TermsOfService />} />
-          <Route path="/category/:categorySlug" element={<SubCategories />} />
+        <Route path="/help-center" element={<HelpCenter />} />
+        <Route path="/returns-refunds" element={<ReturnsRefunds />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/category/:categorySlug" element={<SubCategories />} />
+        <Route path="/about-us" element={<AboutUs />} />
+        <Route path="/how-it-works" element={<HowItWorks />} />
+        <Route path="/careers" element={<Careers />} />
+        <Route path="/contact-us" element={<ContactUs />} />
+        <Route path="/support" element={<SupportPage />} />
 
         {/* Delivery Partner Routes */}
         <Route path="/delivery-partner" element={<DeliveryPartnerAuth />} />

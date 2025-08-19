@@ -92,11 +92,11 @@ const AllCategories = () => {
                     <img
                       src={category.image_url}
                       alt={category.name}
-                      className="w-24 h-24 object-cover rounded-xl"
+                      className="w-32 h-32 object-cover rounded-xl"
                     />
                   ) : (
-                    <div className={`w-24 h-24 rounded-xl bg-gradient-to-br ${category.color_gradient || 'from-blue-400 to-blue-600'} flex items-center justify-center`}>
-                      <Package className="h-8 w-8 text-white" />
+                    <div className={`w-32 h-32 rounded-xl bg-gradient-to-br ${category.color_gradient || 'from-blue-400 to-blue-600'} flex items-center justify-center`}>
+                      <Package className="h-12 w-12 text-white" />
                     </div>
                   )}
                 </div>

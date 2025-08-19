@@ -220,9 +220,9 @@ const MapLocation = () => {
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
     
-    // Simple calculation for demo purposes
-    const lat = markerPosition.lat + (y - rect.height / 2) * 0.0001;
-    const lng = markerPosition.lng + (x - rect.width / 2) * 0.0001;
+    // Convert click position to coordinates (wider area around Kathmandu)
+    const lat = 27.7172 + (0.5 - y / rect.height) * 0.02; // Wider latitude range
+    const lng = 85.3240 + (x / rect.width - 0.5) * 0.03; // Wider longitude range
     
     setMarkerPosition({ lat, lng });
     await reverseGeocode(lat, lng);
