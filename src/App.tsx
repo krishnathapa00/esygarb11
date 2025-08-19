@@ -54,6 +54,7 @@ import HelpCenter from './pages/HelpCenter';
 import ReturnsRefunds from './pages/ReturnsRefunds';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
+import SubCategories from './pages/SubCategories';
 
 const queryClient = new QueryClient();
 
@@ -81,10 +82,11 @@ const AppContent = () => {
         <Route path="/profile" element={<UserProfile />} />
         <Route path="/map-location" element={<MapLocation />} />
         <Route path="/waitlist" element={<Waitlist />} />
-        <Route path="/help-center" element={<HelpCenter />} />
-        <Route path="/returns-refunds" element={<ReturnsRefunds />} />
-        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-        <Route path="/terms-of-service" element={<TermsOfService />} />
+          <Route path="/help-center" element={<HelpCenter />} />
+          <Route path="/returns-refunds" element={<ReturnsRefunds />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-of-service" element={<TermsOfService />} />
+          <Route path="/category/:categorySlug" element={<SubCategories />} />
 
         {/* Delivery Partner Routes */}
         <Route path="/delivery-partner" element={<DeliveryPartnerAuth />} />

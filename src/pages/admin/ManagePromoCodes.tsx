@@ -27,7 +27,7 @@ import { useToast } from "@/hooks/use-toast";
 interface PromoCode {
   id: string;
   code: string;
-  discount_type: 'percentage' | 'fixed';
+  discount_type: string;
   discount_value: number;
   min_order_amount?: number;
   max_discount_amount?: number;
@@ -60,7 +60,7 @@ const ManagePromoCodes = () => {
   });
 
   // Fetch promo codes
-  const { data: promoCodes = [], refetch } = useQuery<PromoCode[]>({
+  const { data: promoCodes = [], refetch } = useQuery({
     queryKey: ['admin-promo-codes'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -73,7 +73,7 @@ const ManagePromoCodes = () => {
     }
   });
 
-  const filteredPromoCodes = promoCodes.filter(promo =>
+  const filteredPromoCodes = (promoCodes || []).filter((promo: any) =>
     promo.code.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -96,12 +96,12 @@ const ManagePromoCodes = () => {
     setEditingPromo(promo);
     setPromoForm({
       code: promo.code,
-      discount_type: promo.discount_type,
+      discount_type: promo.discount_type as 'percentage' | 'fixed',
       discount_value: promo.discount_value.toString(),
       min_order_amount: promo.min_order_amount?.toString() || '',
       max_discount_amount: promo.max_discount_amount?.toString() || '',
       usage_limit: promo.usage_limit?.toString() || '',
-      expiry_date: promo.expiry_date ? promo.expiry_date.split('T')[0] : '',
+      expiry_date: promo.expires_at ? promo.expires_at.split('T')[0] : '',
       is_active: promo.is_active
     });
     setModalOpen(true);
@@ -121,7 +121,7 @@ const ManagePromoCodes = () => {
         min_order_amount: promoForm.min_order_amount ? parseFloat(promoForm.min_order_amount) : null,
         max_discount_amount: promoForm.max_discount_amount ? parseFloat(promoForm.max_discount_amount) : null,
         usage_limit: promoForm.usage_limit ? parseInt(promoForm.usage_limit) : null,
-        expiry_date: promoForm.expiry_date || null,
+        expires_at: promoForm.expiry_date || null,
         is_active: promoForm.is_active,
         used_count: 0
       };
@@ -156,7 +156,7 @@ const ManagePromoCodes = () => {
     }
   };
 
-  const handleDelete = async (promoId: number) => {
+  const handleDelete = async (promoId: string) => {
     if (!confirm('Are you sure you want to delete this promo code?')) {
       return;
     }
@@ -246,9 +246,9 @@ const ManagePromoCodes = () => {
                         <Tag className="h-4 w-4 mr-2 text-primary" />
                         <div>
                           <div className="text-sm font-medium text-foreground">{promo.code}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {promo.expiry_date ? `Expires: ${new Date(promo.expiry_date).toLocaleDateString()}` : 'No expiry'}
-                          </div>
+                           <div className="text-xs text-muted-foreground">
+                             {promo.expires_at ? `Expires: ${new Date(promo.expires_at).toLocaleDateString()}` : 'No expiry'}
+                           </div>
                         </div>
                       </div>
                     </td>

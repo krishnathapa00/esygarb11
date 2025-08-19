@@ -113,7 +113,7 @@ const Checkout = () => {
   };
 
   const handleAddressChange = () => {
-    window.open('/location-selector', '_blank');
+    navigate('/map-location');
   };
 
   const handlePlaceOrder = async () => {

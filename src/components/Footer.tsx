@@ -61,19 +61,19 @@ const Footer = () => {
           <div className="space-y-4">
             <h4 className="text-lg font-semibold">Services</h4>
             <div className="space-y-2">
-              <Link to="/fresh-vegetables" className="block text-gray-300 hover:text-green-400 transition-colors text-sm">
+              <Link to="/category/fresh-vegetables" className="block text-gray-300 hover:text-green-400 transition-colors text-sm">
                 Fresh Vegetables
               </Link>
-              <Link to="/organic-fruits" className="block text-gray-300 hover:text-green-400 transition-colors text-sm">
+              <Link to="/category/organic-fruits" className="block text-gray-300 hover:text-green-400 transition-colors text-sm">
                 Organic Fruits
               </Link>
-              <Link to="/dairy-products" className="block text-gray-300 hover:text-green-400 transition-colors text-sm">
+              <Link to="/category/dairy-products" className="block text-gray-300 hover:text-green-400 transition-colors text-sm">
                 Dairy & Eggs
               </Link>
-              <Link to="/snacks-beverages" className="block text-gray-300 hover:text-green-400 transition-colors text-sm">
+              <Link to="/category/snacks-beverages" className="block text-gray-300 hover:text-green-400 transition-colors text-sm">
                 Snacks & Beverages
               </Link>
-              <Link to="/personal-care" className="block text-gray-300 hover:text-green-400 transition-colors text-sm">
+              <Link to="/category/personal-care" className="block text-gray-300 hover:text-green-400 transition-colors text-sm">
                 Personal Care
               </Link>
             </div>
