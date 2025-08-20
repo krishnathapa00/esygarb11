@@ -176,21 +176,26 @@ const ManageProducts = () => {
   const handleDeleteProduct = async (productId: number) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
 
-    const { error } = await supabase.from('products').delete().eq('id', productId);
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({ is_active: false })
+        .eq('id', productId);
 
-    if (error) {
+      if (error) throw error;
+
+      toast({
+        title: "Product deleted!",
+        description: "Product has been successfully removed.",
+      });
+      refetch();
+      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+    } catch (error: any) {
       toast({
         title: "Delete failed",
         description: error.message,
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Product deleted!",
-        description: "Successfully deleted the product.",
-      });
-      refetch();
-      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
     }
   };
 

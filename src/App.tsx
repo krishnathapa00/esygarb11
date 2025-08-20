@@ -34,7 +34,7 @@ import ManageKYC from "./pages/admin/ManageKYC";
 import DeliveryPartnerManagement from "./pages/admin/DeliveryPartnerManagement";
 import NotFound from "./pages/NotFound";
 import Unauthorized from "./pages/Unauthorized";
-import MapLocation from "./pages/MapLocation";
+import MapLocationEnhanced from "./pages/MapLocationEnhanced";
 import SearchResults from "./pages/SearchResults";
 import Waitlist from './pages/Waitlist';
 import DeliveryProfile from './pages/DeliveryProfile';
@@ -85,7 +85,7 @@ const AppContent = () => {
         <Route path="/order-tracking-lookup" element={<OrderTrackingLookup />} />
         <Route path="/order-history" element={<OrderHistory />} />
         <Route path="/profile" element={<UserProfile />} />
-        <Route path="/map-location" element={<MapLocation />} />
+        <Route path="/map-location" element={<MapLocationEnhanced />} />
         <Route path="/waitlist" element={<Waitlist />} />
         <Route path="/help-center" element={<HelpCenter />} />
         <Route path="/returns-refunds" element={<ReturnsRefunds />} />

@@ -13,7 +13,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import UserDetailsForm from "@/components/UserDetailsForm";
+import ProfileCompletionModal from "@/components/ProfileCompletionModal";
+import AddressConfirmationModal from "@/components/AddressConfirmationModal";
 import EsewaLogo from "../assets/payments/esewa.jpg";
 import KhaltiLogo from "../assets/payments/khalti.jpg";
 
@@ -32,20 +33,12 @@ const Checkout = () => {
   const totalAmount = totalPrice + deliveryFee;
 
   const [selectedPayment, setSelectedPayment] = useState("cod");
-  const [showUserDetails, setShowUserDetails] = useState(false);
-  const [savingProfile, setSavingProfile] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showAddressModal, setShowAddressModal] = useState(false);
   const [deliveryAddress, setDeliveryAddress] = useState("");
-  const [showAddressConfirmation, setShowAddressConfirmation] = useState(false);
 
-  // Check if user needs to complete profile - only for truly new users
-  const storedLocation = localStorage.getItem("esygrab_user_location");
-  const hasLocationFromHomepage = storedLocation ? JSON.parse(storedLocation) : null;
-  
-  // Only ask new users who have never completed profile
-  const needsProfileCompletion = user && (
-    !profile.full_name && 
-    !profile.phone
-  );
+  // Check if user needs to complete profile - only for truly new users without full_name
+  const needsProfileCompletion = user && (!profile.full_name || !profile.phone);
 
   // Load delivery address from localStorage
   useEffect(() => {
@@ -79,37 +72,26 @@ const Checkout = () => {
       }
     }
 
-    // Show user details form if profile is incomplete
+    // Show modals for profile completion or address confirmation
     if (user && needsProfileCompletion) {
-      setShowUserDetails(true);
-    } else if (user && !needsProfileCompletion && deliveryAddress && !showAddressConfirmation) {
-      setShowAddressConfirmation(true);
+      setShowProfileModal(true);
+    } else if (user && !needsProfileCompletion && deliveryAddress) {
+      setShowAddressModal(true);
     }
   }, [loading, user, navigate, cart, mergeGuestCart, needsProfileCompletion, deliveryAddress]);
 
-  const handleUserDetailsComplete = async (details: { fullName: string; deliveryAddress: string }) => {
-    setSavingProfile(true);
-    try {
-      // If user already has address in profile but no deliveryAddress from form, use existing address
-      const finalAddress = details.deliveryAddress || profile.address || hasLocationFromHomepage?.formatted;
-      
-      await updateProfile({
-        full_name: details.fullName,
-        address: finalAddress,
-      });
-      setShowUserDetails(false);
-      setDeliveryAddress(finalAddress);
-      setShowAddressConfirmation(true);
-    } catch (error) {
-      console.error("Error saving profile:", error);
-      alert("Failed to save profile. Please try again.");
-    } finally {
-      setSavingProfile(false);
+  const handleProfileComplete = () => {
+    setShowProfileModal(false);
+    const stored = localStorage.getItem("esygrab_user_location");
+    if (stored) {
+      const location = JSON.parse(stored);
+      setDeliveryAddress(location.address || "");
+      setShowAddressModal(true);
     }
   };
 
   const handleAddressConfirm = () => {
-    setShowAddressConfirmation(false);
+    setShowAddressModal(false);
   };
 
   const handleAddressChange = () => {
@@ -123,7 +105,7 @@ const Checkout = () => {
     }
 
     if (needsProfileCompletion) {
-      setShowUserDetails(true);
+      setShowProfileModal(true);
       return;
     }
 
@@ -233,49 +215,7 @@ const Checkout = () => {
           </h1>
         </div>
 
-        {/* Show user details form if profile is incomplete */}
-        {showUserDetails ? (
-          <div className="max-w-md mx-auto">
-            <UserDetailsForm
-              email={user.email}
-              onComplete={handleUserDetailsComplete}
-              loading={savingProfile}
-            />
-          </div>
-        ) : showAddressConfirmation ? (
-          <div className="max-w-md mx-auto">
-            <div className="bg-white rounded-lg p-4 shadow-sm mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Confirm Delivery Address</h3>
-              <div className="bg-green-50 p-3 rounded-lg border border-green-200 mb-4">
-                <div className="flex items-start gap-2">
-                  <MapPin className="h-5 w-5 text-green-600 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-green-800 font-medium">Current Address:</p>
-                    <p className="text-sm text-green-700">{deliveryAddress}</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex gap-3">
-                <Button 
-                  onClick={handleAddressConfirm}
-                  className="flex-1 bg-green-600 hover:bg-green-700"
-                >
-                  Confirm Address
-                </Button>
-                <Button 
-                  onClick={handleAddressChange}
-                  variant="outline"
-                  className="flex-1"
-                >
-                  Change Address
-                </Button>
-              </div>
-            </div>
-          </div>
-        ) : (
-          /* Mobile-first layout */
-          <div className="space-y-4 lg:grid lg:grid-cols-3 lg:gap-6 lg:space-y-0">
+        <div className="space-y-4 lg:grid lg:grid-cols-3 lg:gap-6 lg:space-y-0">
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-4">
               {/* Delivery Address Section */}
@@ -395,8 +335,27 @@ const Checkout = () => {
               </Button>
             </div>
           </div>
-        )}
       </div>
+
+      {/* Modals */}
+      <ProfileCompletionModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        onComplete={handleProfileComplete}
+        initialData={{
+          email: user?.email,
+          phone: profile.phone,
+          full_name: profile.full_name
+        }}
+      />
+
+      <AddressConfirmationModal
+        isOpen={showAddressModal}
+        onClose={() => setShowAddressModal(false)}
+        onConfirm={handleAddressConfirm}
+        onChangeAddress={handleAddressChange}
+        address={deliveryAddress}
+      />
     </div>
   );
 };
