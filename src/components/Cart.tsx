@@ -43,7 +43,7 @@ const Cart = ({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem }: CartPr
             <div className="flex items-center space-x-2">
               <Truck className="h-4 w-4 text-green-600" />
               <span className="text-sm font-medium text-green-700">
-                Delivery in 10-15 mins
+                Delivery in 10 mins
               </span>
             </div>
           </div>

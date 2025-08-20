@@ -44,7 +44,7 @@ const AddProductNew = () => {
     weight: '',
     discount: '',
     offer: '',
-    delivery_time: '10-15 mins',
+    delivery_time: '10 mins',
     status: true
   });
 
@@ -158,7 +158,7 @@ const AddProductNew = () => {
       weight: '',
       discount: '',
       offer: '',
-      delivery_time: '10-15 mins',
+      delivery_time: '10 mins',
       status: true
     });
     setSelectedImages([]);
@@ -398,7 +398,7 @@ const AddProductNew = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="10-15 mins">10-15 minutes</SelectItem>
+                      <SelectItem value="10 mins">10 minutes</SelectItem>
                       <SelectItem value="15-30 mins">15-30 minutes</SelectItem>
                       <SelectItem value="30-45 mins">30-45 minutes</SelectItem>
                       <SelectItem value="45-60 mins">45-60 minutes</SelectItem>

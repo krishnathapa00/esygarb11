@@ -307,7 +307,7 @@ export const useProducts = () => {
             product.image_url ||
             "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&h=300&fit=crop",
           weight: product.weight || "1 unit",
-          deliveryTime: product.delivery_time || "10-15 mins",
+          deliveryTime: product.delivery_time || "10 mins",
           category: product.categories?.name || "Unknown",
           stockQuantity: product.stock_quantity,
           rating: 4.5,
@@ -381,7 +381,7 @@ export const useProductsByCategory = (categoryId: number) => {
             product.image_url ||
             "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&h=300&fit=crop",
           weight: product.weight || "1 unit",
-          deliveryTime: product.delivery_time || "10-15 mins",
+          deliveryTime: product.delivery_time || "10 mins",
           category: product.categories?.name || "Unknown",
           stockQuantity: product.stock_quantity,
           rating: 4.5,

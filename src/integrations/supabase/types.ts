@@ -837,6 +837,12 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      deduct_stock_and_checkout: {
+        Args: { delivery_address: string; user_uuid: string }
+        Returns: {
+          order_id: string
+        }[]
+      }
       generate_order_number: {
         Args: Record<PropertyKey, never>
         Returns: string

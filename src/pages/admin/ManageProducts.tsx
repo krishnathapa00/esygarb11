@@ -415,7 +415,7 @@ const ManageProducts = () => {
                           <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Time</label>
                           <Input 
                             name="delivery_time" 
-                            placeholder="e.g., 10-15 mins" 
+                            placeholder="e.g., 10 mins" 
                             value={productData.delivery_time} 
                             onChange={handleChange} 
                           />

@@ -125,7 +125,7 @@ const Checkout = () => {
           user_id: user.id,
           total_amount: totalAmount,
           delivery_address: deliveryAddress,
-          estimated_delivery: "10-15 mins",
+          estimated_delivery: "10 mins",
           status: 'pending'
         })
         .select()
@@ -157,7 +157,7 @@ const Checkout = () => {
         totalItems,
         totalAmount,
         deliveryAddress,
-        estimatedDelivery: "10-15 mins",
+        estimatedDelivery: "10 mins",
         paymentMethod: paymentOptions.find((p) => p.id === selectedPayment)?.label || "",
         status: "confirmed"
       };
