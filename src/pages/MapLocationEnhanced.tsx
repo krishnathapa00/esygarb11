@@ -22,94 +22,136 @@ const MapLocationEnhanced = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [markerPosition, setMarkerPosition] = useState({ lat: 27.7172, lng: 85.3240 }); // Default to Kathmandu
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
+  const [webglSupported, setWebglSupported] = useState(true);
 
-  // Initialize map
+  // Check WebGL support
+  const checkWebGLSupport = () => {
+    try {
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      return !!gl;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  // Initialize map with error handling
   useEffect(() => {
     if (!mapContainer.current) return;
 
-    mapboxgl.accessToken = MAPBOX_TOKEN;
-    
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/streets-v12',
-      center: [markerPosition.lng, markerPosition.lat],
-      zoom: 15
-    });
+    // Check WebGL support first
+    if (!checkWebGLSupport()) {
+      setWebglSupported(false);
+      setMapError('WebGL is not supported in your browser. Please use a modern browser that supports WebGL.');
+      return;
+    }
 
-    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    try {
+      mapboxgl.accessToken = MAPBOX_TOKEN;
+      
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/streets-v12',
+        center: [markerPosition.lng, markerPosition.lat],
+        zoom: 15,
+        preserveDrawingBuffer: true,
+        failIfMajorPerformanceCaveat: false
+      });
 
-    // Add marker
-    marker.current = new mapboxgl.Marker({
-      draggable: true,
-      color: '#ef4444'
-    })
-    .setLngLat([markerPosition.lng, markerPosition.lat])
-    .addTo(map.current);
+      map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
-    // Handle marker drag
-    marker.current.on('dragend', () => {
-      if (marker.current) {
-        const lngLat = marker.current.getLngLat();
-        setMarkerPosition({ lat: lngLat.lat, lng: lngLat.lng });
-        reverseGeocode(lngLat.lat, lngLat.lng);
-      }
-    });
+      // Add marker
+      marker.current = new mapboxgl.Marker({
+        draggable: true,
+        color: '#ef4444'
+      })
+      .setLngLat([markerPosition.lng, markerPosition.lat])
+      .addTo(map.current);
 
-    // Handle map click
-    map.current.on('click', (e) => {
-      const { lng, lat } = e.lngLat;
-      setMarkerPosition({ lat, lng });
-      if (marker.current) {
-        marker.current.setLngLat([lng, lat]);
-      }
-      reverseGeocode(lat, lng);
-    });
-
-    map.current.on('load', () => {
-      setMapLoaded(true);
-      // Check for temporarily stored detected location
-      const tempLocation = localStorage.getItem('esygrab_temp_location');
-      if (tempLocation) {
-        try {
-          const location = JSON.parse(tempLocation);
-          if (location.detected && location.coordinates) {
-            const { lat, lng } = location.coordinates;
-            setMarkerPosition({ lat, lng });
-            if (map.current && marker.current) {
-              map.current.setCenter([lng, lat]);
-              marker.current.setLngLat([lng, lat]);
-            }
-            reverseGeocode(lat, lng);
-          }
-          localStorage.removeItem('esygrab_temp_location');
-        } catch (error) {
-          console.error('Error parsing temp location:', error);
+      // Handle marker drag
+      marker.current.on('dragend', () => {
+        if (marker.current) {
+          const lngLat = marker.current.getLngLat();
+          setMarkerPosition({ lat: lngLat.lat, lng: lngLat.lng });
+          reverseGeocode(lngLat.lat, lngLat.lng);
         }
-      } else {
-        // Load user's saved location if available
-        const savedLocation = localStorage.getItem('esygrab_user_location');
-        if (savedLocation) {
+      });
+
+      // Handle map click
+      map.current.on('click', (e) => {
+        const { lng, lat } = e.lngLat;
+        setMarkerPosition({ lat, lng });
+        if (marker.current) {
+          marker.current.setLngLat([lng, lat]);
+        }
+        reverseGeocode(lat, lng);
+      });
+
+      // Handle map errors
+      map.current.on('error', (e) => {
+        console.error('Map error:', e.error);
+        setMapError('Failed to load the map. Please refresh the page and try again.');
+        setWebglSupported(false);
+      });
+
+      map.current.on('load', () => {
+        setMapLoaded(true);
+        setMapError(null);
+        
+        // Check for temporarily stored detected location
+        const tempLocation = localStorage.getItem('esygrab_temp_location');
+        if (tempLocation) {
           try {
-            const location = JSON.parse(savedLocation);
-            setSelectedLocation(location.address || '');
-            if (location.coordinates) {
+            const location = JSON.parse(tempLocation);
+            if (location.detected && location.coordinates) {
               const { lat, lng } = location.coordinates;
               setMarkerPosition({ lat, lng });
               if (map.current && marker.current) {
                 map.current.setCenter([lng, lat]);
                 marker.current.setLngLat([lng, lat]);
               }
+              reverseGeocode(lat, lng);
             }
+            localStorage.removeItem('esygrab_temp_location');
           } catch (error) {
-            console.error('Error parsing saved location:', error);
+            console.error('Error parsing temp location:', error);
+          }
+        } else {
+          // Load user's saved location if available
+          const savedLocation = localStorage.getItem('esygrab_user_location');
+          if (savedLocation) {
+            try {
+              const location = JSON.parse(savedLocation);
+              setSelectedLocation(location.address || '');
+              if (location.coordinates) {
+                const { lat, lng } = location.coordinates;
+                setMarkerPosition({ lat, lng });
+                if (map.current && marker.current) {
+                  map.current.setCenter([lng, lat]);
+                  marker.current.setLngLat([lng, lat]);
+                }
+              }
+            } catch (error) {
+              console.error('Error parsing saved location:', error);
+            }
           }
         }
-      }
-    });
+      });
+
+    } catch (error) {
+      console.error('Map initialization error:', error);
+      setMapError('Failed to initialize the map. Your browser may not support WebGL.');
+      setWebglSupported(false);
+    }
 
     return () => {
-      if (map.current) {
-        map.current.remove();
+      try {
+        if (map.current) {
+          map.current.remove();
+        }
+      } catch (error) {
+        console.error('Error cleaning up map:', error);
       }
     };
   }, []);
@@ -366,11 +408,26 @@ const MapLocationEnhanced = () => {
 
           {/* Map Area */}
           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div 
-              ref={mapContainer}
-              className="w-full h-96"
-              style={{ minHeight: '400px' }}
-            />
+            {mapError || !webglSupported ? (
+              // Fallback UI when WebGL is not supported or map fails
+              <div className="w-full h-96 flex flex-col items-center justify-center bg-gray-100 border-2 border-dashed border-gray-300">
+                <MapPin className="h-16 w-16 text-gray-400 mb-4" />
+                <h3 className="text-lg font-semibold text-gray-700 mb-2">Map Unavailable</h3>
+                <p className="text-sm text-gray-500 text-center max-w-sm mb-4">
+                  {mapError || 'Your browser does not support WebGL, which is required for the interactive map.'}
+                </p>
+                <div className="text-xs text-gray-400 text-center">
+                  <p>You can still search for locations and enter addresses manually above.</p>
+                  <p>Current coordinates: {markerPosition.lat.toFixed(6)}, {markerPosition.lng.toFixed(6)}</p>
+                </div>
+              </div>
+            ) : (
+              <div 
+                ref={mapContainer}
+                className="w-full h-96"
+                style={{ minHeight: '400px' }}
+              />
+            )}
           </div>
 
           {/* Location Details */}
