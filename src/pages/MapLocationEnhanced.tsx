@@ -30,26 +30,39 @@ const MapLocationEnhanced = () => {
     try {
       const canvas = document.createElement('canvas');
       const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-      return !!gl;
+      const supported = !!gl;
+      console.log('WebGL Support Check:', supported);
+      return supported;
     } catch (e) {
+      console.error('WebGL Support Error:', e);
       return false;
     }
   };
 
   // Initialize map with error handling
   useEffect(() => {
-    if (!mapContainer.current) return;
+    console.log('Map initialization starting...');
+    if (!mapContainer.current) {
+      console.log('Map container not found');
+      return;
+    }
 
     // Check WebGL support first
-    if (!checkWebGLSupport()) {
+    const webglSupport = checkWebGLSupport();
+    console.log('WebGL Support Result:', webglSupport);
+    
+    if (!webglSupport) {
+      console.log('WebGL not supported, showing fallback');
       setWebglSupported(false);
       setMapError('WebGL is not supported in your browser. Please use a modern browser that supports WebGL.');
       return;
     }
 
     try {
+      console.log('Setting Mapbox token...');
       mapboxgl.accessToken = MAPBOX_TOKEN;
       
+      console.log('Creating map instance...');
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/streets-v12',
@@ -59,9 +72,11 @@ const MapLocationEnhanced = () => {
         failIfMajorPerformanceCaveat: false
       });
 
+      console.log('Map instance created, adding controls...');
       map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
       // Add marker
+      console.log('Adding marker...');
       marker.current = new mapboxgl.Marker({
         draggable: true,
         color: '#ef4444'
@@ -96,6 +111,7 @@ const MapLocationEnhanced = () => {
       });
 
       map.current.on('load', () => {
+        console.log('Map loaded successfully!');
         setMapLoaded(true);
         setMapError(null);
         
@@ -141,13 +157,14 @@ const MapLocationEnhanced = () => {
 
     } catch (error) {
       console.error('Map initialization error:', error);
-      setMapError('Failed to initialize the map. Your browser may not support WebGL.');
+      setMapError(`Failed to initialize the map: ${error.message}`);
       setWebglSupported(false);
     }
 
     return () => {
       try {
         if (map.current) {
+          console.log('Cleaning up map...');
           map.current.remove();
         }
       } catch (error) {
