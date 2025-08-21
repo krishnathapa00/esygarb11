@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,14 +18,32 @@ import {
   Navigation,
   CheckCircle,
   Truck,
-  AlertCircle
+  AlertCircle,
+  Map
 } from 'lucide-react';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+
+const MAPBOX_TOKEN = 'pk.eyJ1Ijoia3Jpc2huYTEyNDMzNCIsImEiOiJjbWVodG1mZjcwMjhwMnJxczZ1ZWQyeTNlIn0.pl7sk2526OEU-Ub-hB0QTQ';
 
 const DeliveryMapNavigation = () => {
   const { orderId } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  
+  // Map refs and state
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const map = useRef<mapboxgl.Map | null>(null);
+  const partnerMarker = useRef<mapboxgl.Marker | null>(null);
+  const customerMarker = useRef<mapboxgl.Marker | null>(null);
+  const routeSource = useRef<any>(null);
+  
+  const [partnerLocation, setPartnerLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [customerLocation, setCustomerLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [routeInfo, setRouteInfo] = useState<{distance: string, duration: string} | null>(null);
+  const [isTrackingLocation, setIsTrackingLocation] = useState(false);
+  const watchId = useRef<number | null>(null);
   
 
   // Fetch order details with delivery config
@@ -158,6 +176,187 @@ const DeliveryMapNavigation = () => {
     });
   };
 
+  // Initialize map and location tracking
+  useEffect(() => {
+    if (!mapContainer.current || !order) return;
+
+    mapboxgl.accessToken = MAPBOX_TOKEN;
+    
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: 'mapbox://styles/mapbox/streets-v12',
+      center: [85.3240, 27.7172], // Default Kathmandu center
+      zoom: 14
+    });
+
+    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+    // Geocode customer address
+    geocodeAddress(order.delivery_address);
+    
+    // Start location tracking for delivery partner
+    startLocationTracking();
+
+    return () => {
+      stopLocationTracking();
+      if (map.current) {
+        map.current.remove();
+      }
+    };
+  }, [order]);
+
+  // Update route when both locations are available
+  useEffect(() => {
+    if (partnerLocation && customerLocation && map.current) {
+      updateRoute();
+    }
+  }, [partnerLocation, customerLocation]);
+
+  const geocodeAddress = async (address: string) => {
+    try {
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${MAPBOX_TOKEN}&country=NP&limit=1`
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.features && data.features.length > 0) {
+          const [lng, lat] = data.features[0].center;
+          setCustomerLocation({ lat, lng });
+          
+          // Add customer marker
+          if (map.current) {
+            if (customerMarker.current) {
+              customerMarker.current.remove();
+            }
+            
+            customerMarker.current = new mapboxgl.Marker({ 
+              color: '#ef4444',
+              scale: 1.2 
+            })
+            .setLngLat([lng, lat])
+            .setPopup(new mapboxgl.Popup().setHTML('<div><strong>Customer Location</strong><br>' + address + '</div>'))
+            .addTo(map.current);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Geocoding error:', error);
+    }
+  };
+
+  const startLocationTracking = () => {
+    if (!navigator.geolocation) return;
+    
+    setIsTrackingLocation(true);
+    
+    // Get initial position
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        updatePartnerLocation(latitude, longitude);
+      },
+      (error) => console.error('Geolocation error:', error),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+
+    // Watch position changes
+    watchId.current = navigator.geolocation.watchPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        updatePartnerLocation(latitude, longitude);
+      },
+      (error) => console.error('Watch position error:', error),
+      { enableHighAccuracy: true, timeout: 5000, maximumAge: 30000 }
+    );
+  };
+
+  const stopLocationTracking = () => {
+    setIsTrackingLocation(false);
+    if (watchId.current) {
+      navigator.geolocation.clearWatch(watchId.current);
+      watchId.current = null;
+    }
+  };
+
+  const updatePartnerLocation = (lat: number, lng: number) => {
+    setPartnerLocation({ lat, lng });
+    
+    if (map.current) {
+      if (partnerMarker.current) {
+        partnerMarker.current.setLngLat([lng, lat]);
+      } else {
+        partnerMarker.current = new mapboxgl.Marker({ 
+          color: '#10b981',
+          scale: 1.2 
+        })
+        .setLngLat([lng, lat])
+        .setPopup(new mapboxgl.Popup().setHTML('<div><strong>Your Location</strong><br>Delivery Partner</div>'))
+        .addTo(map.current);
+      }
+      
+      // Center map if first location
+      if (!customerLocation) {
+        map.current.setCenter([lng, lat]);
+      }
+    }
+  };
+
+  const updateRoute = async () => {
+    if (!partnerLocation || !customerLocation || !map.current) return;
+    
+    try {
+      const response = await fetch(
+        `https://api.mapbox.com/directions/v5/mapbox/driving/${partnerLocation.lng},${partnerLocation.lat};${customerLocation.lng},${customerLocation.lat}?geometries=geojson&access_token=${MAPBOX_TOKEN}`
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.routes && data.routes.length > 0) {
+          const route = data.routes[0];
+          
+          // Update route info
+          const distance = (route.distance / 1000).toFixed(1) + ' km';
+          const duration = Math.round(route.duration / 60) + ' min';
+          setRouteInfo({ distance, duration });
+          
+          // Add route to map
+          if (map.current.getSource('route')) {
+            (map.current.getSource('route') as any).setData(route.geometry);
+          } else {
+            map.current.addSource('route', {
+              type: 'geojson',
+              data: route.geometry
+            });
+            
+            map.current.addLayer({
+              id: 'route',
+              type: 'line',
+              source: 'route',
+              layout: {
+                'line-join': 'round',
+                'line-cap': 'round'
+              },
+              paint: {
+                'line-color': '#3b82f6',
+                'line-width': 5,
+                'line-opacity': 0.75
+              }
+            });
+          }
+          
+          // Fit map to show both locations
+          const bounds = new mapboxgl.LngLatBounds();
+          bounds.extend([partnerLocation.lng, partnerLocation.lat]);
+          bounds.extend([customerLocation.lng, customerLocation.lat]);
+          map.current.fitBounds(bounds, { padding: 50 });
+        }
+      }
+    } catch (error) {
+      console.error('Route calculation error:', error);
+    }
+  };
+
   const openMap = () => {
     if (order?.delivery_address) {
       const encodedAddress = encodeURIComponent(order.delivery_address);
@@ -226,6 +425,41 @@ const DeliveryMapNavigation = () => {
             <p className="text-sm text-muted-foreground">Order #{order.order_number}</p>
           </div>
         </div>
+
+        {/* Live Map */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Map className="h-5 w-5" />
+              Live Navigation
+              {isTrackingLocation && (
+                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                  Live Tracking
+                </span>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div 
+              ref={mapContainer}
+              className="w-full h-80 rounded-b-lg"
+            />
+            {routeInfo && (
+              <div className="p-4 bg-gray-50 border-t">
+                <div className="flex justify-between text-sm">
+                  <span className="flex items-center gap-1">
+                    <MapPin className="h-4 w-4 text-blue-600" />
+                    Distance: <strong>{routeInfo.distance}</strong>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Timer className="h-4 w-4 text-blue-600" />
+                    ETA: <strong>{routeInfo.duration}</strong>
+                  </span>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Timer Card */}
         <Card className="mb-6">

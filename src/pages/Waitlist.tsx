@@ -96,7 +96,7 @@ const Waitlist = () => {
             Nepal's Fastest Grocery Delivery — <span style={{ color: '#28a745' }}>Coming Soon</span>
           </h1>
           <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
-            Get fresh groceries, snacks, and daily essentials at your doorstep in 10-15 minutes. Be the first to experience convenience redefined.
+            Get fresh groceries, snacks, and daily essentials at your doorstep in 10 minutes. Be the first to experience convenience redefined.
           </p>
           
           {/* Waitlist Form */}
@@ -201,8 +201,8 @@ const Waitlist = () => {
               <div className="mx-auto w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mb-4 md:mb-3">
                 <Zap className="w-8 h-8" style={{ color: '#28a745' }} />
               </div>
-              <h3 className="text-lg md:text-base font-bold text-gray-900 mb-2 md:mb-1">⚡ Ultra-fast 10-15 minute delivery</h3>
-              <p className="text-gray-600 text-sm md:text-xs">Lightning-fast delivery to your doorstep in just 10-15 minutes</p>
+              <h3 className="text-lg md:text-base font-bold text-gray-900 mb-2 md:mb-1">⚡ Ultra-fast 10 minute delivery</h3>
+              <p className="text-gray-600 text-sm md:text-xs">Lightning-fast delivery to your doorstep in just 10 minutes</p>
             </div>
 
             <div className="text-center p-4 md:p-3">

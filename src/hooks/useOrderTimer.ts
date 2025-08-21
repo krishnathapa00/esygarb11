@@ -15,7 +15,7 @@ export const useOrderTimer = ({
   orderCreatedAt,
   acceptedAt,
   deliveredAt,
-  totalDeliveryMinutes = 15
+  totalDeliveryMinutes = 10
 }: UseOrderTimerProps) => {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [remainingSeconds, setRemainingSeconds] = useState(totalDeliveryMinutes * 60);

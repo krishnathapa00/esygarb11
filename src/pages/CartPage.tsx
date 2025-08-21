@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import { ArrowLeft, ShoppingCart, Plus, Minus, Trash2, MapPin, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,10 +7,13 @@ import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tag } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const CartPage = () => {
   const { cart, updateQuantity, removeItem } = useCart();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [deliveryAddress, setDeliveryAddress] = useState(() => {
     const stored = localStorage.getItem("esygrab_user_location");
     if (stored) {
@@ -105,6 +108,17 @@ const CartPage = () => {
     setPromoDiscount(0);
     setPromoCode('');
     toast({ title: "Promo code removed" });
+  };
+
+  const handleProceedToCheckout = () => {
+    if (!user) {
+      // Redirect to auth page if not authenticated
+      navigate('/auth');
+      return;
+    }
+
+    // User is authenticated, proceed to checkout
+    navigate('/checkout');
   };
 
   if (cart.length === 0) {
@@ -270,11 +284,12 @@ const CartPage = () => {
               </div>
             </div>
 
-            <Link to="/checkout" className="block">
-              <Button className="w-full py-3 text-base font-medium bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white fixed bottom-20 left-4 right-4 md:relative md:bottom-auto md:left-auto md:right-auto z-50 md:mb-0">
-                Proceed to Checkout
-              </Button>
-            </Link>
+            <Button 
+              onClick={handleProceedToCheckout}
+              className="w-full py-3 text-base font-medium bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white fixed bottom-20 left-4 right-4 md:relative md:bottom-auto md:left-auto md:right-auto z-50 md:mb-0"
+            >
+              Proceed to Checkout
+            </Button>
           </div>
         </div>
       </div>

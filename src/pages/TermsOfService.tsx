@@ -68,7 +68,7 @@ const TermsOfService = () => {
               <div className="space-y-4">
                 <p className="text-muted-foreground">
                   EsyGrab operates a quick-commerce platform delivering groceries and daily essentials 
-                  within 10-15 minutes in select areas of Nepal.
+                  within 10 minutes in select areas of Nepal.
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
@@ -153,7 +153,7 @@ const TermsOfService = () => {
                 <div>
                   <h3 className="font-semibold mb-3">Delivery Commitment</h3>
                   <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                    <li>We aim to deliver within 10-15 minutes in our service areas</li>
+                    <li>We aim to deliver within 10 minutes in our service areas</li>
                     <li>Delivery times are estimates and may vary</li>
                     <li>Weather conditions and other factors may cause delays</li>
                     <li>Accurate delivery address is required for successful delivery</li>

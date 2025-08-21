@@ -180,7 +180,7 @@ const ContactUs = () => {
 
             <div>
               <h4 className="font-semibold text-gray-900 mb-2">How fast is your delivery?</h4>
-              <p className="text-gray-600 text-sm mb-4">We deliver within 10-15 minutes of order confirmation.</p>
+              <p className="text-gray-600 text-sm mb-4">We deliver within 10 minutes of order confirmation.</p>
             </div>
 
             <div>

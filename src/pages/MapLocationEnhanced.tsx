@@ -238,11 +238,32 @@ const MapLocationEnhanced = () => {
     }
   };
 
-  // Service availability check
+  // Service availability check with 3km limit
   const checkServiceAvailability = (lat: number, lng: number) => {
     // Nepal approximate bounds: lat 26-31, lng 80-89
     const isInNepal = lat >= 26 && lat <= 31 && lng >= 80 && lng <= 89;
-    return isInNepal;
+    
+    // Check distance from service centers (approximate locations)
+    const serviceCenters = [
+      { lat: 27.7172, lng: 85.3240 }, // Kathmandu
+      { lat: 27.6710, lng: 85.4298 }, // Lalitpur 
+      { lat: 27.6722, lng: 85.4298 }  // Bhaktapur
+    ];
+    
+    // Calculate distance to nearest service center
+    const distances = serviceCenters.map(center => {
+      const R = 6371; // Earth's radius in km
+      const dLat = (lat - center.lat) * Math.PI / 180;
+      const dLng = (lng - center.lng) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(center.lat * Math.PI / 180) * Math.cos(lat * Math.PI / 180) *
+                Math.sin(dLng/2) * Math.sin(dLng/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    });
+    
+    const minDistance = Math.min(...distances);
+    return isInNepal && minDistance <= 3; // 3km radius limit
   };
 
   const handleSaveLocation = () => {
@@ -264,7 +285,7 @@ const MapLocationEnhanced = () => {
       } else {
         toast({
           title: "Service unavailable",
-          description: "Sorry, we are not available at your location. EsyGrab currently serves Nepal only.",
+          description: "Sorry, we don't deliver to locations more than 3km from our service centers.",
           variant: "destructive",
         });
         navigate(-1); // Still navigate back

@@ -33,7 +33,7 @@ const HowItWorks = () => {
     {
       icon: <Truck className="h-8 w-8 text-white" />,
       title: "Receive Order",
-      description: "Receive your order in just 10–15 minutes at your doorstep.",
+      description: "Receive your order in just 10 minutes at your doorstep.",
       color: "from-red-500 to-red-600"
     }
   ];
@@ -93,7 +93,7 @@ const HowItWorks = () => {
         <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg p-8 text-center text-white mt-8">
           <h3 className="text-2xl font-bold mb-4">Ready to Experience Fast Delivery?</h3>
           <p className="text-lg mb-6 opacity-90">
-            Start shopping now and get your essentials delivered in just 10-15 minutes!
+            Start shopping now and get your essentials delivered in just 10 minutes!
           </p>
           <Link to="/">
             <Button className="bg-white text-green-600 hover:bg-gray-100 font-semibold px-8 py-3">
@@ -108,7 +108,7 @@ const HowItWorks = () => {
           <div className="grid md:grid-cols-2 gap-6">
             <div>
               <h4 className="font-semibold text-gray-900 mb-2">🚀 Ultra-Fast Delivery</h4>
-              <p className="text-gray-600 text-sm">Get your essentials delivered within 10-15 minutes of placing your order.</p>
+              <p className="text-gray-600 text-sm">Get your essentials delivered within 10 minutes of placing your order.</p>
             </div>
             <div>
               <h4 className="font-semibold text-gray-900 mb-2">✅ Quality Guaranteed</h4>

@@ -54,7 +54,7 @@ const OrderTracking = () => {
     refetchInterval: 5000 // Refresh every 5 seconds
   });
 
-  // Order timer for 15-minute delivery tracking
+  // Order timer for 10-minute delivery tracking
   const orderTimer = useOrderTimer({
     orderId: orderId || '',
     orderStatus: order?.status || 'pending',

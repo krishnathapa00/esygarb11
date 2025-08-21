@@ -30,7 +30,7 @@ const AboutUs = () => {
               Nepal's Fastest Quick-Commerce Platform
             </h2>
             <p className="text-lg text-gray-600 leading-relaxed">
-              EsyGrab is Nepal's fastest and most reliable quick-commerce platform, delivering groceries and daily essentials within just 10–15 minutes. We are on a mission to make everyday shopping effortless, saving you time so you can focus on what truly matters. EsyGrab ensures you get what you need, when you need it.
+              EsyGrab is Nepal's fastest and most reliable quick-commerce platform, delivering groceries and daily essentials within just 10 minutes. We are on a mission to make everyday shopping effortless, saving you time so you can focus on what truly matters. EsyGrab ensures you get what you need, when you need it.
             </p>
           </div>
         </div>
@@ -67,7 +67,7 @@ const AboutUs = () => {
               <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Clock className="h-6 w-6 text-green-600" />
               </div>
-              <h4 className="text-lg font-semibold text-gray-900 mb-2">10-15 Minutes Delivery</h4>
+              <h4 className="text-lg font-semibold text-gray-900 mb-2">10 Minutes Delivery</h4>
               <p className="text-gray-600 text-sm">Ultra-fast delivery that gets your essentials to you in minutes, not hours.</p>
             </div>
 

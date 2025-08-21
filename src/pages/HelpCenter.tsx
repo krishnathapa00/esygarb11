@@ -24,7 +24,7 @@ const HelpCenter = () => {
     {
       id: 1,
       question: "How fast is delivery?",
-      answer: "We deliver your orders within 10-15 minutes in our service areas. Our fast delivery is powered by our network of local darkstores and efficient delivery partners."
+      answer: "We deliver your orders within 10 minutes in our service areas. Our fast delivery is powered by our network of local darkstores and efficient delivery partners."
     },
     {
       id: 2,
