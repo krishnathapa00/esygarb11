@@ -16,6 +16,7 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import ProfileCompletionModal from "@/components/ProfileCompletionModal";
 import AddressConfirmationModal from "@/components/AddressConfirmationModal";
 import EsewaLogo from "../assets/payments/esewa.jpg";
+import LocationDisplay from '@/components/LocationDisplay';
 import KhaltiLogo from "../assets/payments/khalti.jpg";
 
 const Checkout = () => {
@@ -37,8 +38,8 @@ const Checkout = () => {
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [deliveryAddress, setDeliveryAddress] = useState("");
 
-  // Check if user needs to complete profile - only for truly new users without full_name
-  const needsProfileCompletion = user && (!profile.full_name || !profile.phone);
+  // Check if user needs to complete profile - only for new users with missing data
+  const needsProfileCompletion = user && (!profile.full_name || !profile.phone) && !profile.address;
 
   // Load delivery address from localStorage
   useEffect(() => {
@@ -75,7 +76,10 @@ const Checkout = () => {
     // Show modals for profile completion or address confirmation
     if (user && needsProfileCompletion) {
       setShowProfileModal(true);
-    } else if (user && !needsProfileCompletion && deliveryAddress) {
+    } else if (user && !needsProfileCompletion && !deliveryAddress) {
+      // If user has profile but no delivery address, prompt for location
+      navigate('/map-location');
+    } else if (user && deliveryAddress) {
       setShowAddressModal(true);
     }
   }, [loading, user, navigate, cart, mergeGuestCart, needsProfileCompletion, deliveryAddress]);
@@ -226,7 +230,11 @@ const Checkout = () => {
                     <MapPin className="h-5 w-5 text-green-600 mt-0.5" />
                     <div>
                       <p className="text-sm text-green-800 font-medium">Delivering to:</p>
-                      <p className="text-sm text-green-700">{deliveryAddress}</p>
+                      <LocationDisplay 
+                        address={deliveryAddress}
+                        fallback="Please set delivery address"
+                        className="text-sm text-green-700"
+                      />
                     </div>
                   </div>
                 </div>

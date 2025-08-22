@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { MapPin, Edit, X } from 'lucide-react';
+import LocationDisplay from '@/components/LocationDisplay';
 
 interface AddressConfirmationModalProps {
   isOpen: boolean;
@@ -34,7 +35,11 @@ const AddressConfirmationModal = ({
             <MapPin className="h-5 w-5 text-green-600 mt-0.5" />
             <div>
               <p className="text-sm font-medium text-gray-900">Delivery Address</p>
-              <p className="text-sm text-gray-600 mt-1">{address || 'No address selected'}</p>
+              <LocationDisplay 
+                address={address}
+                fallback="No address selected"
+                className="text-sm text-gray-600 mt-1"
+              />
             </div>
           </div>
         </div>

@@ -364,6 +364,7 @@ const ManageCategories = () => {
                                 variant="outline"
                                 size="sm" 
                                 onClick={() => {
+                                  setEditingSubCategory(null);
                                   setSubCategoryForm({ name: '', category_id: category.id.toString(), description: '' });
                                   setSubCategoryModalOpen(true);
                                 }}

@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { formatLocationName, parseCoordinatesFromAddress } from '@/utils/geocoding';
 
 const MAPBOX_TOKEN = 'pk.eyJ1Ijoia3Jpc2huYTEyNDMzNCIsImEiOiJjbWVodG1mZjcwMjhwMnJxczZ1ZWQyeTNlIn0.pl7sk2526OEU-Ub-hB0QTQ';
 
@@ -43,6 +44,7 @@ const DeliveryMapNavigation = () => {
   const [customerLocation, setCustomerLocation] = useState<{lat: number, lng: number} | null>(null);
   const [routeInfo, setRouteInfo] = useState<{distance: string, duration: string} | null>(null);
   const [isTrackingLocation, setIsTrackingLocation] = useState(false);
+  const [customerLocationName, setCustomerLocationName] = useState<string>('');
   const watchId = useRef<number | null>(null);
   
 
@@ -214,6 +216,31 @@ const DeliveryMapNavigation = () => {
 
   const geocodeAddress = async (address: string) => {
     try {
+      // First try to parse if it's coordinates
+      const coords = parseCoordinatesFromAddress(address);
+      if (coords) {
+        setCustomerLocation({ lat: coords.lat, lng: coords.lng });
+        const locationName = await formatLocationName(address);
+        setCustomerLocationName(locationName);
+        
+        // Add customer marker
+        if (map.current) {
+          if (customerMarker.current) {
+            customerMarker.current.remove();
+          }
+          
+          customerMarker.current = new mapboxgl.Marker({ 
+            color: '#ef4444',
+            scale: 1.2 
+          })
+          .setLngLat([coords.lng, coords.lat])
+          .setPopup(new mapboxgl.Popup().setHTML('<div><strong>Customer Location</strong><br>' + locationName + '</div>'))
+          .addTo(map.current);
+        }
+        return;
+      }
+
+      // If not coordinates, use geocoding API
       const response = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${MAPBOX_TOKEN}&country=NP&limit=1`
       );
@@ -223,6 +250,7 @@ const DeliveryMapNavigation = () => {
         if (data.features && data.features.length > 0) {
           const [lng, lat] = data.features[0].center;
           setCustomerLocation({ lat, lng });
+          setCustomerLocationName(data.features[0].place_name);
           
           // Add customer marker
           if (map.current) {
@@ -235,13 +263,14 @@ const DeliveryMapNavigation = () => {
               scale: 1.2 
             })
             .setLngLat([lng, lat])
-            .setPopup(new mapboxgl.Popup().setHTML('<div><strong>Customer Location</strong><br>' + address + '</div>'))
+            .setPopup(new mapboxgl.Popup().setHTML('<div><strong>Customer Location</strong><br>' + data.features[0].place_name + '</div>'))
             .addTo(map.current);
           }
         }
       }
     } catch (error) {
       console.error('Geocoding error:', error);
+      setCustomerLocationName(address); // Fallback to original address
     }
   };
 
@@ -571,7 +600,7 @@ const DeliveryMapNavigation = () => {
               <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
               <div className="flex-1">
                 <div className="text-sm text-muted-foreground mb-1">Delivery Address:</div>
-                <span className="text-sm font-medium">{order.delivery_address || 'N/A'}</span>
+                <span className="text-sm font-medium">{customerLocationName || order.delivery_address || 'N/A'}</span>
               </div>
             </div>
           </CardContent>

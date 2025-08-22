@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AdminLayout from './components/AdminLayout';
+import LocationDisplay from '@/components/LocationDisplay';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
@@ -410,7 +411,11 @@ const OrderDetails = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-700">{order.delivery_address}</p>
+                <LocationDisplay 
+                  address={order.delivery_address} 
+                  fallback="Address not available"
+                  className="text-gray-700"
+                />
               </CardContent>
             </Card>
 

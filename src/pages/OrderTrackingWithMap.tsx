@@ -10,6 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, Package, Truck, CheckCircle, Clock, MapPin, Phone, Timer, AlertCircle, Map } from 'lucide-react';
 import Header from '@/components/Header';
 import { useOrderTimer } from '@/hooks/useOrderTimer';
+import { formatLocationName } from '@/utils/geocoding';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -28,6 +29,7 @@ const OrderTrackingWithMap = () => {
   
   const [customerLocation, setCustomerLocation] = useState<{lat: number, lng: number} | null>(null);
   const [deliveryLocation, setDeliveryLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [customerLocationName, setCustomerLocationName] = useState<string>('');
 
   // Fetch order details
   const { data: order, isLoading } = useQuery({
@@ -103,6 +105,10 @@ const OrderTrackingWithMap = () => {
 
   const geocodeAddress = async (address: string) => {
     try {
+      // First format the location name
+      const locationName = await formatLocationName(address);
+      setCustomerLocationName(locationName);
+
       const response = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${MAPBOX_TOKEN}&country=NP&limit=1`
       );
@@ -120,7 +126,7 @@ const OrderTrackingWithMap = () => {
               scale: 1.2 
             })
             .setLngLat([lng, lat])
-            .setPopup(new mapboxgl.Popup().setHTML('<div><strong>Delivery Location</strong><br>' + address + '</div>'))
+            .setPopup(new mapboxgl.Popup().setHTML('<div><strong>Delivery Location</strong><br>' + locationName + '</div>'))
             .addTo(map.current);
             
             map.current.setCenter([lng, lat]);
@@ -129,6 +135,7 @@ const OrderTrackingWithMap = () => {
       }
     } catch (error) {
       console.error('Geocoding error:', error);
+      setCustomerLocationName(address); // Fallback to original address
     }
   };
 
@@ -346,7 +353,7 @@ const OrderTrackingWithMap = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm">{order.delivery_address}</p>
+            <p className="text-sm">{customerLocationName || order.delivery_address}</p>
           </CardContent>
         </Card>
 
