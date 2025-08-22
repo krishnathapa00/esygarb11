@@ -65,7 +65,7 @@ const MapLocationEnhanced = () => {
       console.log('Creating map instance...');
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/streets-v12',
+        style: 'mapbox://styles/mapbox/satellite-streets-v12',
         center: [markerPosition.lng, markerPosition.lat],
         zoom: 15,
         preserveDrawingBuffer: true,
@@ -297,32 +297,22 @@ const MapLocationEnhanced = () => {
     }
   };
 
-  // Service availability check with 3km limit
+  // Service availability check with 3km limit from office location
   const checkServiceAvailability = (lat: number, lng: number) => {
-    // Nepal approximate bounds: lat 26-31, lng 80-89
-    const isInNepal = lat >= 26 && lat <= 31 && lng >= 80 && lng <= 89;
+    // Office location: 27.687529,85.340859
+    const officeLocation = { lat: 27.687529, lng: 85.340859 };
     
-    // Check distance from service centers (approximate locations)
-    const serviceCenters = [
-      { lat: 27.7172, lng: 85.3240 }, // Kathmandu
-      { lat: 27.6710, lng: 85.4298 }, // Lalitpur 
-      { lat: 27.6722, lng: 85.4298 }  // Bhaktapur
-    ];
+    // Calculate distance from office location
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat - officeLocation.lat) * Math.PI / 180;
+    const dLng = (lng - officeLocation.lng) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(officeLocation.lat * Math.PI / 180) * Math.cos(lat * Math.PI / 180) *
+              Math.sin(dLng/2) * Math.sin(dLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const distance = R * c;
     
-    // Calculate distance to nearest service center
-    const distances = serviceCenters.map(center => {
-      const R = 6371; // Earth's radius in km
-      const dLat = (lat - center.lat) * Math.PI / 180;
-      const dLng = (lng - center.lng) * Math.PI / 180;
-      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(center.lat * Math.PI / 180) * Math.cos(lat * Math.PI / 180) *
-                Math.sin(dLng/2) * Math.sin(dLng/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      return R * c;
-    });
-    
-    const minDistance = Math.min(...distances);
-    return isInNepal && minDistance <= 3; // 3km radius limit
+    return distance <= 3; // 3km radius limit from office
   };
 
   const handleSaveLocation = () => {

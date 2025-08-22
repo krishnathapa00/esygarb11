@@ -55,6 +55,8 @@ import ReturnsRefunds from './pages/ReturnsRefunds';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import SubCategoriesNew from "./pages/SubCategoriesNew";
+import SubCategoriesPage from "./pages/SubCategoriesPage";
+import OrderTrackingWithMap from "./pages/OrderTrackingWithMap";
 import AboutUs from './pages/AboutUs';
 import HowItWorks from './pages/HowItWorks';
 import Careers from './pages/Careers';
@@ -81,7 +83,8 @@ const AppContent = () => {
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/order-confirmation" element={<OrderConfirmation />} />
-        <Route path="/order-tracking/:orderId" element={<OrderTracking />} />
+        <Route path="/subcategories/:categoryId" element={<SubCategoriesPage />} />
+        <Route path="/order-tracking/:orderId" element={<OrderTrackingWithMap />} />
         <Route path="/order-tracking-lookup" element={<OrderTrackingLookup />} />
         <Route path="/order-history" element={<OrderHistory />} />
         <Route path="/profile" element={<UserProfile />} />

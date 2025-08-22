@@ -86,7 +86,7 @@ const MobileUserProfile: React.FC = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
-      <div className="px-4 py-8 pt-20 pb-24 space-y-6">
+      <div className="px-4 py-8 pt-20 pb-24 space-y-6 min-h-screen">
         {/* Header */}
         <div className="flex items-center mb-6">
           <Link to="/">

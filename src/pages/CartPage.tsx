@@ -237,12 +237,12 @@ const CartPage = () => {
                   placeholder="Enter promo code"
                   value={promoCode}
                   onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm md:text-base"
                 />
                 <Button 
                   onClick={handleApplyPromo}
                   variant="outline"
-                  className="px-4 py-2 border-green-200 hover:bg-green-50"
+                  className="px-3 py-2 border-green-200 hover:bg-green-50 text-sm whitespace-nowrap"
                 >
                   Apply
                 </Button>

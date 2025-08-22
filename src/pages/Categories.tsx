@@ -81,11 +81,11 @@ const AllCategories = () => {
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {categories.map((category) => (
-            <Link
-              key={category.id}
-              to={`/subcategories/${category.id}`}
-              className="group"
-            >
+          <Link
+            key={category.id}
+            to={`/subcategories/${category.id}`}
+            className="group"
+          >
               <div className="bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-lg transition-all duration-200 hover:-translate-y-1">
                 <div className="flex items-center justify-center mb-3">
                   {category.image_url ? (

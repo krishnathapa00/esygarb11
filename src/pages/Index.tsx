@@ -100,48 +100,52 @@ const Index = () => {
       )}
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {!serviceAvailable && <ServiceUnavailableMessage />}
-        
-        <BannerCarousel />
+        {!serviceAvailable ? (
+          <ServiceUnavailableMessage />
+        ) : (
+          <>
+            <BannerCarousel />
 
-        <section className="mb-8">
-          <CategoryGrid onCategorySelect={handleCategorySelect} />
-        </section>
+            <section className="mb-8">
+              <CategoryGrid onCategorySelect={handleCategorySelect} />
+            </section>
 
-        {fruitProducts.length > 0 && (
-          <ProductSection
-            title="Fresh Fruits & Vegetables"
-            products={fruitProducts}
-            onAddToCart={handleAddToCart}
-            onUpdateQuantity={handleUpdateQuantity}
-            cartQuantityGetter={getCartQuantity}
-          />
-        )}
+            {fruitProducts.length > 0 && (
+              <ProductSection
+                title="Fresh Fruits & Vegetables"
+                products={fruitProducts}
+                onAddToCart={handleAddToCart}
+                onUpdateQuantity={handleUpdateQuantity}
+                cartQuantityGetter={getCartQuantity}
+              />
+            )}
 
-        {dairyProducts.length > 0 && (
-          <ProductSection
-            title="Dairy & Eggs"
-            products={dairyProducts}
-            onAddToCart={handleAddToCart}
-            onUpdateQuantity={handleUpdateQuantity}
-            cartQuantityGetter={getCartQuantity}
-          />
-        )}
+            {dairyProducts.length > 0 && (
+              <ProductSection
+                title="Dairy & Eggs"
+                products={dairyProducts}
+                onAddToCart={handleAddToCart}
+                onUpdateQuantity={handleUpdateQuantity}
+                cartQuantityGetter={getCartQuantity}
+              />
+            )}
 
-        {snackProducts.length > 0 && (
-          <ProductSection
-            title="Snacks & Beverages"
-            products={snackProducts}
-            onAddToCart={handleAddToCart}
-            onUpdateQuantity={handleUpdateQuantity}
-            cartQuantityGetter={getCartQuantity}
-          />
-        )}
+            {snackProducts.length > 0 && (
+              <ProductSection
+                title="Snacks & Beverages"
+                products={snackProducts}
+                onAddToCart={handleAddToCart}
+                onUpdateQuantity={handleUpdateQuantity}
+                cartQuantityGetter={getCartQuantity}
+              />
+            )}
 
-        {filteredProducts.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">No matching products found.</p>
-          </div>
+            {filteredProducts.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-gray-500 text-lg">No matching products found.</p>
+              </div>
+            )}
+          </>
         )}
       </main>
 
