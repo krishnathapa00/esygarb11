@@ -30,29 +30,24 @@ const Index = () => {
     
     // Check if user has location set and service availability
     const storedLocation = localStorage.getItem("esygrab_user_location");
-    if (storedLocation) {
-      try {
-        const location = JSON.parse(storedLocation);
-        setServiceAvailable(location.serviceAvailable !== false);
-      } catch (error) {
-        console.error('Error parsing stored location:', error);
-        setServiceAvailable(true);
-      }
-    } else if (!user) {
-      // For new users, show location popup after 3 seconds
-      const timer = setTimeout(() => {
-        setShowLocationPopup(true);
-      }, 3000);
-      return () => {
-        clearTimeout(timer);
-        document.body.classList.remove('with-search-bar');
-      };
+    if (!storedLocation) {
+      // Block access without location - show location popup immediately
+      setShowLocationPopup(true);
+      return;
+    }
+    
+    try {
+      const location = JSON.parse(storedLocation);
+      setServiceAvailable(location.serviceAvailable !== false);
+    } catch (error) {
+      console.error('Error parsing stored location:', error);
+      setShowLocationPopup(true);
     }
     
     return () => {
       document.body.classList.remove('with-search-bar');
     };
-  }, [user]);
+  }, []);
 
   const handleCategorySelect = (categoryId: number) => {
     console.log("Category selected:", categoryId);
@@ -106,7 +101,7 @@ const Index = () => {
           <>
             <BannerCarousel />
 
-            <section className="mb-8">
+            <section className="mb-8 hidden md:block">
               <CategoryGrid onCategorySelect={handleCategorySelect} />
             </section>
 
