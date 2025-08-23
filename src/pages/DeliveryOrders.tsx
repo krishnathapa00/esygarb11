@@ -158,30 +158,31 @@ const DeliveryOrders = () => {
                   </Badge>
                 </div>
                 
-                <div className="flex justify-between items-center">
-                  <div className="text-sm">
-                    <p className="font-medium">Total: Rs {order.total_amount}</p>
-                    <p className="text-muted-foreground flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
-                      {order.estimated_delivery}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button 
-                      size="sm"
-                      onClick={() => acceptOrder(order.id)}
-                    >
-                      Accept
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => rejectOrder(order.id)}
-                    >
-                      Reject
-                    </Button>
-                  </div>
-                </div>
+                 <div className="flex justify-between items-center">
+                   <div className="text-sm">
+                     <p className="font-medium">Total: Rs {order.total_amount}</p>
+                     <p className="text-muted-foreground flex items-center gap-1">
+                       <Clock className="h-4 w-4" />
+                       {order.estimated_delivery}
+                     </p>
+                   </div>
+                   <div className="flex gap-2">
+                     <Button 
+                       size="sm"
+                       onClick={() => acceptOrder(order.id)}
+                       disabled={acceptOrderMutation.isPending}
+                     >
+                       {acceptOrderMutation.isPending ? "Accepting..." : "Accept"}
+                     </Button>
+                     <Button 
+                       size="sm" 
+                       variant="outline"
+                       onClick={() => rejectOrder(order.id)}
+                     >
+                       Reject
+                     </Button>
+                   </div>
+                 </div>
               </div>
             ))
           )}
@@ -215,21 +216,21 @@ const DeliveryOrders = () => {
                   </Badge>
                 </div>
                 
-                <div className="flex justify-between items-center">
-                  <div className="text-sm">
-                    <p className="font-medium">Total: Rs {order.total_amount}</p>
-                    <p className="text-muted-foreground flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
-                      {order.estimated_delivery}
-                    </p>
-                  </div>
-                  <Button 
-                    variant="outline"
-                    onClick={() => navigate(`/delivery-partner/navigate/${order.id}`)}
-                  >
-                    Navigate
-                  </Button>
-                </div>
+                 <div className="flex justify-between items-center">
+                   <div className="text-sm">
+                     <p className="font-medium">Total: Rs {order.total_amount}</p>
+                     <p className="text-muted-foreground flex items-center gap-1">
+                       <Clock className="h-4 w-4" />
+                       {order.estimated_delivery}
+                     </p>
+                   </div>
+                   <Button 
+                     variant="outline"
+                     onClick={() => navigate(`/delivery-partner/navigate/${order.id}`)}
+                   >
+                     Navigate
+                   </Button>
+                 </div>
               </div>
             ))
           )}

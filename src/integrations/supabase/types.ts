@@ -385,6 +385,7 @@ export type Database = {
           delivery_time_minutes: number | null
           estimated_delivery: string | null
           id: string
+          is_delivery_waived: boolean | null
           order_number: string
           payment_status: Database["public"]["Enums"]["payment_status"] | null
           picked_up_at: string | null
@@ -405,6 +406,7 @@ export type Database = {
           delivery_time_minutes?: number | null
           estimated_delivery?: string | null
           id?: string
+          is_delivery_waived?: boolean | null
           order_number: string
           payment_status?: Database["public"]["Enums"]["payment_status"] | null
           picked_up_at?: string | null
@@ -425,6 +427,7 @@ export type Database = {
           delivery_time_minutes?: number | null
           estimated_delivery?: string | null
           id?: string
+          is_delivery_waived?: boolean | null
           order_number?: string
           payment_status?: Database["public"]["Enums"]["payment_status"] | null
           picked_up_at?: string | null
@@ -721,6 +724,39 @@ export type Database = {
         }
         Relationships: []
       }
+      store_locations: {
+        Row: {
+          created_at: string | null
+          delivery_radius_km: number
+          id: number
+          is_active: boolean | null
+          latitude: number
+          longitude: number
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          delivery_radius_km?: number
+          id?: number
+          is_active?: boolean | null
+          latitude: number
+          longitude: number
+          name?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          delivery_radius_km?: number
+          id?: number
+          is_active?: boolean | null
+          latitude?: number
+          longitude?: number
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       subcategories: {
         Row: {
           category_id: number
@@ -833,6 +869,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_distance_km: {
+        Args: { lat1: number; lat2: number; lng1: number; lng2: number }
+        Returns: number
+      }
+      check_delivery_availability: {
+        Args: { delivery_lat: number; delivery_lng: number }
+        Returns: boolean
+      }
+      check_delivery_fee_waiver: {
+        Args: { user_id_param: string }
+        Returns: boolean
+      }
       cleanup_expired_user_sessions: {
         Args: Record<PropertyKey, never>
         Returns: undefined
