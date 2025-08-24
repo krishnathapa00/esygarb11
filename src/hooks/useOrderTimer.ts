@@ -53,9 +53,9 @@ export const useOrderTimer = ({
 
   }, [orderCreatedAt, orderStatus, deliveredAt, totalDeliveryMinutes]);
 
-  // Main timer interval
+  // Main timer interval - runs continuously when active
   useEffect(() => {
-    if (isRunning) {
+    if (isRunning && orderCreatedAt) {
       intervalRef.current = setInterval(() => {
         const orderStartTime = new Date(orderCreatedAt).getTime();
         const now = new Date().getTime();
@@ -72,19 +72,24 @@ export const useOrderTimer = ({
           setIsRunning(false);
         }
       }, 1000);
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
     }
     
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
     };
   }, [isRunning, orderCreatedAt, totalDeliveryMinutes]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, []);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

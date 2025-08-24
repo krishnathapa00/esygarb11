@@ -174,19 +174,19 @@ const ManageProducts = () => {
 
   // Handle delete product
   const handleDeleteProduct = async (productId: number) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
+    if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) return;
 
     try {
       const { error } = await supabase
         .from('products')
-        .update({ is_active: false })
+        .delete()
         .eq('id', productId);
 
       if (error) throw error;
 
       toast({
         title: "Product deleted!",
-        description: "Product has been successfully removed.",
+        description: "Product has been permanently removed.",
       });
       refetch();
       queryClient.invalidateQueries({ queryKey: ['admin-products'] });

@@ -1,27 +1,21 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShoppingCart, Grid } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { useProducts } from '@/hooks/useProducts';
 import { useCartActions } from '@/hooks/useCart';
 import ProductCard from '@/components/ProductCard';
 import Header from '@/components/Header';
 import { useIsMobile } from '@/hooks/use-mobile';
-import SubCategoriesMobile from './SubCategoriesMobile';
 
-const SubCategoriesNew = () => {
+const SubCategoriesMobile = () => {
   const { categorySlug } = useParams();
   const navigate = useNavigate();
   const { data: products = [] } = useProducts();
   const { handleAddToCart, handleUpdateQuantity, getCartQuantity } = useCartActions();
   const [activeSubcategory, setActiveSubcategory] = useState('all');
   const isMobile = useIsMobile();
-
-  // Use mobile component for mobile devices
-  if (isMobile) {
-    return <SubCategoriesMobile />;
-  }
 
   // Map category slug to display name and get subcategories
   const getCategoryInfo = (slug: string) => {
@@ -63,7 +57,8 @@ const SubCategoriesNew = () => {
     
     if (activeSubcategory !== 'all') {
       filtered = filtered.filter(p => 
-        p.name.toLowerCase().includes(activeSubcategory.toLowerCase())
+        p.name.toLowerCase().includes(activeSubcategory.toLowerCase()) ||
+        p.category?.toLowerCase().includes(activeSubcategory.toLowerCase())
       );
     }
     
@@ -76,7 +71,7 @@ const SubCategoriesNew = () => {
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      {/* Header - Desktop Only */}
+      {/* Header */}
       <div className="bg-white border-b shadow-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -106,41 +101,86 @@ const SubCategoriesNew = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Subcategory Tabs */}
-        <div className="mb-6">
-          <Tabs value={activeSubcategory} onValueChange={setActiveSubcategory}>
-            <TabsList className="grid w-full grid-cols-5 mb-6">
+      <div className="flex min-h-screen">
+        {/* Left Sidebar - Subcategory Filters (Mobile) */}
+        <div className={`${isMobile ? 'w-24' : 'w-48'} bg-white border-r border-gray-200 shadow-sm`}>
+          <div className="p-4">
+            <h3 className={`font-semibold text-gray-900 mb-4 ${isMobile ? 'text-xs text-center' : 'text-sm'}`}>
+              {isMobile ? 'Filters' : 'Categories'}
+            </h3>
+            <div className="space-y-2">
               {categoryInfo.subcategories.map((subcat) => (
-                <TabsTrigger 
-                  key={subcat.toLowerCase()} 
-                  value={subcat.toLowerCase()}
-                  className="text-xs sm:text-sm"
+                <button
+                  key={subcat.toLowerCase()}
+                  onClick={() => setActiveSubcategory(subcat.toLowerCase())}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                    activeSubcategory === subcat.toLowerCase()
+                      ? 'bg-green-100 text-green-800 border border-green-200'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  } ${isMobile ? 'text-center px-1' : ''}`}
                 >
-                  {subcat}
-                </TabsTrigger>
+                  {isMobile ? subcat.slice(0, 4) : subcat}
+                </button>
               ))}
-            </TabsList>
-          </Tabs>
+            </div>
+          </div>
         </div>
 
-        {/* Products Grid */}
-        <div className="mb-6">
+        {/* Main Content - Products Grid */}
+        <div className="flex-1 p-4">
           {filteredProducts.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <div className={`grid gap-4 ${
+              isMobile 
+                ? 'grid-cols-2' 
+                : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4'
+            }`}>
               {filteredProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onAddToCart={handleAddToCart}
-                  onUpdateQuantity={handleUpdateQuantity}
-                  cartQuantity={getCartQuantity(product.id)}
-                />
+                <div 
+                  key={product.id} 
+                  className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-gray-100 overflow-hidden"
+                >
+                  <div className="aspect-square relative overflow-hidden">
+                    <img
+                      src={product.image || '/placeholder.svg'}
+                      alt={product.name}
+                      className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
+                    />
+                    {product.discount && (
+                      <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                        {product.discount}% OFF
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="p-3 space-y-2">
+                    <h3 className="font-semibold text-gray-900 text-sm leading-tight line-clamp-2">
+                      {product.name}
+                    </h3>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1">
+                          <span className="text-lg font-bold text-gray-900">
+                            NPR {product.price}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      onClick={() => handleAddToCart(product)}
+                      className="w-full mt-2 bg-green-600 hover:bg-green-700 text-white"
+                      size="sm"
+                    >
+                      Add to Cart
+                    </Button>
+                  </div>
+                </div>
               ))}
             </div>
           ) : (
             <div className="text-center py-12">
-              <Grid className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <Filter className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
               <p className="text-gray-500 mb-4">
                 {activeSubcategory === 'all' 
@@ -162,4 +202,4 @@ const SubCategoriesNew = () => {
   );
 };
 
-export default SubCategoriesNew;
+export default SubCategoriesMobile;

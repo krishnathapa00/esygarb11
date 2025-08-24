@@ -57,12 +57,12 @@ const DeliveryMapNavigation = () => {
           .from('orders')
           .select(`
             *,
-            profiles!orders_user_id_fkey(full_name, phone_number, address),
+            profiles!orders_user_id_fkey(full_name, phone_number, address, location),
             order_items(
               *,
               products(name, image_url, price)
             ),
-            user_profile:profiles!orders_user_id_fkey ( full_name, phone_number, address )
+            user_profile:profiles!orders_user_id_fkey ( full_name, phone_number, address, location )
           `)
           .eq('id', orderId)
           .single(),
@@ -387,9 +387,12 @@ const DeliveryMapNavigation = () => {
   };
 
   const openMap = () => {
-    if (order?.delivery_address) {
-      const encodedAddress = encodeURIComponent(order.delivery_address);
-      window.open(`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`, '_blank');
+    if (customerLocation) {
+      // Store location coordinates
+      const storeLocation = "27.687421,85.340841";
+      // Navigate from store to customer location
+      const url = `https://www.google.com/maps/dir/${storeLocation}/${customerLocation.lat},${customerLocation.lng}`;
+      window.open(url, '_blank');
     }
   };
 
@@ -558,7 +561,7 @@ const DeliveryMapNavigation = () => {
                 className="w-full"
               >
                 <Navigation className="h-4 w-4 mr-2" />
-                Open in Google Maps
+                Navigate to User's Location
               </Button>
             </div>
           </CardContent>

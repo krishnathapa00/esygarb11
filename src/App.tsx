@@ -77,6 +77,7 @@ const AppContent = () => {
         <Route path="/auth" element={<AuthHybrid />} />
         <Route path="/" element={<Index />} />
         <Route path="/categories" element={<AllCategories />} />
+        <Route path="/category/:categoryName/products" element={<CategoryProducts />} />
         <Route path="/categories/:categoryId" element={<CategoryProducts />} />
         <Route path="/product/:id" element={<ProductDetails />} />
         <Route path="/search" element={<SearchResults />} />

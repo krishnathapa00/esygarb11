@@ -10,6 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, Package, Truck, CheckCircle, Clock, MapPin, Phone, Timer, AlertCircle } from 'lucide-react';
 import Header from '@/components/Header';
 import { useOrderTimer } from '@/hooks/useOrderTimer';
+import LocationDisplay from '@/components/LocationDisplay';
 
 const OrderTracking = () => {
   const { orderId } = useParams();
@@ -41,7 +42,9 @@ const OrderTracking = () => {
           ),
           profiles!orders_delivery_partner_id_fkey (
             full_name,
-            phone_number
+            phone_number,
+            address,
+            location
           )
         `)
         .eq(queryField, orderId)
@@ -254,7 +257,11 @@ const OrderTracking = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm">{order.delivery_address}</p>
+            <LocationDisplay 
+              address={order.delivery_address}
+              fallback="Delivery address not available"
+              className="text-sm"
+            />
           </CardContent>
         </Card>
 
