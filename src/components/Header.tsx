@@ -33,11 +33,14 @@ const Header = () => {
   // Safety mechanism to ensure no stuck dialogs and force close on page interaction
   useEffect(() => {
     const handleInteraction = () => {
-      // If user clicks anywhere and there's no location set, just dismiss the popup
+      // If user clicks anywhere and popup has been showing for more than 3 seconds, dismiss it
       if (showLocationPopup && !userLocation) {
-        console.log('Force closing popup due to user interaction');
-        setShowLocationPopup(false);
-        sessionStorage.setItem("locationPopupDismissed", "true");
+        const popupStartTime = sessionStorage.getItem("locationPopupStartTime");
+        if (popupStartTime && Date.now() - parseInt(popupStartTime) > 3000) {
+          console.log('Auto-dismissing popup after 3 seconds of interaction');
+          setShowLocationPopup(false);
+          sessionStorage.setItem("locationPopupDismissed", "true");
+        }
       }
     };
 
@@ -76,6 +79,7 @@ const Header = () => {
       console.log('Setting showLocationPopup to true');
       setShowLocationPopup(true);
       sessionStorage.setItem("locationPopupHandled", "true");
+      sessionStorage.setItem("locationPopupStartTime", Date.now().toString());
     } else {
       console.log('Not showing location popup');
       setShowLocationPopup(false);

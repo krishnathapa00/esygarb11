@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useQuery } from '@tanstack/react-query';
 import Header from "../components/Header";
 import {
   ArrowLeft,
@@ -30,7 +31,27 @@ const Checkout = () => {
     (sum, item) => sum + item.price * item.quantity,
     0
   );
-  const deliveryFee = 100;
+  
+  // Fetch current delivery config for dynamic delivery fee
+  const { data: deliveryConfig, isLoading: configLoading } = useQuery({
+    queryKey: ['delivery-config'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('delivery_config')
+        .select('*')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error fetching delivery config:', error);
+        return { delivery_fee: 50, delivery_partner_charge: 30 };
+      }
+      return data || { delivery_fee: 50, delivery_partner_charge: 30 };
+    }
+  });
+
+  const deliveryFee = deliveryConfig?.delivery_fee || 50;
   const totalAmount = totalPrice + deliveryFee;
 
   const [selectedPayment, setSelectedPayment] = useState("cod");
@@ -55,7 +76,7 @@ const Checkout = () => {
       // Store current cart as guest cart and redirect to auth
       localStorage.setItem("guest_cart", JSON.stringify(cart));
       localStorage.setItem("auth_redirect_url", "/checkout");
-      navigate("/auth-hybrid");
+      navigate("/auth");
       return;
     }
 
