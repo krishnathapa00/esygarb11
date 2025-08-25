@@ -348,12 +348,11 @@ const Checkout = () => {
       {/* Modals */}
       <ProfileCompletionModal
         isOpen={showProfileModal}
-        onClose={() => setShowProfileModal(false)}
-        onComplete={handleProfileComplete}
-        initialData={{
-          email: user?.email,
-          phone: profile.phone,
-          full_name: profile.full_name
+        onClose={(updated) => {
+          setShowProfileModal(false);
+          if (updated) {
+            handlePlaceOrder();
+          }
         }}
       />
 

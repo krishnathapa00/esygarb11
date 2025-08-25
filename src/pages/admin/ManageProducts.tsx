@@ -177,6 +177,12 @@ const ManageProducts = () => {
     if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) return;
 
     try {
+      // First check if user has admin permissions
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Not authenticated');
+      }
+
       const { error } = await supabase
         .from('products')
         .delete()
@@ -188,12 +194,16 @@ const ManageProducts = () => {
         title: "Product deleted!",
         description: "Product has been permanently removed.",
       });
-      refetch();
+      
+      // Force refetch and invalidate queries
+      await refetch();
       queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
     } catch (error: any) {
+      console.error('Delete error:', error);
       toast({
         title: "Delete failed",
-        description: error.message,
+        description: error.message || "Failed to delete product",
         variant: "destructive",
       });
     }

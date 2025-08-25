@@ -25,7 +25,7 @@ const UserProfile: React.FC = () => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
-  // Use mobile component on mobile devices
+  // Ensure mobile users get the mobile profile page
   if (isMobile) {
     return <MobileUserProfile />;
   }

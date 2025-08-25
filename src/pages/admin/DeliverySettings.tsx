@@ -66,7 +66,11 @@ const DeliverySettings = () => {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['delivery-config'] });
+    const queryClient = useQueryClient();
+    queryClient.invalidateQueries({ queryKey: ['delivery-config'] });
+    // Also invalidate cart and checkout related queries to update delivery fees
+    queryClient.invalidateQueries({ queryKey: ['cart'] });
+    queryClient.invalidateQueries({ queryKey: ['checkout'] });
       toast({
         title: "Success",
         description: "Delivery settings updated successfully.",

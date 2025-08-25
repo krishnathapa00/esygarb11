@@ -20,6 +20,7 @@ export const useOrderTimer = ({
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [remainingSeconds, setRemainingSeconds] = useState(totalDeliveryMinutes * 60);
   const [isRunning, setIsRunning] = useState(false);
+  const [isOverdue, setIsOverdue] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Calculate times based on order status and timestamps
@@ -41,14 +42,16 @@ export const useOrderTimer = ({
 
     const now = new Date().getTime();
     const currentElapsed = Math.floor((now - orderStartTime) / 1000);
-    const currentRemaining = Math.max(0, (totalDeliveryMs - (now - orderStartTime)) / 1000);
+    const timeFromStart = now - orderStartTime;
+    const currentRemaining = (totalDeliveryMs - timeFromStart) / 1000;
     
     setElapsedSeconds(currentElapsed);
     setRemainingSeconds(Math.floor(currentRemaining));
+    setIsOverdue(currentRemaining <= 0);
 
-    // Timer should run for active orders
+    // Timer should run for active orders regardless of remaining time
     const activeStatuses = ['confirmed', 'ready_for_pickup', 'dispatched', 'out_for_delivery'];
-    const shouldRun = activeStatuses.includes(orderStatus) && currentRemaining > 0;
+    const shouldRun = activeStatuses.includes(orderStatus);
     setIsRunning(shouldRun);
 
   }, [orderCreatedAt, orderStatus, deliveredAt, totalDeliveryMinutes]);
@@ -60,15 +63,18 @@ export const useOrderTimer = ({
         const orderStartTime = new Date(orderCreatedAt).getTime();
         const now = new Date().getTime();
         const totalDeliveryMs = totalDeliveryMinutes * 60 * 1000;
+        const timeFromStart = now - orderStartTime;
         
-        const currentElapsed = Math.floor((now - orderStartTime) / 1000);
-        const currentRemaining = Math.max(0, (totalDeliveryMs - (now - orderStartTime)) / 1000);
+        const currentElapsed = Math.floor(timeFromStart / 1000);
+        const currentRemaining = (totalDeliveryMs - timeFromStart) / 1000;
         
         setElapsedSeconds(currentElapsed);
         setRemainingSeconds(Math.floor(currentRemaining));
+        setIsOverdue(currentRemaining <= 0);
         
-        // Stop timer when time runs out
-        if (currentRemaining <= 0) {
+        // Keep timer running for active orders even when overdue
+        const activeStatuses = ['confirmed', 'ready_for_pickup', 'dispatched', 'out_for_delivery'];
+        if (!activeStatuses.includes(orderStatus)) {
           setIsRunning(false);
         }
       }, 1000);
@@ -92,9 +98,12 @@ export const useOrderTimer = ({
   }, []);
 
   const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    const isNegative = seconds < 0;
+    const absSeconds = Math.abs(seconds);
+    const mins = Math.floor(absSeconds / 60);
+    const secs = absSeconds % 60;
+    const timeString = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    return isNegative ? `-${timeString}` : timeString;
   };
 
   const getDeliveryPartnerRemainingTime = () => {
@@ -127,6 +136,6 @@ export const useOrderTimer = ({
       const partnerRemaining = getDeliveryPartnerRemainingTime();
       return partnerRemaining !== null ? formatTime(partnerRemaining) : null;
     },
-    isOverdue: remainingSeconds === 0 && orderStatus !== 'delivered'
+    isOverdue: isOverdue && orderStatus !== 'delivered'
   };
 };

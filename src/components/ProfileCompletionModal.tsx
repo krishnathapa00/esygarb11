@@ -1,139 +1,250 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { X } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { MapPin, Edit3 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuthContext } from '@/contexts/AuthProvider';
 
 interface ProfileCompletionModalProps {
   isOpen: boolean;
-  onClose: () => void;
-  onComplete: () => void;
-  initialData?: {
-    email?: string;
-    phone?: string;
-    full_name?: string;
-  };
+  onClose: (updated: boolean) => void;
 }
 
-const ProfileCompletionModal = ({ isOpen, onClose, onComplete, initialData }: ProfileCompletionModalProps) => {
+const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({ isOpen, onClose }) => {
+  const { user } = useAuthContext();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [isNewUser, setIsNewUser] = useState(true);
+  const [hasChanges, setHasChanges] = useState(false);
+  
   const [formData, setFormData] = useState({
-    full_name: initialData?.full_name || '',
-    phone: initialData?.phone || '',
-    address: '',
-    location: ''
+    full_name: '',
+    phone: '',
+    email: user?.email || '',
+    address: ''
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const [originalData, setOriginalData] = useState({
+    full_name: '',
+    phone: '',
+    email: user?.email || '',
+    address: ''
+  });
+
+  // Load existing profile data
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (!user) return;
+
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name, phone, address')
+          .eq('id', user.id)
+          .single();
+
+        // Get saved address from localStorage
+        const savedLocation = localStorage.getItem('esygrab_user_location');
+        let addressFromStorage = '';
+        if (savedLocation) {
+          try {
+            const locationData = JSON.parse(savedLocation);
+            addressFromStorage = locationData.address || '';
+          } catch (e) {
+            console.error('Error parsing saved location:', e);
+          }
+        }
+
+        const profileData = {
+          full_name: profile?.full_name || '',
+          phone: profile?.phone || '',
+          email: user.email || '',
+          address: profile?.address || addressFromStorage
+        };
+
+        setFormData(profileData);
+        setOriginalData(profileData);
+        
+        // Determine if this is a new user
+        const isNew = !profile?.full_name || !profile?.phone;
+        setIsNewUser(isNew);
+        setHasChanges(false);
+      } catch (error) {
+        console.error('Error loading profile:', error);
+        setIsNewUser(true);
+      }
+    };
+
+    if (isOpen && user) {
+      loadProfile();
+    }
+  }, [isOpen, user]);
+
+  // Check for changes
+  useEffect(() => {
+    const changed = Object.keys(formData).some(key => 
+      formData[key as keyof typeof formData] !== originalData[key as keyof typeof originalData]
+    );
+    setHasChanges(changed);
+  }, [formData, originalData]);
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = async () => {
+    if (!user) return;
+
+    // Validate required fields for new users
+    if (isNewUser && (!formData.full_name.trim() || !formData.phone.trim())) {
+      toast({
+        title: "Required fields missing",
+        description: "Please fill in your full name and contact number",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
-
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
-
-      // Update profile
       const { error } = await supabase
         .from('profiles')
         .upsert({
           id: user.id,
-          full_name: formData.full_name,
-          phone: formData.phone,
-          address: formData.address,
-          location: formData.location,
+          full_name: formData.full_name.trim(),
+          phone: formData.phone.trim(),
+          address: formData.address.trim(),
           updated_at: new Date().toISOString()
         });
 
       if (error) throw error;
 
       toast({
-        title: "Profile completed!",
-        description: "Your profile has been saved successfully.",
+        title: "Profile updated",
+        description: "Your profile has been saved successfully"
       });
 
-      onComplete();
+      onClose(true);
     } catch (error: any) {
+      console.error('Error saving profile:', error);
       toast({
-        title: "Error saving profile",
-        description: error.message,
-        variant: "destructive",
+        title: "Save failed",
+        description: error.message || "Failed to save profile",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
   };
 
-  if (!isOpen) return null;
+  const handleContinueWithoutChanges = () => {
+    onClose(false);
+  };
+
+  const getButtonText = () => {
+    if (loading) return "Saving...";
+    if (isNewUser) return "Save & Continue";
+    if (hasChanges) return "Save & Continue";
+    return "Continue";
+  };
+
+  const showSaveButton = isNewUser || hasChanges;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-md w-full p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Complete Your Profile</h2>
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={() => {}}>
+      <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
+        <DialogHeader>
+          <DialogTitle className="text-xl font-semibold text-center">
+            Complete Your Profile
+          </DialogTitle>
+        </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
             <Label htmlFor="full_name">Full Name *</Label>
             <Input
               id="full_name"
               value={formData.full_name}
-              onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
-              required
+              onChange={(e) => handleInputChange('full_name', e.target.value)}
+              placeholder="Enter your full name"
+              required={isNewUser}
             />
           </div>
 
-          <div>
-            <Label htmlFor="phone">Phone Number *</Label>
+          <div className="space-y-2">
+            <Label htmlFor="phone">Contact Number *</Label>
             <Input
               id="phone"
               value={formData.phone}
-              onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-              required
+              onChange={(e) => handleInputChange('phone', e.target.value)}
+              placeholder="Enter your contact number"
+              required={isNewUser}
             />
           </div>
 
-          <div>
-            <Label htmlFor="address">Address</Label>
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              value={formData.email}
+              disabled
+              className="bg-gray-50 text-gray-500"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="address" className="flex items-center gap-2">
+              <MapPin className="h-4 w-4" />
+              Default Delivery Address
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  // Open location selector
+                  window.location.href = '/map-location';
+                }}
+                className="ml-auto text-xs"
+              >
+                <Edit3 className="h-3 w-3 mr-1" />
+                Edit
+              </Button>
+            </Label>
             <Input
               id="address"
               value={formData.address}
-              onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-              placeholder="Your address"
+              onChange={(e) => handleInputChange('address', e.target.value)}
+              placeholder="Enter your delivery address"
+              className="min-h-[60px]"
             />
           </div>
+        </div>
 
-          <div>
-            <Label htmlFor="location">Area/Location</Label>
-            <Input
-              id="location"
-              value={formData.location}
-              onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-              placeholder="Your area/location"
-            />
-          </div>
-
-          <div className="flex space-x-3 pt-4">
+        <div className="flex gap-3 pt-4">
+          {!isNewUser && !hasChanges && (
             <Button
-              type="submit"
-              disabled={loading || !formData.full_name || !formData.phone}
-              className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+              onClick={handleContinueWithoutChanges}
+              className="flex-1 bg-primary hover:bg-primary/90"
             >
-              {loading ? 'Saving...' : 'Complete Profile'}
+              Continue
             </Button>
-            <Button type="button" variant="outline" onClick={onClose} className="flex-1">
-              Cancel
+          )}
+          
+          {showSaveButton && (
+            <Button
+              onClick={handleSubmit}
+              disabled={loading || (isNewUser && (!formData.full_name.trim() || !formData.phone.trim()))}
+              className="flex-1 bg-primary hover:bg-primary/90"
+            >
+              {getButtonText()}
             </Button>
-          </div>
-        </form>
-      </div>
-    </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

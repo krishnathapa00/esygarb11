@@ -118,7 +118,13 @@ const CartPage = () => {
     }
 
     // User is authenticated, proceed to checkout
-    navigate('/checkout');
+    navigate('/checkout', { 
+      state: { 
+        showProfileModal: true,
+        appliedPromo: appliedPromo,
+        promoDiscount: promoDiscount
+      } 
+    });
   };
 
   if (cart.length === 0) {
