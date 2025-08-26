@@ -64,15 +64,15 @@ const Index = () => {
     navigate(`/product/${productId}`);
   };
 
-  const fruitProducts = filteredProducts.filter(
-    (p) => p.category === "Fruits & Vegetables"
-  );
-  const dairyProducts = filteredProducts.filter(
-    (p) => p.category === "Dairy & Eggs"
-  );
-  const snackProducts = filteredProducts.filter(
-    (p) => p.category === "Snacks & Beverages"
-  );
+  // Group products by category dynamically
+  const productsByCategory = filteredProducts.reduce((acc, product) => {
+    const category = product.category || 'Other';
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(product);
+    return acc;
+  }, {} as Record<string, typeof filteredProducts>);
 
   // Remove the blocking loading state - show content with loading indicators instead
 
@@ -105,35 +105,19 @@ const Index = () => {
               <CategoryGrid onCategorySelect={handleCategorySelect} />
             </section>
 
-            {fruitProducts.length > 0 && (
-              <ProductSection
-                title="Fresh Fruits & Vegetables"
-                products={fruitProducts}
-                onAddToCart={handleAddToCart}
-                onUpdateQuantity={handleUpdateQuantity}
-                cartQuantityGetter={getCartQuantity}
-              />
-            )}
-
-            {dairyProducts.length > 0 && (
-              <ProductSection
-                title="Dairy & Eggs"
-                products={dairyProducts}
-                onAddToCart={handleAddToCart}
-                onUpdateQuantity={handleUpdateQuantity}
-                cartQuantityGetter={getCartQuantity}
-              />
-            )}
-
-            {snackProducts.length > 0 && (
-              <ProductSection
-                title="Snacks & Beverages"
-                products={snackProducts}
-                onAddToCart={handleAddToCart}
-                onUpdateQuantity={handleUpdateQuantity}
-                cartQuantityGetter={getCartQuantity}
-              />
-            )}
+            {/* Display products by category dynamically */}
+            {Object.entries(productsByCategory).map(([categoryName, categoryProducts]) => (
+              categoryProducts.length > 0 && (
+                <ProductSection
+                  key={categoryName}
+                  title={categoryName}
+                  products={categoryProducts}
+                  onAddToCart={handleAddToCart}
+                  onUpdateQuantity={handleUpdateQuantity}
+                  cartQuantityGetter={getCartQuantity}
+                />
+              )
+            ))}
 
             {filteredProducts.length === 0 && (
               <div className="text-center py-12">

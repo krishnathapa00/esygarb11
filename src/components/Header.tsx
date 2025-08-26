@@ -152,7 +152,7 @@ const Header = () => {
               <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
                 <Package className="h-5 w-5 text-white" />
               </div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+              <h1 className="text-xl font-bold font-poppins bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                 EsyGrab
               </h1>
             </Link>

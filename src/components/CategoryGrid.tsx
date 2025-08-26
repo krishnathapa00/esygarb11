@@ -1,56 +1,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useCategories } from "@/hooks/useCategories";
 
-const categories = [
-  {
-    id: 1,
-    name: "Fruits & Vegetables",
-    image:
-      "https://images.unsplash.com/photo-1518843875459-f738682238a6?w=200&h=200&fit=crop&crop=center",
-    color: "from-green-400 to-emerald-500",
-  },
-  {
-    id: 2,
-    name: "Dairy & Eggs",
-    image:
-      "https://images.unsplash.com/photo-1563636619-e9143da7973b?w=200&h=200&fit=crop&crop=center",
-    color: "from-blue-400 to-cyan-500",
-  },
-  {
-    id: 3,
-    name: "Snacks & Beverages",
-    image:
-      "https://images.unsplash.com/photo-1614735241165-6756e1df61ab?w=200&h=200&fit=crop&crop=center",
-    color: "from-orange-400 to-amber-500",
-  },
-  {
-    id: 4,
-    name: "Personal Care",
-    image:
-      "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=200&h=200&fit=crop&crop=center",
-    color: "from-pink-400 to-rose-500",
-  },
-  {
-    id: 5,
-    name: "Home & Kitchen",
-    image:
-      "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=200&h=200&fit=crop&crop=center",
-    color: "from-purple-400 to-indigo-500",
-  },
-  {
-    id: 6,
-    name: "Baby Care",
-    image:
-      "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=200&h=200&fit=crop&crop=center",
-    color: "from-yellow-400 to-orange-500",
-  },
-];
+const CategoryGrid = ({ onCategorySelect }: { onCategorySelect: (categoryId: number) => void }) => {
+  const { data: categories = [] } = useCategories();
 
-interface CategoryGridProps {
-  onCategorySelect: (categoryId: number) => void;
-}
-
-const CategoryGrid = ({ onCategorySelect }: CategoryGridProps) => {
   return (
     <div className="py-6">
       <div className="flex items-center justify-between mb-4">
@@ -63,15 +17,15 @@ const CategoryGrid = ({ onCategorySelect }: CategoryGridProps) => {
         </Link>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
-        {categories.map((category) => (
+        {categories.slice(0, 6).map((category) => (
           <Link
             key={category.id}
-            to={`/categories/${category.id}`}
+            to={`/category/${category.name.toLowerCase().replace(/\s+/g, '-')}`}
             onClick={() => onCategorySelect(category.id)}
             className="group cursor-pointer transform transition-all duration-300 hover:scale-105"
           >
             <div
-              className={`bg-gradient-to-br ${category.color} rounded-xl p-2 md:p-4 text-center shadow-md hover:shadow-lg transition-all duration-300 aspect-square flex flex-col justify-center items-center min-h-[70px] md:min-h-[100px]`}
+              className={`bg-gradient-to-br ${category.gradient} rounded-xl p-2 md:p-4 text-center shadow-md hover:shadow-lg transition-all duration-300 aspect-square flex flex-col justify-center items-center min-h-[70px] md:min-h-[100px]`}
             >
               <div className="w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 mx-auto mb-1 md:mb-2 rounded-full overflow-hidden bg-white/20 backdrop-blur-sm">
                 <img

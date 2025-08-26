@@ -95,7 +95,7 @@ const AppContent = () => {
         <Route path="/returns-refunds" element={<ReturnsRefunds />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms-of-service" element={<TermsOfService />} />
-        <Route path="/category/:categorySlug" element={<SubCategoriesNew />} />
+        <Route path="/category/:categoryName" element={<CategoryProducts />} />
         <Route path="/about-us" element={<AboutUs />} />
         <Route path="/how-it-works" element={<HowItWorks />} />
         <Route path="/careers" element={<Careers />} />

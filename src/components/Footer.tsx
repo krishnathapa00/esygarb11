@@ -1,9 +1,11 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Phone, Mail, MapPin, Clock, Facebook, Twitter, Instagram, Youtube } from 'lucide-react';
+import { useCategories } from "@/hooks/useCategories";
 
 const Footer = () => {
+  const { data: categories = [] } = useCategories();
+  
   return (
     <footer className="hidden md:block bg-gray-900 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -57,25 +59,19 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Services */}
+          {/* Categories (replaced Services) */}
           <div className="space-y-4">
-            <h4 className="text-lg font-semibold">Services</h4>
+            <h4 className="text-lg font-semibold">Categories</h4>
             <div className="space-y-2">
-              <Link to="/subcategories/1" className="block text-gray-300 hover:text-green-400 transition-colors text-sm">
-                Fresh Vegetables
-              </Link>
-              <Link to="/subcategories/2" className="block text-gray-300 hover:text-green-400 transition-colors text-sm">
-                Organic Fruits
-              </Link>
-              <Link to="/subcategories/3" className="block text-gray-300 hover:text-green-400 transition-colors text-sm">
-                Dairy & Eggs
-              </Link>
-              <Link to="/subcategories/4" className="block text-gray-300 hover:text-green-400 transition-colors text-sm">
-                Snacks & Beverages
-              </Link>
-              <Link to="/subcategories/5" className="block text-gray-300 hover:text-green-400 transition-colors text-sm">
-                Personal Care
-              </Link>
+              {categories.slice(0, 5).map((category) => (
+                <Link 
+                  key={category.id} 
+                  to={`/category/${category.name.toLowerCase().replace(/\s+/g, '-')}`} 
+                  className="block text-gray-300 hover:text-green-400 transition-colors text-sm"
+                >
+                  {category.name}
+                </Link>
+              ))}
             </div>
           </div>
 
@@ -109,7 +105,7 @@ const Footer = () => {
         <div className="border-t border-gray-800 mt-8 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="text-sm text-gray-400">
-              © 2024 EsyGrab Nepal. All rights reserved.
+              @2025 EsyGrab by Virkuti Online Shopping Pvt.Ltd
             </div>
             
             {/* Social Media */}
