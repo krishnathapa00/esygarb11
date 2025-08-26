@@ -5,6 +5,13 @@ import { useCategories } from "@/hooks/useCategories";
 const CategoryGrid = ({ onCategorySelect }: { onCategorySelect: (categoryId: number) => void }) => {
   const { data: categories = [] } = useCategories();
 
+  // Reorder categories to put "Fruits & Vegetables" first
+  const orderedCategories = [...categories].sort((a, b) => {
+    if (a.name.toLowerCase().includes('fruits') || a.name.toLowerCase().includes('vegetables')) return -1;
+    if (b.name.toLowerCase().includes('fruits') || b.name.toLowerCase().includes('vegetables')) return 1;
+    return 0;
+  });
+
   return (
     <div className="py-6">
       <div className="flex items-center justify-between mb-4">
@@ -17,10 +24,10 @@ const CategoryGrid = ({ onCategorySelect }: { onCategorySelect: (categoryId: num
         </Link>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
-        {categories.slice(0, 6).map((category) => (
+        {orderedCategories.slice(0, 6).map((category) => (
           <Link
             key={category.id}
-            to={`/category/${category.name.toLowerCase().replace(/\s+/g, '-')}`}
+            to={`/subcategories/${category.name.toLowerCase().replace(/\s+/g, '-')}`}
             onClick={() => onCategorySelect(category.id)}
             className="group cursor-pointer transform transition-all duration-300 hover:scale-105"
           >

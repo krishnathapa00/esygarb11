@@ -193,7 +193,7 @@ const ReturnsRefunds = () => {
                   <Phone className="h-5 w-5 text-primary" />
                   <div>
                     <p className="font-medium">Call Us</p>
-                    <p className="text-muted-foreground">+977-9761158650</p>
+                    <p className="text-muted-foreground">+9779865053325 / +9779868293232</p>
                     <p className="text-sm text-muted-foreground">7 AM - 10 PM, 7 days a week</p>
                   </div>
                 </div>

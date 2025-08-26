@@ -275,7 +275,7 @@ const TermsOfService = () => {
                 <div>
                   <p className="font-medium">Customer Support</p>
                   <p className="text-muted-foreground">support@esygrab.com</p>
-                  <p className="text-muted-foreground">+977-9761158650</p>
+                  <p className="text-muted-foreground">+9779865053325 / +9779868293232</p>
                 </div>
                 <div>
                   <p className="font-medium">Office Address</p>

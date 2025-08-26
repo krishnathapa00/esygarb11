@@ -64,7 +64,7 @@ const Index = () => {
     navigate(`/product/${productId}`);
   };
 
-  // Group products by category dynamically
+  // Group products by category dynamically and sort categories
   const productsByCategory = filteredProducts.reduce((acc, product) => {
     const category = product.category || 'Other';
     if (!acc[category]) {
@@ -73,6 +73,13 @@ const Index = () => {
     acc[category].push(product);
     return acc;
   }, {} as Record<string, typeof filteredProducts>);
+
+  // Sort categories to put "Fruits & Vegetables" first
+  const sortedCategories = Object.entries(productsByCategory).sort(([catA], [catB]) => {
+    if (catA.toLowerCase().includes('fruits') || catA.toLowerCase().includes('vegetables')) return -1;
+    if (catB.toLowerCase().includes('fruits') || catB.toLowerCase().includes('vegetables')) return 1;
+    return catA.localeCompare(catB);
+  });
 
   // Remove the blocking loading state - show content with loading indicators instead
 
@@ -106,7 +113,7 @@ const Index = () => {
             </section>
 
             {/* Display products by category dynamically */}
-            {Object.entries(productsByCategory).map(([categoryName, categoryProducts]) => (
+            {sortedCategories.map(([categoryName, categoryProducts]) => (
               categoryProducts.length > 0 && (
                 <ProductSection
                   key={categoryName}

@@ -287,8 +287,8 @@ const Header = () => {
           <MobileNavButton
             to={user ? "/profile" : "/auth"}
             icon={User}
-            label="Account"
-            isActive={location.pathname === "/profile" || location.pathname === "/auth"}
+            label="Profile"
+            isActive={location.pathname === "/profile" || (!user && location.pathname === "/auth")}
           />
         </div>
       </div>

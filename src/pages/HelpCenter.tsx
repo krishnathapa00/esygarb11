@@ -34,7 +34,7 @@ const HelpCenter = () => {
     {
       id: 3,
       question: "What are your delivery charges?",
-      answer: "New users get free delivery for their first 2-3 orders. After that, delivery charges are NPR 50 per order. Check our current delivery settings for any ongoing promotions."
+      answer: "Standard delivery fee is Rs 15 per order. New users may get promotional delivery rates. Check our current delivery settings for any ongoing promotions."
     },
     {
       id: 4,
@@ -102,7 +102,7 @@ const HelpCenter = () => {
                 <CardDescription>Get immediate help</CardDescription>
               </CardHeader>
               <CardContent className="text-center">
-                <p className="font-medium">+977-9761158650</p>
+                <p className="font-medium">+9779865053325 / +9779868293232</p>
                 <p className="text-sm text-muted-foreground">7 AM - 10 PM, 7 days a week</p>
               </CardContent>
             </Card>

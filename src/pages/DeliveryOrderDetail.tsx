@@ -186,20 +186,25 @@ const DeliveryOrderDetail = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">Customer</p>
-                <div className="flex items-center gap-2">
-                  <p className="font-medium">{order.profiles?.full_name || 'Customer'}</p>
-                  <Button size="sm" variant="outline" asChild>
-                    <a href={`tel:${order.profiles?.phone_number || order.profiles?.phone}`}>
-                      <Phone className="w-4 h-4" />
-                    </a>
-                  </Button>
+                <div>
+                  <p className="text-sm text-muted-foreground">Customer Information</p>
+                  <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                    <div className="flex items-center gap-2 mb-2">
+                      <p className="font-semibold text-blue-800">{order.profiles?.full_name || 'Customer Name'}</p>
+                      <Button size="sm" variant="outline" asChild>
+                        <a href={`tel:${order.profiles?.phone_number || order.profiles?.phone}`}>
+                          <Phone className="w-4 h-4" />
+                        </a>
+                      </Button>
+                    </div>
+                    <p className="text-sm text-blue-700 font-medium">
+                      📞 {order.profiles?.phone_number || order.profiles?.phone || 'N/A'}
+                    </p>
+                    <p className="text-sm text-blue-700">
+                      📍 {order.delivery_address}
+                    </p>
+                  </div>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Contact: {order.profiles?.phone_number || order.profiles?.phone || 'N/A'}
-                </p>
-              </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Amount</p>
                 <p className="font-medium text-lg">₹{parseFloat(String(order.total_amount || '0')).toFixed(2)}</p>
@@ -289,10 +294,18 @@ const DeliveryOrderDetail = () => {
                 <div className="space-y-3">
                   <Button
                     variant="outline"
-                    onClick={() => openMap(order.delivery_address)}
-                    className="w-full"
+                    onClick={() => {
+                      // Get store location (hardcoded for now, should come from settings)
+                      const storeLocation = "New Baneshwor, Kathmandu, Nepal";
+                      const destination = order.delivery_address;
+                      
+                      // Open Google Maps with directions from store to customer
+                      const directionsUrl = `https://www.google.com/maps/dir/${encodeURIComponent(storeLocation)}/${encodeURIComponent(destination)}`;
+                      window.open(directionsUrl, '_blank');
+                    }}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                   >
-                    Open Navigation
+                    🧭 Navigate to User's Location
                   </Button>
                   <Button 
                     onClick={handleDelivered}

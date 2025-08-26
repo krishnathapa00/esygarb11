@@ -177,19 +177,35 @@ const ManageProducts = () => {
     if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) return;
 
     try {
-      // First check if user has admin permissions
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('Not authenticated');
+      console.log('Attempting to delete product:', productId);
+      
+      // First check if user has admin permissions - get session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated - please log in again');
       }
 
+      // Attempt direct deletion with proper error handling
       const { error } = await supabase
         .from('products')
         .delete()
         .eq('id', productId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Delete error details:', error);
+        
+        // Handle specific error cases
+        if (error.code === '23503') {
+          throw new Error('Cannot delete product - it has associated orders. Archive the product instead.');
+        } else if (error.code === '42501') {
+          throw new Error('Permission denied - only admins can delete products');
+        } else {
+          throw new Error(`Database error: ${error.message}`);
+        }
+      }
 
+      console.log('Product deleted successfully:', productId);
+      
       toast({
         title: "Product deleted!",
         description: "Product has been permanently removed.",
@@ -200,10 +216,10 @@ const ManageProducts = () => {
       queryClient.invalidateQueries({ queryKey: ['admin-products'] });
       queryClient.invalidateQueries({ queryKey: ['products'] });
     } catch (error: any) {
-      console.error('Delete error:', error);
+      console.error('Delete operation failed:', error);
       toast({
         title: "Delete failed",
-        description: error.message || "Failed to delete product",
+        description: error.message || "Failed to delete product. Please try again or contact support.",
         variant: "destructive",
       });
     }

@@ -24,7 +24,7 @@ const Footer = () => {
             <div className="space-y-2">
               <div className="flex items-center space-x-2 text-sm text-gray-300">
                 <Phone className="h-4 w-4 text-green-400" />
-                <span>+977 9865053325</span>
+                <span>+9779865053325 / +9779868293232</span>
               </div>
               <div className="flex items-center space-x-2 text-sm text-gray-300">
                 <Mail className="h-4 w-4 text-green-400" />
@@ -37,36 +37,30 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Quick Links */}
-          <div className="space-y-4">
-            <h4 className="text-lg font-semibold">Quick Links</h4>
-            <div className="space-y-2">
-              <Link to="/about-us" className="block text-gray-300 hover:text-green-400 transition-colors text-sm">
-                About Us
-              </Link>
-              <Link to="/how-it-works" className="block text-gray-300 hover:text-green-400 transition-colors text-sm">
-                How It Works
-              </Link>
-              <Link to="/careers" className="block text-gray-300 hover:text-green-400 transition-colors text-sm">
-                Careers
-              </Link>
-              <Link to="/contact-us" className="block text-gray-300 hover:text-green-400 transition-colors text-sm">
-                Contact Us
-              </Link>
-              <Link to="/delivery-partner" className="block text-gray-300 hover:text-green-400 transition-colors text-sm">
-                Become a Delivery Partner
-              </Link>
-            </div>
-          </div>
-
-          {/* Categories (replaced Services) */}
+          {/* Categories (replacing Quick Links) */}
           <div className="space-y-4">
             <h4 className="text-lg font-semibold">Categories</h4>
             <div className="space-y-2">
               {categories.slice(0, 5).map((category) => (
                 <Link 
                   key={category.id} 
-                  to={`/category/${category.name.toLowerCase().replace(/\s+/g, '-')}`} 
+                  to={`/subcategories/${category.name.toLowerCase().replace(/\s+/g, '-')}`} 
+                  className="block text-gray-300 hover:text-green-400 transition-colors text-sm"
+                >
+                  {category.name}
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* More Categories */}
+          <div className="space-y-4">
+            <h4 className="text-lg font-semibold">More Categories</h4>
+            <div className="space-y-2">
+              {categories.slice(5, 10).map((category) => (
+                <Link 
+                  key={category.id} 
+                  to={`/subcategories/${category.name.toLowerCase().replace(/\s+/g, '-')}`} 
                   className="block text-gray-300 hover:text-green-400 transition-colors text-sm"
                 >
                   {category.name}

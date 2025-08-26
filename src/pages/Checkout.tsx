@@ -45,13 +45,13 @@ const Checkout = () => {
       
       if (error) {
         console.error('Error fetching delivery config:', error);
-        return { delivery_fee: 50, delivery_partner_charge: 30 };
+        return { delivery_fee: 15, delivery_partner_charge: 30 };
       }
-      return data || { delivery_fee: 50, delivery_partner_charge: 30 };
+      return data || { delivery_fee: 15, delivery_partner_charge: 30 };
     }
   });
 
-  const deliveryFee = deliveryConfig?.delivery_fee || 50;
+  const deliveryFee = deliveryConfig?.delivery_fee || 15;
   const totalAmount = totalPrice + deliveryFee;
 
   const [selectedPayment, setSelectedPayment] = useState("cod");
@@ -100,9 +100,8 @@ const Checkout = () => {
     } else if (user && !needsProfileCompletion && !deliveryAddress) {
       // If user has profile but no delivery address, prompt for location
       navigate('/map-location');
-    } else if (user && deliveryAddress) {
-      setShowAddressModal(true);
     }
+    // Remove the redundant address confirmation modal
   }, [loading, user, navigate, cart, mergeGuestCart, needsProfileCompletion, deliveryAddress]);
 
   const handleProfileComplete = () => {
@@ -377,13 +376,6 @@ const Checkout = () => {
         }}
       />
 
-      <AddressConfirmationModal
-        isOpen={showAddressModal}
-        onClose={() => setShowAddressModal(false)}
-        onConfirm={handleAddressConfirm}
-        onChangeAddress={handleAddressChange}
-        address={deliveryAddress}
-      />
     </div>
   );
 };

@@ -54,7 +54,7 @@ const ContactUs = () => {
                 </div>
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-1">Phone Number</h4>
-                  <p className="text-gray-600">+977-9761158650</p>
+                  <p className="text-gray-600">+9779865053325 / +9779868293232</p>
                   <p className="text-sm text-gray-500">Available 7 AM - 10 PM</p>
                 </div>
               </div>

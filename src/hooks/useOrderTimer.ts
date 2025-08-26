@@ -35,8 +35,9 @@ export const useOrderTimer = ({
       const deliveredTime = new Date(deliveredAt).getTime();
       const finalElapsed = Math.floor((deliveredTime - orderStartTime) / 1000);
       setElapsedSeconds(finalElapsed);
-      setRemainingSeconds(0);
+      setRemainingSeconds(totalDeliveryMs / 1000 - finalElapsed);
       setIsRunning(false);
+      setIsOverdue(finalElapsed > totalDeliveryMs / 1000);
       return;
     }
 
@@ -50,7 +51,7 @@ export const useOrderTimer = ({
     setIsOverdue(currentRemaining <= 0);
 
     // Timer should run for active orders regardless of remaining time
-    const activeStatuses = ['confirmed', 'ready_for_pickup', 'dispatched', 'out_for_delivery'];
+    const activeStatuses = ['confirmed', 'ready_for_pickup', 'dispatched', 'out_for_delivery', 'pending'];
     const shouldRun = activeStatuses.includes(orderStatus);
     setIsRunning(shouldRun);
 
@@ -73,7 +74,7 @@ export const useOrderTimer = ({
         setIsOverdue(currentRemaining <= 0);
         
         // Keep timer running for active orders even when overdue
-        const activeStatuses = ['confirmed', 'ready_for_pickup', 'dispatched', 'out_for_delivery'];
+        const activeStatuses = ['confirmed', 'ready_for_pickup', 'dispatched', 'out_for_delivery', 'pending'];
         if (!activeStatuses.includes(orderStatus)) {
           setIsRunning(false);
         }
@@ -86,7 +87,7 @@ export const useOrderTimer = ({
         intervalRef.current = null;
       }
     };
-  }, [isRunning, orderCreatedAt, totalDeliveryMinutes]);
+  }, [isRunning, orderCreatedAt, orderStatus, totalDeliveryMinutes]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -106,6 +107,16 @@ export const useOrderTimer = ({
     return isNegative ? `-${timeString}` : timeString;
   };
 
+  const getDisplayMessage = () => {
+    if (orderStatus === 'delivered') {
+      return 'Order delivered';
+    }
+    if (isOverdue) {
+      return 'Slight delay — your order is being delivered!';
+    }
+    return 'Expected delivery time';
+  };
+
   const getDeliveryPartnerRemainingTime = () => {
     if (!acceptedAt || orderStatus === 'delivered') return null;
     
@@ -120,7 +131,7 @@ export const useOrderTimer = ({
     
     // Calculate current remaining time for delivery partner
     const timeUsedByPartner = now - acceptTime;
-    const partnerRemaining = Math.max(0, (remainingAtAccept - timeUsedByPartner) / 1000);
+    const partnerRemaining = (remainingAtAccept - timeUsedByPartner) / 1000;
     
     return Math.floor(partnerRemaining);
   };
@@ -129,13 +140,14 @@ export const useOrderTimer = ({
     elapsedSeconds,
     remainingSeconds,
     isRunning,
+    isOverdue: isOverdue && orderStatus !== 'delivered',
+    displayMessage: getDisplayMessage(),
     formatElapsed: () => formatTime(elapsedSeconds),
     formatRemaining: () => formatTime(remainingSeconds),
     deliveryPartnerRemaining: getDeliveryPartnerRemainingTime(),
     formatDeliveryPartnerRemaining: () => {
       const partnerRemaining = getDeliveryPartnerRemainingTime();
       return partnerRemaining !== null ? formatTime(partnerRemaining) : null;
-    },
-    isOverdue: isOverdue && orderStatus !== 'delivered'
+    }
   };
 };
