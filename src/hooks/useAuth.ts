@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import type { User, Session } from '@supabase/supabase-js';
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import type { User, Session } from "@supabase/supabase-js";
 
 interface AuthUser {
   id: string;
@@ -19,111 +19,131 @@ export const useAuth = () => {
   const [state, setState] = useState<AuthState>({
     user: null,
     loading: true,
-    isAuthenticated: false
+    isAuthenticated: false,
   });
   const [session, setSession] = useState<Session | null>(null);
 
-  // Clear only our custom storage, not Supabase's auth tokens
   const clearStorage = useCallback(() => {
-    localStorage.removeItem('esygrab_session');
-    localStorage.removeItem('esygrab_auth_user');
+    localStorage.removeItem("esygrab_session");
+    localStorage.removeItem("esygrab_auth_user");
   }, []);
 
-  // Get user profile with role
-  const getUserProfile = useCallback(async (user: User): Promise<AuthUser | null> => {
-    try {
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
+  const getUserProfile = useCallback(
+    async (user: User): Promise<AuthUser | null> => {
+      try {
+        let { data: profile, error } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .single();
 
-      if (error || !profile) {
-        console.error('Failed to fetch user profile:', error);
+        if (error && error.code === "PGRST116") {
+          const { data: newProfile, error: insertError } = await supabase
+            .from("profiles")
+            .insert([{ id: user.id, role: "customer" }])
+            .select("role")
+            .single();
+
+          if (insertError) {
+            console.error("Failed to create profile:", insertError);
+            return null;
+          }
+
+          profile = newProfile;
+        } else if (error) {
+          console.error("Failed to fetch user profile:", error);
+          return null;
+        }
+
+        return {
+          id: user.id,
+          email: user.email || "",
+          role: profile.role || "customer",
+          isVerified: true,
+        };
+      } catch (error) {
+        console.error("Error fetching profile:", error);
         return null;
       }
-
-      return {
-        id: user.id,
-        email: user.email || '',
-        role: profile.role || 'customer',
-        isVerified: true
-      };
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-      return null;
-    }
-  }, []);
+    },
+    []
+  );
 
   // Set authenticated user with session persistence
-  const setAuthUser = useCallback(async (user: User | null, skipProfile = false) => {
-    if (!user) {
-      setState({
-        user: null,
-        loading: false,
-        isAuthenticated: false
-      });
-      clearStorage();
-      return;
-    }
+  const setAuthUser = useCallback(
+    async (user: User | null, skipProfile = false) => {
+      if (!user) {
+        setState({
+          user: null,
+          loading: false,
+          isAuthenticated: false,
+        });
+        clearStorage();
+        return;
+      }
 
-    if (skipProfile) {
-      // Use timeout to defer profile fetch and avoid deadlocks
-      setTimeout(async () => {
+      if (skipProfile) {
+        // Use timeout to defer profile fetch and avoid deadlocks
+        setTimeout(async () => {
+          const authUser = await getUserProfile(user);
+          if (authUser) {
+            setState({
+              user: authUser,
+              loading: false,
+              isAuthenticated: true,
+            });
+
+            // Store session with 7-day expiry and current activity
+            const sessionData = {
+              user: authUser,
+              expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
+              lastActivity: Date.now(),
+            };
+            localStorage.setItem(
+              "esygrab_session",
+              JSON.stringify(sessionData)
+            );
+          }
+        }, 0);
+      } else {
         const authUser = await getUserProfile(user);
         if (authUser) {
           setState({
             user: authUser,
             loading: false,
-            isAuthenticated: true
+            isAuthenticated: true,
           });
-          
+
           // Store session with 7-day expiry and current activity
           const sessionData = {
             user: authUser,
-            expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000), // 7 days
-            lastActivity: Date.now()
+            expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
+            lastActivity: Date.now(),
           };
-          localStorage.setItem('esygrab_session', JSON.stringify(sessionData));
+          localStorage.setItem("esygrab_session", JSON.stringify(sessionData));
+        } else {
+          setState({
+            user: null,
+            loading: false,
+            isAuthenticated: false,
+          });
         }
-      }, 0);
-    } else {
-      const authUser = await getUserProfile(user);
-      if (authUser) {
-        setState({
-          user: authUser,
-          loading: false,
-          isAuthenticated: true
-        });
-        
-        // Store session with 7-day expiry and current activity
-        const sessionData = {
-          user: authUser,
-          expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000), // 7 days
-          lastActivity: Date.now()
-        };
-        localStorage.setItem('esygrab_session', JSON.stringify(sessionData));
-      } else {
-        setState({
-          user: null,
-          loading: false,
-          isAuthenticated: false
-        });
       }
-    }
-  }, [getUserProfile, clearStorage]);
+    },
+    [getUserProfile, clearStorage]
+  );
 
   // Check for expired sessions and clean up
   const checkSessionValidity = useCallback(() => {
-    const storedSession = localStorage.getItem('esygrab_session');
+    const storedSession = localStorage.getItem("esygrab_session");
     if (!storedSession) return false;
 
     try {
       const { expiresAt, lastActivity } = JSON.parse(storedSession);
       const now = Date.now();
-      
+
       // Check if session expired (7 days) or inactive for more than 1 day
-      if (now > expiresAt || (now - lastActivity) > (24 * 60 * 60 * 1000)) {
+      if (now > expiresAt || now - lastActivity > 24 * 60 * 60 * 1000) {
         clearStorage();
         return false;
       }
@@ -139,26 +159,26 @@ export const useAuth = () => {
     let mounted = true;
 
     // Set up auth listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (!mounted) return;
-        
-        console.log('Auth state change:', event);
-        setSession(session);
-        
-        if (event === 'SIGNED_OUT' || !session) {
-          setState({
-            user: null,
-            loading: false,
-            isAuthenticated: false
-          });
-          clearStorage();
-        } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          // Skip profile fetch on auth state change to avoid deadlocks
-          setAuthUser(session.user, true);
-        }
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return;
+
+      console.log("Auth state change:", event);
+      setSession(session);
+
+      if (event === "SIGNED_OUT" || !session) {
+        setState({
+          user: null,
+          loading: false,
+          isAuthenticated: false,
+        });
+        clearStorage();
+      } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        // Skip profile fetch on auth state change to avoid deadlocks
+        setAuthUser(session.user, true);
       }
-    );
+    });
 
     // THEN check for existing session
     const initAuth = async () => {
@@ -167,25 +187,27 @@ export const useAuth = () => {
           // Session invalid, sign out
           await supabase.auth.signOut();
           if (mounted) {
-            setState(prev => ({ ...prev, loading: false }));
+            setState((prev) => ({ ...prev, loading: false }));
           }
           return;
         }
 
-        const { data: { session } } = await supabase.auth.getSession();
-        
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
         if (mounted) {
           setSession(session);
           if (session?.user) {
             await setAuthUser(session.user);
           } else {
-            setState(prev => ({ ...prev, loading: false }));
+            setState((prev) => ({ ...prev, loading: false }));
           }
         }
       } catch (error) {
-        console.error('Auth initialization error:', error);
+        console.error("Auth initialization error:", error);
         if (mounted) {
-          setState(prev => ({ ...prev, loading: false }));
+          setState((prev) => ({ ...prev, loading: false }));
         }
       }
     };
@@ -199,22 +221,25 @@ export const useAuth = () => {
   }, [setAuthUser, checkSessionValidity, clearStorage]);
 
   // Sign in with email/password
-  const signInWithPassword = useCallback(async (email: string, password: string) => {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
+  const signInWithPassword = useCallback(
+    async (email: string, password: string) => {
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
 
-      if (error) {
+        if (error) {
+          return { error: { message: error.message } };
+        }
+
+        return { data };
+      } catch (error: any) {
         return { error: { message: error.message } };
       }
-
-      return { data };
-    } catch (error: any) {
-      return { error: { message: error.message } };
-    }
-  }, []);
+    },
+    []
+  );
 
   // Sign in with OTP
   const signInWithOtp = useCallback(async (email: string) => {
@@ -222,8 +247,8 @@ export const useAuth = () => {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          shouldCreateUser: true
-        }
+          shouldCreateUser: true,
+        },
       });
 
       if (error) {
@@ -236,13 +261,12 @@ export const useAuth = () => {
     }
   }, []);
 
-  // Verify OTP
   const verifyOtp = useCallback(async (email: string, token: string) => {
     try {
       const { data, error } = await supabase.auth.verifyOtp({
         email,
         token,
-        type: 'email'
+        type: "email",
       });
 
       if (error) {
@@ -255,29 +279,30 @@ export const useAuth = () => {
     }
   }, []);
 
-  // Sign up
-  const signUp = useCallback(async (email: string, password: string, userData?: any) => {
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: userData,
-          emailRedirectTo: `${window.location.origin}/`
+  const signUp = useCallback(
+    async (email: string, password: string, userData?: any) => {
+      try {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: userData,
+            emailRedirectTo: `${window.location.origin}/`,
+          },
+        });
+
+        if (error) {
+          return { error: { message: error.message } };
         }
-      });
 
-      if (error) {
+        return { data };
+      } catch (error: any) {
         return { error: { message: error.message } };
       }
+    },
+    []
+  );
 
-      return { data };
-    } catch (error: any) {
-      return { error: { message: error.message } };
-    }
-  }, []);
-
-  // Sign out
   const signOut = useCallback(async () => {
     try {
       clearStorage();
@@ -286,18 +311,17 @@ export const useAuth = () => {
       setState({
         user: null,
         loading: false,
-        isAuthenticated: false
+        isAuthenticated: false,
       });
     } catch (error) {
-      console.error('Sign out error:', error);
+      console.error("Sign out error:", error);
     }
   }, [clearStorage]);
 
-  // Reset password
   const resetPassword = useCallback(async (email: string) => {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset`
+        redirectTo: `${window.location.origin}/auth/reset`,
       });
 
       if (error) {
@@ -317,6 +341,6 @@ export const useAuth = () => {
     verifyOtp,
     signUp,
     signOut,
-    resetPassword
+    resetPassword,
   };
 };
