@@ -1,34 +1,37 @@
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import Header from "@/components/Header";
-import MobileUserProfile from "@/components/MobileUserProfile";
-import InputField from "@/components/InputField";
-import TextAreaField from "@/components/TextAreaField";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuthContext } from "@/contexts/AuthProvider";
 import { Button } from "@/components/ui/button";
-import { LogOut, History, Package, HelpCircle, MapPin } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  User,
+  History,
+  Package,
+  HelpCircle,
+  LogOut,
+  ArrowLeft,
+  ArrowRight,
+  Phone,
+  Shield,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import Header from "@/components/Header";
 import {
   fetchUserProfile,
   updateUserProfile,
   ProfileFormValues,
 } from "@/services/profileService";
-import SingleImageUpload from "@/components/SingleImageUpload";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import InputField from "@/components/InputField";
+import TextAreaField from "@/components/TextAreaField";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { supabase } from "@/integrations/supabase/client";
 
 const UserProfile: React.FC = () => {
   const navigate = useNavigate();
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, signOut, loading, isAuthenticated } = useAuthContext();
   const { toast } = useToast();
   const isMobile = useIsMobile();
-
-  // Ensure mobile users get the mobile profile page
-  if (isMobile) {
-    return <MobileUserProfile />;
-  }
 
   const [profile, setProfile] = useState<ProfileFormValues | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
@@ -37,16 +40,18 @@ const UserProfile: React.FC = () => {
   const [updating, setUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
 
-  const { register, handleSubmit, reset, watch, setValue } = useForm<ProfileFormValues>({
-    defaultValues: {
-      full_name: "",
-      phone: "",
-      address: "",
-      avatar_url: "",
-    },
-    mode: "onBlur",
-  });
+  const { register, handleSubmit, reset, watch, setValue } =
+    useForm<ProfileFormValues>({
+      defaultValues: {
+        full_name: "",
+        phone: "",
+        address: "",
+        avatar_url: "",
+      },
+      mode: "onBlur",
+    });
 
+  // Fetch profile data
   useEffect(() => {
     if (!user) return;
     setLoadingProfile(true);
@@ -56,46 +61,71 @@ const UserProfile: React.FC = () => {
       .then((data) => {
         setProfile(data);
         reset(data);
-        // If user has no profile data, automatically enter edit mode
-        if (!data?.full_name || !data?.phone) {
-          setIsEditing(true);
-        }
+        if (!data?.full_name || !data?.phone) setIsEditing(true);
       })
-      .catch((err) => {
-        setError(err.message || "Failed to load profile");
-        // If profile doesn't exist, enter edit mode for new user
-        setIsEditing(true);
-      })
-      .finally(() => {
-        setLoadingProfile(false);
-      });
+      .catch(() => setIsEditing(true))
+      .finally(() => setLoadingProfile(false));
   }, [user, reset]);
 
+  // Redirect if not authenticated
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate("/login");
+    if (!loading && !isAuthenticated) {
+      navigate("/auth");
     }
-  }, [authLoading, user, navigate]);
+  }, [loading, isAuthenticated, navigate]);
 
   const avatarUrl = watch("avatar_url");
 
-  const handleImageUpload = (url: string) => {
-    setValue("avatar_url", url);
+  const handleImageUpload = async (file: File) => {
+    if (!file.type.startsWith("image/") || file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Invalid file",
+        description: "Select an image less than 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${Date.now()}_${Math.random()
+      .toString(36)
+      .substring(2)}.${fileExt}`;
+    const filePath = `avatars/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("user-avatars")
+      .upload(filePath, file);
+    if (uploadError) throw uploadError;
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("user-avatars").getPublicUrl(filePath);
+    const newAvatarUrl = `${publicUrl}?t=${Date.now()}`;
+    setValue("avatar_url", newAvatarUrl);
+
+    await supabase
+      .from("profiles")
+      .update({ avatar_url: newAvatarUrl })
+      .eq("id", user.id);
+
+    toast({
+      title: "Avatar updated",
+      description: "Profile picture updated successfully",
+    });
   };
 
   const handleLogout = async () => {
     try {
       await signOut();
       toast({
-        title: "Logged out successfully",
-        description: "You have been logged out of your account"
+        title: "Logged out",
+        description: "You have been logged out successfully",
       });
       navigate("/");
-    } catch (error) {
+    } catch {
       toast({
         title: "Logout failed",
-        description: "There was an error logging you out",
-        variant: "destructive"
+        description: "Could not log out",
+        variant: "destructive",
       });
     }
   };
@@ -105,293 +135,242 @@ const UserProfile: React.FC = () => {
     setUpdateError(null);
 
     try {
-      // Ensure all required fields are strings
       const profileData: ProfileFormValues = {
         full_name: data.full_name || "",
-        phone: data.phone || "", 
+        phone: data.phone || "",
         address: data.address || "",
         location: data.location || "",
-        avatar_url: data.avatar_url || ""
+        avatar_url: data.avatar_url || "",
       };
-
       const updatedProfile = await updateUserProfile(profileData);
       setProfile(updatedProfile);
       reset(updatedProfile);
       setIsEditing(false);
-      
       toast({
-        title: "Profile updated successfully",
-        description: "Your profile information has been saved"
+        title: "Profile updated",
+        description: "Profile saved successfully",
       });
     } catch (err: any) {
-      console.error("Profile update error:", err);
-      const errorMessage = err?.message || "Failed to update profile";
-      setUpdateError(errorMessage);
+      setUpdateError(err?.message || "Failed to update profile");
       toast({
         title: "Update failed",
-        description: errorMessage,
-        variant: "destructive"
+        description: err?.message || "Failed to update profile",
+        variant: "destructive",
       });
     } finally {
       setUpdating(false);
     }
   };
 
-  if (authLoading || loadingProfile) {
+  // Mobile Layout
+  if (isMobile) {
+    const quickActions = [
+      {
+        icon: History,
+        label: "Order History",
+        href: "/order-history",
+        description: "View past orders",
+      },
+      {
+        icon: Package,
+        label: "Track Orders",
+        href: "/order-tracking-lookup",
+        description: "Track current orders",
+      },
+      {
+        icon: HelpCircle,
+        label: "Support",
+        href: "/help-center",
+        description: "Get support",
+      },
+    ];
+
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin h-12 w-12 rounded-full border-b-2 border-primary mx-auto" />
-          <p className="mt-4 text-muted-foreground">Loading profile...</p>
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="px-4 py-8 pt-20 pb-24 space-y-6">
+          <div className="flex items-center mb-6">
+            <Link to="/">
+              <Button variant="ghost" size="sm" className="mr-3 p-2">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </Link>
+            <h1 className="text-2xl font-bold text-foreground">My Account</h1>
+          </div>
+
+          <Card className="border-border">
+            <CardHeader className="pb-3 flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+                  <User className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <CardTitle className="text-sm text-foreground">
+                    {user.email}
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Member since {new Date().getFullYear()}
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditing(true)}
+              >
+                Edit
+              </Button>
+            </CardHeader>
+          </Card>
+
+          {/* Quick Actions */}
+          <div className="space-y-3">
+            <h3 className="text-lg font-semibold text-foreground mb-3">
+              Quick Actions
+            </h3>
+            {quickActions.map((action, i) => (
+              <Link key={i} to={action.href}>
+                <Card className="border-border hover:bg-accent/50 transition-colors">
+                  <CardContent className="p-4 flex justify-between items-center">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                        <action.icon className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-foreground">
+                          {action.label}
+                        </h4>
+                        <p className="text-sm text-muted-foreground">
+                          {action.description}
+                        </p>
+                      </div>
+                    </div>
+                    <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+
+          {/* Logout */}
+          <Card className="border-border">
+            <CardContent className="p-4">
+              <Button
+                variant="destructive"
+                className="w-full flex items-center justify-center"
+                onClick={handleLogout}
+              >
+                <LogOut className="h-4 w-4 mr-2" /> Sign Out
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
   }
 
-  if (error && !isEditing) {
+  // Desktop Layout
+  if (loadingProfile)
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <main className="max-w-4xl mx-auto px-4 py-10">
-          <div className="text-center">
-            <p className="text-destructive mb-4">Error loading profile: {error}</p>
-            <Button onClick={() => setIsEditing(true)}>Create Profile</Button>
-          </div>
-        </main>
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
       </div>
     );
-  }
-
-  if (!user) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50">
       <Header />
       <main className="max-w-6xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2">My Profile</h1>
-          <p className="text-gray-600">Manage your account settings and preferences</p>
-        </div>
-        
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2">
+          My Profile
+        </h1>
+        <p className="text-gray-600 mb-8">
+          Manage your account settings and preferences
+        </p>
+
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Profile Card */}
           <div className="lg:col-span-1">
             <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
               <CardContent className="p-8 text-center">
                 <div className="w-32 h-32 mx-auto mb-6 relative group">
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  id="avatar-upload"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-
-                    // Validate file type
-                    if (!file.type.startsWith('image/')) {
-                      toast({
-                        title: "Invalid file type",
-                        description: "Please select an image file",
-                        variant: "destructive"
-                      });
-                      return;
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    id="avatar-upload"
+                    onChange={(e) =>
+                      e.target.files && handleImageUpload(e.target.files[0])
                     }
-
-                    // Validate file size (max 5MB)
-                    if (file.size > 5 * 1024 * 1024) {
-                      toast({
-                        title: "File too large",
-                        description: "Please select an image smaller than 5MB",
-                        variant: "destructive"
-                      });
-                      return;
-                    }
-
-                    try {
-                      const fileExt = file.name.split('.').pop();
-                      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
-                      const filePath = `avatars/${fileName}`;
-
-                      const { error: uploadError } = await supabase.storage
-                        .from('user-avatars')
-                        .upload(filePath, file);
-
-                      if (uploadError) {
-                        throw uploadError;
-                      }
-
-                      const { data: { publicUrl } } = supabase.storage
-                        .from('user-avatars')
-                        .getPublicUrl(filePath);
-
-                      const newAvatarUrl = `${publicUrl}?t=${Date.now()}`;
-                      setValue("avatar_url", newAvatarUrl);
-                      
-                      // Update the profile immediately in the database
-                      await supabase
-                        .from('profiles')
-                        .update({ avatar_url: newAvatarUrl })
-                        .eq('id', user.id);
-                      
-                      toast({
-                        title: "Image uploaded successfully",
-                        description: "Your avatar has been updated"
-                      });
-
-                    } catch (error: any) {
-                      toast({
-                        title: "Upload failed",
-                        description: error.message || "Failed to upload image",
-                        variant: "destructive"
-                      });
-                    }
-                  }}
-                />
-                <label 
-                  htmlFor="avatar-upload" 
-                  className="cursor-pointer block w-full h-full"
-                >
-                  <img
-                    src={avatarUrl || profile?.avatar_url || "/images/avatar.jpg"}
-                    alt="Avatar"
-                    className="w-full h-full rounded-full border-4 border-green-100 object-cover group-hover:opacity-75 transition-all shadow-lg"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = "/images/avatar.jpg";
-                    }}
                   />
-                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span className="text-white text-sm font-medium">Change Photo</span>
-                  </div>
-                </label>
-              </div>
-              <div className="space-y-2">
-                <h2 className="text-2xl font-bold text-gray-900">{profile?.full_name || "Your Name"}</h2>
-                <p className="text-green-600 font-medium">{user.email}</p>
-                <div className="inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm font-medium">
-                  ✓ Verified Account
+                  <label
+                    htmlFor="avatar-upload"
+                    className="cursor-pointer block w-full h-full"
+                  >
+                    <img
+                      src={
+                        avatarUrl || profile?.avatar_url || "/images/avatar.jpg"
+                      }
+                      alt="Avatar"
+                      className="w-full h-full rounded-full border-4 border-green-100 object-cover group-hover:opacity-75 transition-all shadow-lg"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-white text-sm font-medium">
+                        Change Photo
+                      </span>
+                    </div>
+                  </label>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  {profile?.full_name || "Your Name"}
+                </h2>
+                <p className="text-green-600 font-medium">{user.email}</p>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {!isEditing ? (
-            <>
-              {/* Personal Information Card */}
               <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
                 <CardHeader className="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-t-lg">
-                  <CardTitle className="text-xl">Personal Information</CardTitle>
+                  <CardTitle className="text-xl">
+                    Personal Information
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="p-6">
-                  <div className="space-y-6">
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Full Name</label>
-                        <p className="text-lg font-medium text-gray-900 bg-gray-50 p-3 rounded-lg">
-                          {profile?.full_name || "Not provided"}
-                        </p>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Phone Number</label>
-                        <p className="text-lg font-medium text-gray-900 bg-gray-50 p-3 rounded-lg">
-                          {profile?.phone || "Not provided"}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Address</label>
-                      <p className="text-lg font-medium text-gray-900 bg-gray-50 p-3 rounded-lg">
-                        {profile?.address || "Not provided"}
-                      </p>
-                    </div>
-                    <Button 
-                      onClick={() => setIsEditing(true)}
-                      className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-3 rounded-lg font-medium text-lg shadow-lg hover:shadow-xl transition-all"
-                    >
-                      Edit Profile Information
-                    </Button>
-                  </div>
+                <CardContent className="p-6 space-y-4">
+                  <p>
+                    <strong>Full Name:</strong>{" "}
+                    {profile?.full_name || "Not provided"}
+                  </p>
+                  <p>
+                    <strong>Phone:</strong> {profile?.phone || "Not provided"}
+                  </p>
+                  <p>
+                    <strong>Address:</strong>{" "}
+                    {profile?.address || "Not provided"}
+                  </p>
+                  <Button
+                    onClick={() => setIsEditing(true)}
+                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white"
+                  >
+                    Edit Profile
+                  </Button>
                 </CardContent>
               </Card>
-
-              {/* Quick Actions Grid */}
-              <div className="grid md:grid-cols-2 gap-6">
-                <Card 
-                  className="bg-white/80 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all cursor-pointer group hover:scale-105"
-                  onClick={() => navigate('/order-history')}
-                >
-                  <CardContent className="p-6">
-                    <div className="flex items-center space-x-4">
-                      <div className="p-4 bg-blue-100 rounded-full group-hover:bg-blue-200 transition-colors">
-                        <History className="h-8 w-8 text-blue-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-semibold text-gray-900">Order History</h3>
-                        <p className="text-gray-600">View your past orders and purchases</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card 
-                  className="bg-white/80 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all cursor-pointer group hover:scale-105"
-                  onClick={() => navigate('/order-tracking-lookup')}
-                >
-                  <CardContent className="p-6">
-                    <div className="flex items-center space-x-4">
-                      <div className="p-4 bg-orange-100 rounded-full group-hover:bg-orange-200 transition-colors">
-                        <MapPin className="h-8 w-8 text-orange-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-semibold text-gray-900">Track Orders</h3>
-                        <p className="text-gray-600">Track your current orders in real-time</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card 
-                  className="bg-white/80 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all cursor-pointer group hover:scale-105"
-                  onClick={() => navigate('/support')}
-                >
-                  <CardContent className="p-6">
-                    <div className="flex items-center space-x-4">
-                      <div className="p-4 bg-purple-100 rounded-full group-hover:bg-purple-200 transition-colors">
-                        <HelpCircle className="h-8 w-8 text-purple-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-semibold text-gray-900">Support</h3>
-                        <p className="text-gray-600">Get help and customer support</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
-                  <CardContent className="p-6">
-                    <div className="flex items-center space-x-4">
-                      <div className="p-4 bg-green-100 rounded-full">
-                        <Package className="h-8 w-8 text-green-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-semibold text-gray-900">Account Status</h3>
-                        <p className="text-green-600 font-medium">Active & Verified</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </>) : (
-            <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
-              <CardHeader className="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-t-lg">
-                <CardTitle className="text-xl">Edit Profile Information</CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
-                  <div className="grid md:grid-cols-2 gap-6">
+            ) : (
+              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
+                <CardHeader className="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-t-lg">
+                  <CardTitle className="text-xl">
+                    Edit Profile Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <form
+                    onSubmit={handleSubmit(onSubmit)}
+                    className="space-y-6"
+                    noValidate
+                  >
                     <InputField
                       label="Full Name"
                       name="full_name"
@@ -408,63 +387,53 @@ const UserProfile: React.FC = () => {
                         message: "Invalid phone number",
                       }}
                     />
-                  </div>
-                  <TextAreaField
-                    label="Address"
-                    name="address"
-                    register={register}
-                    rows={3}
-                  />
-
-                  <div className="flex gap-4">
-                    <Button
-                      type="submit"
-                      disabled={updating}
-                      className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-3 rounded-lg font-medium text-lg shadow-lg hover:shadow-xl transition-all"
-                    >
-                      {updating ? "Saving..." : "Save Changes"}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        reset(profile || {});
-                        setIsEditing(false);
-                      }}
-                      className="flex-1 border-2 border-gray-300 hover:border-gray-400 py-3 rounded-lg font-medium text-lg"
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                  
-                  {updateError && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                      <p className="text-red-600 text-sm">{updateError}</p>
+                    <TextAreaField
+                      label="Address"
+                      name="address"
+                      register={register}
+                      rows={3}
+                    />
+                    <div className="flex gap-4">
+                      <Button
+                        type="submit"
+                        disabled={updating}
+                        className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white"
+                      >
+                        {updating ? "Saving..." : "Save Changes"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          reset(profile || {});
+                          setIsEditing(false);
+                        }}
+                        className="flex-1 border-gray-300"
+                      >
+                        Cancel
+                      </Button>
                     </div>
-                  )}
-                </form>
+                    {updateError && (
+                      <p className="text-red-600">{updateError}</p>
+                    )}
+                  </form>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Logout Button */}
+            <Card className="bg-red-50 border-red-200 shadow-xl mt-6">
+              <CardContent className="p-6 text-center">
+                <Button
+                  onClick={handleLogout}
+                  variant="destructive"
+                  className="w-full flex items-center justify-center"
+                >
+                  <LogOut className="h-5 w-5 mr-2" /> Sign Out
+                </Button>
               </CardContent>
             </Card>
-            )}
           </div>
-        </div>
-
-        {/* Sign Out Section */}
-        <div className="mt-8">
-          <Card className="bg-red-50 border-red-200 shadow-xl">
-            <CardContent className="p-6 text-center">
-              <h3 className="text-lg font-semibold text-red-800 mb-2">Account Management</h3>
-              <p className="text-red-600 mb-4">Securely sign out of your account</p>
-              <Button
-                onClick={handleLogout}
-                variant="outline"
-                className="bg-white border-2 border-red-500 text-red-600 hover:bg-red-500 hover:text-white px-8 py-3 rounded-lg font-medium text-lg shadow-lg hover:shadow-xl transition-all"
-              >
-                <LogOut className="h-5 w-5 mr-2" />
-                Sign Out
-              </Button>
-            </CardContent>
-          </Card>
         </div>
       </main>
     </div>
