@@ -64,31 +64,73 @@ const AuthHybrid = () => {
     if (otp.length !== 6) {
       toast({
         title: "Invalid OTP",
-        description: "Please enter the complete 6-digit OTP",
+        description: "Please enter the complete 6-digit OTP.",
         variant: "destructive",
       });
       return;
     }
 
-    setLoading(true);
-    const { error, data } = await verifyOtp(email, otp);
-    setLoading(false);
+    try {
+      setLoading(true);
 
-    if (error) {
+      const { data, error } = await verifyOtp(email, otp);
+
+      if (error) {
+        toast({
+          title: "Verification Failed",
+          description: error.message || "Invalid OTP. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!data?.session) {
+        toast({
+          title: "Verification Error",
+          description:
+            "OTP verified but no session received. Please try signing in again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { user, session } = data;
+
+      if (user && session) {
+        localStorage.setItem(
+          "esygrab_session",
+          JSON.stringify({
+            user,
+            expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
+            lastActivity: Date.now(),
+          })
+        );
+
+        toast({
+          title: "Email Verified Successfully",
+          description: "Welcome to Esygrab!",
+          variant: "default",
+        });
+
+        setIsOtpModalOpen(false);
+
+        navigate("/");
+      } else {
+        toast({
+          title: "Session Error",
+          description: "Could not retrieve session after OTP verification.",
+          variant: "destructive",
+        });
+      }
+    } catch (err) {
       toast({
-        title: "Verification Failed",
-        description: error.message || "Invalid OTP. Please try again.",
+        title: "Unexpected Error",
+        description:
+          "Something went wrong while verifying OTP. Please try again later.",
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Email Verified Successfully",
-        description: "Welcome to Esygrab!",
-      });
-      setIsOtpModalOpen(false);
-      
-      // Redirect based on user role (customers always go to home)
-      navigate("/");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -207,7 +249,7 @@ const AuthHybrid = () => {
             <p className="text-sm text-gray-600">
               <span
                 className="text-green-600 hover:text-green-700 cursor-pointer"
-                onClick={() => navigate('/auth/reset')}
+                onClick={() => navigate("/auth/reset")}
               >
                 Forgot your password?
               </span>
