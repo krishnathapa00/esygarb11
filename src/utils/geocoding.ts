@@ -1,15 +1,15 @@
-const MAPBOX_TOKEN = 'pk.eyJ1Ijoia3Jpc2huYTEyNDMzNCIsImEiOiJjbWVodG1mZjcwMjhwMnJxczZ1ZWQyeTNlIn0.pl7sk2526OEU-Ub-hB0QTQ';
+const GOOGLE_MAPS_API_KEY = 'AIzaSyADxM5y7WrXu3BRJ_hJQZhh6FLXWyO3E1g';
 
 export const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
   try {
     const response = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}&types=address,poi`
+      `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_MAPS_API_KEY}`
     );
     
     if (response.ok) {
       const data = await response.json();
-      if (data.features && data.features.length > 0) {
-        return data.features[0].place_name;
+      if (data.results && data.results.length > 0) {
+        return data.results[0].formatted_address;
       }
     }
     return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;

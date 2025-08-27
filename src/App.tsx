@@ -43,7 +43,7 @@ import DeliveryOrderDetail from './pages/DeliveryOrderDetail';
 import DeliveryEarnings from './pages/DeliveryEarnings';
 import DeliveryHistory from './pages/DeliveryHistory';
 import DeliveryWithdraw from './pages/DeliveryWithdraw';
-import DeliveryMapNavigation from './pages/DeliveryMapNavigation';
+import DeliveryMapNavigationNew from './pages/DeliveryMapNavigationNew';
 import ManageDarkstores from './pages/admin/ManageDarkstores';
 import DeliverySettings from './pages/admin/DeliverySettings';
 import ManageCategories from './pages/admin/ManageCategories';
@@ -164,7 +164,7 @@ const AppContent = () => {
           path="/delivery-partner/navigate/:orderId"
           element={
             <RoleProtectedRoute allowedRoles={["delivery_partner"]}>
-              <DeliveryMapNavigation />
+              <DeliveryMapNavigationNew />
             </RoleProtectedRoute>
           }
         />

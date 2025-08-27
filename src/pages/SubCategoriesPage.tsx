@@ -121,7 +121,7 @@ const SubCategoriesPage = () => {
         <Header />
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="text-center py-12">
-            <div className="text-lg text-gray-600">Loading products...</div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
           </div>
         </div>
       </div>

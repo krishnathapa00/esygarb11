@@ -5,16 +5,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+const GOOGLE_MAPS_API_KEY = 'AIzaSyADxM5y7WrXu3BRJ_hJQZhh6FLXWyO3E1g';
 
-const MAPBOX_TOKEN = 'pk.eyJ1Ijoia3Jpc2huYTEyNDMzNCIsImEiOiJjbWVodG1mZjcwMjhwMnJxczZ1ZWQyeTNlIn0.pl7sk2526OEU-Ub-hB0QTQ';
+// Declare global google types
+declare global {
+  interface Window {
+    google: any;
+    initGoogleMaps: () => void;
+  }
+}
 
 const MapLocationEnhanced = () => {
   const navigate = useNavigate();
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
-  const marker = useRef<mapboxgl.Marker | null>(null);
+  const map = useRef<any>(null);
+  const marker = useRef<any>(null);
   
   const [selectedLocation, setSelectedLocation] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -23,98 +28,68 @@ const MapLocationEnhanced = () => {
   const [markerPosition, setMarkerPosition] = useState({ lat: 27.7172, lng: 85.3240 }); // Default to Kathmandu
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
-  const [webglSupported, setWebglSupported] = useState(true);
 
-  // Check WebGL support
-  const checkWebGLSupport = () => {
-    try {
-      const canvas = document.createElement('canvas');
-      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-      const supported = !!gl;
-      console.log('WebGL Support Check:', supported);
-      return supported;
-    } catch (e) {
-      console.error('WebGL Support Error:', e);
-      return false;
-    }
-  };
-
-  // Initialize map with error handling
+  // Load Google Maps Script and initialize map
   useEffect(() => {
-    console.log('Map initialization starting...');
-    if (!mapContainer.current) {
-      console.log('Map container not found');
-      return;
-    }
+    if (!mapContainer.current) return;
 
-    // Check WebGL support first
-    const webglSupport = checkWebGLSupport();
-    console.log('WebGL Support Result:', webglSupport);
-    
-    if (!webglSupport) {
-      console.log('WebGL not supported, showing fallback');
-      setWebglSupported(false);
-      setMapError('WebGL is not supported in your browser. Please use a modern browser that supports WebGL.');
-      return;
-    }
+    const loadGoogleMaps = () => {
+      if (window.google) {
+        initMap();
+        return;
+      }
 
-    try {
-      console.log('Setting Mapbox token...');
-      mapboxgl.accessToken = MAPBOX_TOKEN;
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&callback=initGoogleMaps`;
+      script.async = true;
+      script.defer = true;
       
-      console.log('Creating map instance...');
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/satellite-streets-v12',
-        center: [markerPosition.lng, markerPosition.lat],
-        zoom: 15,
-        preserveDrawingBuffer: true,
-        failIfMajorPerformanceCaveat: false
-      });
+      window.initGoogleMaps = () => {
+        initMap();
+      };
+      
+      document.head.appendChild(script);
+    };
 
-      console.log('Map instance created, adding controls...');
-      map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    const initMap = () => {
+      if (!mapContainer.current || !window.google) return;
 
-      // Add marker
-      console.log('Adding marker...');
-      marker.current = new mapboxgl.Marker({
-        draggable: true,
-        color: '#ef4444'
-      })
-      .setLngLat([markerPosition.lng, markerPosition.lat])
-      .addTo(map.current);
+      try {
+        const mapInstance = new window.google.maps.Map(mapContainer.current, {
+          zoom: 15,
+          center: markerPosition,
+          mapTypeControl: true,
+          fullscreenControl: true,
+          streetViewControl: true,
+        });
 
-      // Handle marker drag
-      marker.current.on('dragend', () => {
-        if (marker.current) {
-          const lngLat = marker.current.getLngLat();
-          setMarkerPosition({ lat: lngLat.lat, lng: lngLat.lng });
-          reverseGeocode(lngLat.lat, lngLat.lng);
-        }
-      });
+        // Add marker
+        const markerInstance = new window.google.maps.Marker({
+          position: markerPosition,
+          map: mapInstance,
+          draggable: true,
+          title: 'Selected Location'
+        });
 
-      // Handle map click
-      map.current.on('click', (e) => {
-        const { lng, lat } = e.lngLat;
-        setMarkerPosition({ lat, lng });
-        if (marker.current) {
-          marker.current.setLngLat([lng, lat]);
-        }
-        reverseGeocode(lat, lng);
-      });
+        // Handle map click
+        mapInstance.addListener('click', (event: any) => {
+          const lat = event.latLng.lat();
+          const lng = event.latLng.lng();
+          updateLocation(lat, lng, markerInstance, mapInstance);
+        });
 
-      // Handle map errors
-      map.current.on('error', (e) => {
-        console.error('Map error:', e.error);
-        setMapError('Failed to load the map. Please refresh the page and try again.');
-        setWebglSupported(false);
-      });
+        // Handle marker drag
+        markerInstance.addListener('dragend', (event: any) => {
+          const lat = event.latLng.lat();
+          const lng = event.latLng.lng();
+          updateLocation(lat, lng, markerInstance, mapInstance);
+        });
 
-      map.current.on('load', () => {
-        console.log('Map loaded successfully!');
+        map.current = mapInstance;
+        marker.current = markerInstance;
         setMapLoaded(true);
         setMapError(null);
-        
+
         // Check for temporarily stored detected location
         const tempLocation = localStorage.getItem('esygrab_temp_location');
         if (tempLocation) {
@@ -122,12 +97,7 @@ const MapLocationEnhanced = () => {
             const location = JSON.parse(tempLocation);
             if (location.detected && location.coordinates) {
               const { lat, lng } = location.coordinates;
-              setMarkerPosition({ lat, lng });
-              if (map.current && marker.current) {
-                map.current.setCenter([lng, lat]);
-                marker.current.setLngLat([lng, lat]);
-              }
-              reverseGeocode(lat, lng);
+              updateLocation(lat, lng, markerInstance, mapInstance);
             }
             localStorage.removeItem('esygrab_temp_location');
           } catch (error) {
@@ -142,58 +112,62 @@ const MapLocationEnhanced = () => {
               setSelectedLocation(location.address || '');
               if (location.coordinates) {
                 const { lat, lng } = location.coordinates;
-                setMarkerPosition({ lat, lng });
-                if (map.current && marker.current) {
-                  map.current.setCenter([lng, lat]);
-                  marker.current.setLngLat([lng, lat]);
-                }
+                updateLocation(lat, lng, markerInstance, mapInstance);
               }
             } catch (error) {
               console.error('Error parsing saved location:', error);
             }
           }
         }
-      });
 
-    } catch (error) {
-      console.error('Map initialization error:', error);
-      setMapError(`Failed to initialize the map: ${error.message}`);
-      setWebglSupported(false);
-    }
+        // Initial reverse geocoding
+        reverseGeocode(markerPosition.lat, markerPosition.lng);
+
+      } catch (error) {
+        console.error('Map initialization error:', error);
+        setMapError(`Failed to initialize the map: ${error}`);
+      }
+    };
+
+    const updateLocation = (lat: number, lng: number, markerInstance: any, mapInstance: any) => {
+      const newLocation = { lat, lng };
+      setMarkerPosition(newLocation);
+      
+      markerInstance.setPosition(newLocation);
+      mapInstance.panTo(newLocation);
+      
+      reverseGeocode(lat, lng);
+    };
+
+    loadGoogleMaps();
 
     return () => {
-      try {
-        if (map.current) {
-          console.log('Cleaning up map...');
-          map.current.remove();
-        }
-      } catch (error) {
-        console.error('Error cleaning up map:', error);
+      if (map.current) {
+        // Google Maps doesn't need explicit cleanup like Mapbox
+        map.current = null;
       }
     };
   }, []);
 
-  // Helper function for reverse geocoding using Mapbox
+  // Helper function for reverse geocoding using Google Maps
   const reverseGeocode = async (lat: number, lng: number) => {
     try {
-      const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}&types=address,poi`
-      );
+      if (!window.google) return;
       
-      if (response.ok) {
-        const data = await response.json();
-        if (data.features && data.features.length > 0) {
-          const place = data.features[0];
-          setSelectedLocation(place.place_name);
-        } else {
-          setSelectedLocation(`Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`);
-        }
-      } else {
-        setSelectedLocation(`Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`);
-      }
+      const geocoder = new window.google.maps.Geocoder();
+      const response = await new Promise((resolve, reject) => {
+        geocoder.geocode({ location: { lat, lng } }, (results: any, status: any) => {
+          if (status === 'OK' && results && results[0]) {
+            resolve(results[0].formatted_address);
+          } else {
+            reject('No address found');
+          }
+        });
+      });
+      setSelectedLocation(response as string);
     } catch (error) {
       console.error('Reverse geocoding error:', error);
-      setSelectedLocation(`Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`);
+      setSelectedLocation(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
     }
   };
 
@@ -209,8 +183,8 @@ const MapLocationEnhanced = () => {
           setMarkerPosition({ lat, lng });
           
           if (map.current && marker.current) {
-            map.current.setCenter([lng, lat]);
-            marker.current.setLngLat([lng, lat]);
+            map.current.panTo({ lat, lng });
+            marker.current.setPosition({ lat, lng });
           }
           
           await reverseGeocode(lat, lng);
@@ -251,26 +225,29 @@ const MapLocationEnhanced = () => {
   };
 
   const handleSearchLocation = async () => {
-    if (!searchQuery.trim()) return;
+    if (!searchQuery.trim() || !window.google || !map.current) return;
     
     setIsSearching(true);
     try {
-      const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchQuery)}.json?access_token=${MAPBOX_TOKEN}&country=NP&limit=1`
-      );
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.features && data.features.length > 0) {
-          const place = data.features[0];
-          const [lng, lat] = place.center;
+      const service = new window.google.maps.places.PlacesService(map.current);
+      const request = {
+        query: searchQuery,
+        fields: ['place_id', 'geometry', 'formatted_address', 'name'],
+      };
+
+      service.textSearch(request, (results: any, status: any) => {
+        setIsSearching(false);
+        if (status === window.google.maps.places.PlacesServiceStatus.OK && results && results[0]) {
+          const place = results[0];
+          const lat = place.geometry.location.lat();
+          const lng = place.geometry.location.lng();
           
           setMarkerPosition({ lat, lng });
-          setSelectedLocation(place.place_name);
+          setSelectedLocation(place.formatted_address);
           
           if (map.current && marker.current) {
-            map.current.setCenter([lng, lat]);
-            marker.current.setLngLat([lng, lat]);
+            map.current.panTo({ lat, lng });
+            marker.current.setPosition({ lat, lng });
           }
           
           toast({
@@ -284,16 +261,15 @@ const MapLocationEnhanced = () => {
             variant: "destructive",
           });
         }
-      }
+      });
     } catch (error) {
+      setIsSearching(false);
       console.error('Search error:', error);
       toast({
         title: "Search failed",
         description: "Unable to search location. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsSearching(false);
     }
   };
 
@@ -415,13 +391,13 @@ const MapLocationEnhanced = () => {
 
           {/* Map Area */}
           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            {mapError || !webglSupported ? (
-              // Fallback UI when WebGL is not supported or map fails
+            {mapError ? (
+              // Fallback UI when map fails
               <div className="w-full h-96 flex flex-col items-center justify-center bg-gray-100 border-2 border-dashed border-gray-300">
                 <MapPin className="h-16 w-16 text-gray-400 mb-4" />
                 <h3 className="text-lg font-semibold text-gray-700 mb-2">Map Unavailable</h3>
                 <p className="text-sm text-gray-500 text-center max-w-sm mb-4">
-                  {mapError || 'Your browser does not support WebGL, which is required for the interactive map.'}
+                  {mapError}
                 </p>
                 <div className="text-xs text-gray-400 text-center">
                   <p>You can still search for locations and enter addresses manually above.</p>
