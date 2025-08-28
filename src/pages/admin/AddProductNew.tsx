@@ -19,7 +19,7 @@ import AdminLayout from "./components/AdminLayout";
 import MultipleImageUpload from "@/components/MultipleImageUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 interface Category {
   id: number;
@@ -34,7 +34,6 @@ interface SubCategory {
 
 const AddProductNew = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [mainImageIndex, setMainImageIndex] = useState(0);
@@ -104,7 +103,6 @@ const AddProductNew = () => {
   const handleSaveProduct = async (isDraft: boolean = false) => {
     setLoading(true);
     try {
-      // Validate required fields
       if (!productData.name || !productData.price || !productData.category_id) {
         throw new Error(
           "Please fill in all required fields (Name, Price, Category)"
@@ -129,7 +127,7 @@ const AddProductNew = () => {
         subcategory_id: productData.subcategory_id
           ? Number(productData.subcategory_id)
           : null,
-        image_url: selectedImages[mainImageIndex], // Main image
+        image_url: selectedImages[mainImageIndex],
         image_urls: selectedImages,
         weight: productData.weight || null,
         delivery_time: productData.delivery_time,
@@ -156,7 +154,6 @@ const AddProductNew = () => {
       toast({
         title: "Failed to Save Product",
         description: error.message,
-        variant: "destructive",
       });
     } finally {
       setLoading(false);
