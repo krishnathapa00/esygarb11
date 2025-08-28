@@ -58,7 +58,7 @@ const CategoryGrid = ({
           >
             <div
               className={`rounded-2xl p-4 text-center shadow-lg hover:shadow-2xl transition-all duration-300 aspect-square flex flex-col justify-center items-center min-h-[90px] md:min-h-[110px] ${
-                category.bgColor || solidColors[idx % solidColors.length]
+                solidColors[idx % solidColors.length]
               }`}
             >
               <div className="w-10 h-10 md:w-14 md:h-14 mx-auto mb-2 rounded-full overflow-hidden bg-white/30 backdrop-blur-md flex justify-center items-center">
