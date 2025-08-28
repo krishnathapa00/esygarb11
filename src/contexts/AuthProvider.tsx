@@ -49,16 +49,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Restore session on refresh
+    const fetchUserProfile = async (user: any) => {
+      if (!user) return null;
+      const { data: profile, error } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+      return {
+        id: user.id,
+        email: user.email!,
+        role: profile?.role || "user",
+        isVerified: user.user_metadata.isVerified ?? false,
+      };
+    };
+
     const initSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session?.user) {
-        setUser({
-          id: data.session.user.id,
-          email: data.session.user.email!,
-          role: (data.session.user.user_metadata.role as string) || "user",
-          isVerified: data.session.user.user_metadata.isVerified ?? false,
-        });
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session?.user) {
+        const userData = await fetchUserProfile(session.user);
+        setUser(userData);
       } else {
         setUser(null);
       }
@@ -67,19 +79,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     initSession();
 
-    // Listen to login/logout events
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        if (session?.user) {
-          setUser({
-            id: session.user.id,
-            email: session.user.email!,
-            role: (session.user.user_metadata.role as string) || "user",
-            isVerified: session.user.user_metadata.isVerified ?? false,
-          });
-        } else {
-          setUser(null);
-        }
+        
+        fetchUserProfile(session?.user)
+          .then((userData) => setUser(userData))
+          .catch(() => setUser(null));
       }
     );
 
