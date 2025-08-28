@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
+import GoogleMapsComponent from '@/components/GoogleMapsComponent';
 
 const MapLocation = () => {
   const navigate = useNavigate();
@@ -265,48 +266,15 @@ const MapLocation = () => {
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="space-y-6">
-          {/* Map Area */}
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div 
-              ref={mapRef}
-              onClick={handleMapClick}
-              className="relative w-full h-96 bg-gradient-to-br from-green-100 to-blue-100 cursor-crosshair"
-              style={{
-                backgroundImage: `
-                  linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px),
-                  linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px)
-                `,
-                backgroundSize: '20px 20px'
-              }}
-            >
-              {mapLoaded && (
-                <>
-                  {/* Map placeholder content */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center text-gray-500">
-                      <MapPin className="h-8 w-8 mx-auto mb-2" />
-                      <p className="text-sm">Click anywhere on the map to set location</p>
-                      <p className="text-xs">This is a demo map - click to place marker</p>
-                    </div>
-                  </div>
-                  
-                  {/* Location marker */}
-                  <div 
-                    className="absolute transform -translate-x-1/2 -translate-y-1/2 z-10"
-                    style={{
-                      left: '50%',
-                      top: '50%'
-                    }}
-                  >
-                    <div className="relative">
-                      <MapPin className="h-8 w-8 text-red-500 drop-shadow-lg" fill="currentColor" />
-                      <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-red-500 rounded-full opacity-50 animate-ping"></div>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
+          {/* Google Maps */}
+          <GoogleMapsComponent
+            onLocationSelect={(location) => {
+              setMarkerPosition({ lat: location.lat, lng: location.lng });
+              setSelectedLocation(location.address);
+            }}
+            initialLocation={markerPosition}
+            height="400px"
+          />
 
           {/* Search Location */}
           <div className="bg-white rounded-lg p-6 shadow-sm">

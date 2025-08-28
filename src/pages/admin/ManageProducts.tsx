@@ -15,6 +15,7 @@ type ProductRow = {
   id: number;
   name: string;
   price: number;
+  original_price: number | null;
   category_id: number | null;
   discount: number | null;
   offer: string | null;
@@ -39,6 +40,7 @@ const ManageProducts = () => {
   const [productData, setProductData] = useState({
     name: '',
     price: '',
+    original_price: '',
     category_id: '',
     discount: '',
     offer: '',
@@ -56,7 +58,7 @@ const ManageProducts = () => {
       const { data, error } = await supabase
         .from('products')
         .select(`
-          id, name, price, category_id, discount, offer, image_url, stock_quantity, weight, delivery_time, description, is_active,
+          id, name, price, original_price, category_id, discount, offer, image_url, stock_quantity, weight, delivery_time, description, is_active,
           categories:category_id ( name )
         `)
         .order('created_at', { ascending: false });
@@ -86,6 +88,7 @@ const ManageProducts = () => {
     setProductData({
       name: '',
       price: '',
+      original_price: '',
       category_id: '',
       discount: '',
       offer: '',
@@ -114,6 +117,7 @@ const ManageProducts = () => {
     const payload: any = {
       name: productData.name,
       price: Number(productData.price),
+      original_price: productData.original_price ? Number(productData.original_price) : null,
       category_id: productData.category_id ? Number(productData.category_id) : null,
       discount: productData.discount ? Number(productData.discount) : null,
       image_url: productData.image_url,
@@ -160,6 +164,7 @@ const ManageProducts = () => {
     setProductData({
       name: product.name,
       price: product.price.toString(),
+      original_price: product.original_price?.toString() || '',
       category_id: product.category_id?.toString() || '',
       discount: product.discount?.toString() || '',
       offer: product.offer || '',

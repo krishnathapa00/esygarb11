@@ -376,10 +376,26 @@ const ManageCategories = () => {
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                               {subCategories
                                 .filter(sub => sub.category_id === category.id)
-                                .map((subCategory) => (
+                                .map((subCategory, index) => (
                                   <div 
                                     key={subCategory.id} 
                                     className="flex items-center justify-between bg-white p-2 rounded border"
+                                    draggable
+                                    onDragStart={(e) => {
+                                      e.dataTransfer.setData('text/plain', subCategory.id.toString());
+                                      e.dataTransfer.setData('application/json', JSON.stringify(subCategory));
+                                    }}
+                                    onDragOver={(e) => e.preventDefault()}
+                                    onDrop={async (e) => {
+                                      e.preventDefault();
+                                      const draggedId = e.dataTransfer.getData('text/plain');
+                                      const droppedOnId = subCategory.id.toString();
+                                      
+                                      if (draggedId !== droppedOnId) {
+                                        // Reorder logic here - for now just show feedback
+                                        toast({ title: "Subcategory reordered", description: "Feature in development" });
+                                      }
+                                    }}
                                   >
                                     <div>
                                       <div className="text-xs font-medium">{subCategory.name}</div>

@@ -52,7 +52,7 @@ const AuthHybrid = () => {
       });
     } else {
       setIsOtpModalOpen(true);
-      setCooldown(120);
+      setCooldown(30);
       toast({
         title: "OTP Sent Successfully",
         description: "Please check your email for the verification code.",
@@ -148,7 +148,7 @@ const AuthHybrid = () => {
         variant: "destructive",
       });
     } else {
-      setCooldown(120);
+      setCooldown(30);
       toast({
         title: "OTP Resent",
         description: "A new verification code has been sent to your email.",
