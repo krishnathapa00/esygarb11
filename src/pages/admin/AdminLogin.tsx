@@ -20,7 +20,7 @@ const AdminLogin = () => {
     e.preventDefault();
     setLoading(true);
 
-    console.log('AdminLogin: Starting login for email:', email);
+    console.log("AdminLogin: Starting login for email:", email);
 
     const { data, error } = await signInWithPassword(email, password);
 
@@ -35,17 +35,17 @@ const AdminLogin = () => {
     }
 
     if (data?.user) {
-      console.log('AdminLogin: Login successful, checking user role...');
+      console.log("AdminLogin: Login successful, checking user role...");
       setLoading(false);
-      
+
       toast({
         title: "Login successful!",
         description: "Welcome to the admin panel.",
       });
-      
+
       // Let the auth context handle role-based navigation
       // The AuthGuard will redirect to appropriate dashboard
-      navigate('/admin/dashboard');
+      navigate("/admin/dashboard");
     } else {
       setLoading(false);
       toast({
@@ -152,8 +152,10 @@ const AdminLogin = () => {
 
         <div className="mt-8 text-center text-gray-500 text-sm">
           <p>
-            Use your admin email and password.<br />
-            If you haven't signed up, register via the customer or hybrid signup flow first.
+            Use your admin email and password.
+            <br />
+            If you haven't signed up, register via the customer or hybrid signup
+            flow first.
           </p>
         </div>
       </div>
