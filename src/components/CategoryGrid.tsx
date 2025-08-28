@@ -2,15 +2,37 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useCategories } from "@/hooks/useCategories";
 
-const CategoryGrid = ({ onCategorySelect }: { onCategorySelect: (categoryId: number) => void }) => {
+const CategoryGrid = ({
+  onCategorySelect,
+}: {
+  onCategorySelect: (categoryId: number) => void;
+}) => {
   const { data: categories = [] } = useCategories();
 
   // Reorder categories to put "Fruits & Vegetables" first
   const orderedCategories = [...categories].sort((a, b) => {
-    if (a.name.toLowerCase().includes('fruits') || a.name.toLowerCase().includes('vegetables')) return -1;
-    if (b.name.toLowerCase().includes('fruits') || b.name.toLowerCase().includes('vegetables')) return 1;
+    if (
+      a.name.toLowerCase().includes("fruits") ||
+      a.name.toLowerCase().includes("vegetables")
+    )
+      return -1;
+    if (
+      b.name.toLowerCase().includes("fruits") ||
+      b.name.toLowerCase().includes("vegetables")
+    )
+      return 1;
     return 0;
   });
+
+  // Solid colors for categories, high contrast for white text
+  const solidColors = [
+    "bg-green-600", // green
+    "bg-yellow-500", // yellow
+    "bg-pink-500", // pink
+    "bg-purple-600", // purple
+    "bg-blue-600", // blue
+    "bg-red-600", // red
+  ];
 
   return (
     <div className="py-6">
@@ -23,25 +45,30 @@ const CategoryGrid = ({ onCategorySelect }: { onCategorySelect: (categoryId: num
           View All
         </Link>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
-        {orderedCategories.slice(0, 6).map((category) => (
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        {orderedCategories.slice(0, 6).map((category, idx) => (
           <Link
             key={category.id}
-            to={`/subcategories/${category.name.toLowerCase().replace(/\s+/g, '-')}`}
+            to={`/subcategories/${category.name
+              .toLowerCase()
+              .replace(/\s+/g, "-")}`}
             onClick={() => onCategorySelect(category.id)}
             className="group cursor-pointer transform transition-all duration-300 hover:scale-105"
           >
             <div
-              className={`bg-gradient-to-br ${category.gradient} rounded-xl p-2 md:p-4 text-center shadow-md hover:shadow-lg transition-all duration-300 aspect-square flex flex-col justify-center items-center min-h-[70px] md:min-h-[100px]`}
+              className={`rounded-2xl p-4 text-center shadow-lg hover:shadow-2xl transition-all duration-300 aspect-square flex flex-col justify-center items-center min-h-[90px] md:min-h-[110px] ${
+                category.bgColor || solidColors[idx % solidColors.length]
+              }`}
             >
-              <div className="w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 mx-auto mb-1 md:mb-2 rounded-full overflow-hidden bg-white/20 backdrop-blur-sm">
+              <div className="w-10 h-10 md:w-14 md:h-14 mx-auto mb-2 rounded-full overflow-hidden bg-white/30 backdrop-blur-md flex justify-center items-center">
                 <img
                   src={category.image}
                   alt={category.name}
                   className="w-full h-full object-cover"
                 />
               </div>
-              <h3 className="text-white font-medium text-xs md:text-sm leading-tight text-center">
+              <h3 className="text-white font-semibold text-sm md:text-base leading-tight text-center drop-shadow-md">
                 {category.name}
               </h3>
             </div>
