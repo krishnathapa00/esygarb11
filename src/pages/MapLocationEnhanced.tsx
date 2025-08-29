@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Crosshair, Loader2, Search } from "lucide-react";
+import { ArrowLeft, Crosshair, Loader2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,7 +8,9 @@ import { toast } from "@/hooks/use-toast";
 
 const GOOGLE_MAPS_API_KEY = "AIzaSyADxM5y7WrXu3BRJ_hJQZhh6FLXWyO3E1g";
 
-// Declare global google types
+const OFFICE_COORDS = { lat: 27.687441, lng: 85.340829 };
+const MAX_DISTANCE_KM = 2;
+
 declare global {
   interface Window {
     google: any;
@@ -27,53 +29,65 @@ const MapLocationEnhanced = () => {
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isDetecting, setIsDetecting] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const [markerPosition, setMarkerPosition] = useState({
-    lat: 27.7172,
-    lng: 85.324,
-  });
-  const [mapLoaded, setMapLoaded] = useState(false);
+  const [markerPosition, setMarkerPosition] = useState(OFFICE_COORDS);
   const [mapError, setMapError] = useState<string | null>(null);
+  const [isWithinRange, setIsWithinRange] = useState(true); // new state
 
-  const handleAutoDetect = () => {
-    if (!navigator.geolocation) {
+  // ------------------- Distance & Range -------------------
+  const getDistanceFromOffice = (lat: number, lng: number) => {
+    const toRad = (x: number) => (x * Math.PI) / 180;
+    const R = 6371;
+    const dLat = toRad(lat - OFFICE_COORDS.lat);
+    const dLon = toRad(lng - OFFICE_COORDS.lng);
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRad(OFFICE_COORDS.lat)) *
+        Math.cos(toRad(lat)) *
+        Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  };
+
+  const checkDeliveryRange = (lat: number, lng: number) => {
+    const distance = getDistanceFromOffice(lat, lng);
+    const inRange = distance <= MAX_DISTANCE_KM;
+    setIsWithinRange(inRange); // update UI state
+    if (!inRange) {
       toast({
-        title: "GPS Not Available",
-        description: "Your browser does not support geolocation.",
+        title: "Out of Delivery Range",
+        description: `This location is more than ${MAX_DISTANCE_KM} km from our office.`,
         variant: "destructive",
       });
-      return;
     }
+    return inRange;
+  };
 
-    setIsDetecting(true);
+  // ------------------- Marker Utility -------------------
+  const updateMarker = (lat: number, lng: number) => {
+    setMarkerPosition({ lat, lng });
+    marker.current?.setPosition({ lat, lng });
+    map.current?.panTo({ lat, lng });
+  };
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude: lat, longitude: lng } = position.coords;
-
-        setMarkerPosition({ lat, lng });
-        map.current?.panTo({ lat, lng });
-
-        if (marker.current) {
-          if (marker.current.setPosition)
-            marker.current.setPosition({ lat, lng });
-          else marker.current.position = { lat, lng }; // AdvancedMarkerElement
+  const reverseGeocode = (lat: number, lng: number) => {
+    if (!window.google) return;
+    const geocoder = new window.google.maps.Geocoder();
+    geocoder.geocode(
+      { location: { lat, lng } },
+      (results: any, status: any) => {
+        if (status === "OK" && results && results[0]) {
+          setSelectedLocation(results[0].formatted_address);
+        } else {
+          setSelectedLocation(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
         }
-
-        reverseGeocode(lat, lng);
-
-        setIsDetecting(false);
-      },
-      (error) => {
-        console.error("Geolocation error:", error);
-        toast({
-          title: "GPS Error",
-          description: "Unable to detect location. Please try again.",
-          variant: "destructive",
-        });
-        setIsDetecting(false);
-      },
-      { enableHighAccuracy: true }
+      }
     );
+  };
+
+  const placeMarkerAt = (lat: number, lng: number, address?: string) => {
+    checkDeliveryRange(lat, lng);
+    updateMarker(lat, lng);
+    if (address) setSelectedLocation(address);
+    else reverseGeocode(lat, lng);
   };
 
   // ------------------- Load Map -------------------
@@ -90,96 +104,78 @@ const MapLocationEnhanced = () => {
       script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places,marker&callback=initGoogleMaps`;
       script.async = true;
       script.defer = true;
-
-      window.initGoogleMaps = () => {
-        initMap();
-      };
-
+      window.initGoogleMaps = () => initMap();
       document.head.appendChild(script);
     };
 
     const initMap = () => {
       if (!mapContainer.current || !window.google) return;
 
-      try {
-        const mapInstance = new window.google.maps.Map(mapContainer.current, {
-          zoom: 15,
-          center: markerPosition,
-          mapTypeControl: true,
-          fullscreenControl: true,
-          streetViewControl: true,
-        });
+      const mapInstance = new window.google.maps.Map(mapContainer.current, {
+        zoom: 15,
+        center: OFFICE_COORDS,
+        mapTypeControl: true,
+      });
 
-        // ---------- Custom Green Pin ----------
-        let markerInstance;
-        if (window.google.maps.marker?.AdvancedMarkerElement) {
-          const pinElement = document.createElement("div");
-          pinElement.style.width = "32px";
-          pinElement.style.height = "32px";
-          pinElement.style.background = "#10b981";
-          pinElement.style.borderRadius = "50% 50% 50% 0";
-          pinElement.style.transform = "rotate(-45deg)";
-          pinElement.style.position = "relative";
-          pinElement.style.top = "-16px";
-          pinElement.style.left = "-16px";
-          pinElement.style.boxShadow = "0 2px 6px rgba(0,0,0,0.3)";
+      marker.current = new window.google.maps.Marker({
+        position: OFFICE_COORDS,
+        map: mapInstance,
+        draggable: true,
+        title: "Your Location",
+        animation: window.google.maps.Animation.DROP,
+      });
 
-          const innerCircle = document.createElement("div");
-          innerCircle.style.width = "14px";
-          innerCircle.style.height = "14px";
-          innerCircle.style.background = "white";
-          innerCircle.style.borderRadius = "50%";
-          innerCircle.style.position = "absolute";
-          innerCircle.style.top = "9px";
-          innerCircle.style.left = "9px";
+      marker.current.addListener("dragend", (e: any) => {
+        const lat = e.latLng.lat();
+        const lng = e.latLng.lng();
+        placeMarkerAt(lat, lng);
+      });
 
-          pinElement.appendChild(innerCircle);
+      mapInstance.addListener("click", (e: any) => {
+        const lat = e.latLng.lat();
+        const lng = e.latLng.lng();
+        placeMarkerAt(lat, lng);
+      });
 
-          markerInstance = new window.google.maps.marker.AdvancedMarkerElement({
-            position: markerPosition,
-            map: mapInstance,
-            gmpDraggable: true,
-            content: pinElement,
-          });
-
-          markerInstance.addListener("dragend", (e: any) => {
-            const lat = e.latLng.lat();
-            const lng = e.latLng.lng();
-            setMarkerPosition({ lat, lng });
-            reverseGeocode(lat, lng);
-          });
-        } else {
-          // Fallback to default red marker
-          markerInstance = new window.google.maps.Marker({
-            position: markerPosition,
-            map: mapInstance,
-            draggable: true,
-          });
-
-          markerInstance.addListener("dragend", (e: any) => {
-            const lat = e.latLng.lat();
-            const lng = e.latLng.lng();
-            setMarkerPosition({ lat, lng });
-            reverseGeocode(lat, lng);
-          });
-        }
-
-        map.current = mapInstance;
-        marker.current = markerInstance;
-        setMapLoaded(true);
-        setMapError(null);
-
-        reverseGeocode(markerPosition.lat, markerPosition.lng);
-      } catch (error) {
-        console.error("Map initialization error:", error);
-        setMapError(`Failed to initialize the map: ${error}`);
-      }
+      map.current = mapInstance;
+      placeMarkerAt(OFFICE_COORDS.lat, OFFICE_COORDS.lng);
     };
 
     loadGoogleMaps();
   }, []);
 
-  // ------------------- Suggestions -------------------
+  // ------------------- Auto Detect -------------------
+  const handleAutoDetect = () => {
+    if (!navigator.geolocation) {
+      toast({
+        title: "GPS Not Available",
+        description: "Your browser does not support geolocation.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsDetecting(true);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude: lat, longitude: lng } = position.coords;
+        placeMarkerAt(lat, lng);
+        setIsDetecting(false);
+      },
+      () => {
+        toast({
+          title: "GPS Error",
+          description: "Unable to detect location.",
+          variant: "destructive",
+        });
+        setIsDetecting(false);
+      },
+      { enableHighAccuracy: true }
+    );
+  };
+
+  // ------------------- Search Suggestions -------------------
   useEffect(() => {
     if (!searchQuery.trim() || !window.google) {
       setSuggestions([]);
@@ -202,7 +198,6 @@ const MapLocationEnhanced = () => {
     );
   }, [searchQuery]);
 
-  // ------------------- Handle Suggestion Click -------------------
   const handleSuggestionClick = (placeId: string, description: string) => {
     if (!window.google || !map.current) return;
 
@@ -214,17 +209,7 @@ const MapLocationEnhanced = () => {
       ) {
         const lat = place.geometry.location.lat();
         const lng = place.geometry.location.lng();
-
-        setMarkerPosition({ lat, lng });
-        setSelectedLocation(description);
-
-        map.current.panTo({ lat, lng });
-
-        if (marker.current) {
-          if (marker.current.setPosition)
-            marker.current.setPosition({ lat, lng });
-          else marker.current.position = { lat, lng }; // AdvancedMarkerElement
-        }
+        placeMarkerAt(lat, lng, description);
       }
     });
 
@@ -232,21 +217,26 @@ const MapLocationEnhanced = () => {
     setSearchQuery(description);
   };
 
-  // ------------------- Reverse Geocode -------------------
-  const reverseGeocode = async (lat: number, lng: number) => {
-    if (!window.google) return;
+  const handleSearchLocation = (address: string) => {
+    if (!address.trim() || !window.google || !map.current) return;
+
+    setIsSearching(true);
 
     const geocoder = new window.google.maps.Geocoder();
-    geocoder.geocode(
-      { location: { lat, lng } },
-      (results: any, status: any) => {
-        if (status === "OK" && results && results[0]) {
-          setSelectedLocation(results[0].formatted_address);
-        } else {
-          setSelectedLocation(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
-        }
+    geocoder.geocode({ address }, (results: any, status: any) => {
+      setIsSearching(false);
+      if (status === "OK" && results && results[0]) {
+        const lat = results[0].geometry.location.lat();
+        const lng = results[0].geometry.location.lng();
+        placeMarkerAt(lat, lng, results[0].formatted_address);
+      } else {
+        toast({
+          title: "Location not found",
+          description: "Please enter a valid address.",
+          variant: "destructive",
+        });
       }
-    );
+    });
   };
 
   // ------------------- Save Location -------------------
@@ -254,80 +244,30 @@ const MapLocationEnhanced = () => {
     if (!selectedLocation.trim()) {
       toast({
         title: "No location selected",
-        description: "Please search or pick a location before saving.",
+        description: "Please pick a location before saving.",
         variant: "destructive",
       });
       return;
     }
 
-    const savedData = {
-      address: selectedLocation,
-      coordinates: markerPosition,
-    };
+    if (!isWithinRange) return;
 
-    localStorage.setItem("esygrab_user_location", JSON.stringify(savedData));
+    localStorage.setItem(
+      "esygrab_user_location",
+      JSON.stringify({ address: selectedLocation, coordinates: markerPosition })
+    );
 
     toast({
       title: "Location saved",
-      description: `${savedData.address} has been saved successfully.`,
+      description: `${selectedLocation} has been saved successfully.`,
     });
-
-    console.log("Saved Location:", savedData);
 
     navigate(-1);
   };
 
-  // ------------------- Search Location -------------------
-  const handleSearchLocation = async () => {
-    if (!searchQuery.trim() || !window.google || !map.current) return;
-
-    setIsSearching(true);
-    const service = new window.google.maps.places.PlacesService(map.current);
-    service.textSearch(
-      {
-        query: searchQuery,
-        fields: ["place_id", "geometry", "formatted_address", "name"],
-      },
-      (results: any, status: any) => {
-        setIsSearching(false);
-        if (
-          status === window.google.maps.places.PlacesServiceStatus.OK &&
-          results &&
-          results[0]
-        ) {
-          const place = results[0];
-          const lat = place.geometry.location.lat();
-          const lng = place.geometry.location.lng();
-
-          setMarkerPosition({ lat, lng });
-          setSelectedLocation(place.formatted_address);
-
-          map.current.panTo({ lat, lng });
-          if (marker.current) {
-            if (marker.current.setPosition)
-              marker.current.setPosition({ lat, lng });
-            else marker.current.position = { lat, lng };
-          }
-
-          toast({
-            title: "Location found",
-            description: "Location has been updated on the map",
-          });
-        } else {
-          toast({
-            title: "Location not found",
-            description: "Please try a different search term",
-            variant: "destructive",
-          });
-        }
-      }
-    );
-  };
-
-  // ------------------- JSX -------------------
+  // ------------------- Render -------------------
   return (
     <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
-      {/* Header */}
       <div className="bg-white border-b shadow-sm">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -364,7 +304,7 @@ const MapLocationEnhanced = () => {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        {/* Search Location */}
+        {/* Search */}
         <div className="bg-white rounded-lg p-4 shadow-sm relative">
           <Label htmlFor="search">Search Location</Label>
           <div className="flex space-x-2 mt-1 relative">
@@ -374,11 +314,16 @@ const MapLocationEnhanced = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search for a place (e.g., New Baneshwor, Kathmandu)"
               className="flex-1"
-              onKeyPress={(e) => e.key === "Enter" && handleSearchLocation()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleSearchLocation(searchQuery);
+                }
+              }}
             />
             <Button
-              onClick={handleSearchLocation}
-              disabled={isSearching || !searchQuery.trim()}
+              onClick={() => handleSearchLocation(searchQuery)}
+              disabled={!searchQuery.trim() || isSearching}
               className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
             >
               {isSearching ? (
@@ -408,20 +353,11 @@ const MapLocationEnhanced = () => {
 
         {/* Map */}
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          {mapError ? (
-            <div className="w-full h-96 flex flex-col items-center justify-center bg-gray-100 border-2 border-dashed border-gray-300">
-              <MapPin className="h-16 w-16 text-gray-400 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                Map Unavailable
-              </h3>
-            </div>
-          ) : (
-            <div
-              ref={mapContainer}
-              className="w-full h-96"
-              style={{ minHeight: "400px" }}
-            />
-          )}
+          <div
+            ref={mapContainer}
+            className="w-full h-96"
+            style={{ minHeight: "400px" }}
+          />
         </div>
 
         {/* Selected Location */}
@@ -436,10 +372,16 @@ const MapLocationEnhanced = () => {
               className="mt-1"
             />
           </div>
+          {!isWithinRange && (
+            <p className="text-sm text-red-500">
+              This location is outside our 2 km delivery range. Please move the
+              marker closer to continue.
+            </p>
+          )}
           <div className="flex space-x-3">
             <Button
               onClick={handleSaveLocation}
-              disabled={!selectedLocation.trim()}
+              disabled={!selectedLocation.trim() || !isWithinRange}
               className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
             >
               Save Location
