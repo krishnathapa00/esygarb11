@@ -14,6 +14,7 @@ type ProductRow = {
   id: number;
   name: string;
   price: number;
+  original_price: number;
   category_id: number | null;
   subcategory_id: number | null;
   discount: number | null;
@@ -39,6 +40,7 @@ const ManageProducts = () => {
   const [productData, setProductData] = useState({
     name: "",
     price: "",
+    original_price: "",
     category_id: "",
     subcategory_id: "",
     discount: "",
@@ -62,7 +64,7 @@ const ManageProducts = () => {
         .from("products")
         .select(
           `
-          id, name, price, category_id, subcategory_id, discount, offer, image_url, stock_quantity, weight, delivery_time, description, is_active,
+          id, name, price, original_price, category_id, subcategory_id, discount, offer, image_url, stock_quantity, weight, delivery_time, description, is_active,
           categories:category_id ( name )
         `
         )
@@ -117,6 +119,7 @@ const ManageProducts = () => {
     setProductData({
       name: "",
       price: "",
+      original_price: "",
       category_id: "",
       subcategory_id: "",
       discount: "",
@@ -205,6 +208,7 @@ const ManageProducts = () => {
     setProductData({
       name: product.name,
       price: product.price.toString(),
+      original_price: product.original_price?.toString() || "",
       category_id: product.category_id?.toString() || "",
       subcategory_id: product.subcategory_id?.toString() || "",
       discount: product.discount?.toString() || "",
@@ -537,7 +541,22 @@ const ManageProducts = () => {
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Price (Rs) *
+                            Original Price (Rs) *
+                          </label>
+                          <Input
+                            name="price"
+                            type="number"
+                            placeholder="0"
+                            value={productData.original_price}
+                            onChange={handleChange}
+                            required
+                            min={0}
+                            step="0.01"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Selling Price (Rs) *
                           </label>
                           <Input
                             name="price"
@@ -550,6 +569,7 @@ const ManageProducts = () => {
                             step="0.01"
                           />
                         </div>
+
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             Discount (%)
