@@ -1,37 +1,45 @@
-import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { MapPin, Edit3 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuthContext } from '@/contexts/AuthProvider';
+import React, { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { MapPin, Edit3 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuthContext } from "@/contexts/AuthProvider";
 
 interface ProfileCompletionModalProps {
   isOpen: boolean;
   onClose: (updated: boolean) => void;
 }
 
-const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({ isOpen, onClose }) => {
+const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
+  isOpen,
+  onClose,
+}) => {
   const { user } = useAuthContext();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [isNewUser, setIsNewUser] = useState(true);
   const [hasChanges, setHasChanges] = useState(false);
-  
+
   const [formData, setFormData] = useState({
-    full_name: '',
-    phone: '',
-    email: user?.email || '',
-    address: ''
+    full_name: "",
+    phone: "",
+    email: user?.email || "",
+    address: "",
   });
 
   const [originalData, setOriginalData] = useState({
-    full_name: '',
-    phone: '',
-    email: user?.email || '',
-    address: ''
+    full_name: "",
+    phone: "",
+    email: user?.email || "",
+    address: "",
   });
 
   // Load existing profile data
@@ -41,39 +49,39 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({ isOpen,
 
       try {
         const { data: profile } = await supabase
-          .from('profiles')
-          .select('full_name, phone, address')
-          .eq('id', user.id)
+          .from("profiles")
+          .select("full_name, phone, address")
+          .eq("id", user.id)
           .single();
 
         // Get saved address from localStorage
-        const savedLocation = localStorage.getItem('esygrab_user_location');
-        let addressFromStorage = '';
+        const savedLocation = localStorage.getItem("esygrab_user_location");
+        let addressFromStorage = "";
         if (savedLocation) {
           try {
             const locationData = JSON.parse(savedLocation);
-            addressFromStorage = locationData.address || '';
+            addressFromStorage = locationData.address || "";
           } catch (e) {
-            console.error('Error parsing saved location:', e);
+            console.error("Error parsing saved location:", e);
           }
         }
 
         const profileData = {
-          full_name: profile?.full_name || '',
-          phone: profile?.phone || '',
-          email: user.email || '',
-          address: profile?.address || addressFromStorage
+          full_name: profile?.full_name || "",
+          phone: profile?.phone || "",
+          email: user.email || "",
+          address: profile?.address || addressFromStorage,
         };
 
         setFormData(profileData);
         setOriginalData(profileData);
-        
+
         // Determine if this is a new user
         const isNew = !profile?.full_name || !profile?.phone;
         setIsNewUser(isNew);
         setHasChanges(false);
       } catch (error) {
-        console.error('Error loading profile:', error);
+        console.error("Error loading profile:", error);
         setIsNewUser(true);
       }
     };
@@ -85,14 +93,16 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({ isOpen,
 
   // Check for changes
   useEffect(() => {
-    const changed = Object.keys(formData).some(key => 
-      formData[key as keyof typeof formData] !== originalData[key as keyof typeof originalData]
+    const changed = Object.keys(formData).some(
+      (key) =>
+        formData[key as keyof typeof formData] !==
+        originalData[key as keyof typeof originalData]
     );
     setHasChanges(changed);
   }, [formData, originalData]);
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async () => {
@@ -103,37 +113,35 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({ isOpen,
       toast({
         title: "Required fields missing",
         description: "Please fill in your full name and contact number",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          id: user.id,
-          full_name: formData.full_name.trim(),
-          phone: formData.phone.trim(),
-          address: formData.address.trim(),
-          updated_at: new Date().toISOString()
-        });
+      const { error } = await supabase.from("profiles").upsert({
+        id: user.id,
+        full_name: formData.full_name.trim(),
+        phone: formData.phone.trim(),
+        address: formData.address.trim(),
+        updated_at: new Date().toISOString(),
+      });
 
       if (error) throw error;
 
       toast({
         title: "Profile updated",
-        description: "Your profile has been saved successfully"
+        description: "Your profile has been saved successfully",
       });
 
       onClose(true);
     } catch (error: any) {
-      console.error('Error saving profile:', error);
+      console.error("Error saving profile:", error);
       toast({
         title: "Save failed",
         description: error.message || "Failed to save profile",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -154,8 +162,16 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({ isOpen,
   const showSaveButton = isNewUser || hasChanges;
 
   return (
-    <Dialog open={isOpen} onOpenChange={() => {}}>
-      <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose(false);
+      }}
+    >
+      <DialogContent
+        className="sm:max-w-md"
+        onPointerDownOutside={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold text-center">
             Complete Your Profile
@@ -168,7 +184,7 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({ isOpen,
             <Input
               id="full_name"
               value={formData.full_name}
-              onChange={(e) => handleInputChange('full_name', e.target.value)}
+              onChange={(e) => handleInputChange("full_name", e.target.value)}
               placeholder="Enter your full name"
               required={isNewUser}
             />
@@ -179,7 +195,7 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({ isOpen,
             <Input
               id="phone"
               value={formData.phone}
-              onChange={(e) => handleInputChange('phone', e.target.value)}
+              onChange={(e) => handleInputChange("phone", e.target.value)}
               placeholder="Enter your contact number"
               required={isNewUser}
             />
@@ -205,7 +221,7 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({ isOpen,
                 size="sm"
                 onClick={() => {
                   // Open location selector
-                  window.location.href = '/map-location';
+                  window.location.href = "/map-location";
                 }}
                 className="ml-auto text-xs"
               >
@@ -216,7 +232,7 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({ isOpen,
             <Input
               id="address"
               value={formData.address}
-              onChange={(e) => handleInputChange('address', e.target.value)}
+              onChange={(e) => handleInputChange("address", e.target.value)}
               placeholder="Enter your delivery address"
               className="min-h-[60px]"
             />
@@ -232,11 +248,15 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({ isOpen,
               Continue
             </Button>
           )}
-          
+
           {showSaveButton && (
             <Button
               onClick={handleSubmit}
-              disabled={loading || (isNewUser && (!formData.full_name.trim() || !formData.phone.trim()))}
+              disabled={
+                loading ||
+                (isNewUser &&
+                  (!formData.full_name.trim() || !formData.phone.trim()))
+              }
               className="flex-1 bg-primary hover:bg-primary/90"
             >
               {getButtonText()}
