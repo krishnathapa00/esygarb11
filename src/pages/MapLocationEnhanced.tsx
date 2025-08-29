@@ -265,7 +265,7 @@ const MapLocationEnhanced = () => {
       coordinates: markerPosition,
     };
 
-    localStorage.setItem("userLocation", JSON.stringify(savedData));
+    localStorage.setItem("esygrab_user_location", JSON.stringify(savedData));
 
     toast({
       title: "Location saved",
@@ -273,6 +273,8 @@ const MapLocationEnhanced = () => {
     });
 
     console.log("Saved Location:", savedData);
+
+    navigate(-1);
   };
 
   // ------------------- Search Location -------------------
