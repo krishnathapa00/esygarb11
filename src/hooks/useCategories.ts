@@ -1,34 +1,50 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export interface Category {
+export interface Subcategory {
   id: number;
   name: string;
-  image: string;
-  gradient: string;
-  productCount: number;
+  category_id: number;
+  description?: string;
 }
 
-export const useCategories = () => {
+export const fetchSubcategories = async (categoryId?: number) => {
+  let query = supabase
+    .from("subcategories")
+    .select("*")
+    .eq("is_active", true)
+    .order("name");
+
+  if (categoryId) {
+    query = query.eq("category_id", categoryId);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+
+  return data as Subcategory[];
+};
+
+export const useSubcategories = (categoryId?: number) => {
   return useQuery({
-    queryKey: ["categories"],
+    queryKey: ["subcategories", categoryId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("categories")
+      let query = supabase
+        .from("subcategories")
         .select("*")
+        .eq("is_active", true)
         .order("name");
+
+      if (categoryId) {
+        query = query.eq("category_id", categoryId);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
-      return data.map((category) => ({
-        id: category.id,
-        name: category.name,
-        image:
-          category.image_url ||
-          "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=400&fit=crop",
-        gradient: category.color_gradient || "from-gray-400 to-gray-500",
-        productCount: category.product_count || 0,
-      })) as Category[];
+      return data as Subcategory[];
     },
+    enabled: categoryId !== undefined,
   });
 };
