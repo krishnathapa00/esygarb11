@@ -2,8 +2,16 @@ import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuthContext } from "@/contexts/AuthProvider";
-import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
+
+import Header from "@/components/Header";
+import InputField from "@/components/InputField";
+import TextAreaField from "@/components/TextAreaField";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+
 import {
   User,
   History,
@@ -12,20 +20,12 @@ import {
   LogOut,
   ArrowLeft,
   ArrowRight,
-  Phone,
-  Shield,
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import Header from "@/components/Header";
 import {
   fetchUserProfile,
   updateUserProfile,
   ProfileFormValues,
 } from "@/services/profileService";
-import InputField from "@/components/InputField";
-import TextAreaField from "@/components/TextAreaField";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { supabase } from "@/integrations/supabase/client";
 
 const UserProfile: React.FC = () => {
   const navigate = useNavigate();
@@ -35,28 +35,22 @@ const UserProfile: React.FC = () => {
 
   const [profile, setProfile] = useState<ProfileFormValues | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
 
   const { register, handleSubmit, reset, watch, setValue } =
     useForm<ProfileFormValues>({
-      defaultValues: {
-        full_name: "",
-        phone: "",
-        address: "",
-        avatar_url: "",
-      },
+      defaultValues: { full_name: "", phone: "", address: "", avatar_url: "" },
       mode: "onBlur",
     });
 
-  // Fetch profile data
+  const avatarUrl = watch("avatar_url");
+
+  // Fetch profile
   useEffect(() => {
     if (!user) return;
     setLoadingProfile(true);
-    setError(null);
-
     fetchUserProfile()
       .then((data) => {
         setProfile(data);
@@ -69,21 +63,17 @@ const UserProfile: React.FC = () => {
 
   // Redirect if not authenticated
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      navigate("/auth");
-    }
+    if (!loading && !isAuthenticated) navigate("/auth");
   }, [loading, isAuthenticated, navigate]);
 
-  const avatarUrl = watch("avatar_url");
-
+  // ------------------- Handlers -------------------
   const handleImageUpload = async (file: File) => {
     if (!file.type.startsWith("image/") || file.size > 5 * 1024 * 1024) {
-      toast({
+      return toast({
         title: "Invalid file",
         description: "Select an image less than 5MB",
         variant: "destructive",
       });
-      return;
     }
     const fileExt = file.name.split(".").pop();
     const fileName = `${Date.now()}_${Math.random()
@@ -105,8 +95,7 @@ const UserProfile: React.FC = () => {
     await supabase
       .from("profiles")
       .update({ avatar_url: newAvatarUrl })
-      .eq("id", user.id);
-
+      .eq("id", user?.id);
     toast({
       title: "Avatar updated",
       description: "Profile picture updated successfully",
@@ -133,16 +122,14 @@ const UserProfile: React.FC = () => {
   const onSubmit = async (data: ProfileFormValues) => {
     setUpdating(true);
     setUpdateError(null);
-
     try {
-      const profileData: ProfileFormValues = {
+      const updatedProfile = await updateUserProfile({
         full_name: data.full_name || "",
         phone: data.phone || "",
         address: data.address || "",
         location: data.location || "",
         avatar_url: data.avatar_url || "",
-      };
-      const updatedProfile = await updateUserProfile(profileData);
+      });
       setProfile(updatedProfile);
       reset(updatedProfile);
       setIsEditing(false);
@@ -162,29 +149,30 @@ const UserProfile: React.FC = () => {
     }
   };
 
-  // Mobile Layout
-  if (isMobile) {
-    const quickActions = [
-      {
-        icon: History,
-        label: "Order History",
-        href: "/order-history",
-        description: "View past orders",
-      },
-      {
-        icon: Package,
-        label: "Track Orders",
-        href: "/order-tracking-lookup",
-        description: "Track current orders",
-      },
-      {
-        icon: HelpCircle,
-        label: "Support",
-        href: "/help-center",
-        description: "Get support",
-      },
-    ];
+  // ------------------- Quick Actions -------------------
+  const quickActions = [
+    {
+      icon: History,
+      label: "Order History",
+      href: "/order-history",
+      description: "View past orders",
+    },
+    {
+      icon: Package,
+      label: "Track Orders",
+      href: "/order-tracking-lookup",
+      description: "Track current orders",
+    },
+    {
+      icon: HelpCircle,
+      label: "Support",
+      href: "/help-center",
+      description: "Get support",
+    },
+  ];
 
+  // ------------------- Mobile Layout -------------------
+  if (isMobile) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -223,7 +211,6 @@ const UserProfile: React.FC = () => {
             </CardHeader>
           </Card>
 
-          {/* Quick Actions */}
           <div className="space-y-3">
             <h3 className="text-lg font-semibold text-foreground mb-3">
               Quick Actions
@@ -252,7 +239,6 @@ const UserProfile: React.FC = () => {
             ))}
           </div>
 
-          {/* Logout */}
           <Card className="border-border">
             <CardContent className="p-4">
               <Button
@@ -269,7 +255,7 @@ const UserProfile: React.FC = () => {
     );
   }
 
-  // Desktop Layout
+  // ------------------- Desktop Layout -------------------
   if (loadingProfile)
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -421,7 +407,38 @@ const UserProfile: React.FC = () => {
               </Card>
             )}
 
-            {/* Logout Button */}
+            {/* Quick Actions */}
+            <div className="space-y-3 mt-6">
+              <h3 className="text-lg font-semibold text-foreground mb-3">
+                Quick Actions
+              </h3>
+              <div className="grid md:grid-cols-3 gap-4">
+                {quickActions.map((action, i) => (
+                  <Link key={i} to={action.href}>
+                    <Card className="border-border hover:bg-accent/50 transition-colors">
+                      <CardContent className="p-4 flex justify-between items-center">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                            <action.icon className="h-5 w-5 text-primary" />
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-foreground">
+                              {action.label}
+                            </h4>
+                            <p className="text-sm text-muted-foreground">
+                              {action.description}
+                            </p>
+                          </div>
+                        </div>
+                        <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Logout */}
             <Card className="bg-red-50 border-red-200 shadow-xl mt-6">
               <CardContent className="p-6 text-center">
                 <Button
