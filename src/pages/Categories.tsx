@@ -20,7 +20,7 @@ const AllCategories = () => {
   const { data: categories = [], isLoading } = useQuery<Category[]>({
     queryKey: ["categories"],
     queryFn: async () => {
-      // Fetch all categories
+      // 1️⃣ Fetch all categories
       const { data: cats, error: catError } = await supabase
         .from("categories")
         .select("*")
@@ -28,7 +28,7 @@ const AllCategories = () => {
 
       if (catError) throw catError;
 
-      // Fetch product counts grouped by category_id
+      // 2️⃣ Fetch product counts grouped by category_id
       const { data: counts, error: countError } = await supabase
         .from("products")
         .select("category_id", { count: "exact", head: false })
