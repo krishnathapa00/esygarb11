@@ -1,9 +1,10 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Header from "../components/Header";
 import { ArrowLeft, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocation, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client"; // if using supabase to update status
 
 const OrderConfirmation = () => {
   const location = useLocation();
@@ -14,12 +15,45 @@ const OrderConfirmation = () => {
   );
   const orderData = location.state || fallbackOrder;
 
+  const [canCancel, setCanCancel] = useState(false);
+
   useEffect(() => {
     if (!orderData) {
-      // Redirect back if no data (e.g., user opened page directly)
       navigate("/");
+      return;
     }
+
+    const checkCancel = () => {
+      const orderTime = new Date(orderData.createdAt).getTime();
+      const now = Date.now();
+      const diffMs = now - orderTime;
+      setCanCancel(diffMs <= 2 * 60 * 1000); // 2 minutes
+    };
+
+    checkCancel();
+    const interval = setInterval(checkCancel, 1000);
+
+    return () => clearInterval(interval);
   }, [orderData, navigate]);
+
+  const handleCancelOrder = async () => {
+    if (confirm("Are you sure you want to cancel this order?")) {
+      try {
+        const { error } = await supabase
+          .from("orders")
+          .update({ status: "cancelled" })
+          .eq("order_number", orderData.orderId);
+
+        if (error) throw error;
+
+        alert("Order cancelled successfully.");
+        setCanCancel(false);
+      } catch (error) {
+        console.error("Error cancelling order:", error);
+        alert("Failed to cancel order. Please try again.");
+      }
+    }
+  };
 
   if (!orderData) return null;
 
@@ -62,18 +96,22 @@ const OrderConfirmation = () => {
 
           <div className="space-y-6 text-left">
             <div className="border-b pb-4">
-              <h3 className="font-semibold mb-2">Order Summary</h3>
+              <h3 className="font-semibold mb-2">Order Summary:</h3>
               {orderData.items && Array.isArray(orderData.items) ? (
                 <div className="space-y-2">
                   {orderData.items.map((item: any, index: number) => (
                     <div key={index} className="flex justify-between text-sm">
-                      <span>{item.name} x {item.quantity}</span>
+                      <span>
+                        {item.name} x {item.quantity}
+                      </span>
                       <span>Rs {item.price * item.quantity}</span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-600">Items: {orderData.totalItems || 0}</p>
+                <p className="text-gray-600">
+                  Items: {orderData.totalItems || 0}
+                </p>
               )}
               <div className="mt-2 pt-2 border-t">
                 <div className="flex justify-between font-semibold">
@@ -94,14 +132,35 @@ const OrderConfirmation = () => {
             </div>
           </div>
 
-          <div className="mt-8 space-x-4">
+          <div className="mt-8 space-y-4">
+            {/* Cancellation Notice */}
+            {canCancel && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-yellow-800 text-center text-sm">
+                ⚠️ Cancellation is allowed within 1-2 minutes of placing the
+                order.
+              </div>
+            )}
+
+            {/* Cancel Button */}
+            {canCancel && (
+              <Button
+                variant="destructive"
+                className="w-full sm:w-auto"
+                onClick={handleCancelOrder}
+              >
+                Cancel Order
+              </Button>
+            )}
+
             <Link to={`/order-tracking/${orderData.orderId}`}>
-              <Button className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700">
+              <Button className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 w-full sm:w-auto">
                 Track Order
               </Button>
             </Link>
             <Link to="/">
-              <Button variant="outline">Continue Shopping</Button>
+              <Button variant="outline" className="w-full sm:w-auto">
+                Continue Shopping
+              </Button>
             </Link>
           </div>
         </div>
