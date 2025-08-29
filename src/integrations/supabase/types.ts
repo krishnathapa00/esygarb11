@@ -105,6 +105,7 @@ export type Database = {
           image_url: string | null
           name: string
           product_count: number | null
+          slug: string | null;
         }
         Insert: {
           color_gradient?: string | null
