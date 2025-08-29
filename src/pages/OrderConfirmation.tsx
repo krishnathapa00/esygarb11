@@ -4,7 +4,7 @@ import Header from "../components/Header";
 import { ArrowLeft, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocation, useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client"; 
+import { supabase } from "@/integrations/supabase/client";
 
 const OrderConfirmation = () => {
   const location = useLocation();
@@ -16,6 +16,7 @@ const OrderConfirmation = () => {
   const orderData = location.state || fallbackOrder;
 
   const [canCancel, setCanCancel] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(120);
 
   useEffect(() => {
     if (!orderData) {
@@ -23,15 +24,21 @@ const OrderConfirmation = () => {
       return;
     }
 
-    const checkCancel = () => {
+    const interval = setInterval(() => {
+      if (!orderData.createdAt) {
+        setCanCancel(false);
+        setTimeLeft(0);
+        return;
+      }
+
       const orderTime = new Date(orderData.createdAt).getTime();
       const now = Date.now();
-      const diffMs = now - orderTime;
-      setCanCancel(diffMs <= 2 * 60 * 1000); // 2 minutes
-    };
+      const remainingMs = 2 * 60 * 1000 - (now - orderTime);
+      const remainingSec = Math.max(0, Math.floor(remainingMs / 1000));
 
-    checkCancel();
-    const interval = setInterval(checkCancel, 1000);
+      setTimeLeft(remainingSec);
+      setCanCancel(remainingSec > 0);
+    }, 1000);
 
     return () => clearInterval(interval);
   }, [orderData, navigate]);
@@ -135,21 +142,20 @@ const OrderConfirmation = () => {
           <div className="mt-8 space-y-4">
             {/* Cancellation Notice */}
             {canCancel && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-yellow-800 text-center text-sm">
-                ⚠️ Cancellation is allowed within 1-2 minutes of placing the
-                order.
+              <div className="mb-4 flex items-center justify-between bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-yellow-800 text-sm">
+                <span>
+                  ⚠️ Cancellation allowed for {Math.floor(timeLeft / 60)}:
+                  {timeLeft % 60 < 10 ? `0${timeLeft % 60}` : timeLeft % 60}{" "}
+                  more seconds.
+                </span>
+                <Button
+                  variant="destructive"
+                  className="ml-4"
+                  onClick={handleCancelOrder}
+                >
+                  Cancel Order
+                </Button>
               </div>
-            )}
-
-            {/* Cancel Button */}
-            {canCancel && (
-              <Button
-                variant="destructive"
-                className="w-full sm:w-auto"
-                onClick={handleCancelOrder}
-              >
-                Cancel Order
-              </Button>
             )}
 
             <Link to={`/order-tracking/${orderData.orderId}`}>
