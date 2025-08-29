@@ -4,7 +4,7 @@ import Header from "../components/Header";
 import { ArrowLeft, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocation, useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client"; // if using supabase to update status
+import { supabase } from "@/integrations/supabase/client"; 
 
 const OrderConfirmation = () => {
   const location = useLocation();
