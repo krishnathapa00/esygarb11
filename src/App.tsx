@@ -84,7 +84,7 @@ const AppContent = () => {
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/order-confirmation" element={<OrderConfirmation />} />
-        <Route path="/subcategories/:categoryId" element={<SubCategoriesPage />} />
+        <Route path="/subcategories/:slug" element={<SubCategoriesPage />} />
         <Route path="/order-tracking/:orderId" element={<OrderTrackingWithMap />} />
         <Route path="/order-tracking-lookup" element={<OrderTrackingLookup />} />
         <Route path="/order-history" element={<OrderHistory />} />
