@@ -68,17 +68,19 @@ const Index = () => {
   const productsByCategory = filteredProducts.reduce((acc, product) => {
     const categoryId = product.categoryId ?? -1;
     const categoryName = product.category || "Other";
+    const categorySlug = product.categorySlug || "unknown";
 
     if (!acc[categoryId]) {
       acc[categoryId] = {
         name: categoryName,
+        slug: categorySlug,
         products: [],
       };
     }
 
     acc[categoryId].products.push(product);
     return acc;
-  }, {} as Record<number, { name: string; products: Product[] }>);
+  }, {} as Record<number, { name: string; slug: string; products: Product[] }>);
 
   const categoryOrder = [
     "Fruits & Vegetables",
@@ -139,6 +141,7 @@ const Index = () => {
                   <ProductSection
                     key={categoryId}
                     title={categoryData.name}
+                    slug={categoryData.slug}
                     products={categoryData.products}
                     onAddToCart={handleAddToCart}
                     onUpdateQuantity={handleUpdateQuantity}
