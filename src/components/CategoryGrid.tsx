@@ -1,6 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { useCategories } from "@/hooks/useCategories";
+import { fetchSubcategories } from "@/hooks/useSubcategories";
+import { useQueryClient } from "@tanstack/react-query";
 
 const CategoryGrid = ({
   onCategorySelect,
@@ -8,6 +10,15 @@ const CategoryGrid = ({
   onCategorySelect: (categoryId: number) => void;
 }) => {
   const { data: categories = [] } = useCategories();
+
+  const queryClient = useQueryClient();
+
+  const prefetchSubcategories = (categoryId: number) => {
+    queryClient.prefetchQuery({
+      queryKey: ["subcategories", categoryId],
+      queryFn: () => fetchSubcategories(categoryId),
+    });
+  };
 
   // Reorder categories to put "Fruits & Vegetables" first
   const orderedCategories = [...categories].sort((a, b) => {
@@ -50,10 +61,9 @@ const CategoryGrid = ({
         {orderedCategories.slice(0, 6).map((category, idx) => (
           <Link
             key={category.id}
-            to={`/subcategories/${category.name
-              .toLowerCase()
-              .replace(/\s+/g, "-")}`}
+            to={`/subcategories/${category.slug}`}
             onClick={() => onCategorySelect(category.id)}
+            onMouseEnter={() => prefetchSubcategories(category.id)}
             className="group cursor-pointer transform transition-all duration-300 hover:scale-105"
           >
             <div
