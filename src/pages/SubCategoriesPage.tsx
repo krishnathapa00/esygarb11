@@ -1,13 +1,13 @@
-import React, { useState, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import Header from '@/components/Header';
-import { ArrowLeft, Search, Filter } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import ProductCard from '@/components/ProductCard';
-import { useCartActions } from '@/hooks/useCart';
+import React, { useState, useMemo } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import Header from "@/components/Header";
+import { ArrowLeft, Search, Filter } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import ProductCard from "@/components/ProductCard";
+import { useCartActions } from "@/hooks/useCart";
 
 interface Category {
   id: number;
@@ -35,61 +35,62 @@ interface Product {
 }
 
 const SubCategoriesPage = () => {
-  const { categoryId } = useParams();
+  const { slug } = useParams();
+
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSubCategory, setSelectedSubCategory] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedSubCategory, setSelectedSubCategory] = useState<number | null>(
+    null
+  );
 
-  const { handleAddToCart, handleUpdateQuantity, getCartQuantity } = useCartActions();
+  const { handleAddToCart, handleUpdateQuantity, getCartQuantity } =
+    useCartActions();
 
-  // Fetch category details
   const { data: category } = useQuery<Category>({
-    queryKey: ['category', categoryId],
+    queryKey: ["category", slug],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('id', parseInt(categoryId!))
+        .from("categories")
+        .select("*")
+        .eq("slug", slug)
         .single();
-
       if (error) throw error;
       return data;
     },
-    enabled: !!categoryId
+    enabled: !!slug,
   });
 
-  // Fetch subcategories for this category
   const { data: subCategories = [] } = useQuery<SubCategory[]>({
-    queryKey: ['subcategories', categoryId],
+    queryKey: ["subcategories", category?.id],
     queryFn: async () => {
+      if (!category) return [];
       const { data, error } = await supabase
-        .from('subcategories')
-        .select('*')
-        .eq('category_id', parseInt(categoryId!))
-        .eq('is_active', true)
-        .order('name');
-
+        .from("subcategories")
+        .select("*")
+        .eq("category_id", category.id)
+        .eq("is_active", true)
+        .order("name");
       if (error) throw error;
       return data || [];
     },
-    enabled: !!categoryId
+    enabled: !!category?.id,
   });
 
   // Fetch products for this category
   const { data: products = [], isLoading } = useQuery<Product[]>({
-    queryKey: ['products', categoryId],
+    queryKey: ["products", category?.id],
     queryFn: async () => {
+      if (!category) return [];
       const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('category_id', parseInt(categoryId!))
-        .eq('is_active', true)
-        .order('name');
-
+        .from("products")
+        .select("*")
+        .eq("category_id", category.id)
+        .eq("is_active", true)
+        .order("name");
       if (error) throw error;
       return data || [];
     },
-    enabled: !!categoryId
+    enabled: !!category?.id,
   });
 
   // Filter products based on search and subcategory
@@ -98,12 +99,14 @@ const SubCategoriesPage = () => {
 
     // Filter by subcategory if selected
     if (selectedSubCategory) {
-      filtered = filtered.filter(product => product.subcategory_id === selectedSubCategory);
+      filtered = filtered.filter(
+        (product) => product.subcategory_id === selectedSubCategory
+      );
     }
 
     // Filter by search query
     if (searchQuery.trim()) {
-      filtered = filtered.filter(product =>
+      filtered = filtered.filter((product) =>
         product.name.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
@@ -131,16 +134,25 @@ const SubCategoriesPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Header */}
         <div className="flex items-center mb-6">
-          <Button variant="ghost" size="sm" className="mr-3 p-2" onClick={() => navigate('/categories')}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mr-3 p-2"
+            onClick={() => navigate("/categories")}
+          >
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{category?.name}</h1>
-            <p className="text-gray-500 text-sm mt-1">{filteredProducts.length} products available</p>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {category?.name}
+            </h1>
+            <p className="text-gray-500 text-sm mt-1">
+              {filteredProducts.length} products available
+            </p>
           </div>
         </div>
 
@@ -173,8 +185,8 @@ const SubCategoriesPage = () => {
                   onClick={() => handleSubCategoryClick(null)}
                   className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
                     selectedSubCategory === null
-                      ? 'bg-green-50 text-green-700 font-medium'
-                      : 'text-gray-700 hover:bg-gray-50'
+                      ? "bg-green-50 text-green-700 font-medium"
+                      : "text-gray-700 hover:bg-gray-50"
                   }`}
                 >
                   All Products ({products.length})
@@ -182,15 +194,17 @@ const SubCategoriesPage = () => {
 
                 {/* SubCategory List */}
                 {subCategories.map((subCategory) => {
-                  const productCount = products.filter(p => p.subcategory_id === subCategory.id).length;
+                  const productCount = products.filter(
+                    (p) => p.subcategory_id === subCategory.id
+                  ).length;
                   return (
                     <button
                       key={subCategory.id}
                       onClick={() => handleSubCategoryClick(subCategory.id)}
                       className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
                         selectedSubCategory === subCategory.id
-                          ? 'bg-green-50 text-green-700 font-medium'
-                          : 'text-gray-700 hover:bg-gray-50'
+                          ? "bg-green-50 text-green-700 font-medium"
+                          : "text-gray-700 hover:bg-gray-50"
                       }`}
                     >
                       {subCategory.name} ({productCount})
@@ -213,14 +227,16 @@ const SubCategoriesPage = () => {
                       name: product.name,
                       price: product.price,
                       originalPrice: product.original_price,
-                      image: product.image_url || '/placeholder.svg',
-                      weight: product.weight || '',
+                      image: product.image_url || "/placeholder.svg",
+                      weight: product.weight || "",
                       discount: product.discount,
-                      deliveryTime: '10 min',
-                      category: category?.name || ''
+                      deliveryTime: "10 min",
+                      category: category?.name || "",
                     }}
                     onAddToCart={() => handleAddToCart(product)}
-                    onUpdateQuantity={(productId, quantity) => handleUpdateQuantity(productId, quantity)}
+                    onUpdateQuantity={(productId, quantity) =>
+                      handleUpdateQuantity(productId, quantity)
+                    }
                     cartQuantity={getCartQuantity(product.id)}
                   />
                 ))}
@@ -230,14 +246,18 @@ const SubCategoriesPage = () => {
                 <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Search className="h-10 w-10 text-gray-400" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  No products found
+                </h3>
                 <p className="text-gray-500">
-                  {searchQuery ? 'Try searching with different keywords' : 'No products available in this category'}
+                  {searchQuery
+                    ? "Try searching with different keywords"
+                    : "No products available in this category"}
                 </p>
                 {searchQuery && (
                   <Button
                     variant="outline"
-                    onClick={() => setSearchQuery('')}
+                    onClick={() => setSearchQuery("")}
                     className="mt-4"
                   >
                     Clear Search
@@ -248,7 +268,7 @@ const SubCategoriesPage = () => {
           </div>
         </div>
       </div>
-      
+
       <div className="h-20 md:hidden"></div>
     </div>
   );
