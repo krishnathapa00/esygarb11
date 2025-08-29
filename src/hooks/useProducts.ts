@@ -16,6 +16,7 @@ export interface Product {
   deliveryTime: string;
   category: string;
   categoryId: number;
+  categorySlug: string;
   stockQuantity?: number;
   isActive?: boolean;
 }
@@ -31,7 +32,8 @@ export const useProducts = () => {
           *,
           categories:category_id (
             id,
-            name
+            name,
+            slug
           )
         `
         )
@@ -52,7 +54,8 @@ export const useProducts = () => {
         weight: product.weight || "1 unit",
         deliveryTime: product.delivery_time || "10 mins",
         category: product.categories?.name || "Unknown",
-        categoryId: product.categories?.id ?? -1, // <- for sorting by category id
+        categoryId: product.categories?.id ?? -1,
+        categorySlug: product.categories?.slug || "Unknown",
         stockQuantity: product.stock_quantity,
         rating: 4.5,
         reviews: 50,
