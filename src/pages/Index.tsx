@@ -80,11 +80,28 @@ const Index = () => {
     return acc;
   }, {} as Record<number, { name: string; products: Product[] }>);
 
-  const sortedCategories = Object.entries(productsByCategory).sort(
-    ([idA], [idB]) => Number(idA) - Number(idB)
-  );
+  const categoryOrder = [
+    "Fruits & Vegetables",
+    "Snacks & Beverages",
+    // Add more custom priorities if needed
+  ];
 
-  // Remove the blocking loading state - show content with loading indicators instead
+  const sortedCategories = Object.entries(productsByCategory).sort(
+    ([, aData], [, bData]) => {
+      const aIndex = categoryOrder.indexOf(aData.name);
+      const bIndex = categoryOrder.indexOf(bData.name);
+
+      if (aIndex !== -1 && bIndex !== -1) {
+        return aIndex - bIndex;
+      } else if (aIndex !== -1) {
+        return -1;
+      } else if (bIndex !== -1) {
+        return 1;
+      } else {
+        return aData.name.localeCompare(bData.name);
+      }
+    }
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20 md:pb-0 relative overflow-x-hidden">
