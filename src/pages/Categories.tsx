@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import Header from '../components/Header';
-import { ArrowLeft, Clock, Package, Truck } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import Header from "../components/Header";
+import { ArrowLeft, Clock, Package, Truck } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Category {
   id: number;
   name: string;
+  slug: string;
   image_url?: string;
   color_gradient?: string;
   product_count?: number;
@@ -17,19 +18,44 @@ interface Category {
 const AllCategories = () => {
   // Fetch categories from database
   const { data: categories = [], isLoading } = useQuery<Category[]>({
-    queryKey: ['categories'],
+    queryKey: ["categories"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('created_at', { ascending: true });
+      // 1️⃣ Fetch all categories
+      const { data: cats, error: catError } = await supabase
+        .from("categories")
+        .select("*")
+        .order("created_at", { ascending: true });
 
-      if (error) throw error;
-      return data || [];
-    }
+      if (catError) throw catError;
+
+      // 2️⃣ Fetch product counts grouped by category_id
+      const { data: counts, error: countError } = await supabase
+        .from("products")
+        .select("category_id", { count: "exact", head: false })
+        .eq("is_active", true);
+
+      if (countError) throw countError;
+
+      // Aggregate counts per category
+      const countsMap: Record<number, number> = {};
+      counts?.forEach((p: any) => {
+        countsMap[p.category_id] = (countsMap[p.category_id] || 0) + 1;
+      });
+
+      // Map counts into categories
+      const categoriesWithCounts = cats.map((cat) => ({
+        ...cat,
+        product_count: countsMap[cat.id] || 0,
+      }));
+
+      return categoriesWithCounts;
+    },
   });
 
-  const totalProducts = categories.reduce((sum, cat) => sum + (cat.product_count || 0), 0);
+  const totalProducts = categories.reduce(
+    (sum, cat) => sum + (cat.product_count || 0),
+    0
+  );
 
   if (isLoading) {
     return (
@@ -47,7 +73,7 @@ const AllCategories = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex items-center mb-6">
           <Link to="/">
@@ -64,7 +90,9 @@ const AllCategories = () => {
         <div className="grid grid-cols-3 gap-4 mb-8">
           <div className="bg-green-50 rounded-2xl p-4 text-center">
             <Package className="h-6 w-6 text-green-600 mx-auto mb-2" />
-            <div className="text-lg font-bold text-green-700">{totalProducts}</div>
+            <div className="text-lg font-bold text-green-700">
+              {totalProducts}
+            </div>
             <div className="text-xs text-green-600">Products</div>
           </div>
           <div className="bg-blue-50 rounded-2xl p-4 text-center">
@@ -81,11 +109,11 @@ const AllCategories = () => {
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {categories.map((category) => (
-          <Link
-            key={category.id}
-            to={`/subcategories/${category.id}`}
-            className="group"
-          >
+            <Link
+              key={category.id}
+              to={`/subcategories/${category.slug}`} // <-- use slug here
+              className="group"
+            >
               <div className="bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-lg transition-all duration-200 hover:-translate-y-1">
                 <div className="flex items-center justify-center mb-3">
                   {category.image_url ? (
@@ -95,12 +123,16 @@ const AllCategories = () => {
                       className="w-32 h-32 object-cover rounded-xl"
                     />
                   ) : (
-                    <div className={`w-32 h-32 rounded-xl bg-gradient-to-br ${category.color_gradient || 'from-blue-400 to-blue-600'} flex items-center justify-center`}>
+                    <div
+                      className={`w-32 h-32 rounded-xl bg-gradient-to-br ${
+                        category.color_gradient || "from-blue-400 to-blue-600"
+                      } flex items-center justify-center`}
+                    >
                       <Package className="h-12 w-12 text-white" />
                     </div>
                   )}
                 </div>
-                
+
                 <div className="text-center">
                   <h3 className="font-medium text-gray-900 text-sm mb-1">
                     {category.name}
@@ -117,12 +149,16 @@ const AllCategories = () => {
         {categories.length === 0 && (
           <div className="text-center py-12">
             <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No categories available</h3>
-            <p className="text-gray-500">Categories will appear here once they are added by the admin.</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              No categories available
+            </h3>
+            <p className="text-gray-500">
+              Categories will appear here once they are added by the admin.
+            </p>
           </div>
         )}
       </div>
-      
+
       <div className="h-20 md:hidden"></div>
     </div>
   );
