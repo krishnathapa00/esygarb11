@@ -7,7 +7,7 @@ import BannerCarousel from "../components/BannerCarousel";
 import Footer from "../components/Footer";
 import LocationDetectionPopup from "../components/LocationDetectionPopup";
 import ServiceUnavailableMessage from "../components/ServiceUnavailableMessage";
-import { useProducts } from "../hooks/useProducts";
+import { Product, useProducts } from "../hooks/useProducts";
 import { useAuthContext } from "@/contexts/AuthProvider";
 import { useCartActions } from "@/hooks/useCart";
 
@@ -26,8 +26,8 @@ const Index = () => {
 
   // Add class to body for search bar styling and handle location detection
   useEffect(() => {
-    document.body.classList.add('with-search-bar');
-    
+    document.body.classList.add("with-search-bar");
+
     // Check if user has location set and service availability
     const storedLocation = localStorage.getItem("esygrab_user_location");
     if (!storedLocation) {
@@ -35,17 +35,17 @@ const Index = () => {
       setShowLocationPopup(true);
       return;
     }
-    
+
     try {
       const location = JSON.parse(storedLocation);
       setServiceAvailable(location.serviceAvailable !== false);
     } catch (error) {
-      console.error('Error parsing stored location:', error);
+      console.error("Error parsing stored location:", error);
       setShowLocationPopup(true);
     }
-    
+
     return () => {
-      document.body.classList.remove('with-search-bar');
+      document.body.classList.remove("with-search-bar");
     };
   }, []);
 
@@ -66,20 +66,23 @@ const Index = () => {
 
   // Group products by category dynamically and sort categories
   const productsByCategory = filteredProducts.reduce((acc, product) => {
-    const category = product.category || 'Other';
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    acc[category].push(product);
-    return acc;
-  }, {} as Record<string, typeof filteredProducts>);
+    const categoryId = product.categoryId ?? -1;
+    const categoryName = product.category || "Other";
 
-  // Sort categories to put "Fruits & Vegetables" first
-  const sortedCategories = Object.entries(productsByCategory).sort(([catA], [catB]) => {
-    if (catA.toLowerCase().includes('fruits') || catA.toLowerCase().includes('vegetables')) return -1;
-    if (catB.toLowerCase().includes('fruits') || catB.toLowerCase().includes('vegetables')) return 1;
-    return catA.localeCompare(catB);
-  });
+    if (!acc[categoryId]) {
+      acc[categoryId] = {
+        name: categoryName,
+        products: [],
+      };
+    }
+
+    acc[categoryId].products.push(product);
+    return acc;
+  }, {} as Record<number, { name: string; products: Product[] }>);
+
+  const sortedCategories = Object.entries(productsByCategory).sort(
+    ([idA], [idB]) => Number(idA) - Number(idB)
+  );
 
   // Remove the blocking loading state - show content with loading indicators instead
 
@@ -113,22 +116,25 @@ const Index = () => {
             </section>
 
             {/* Display products by category dynamically */}
-            {sortedCategories.map(([categoryName, categoryProducts]) => (
-              categoryProducts.length > 0 && (
-                <ProductSection
-                  key={categoryName}
-                  title={categoryName}
-                  products={categoryProducts}
-                  onAddToCart={handleAddToCart}
-                  onUpdateQuantity={handleUpdateQuantity}
-                  cartQuantityGetter={getCartQuantity}
-                />
-              )
-            ))}
+            {sortedCategories.map(
+              ([categoryId, categoryData]) =>
+                categoryData.products.length > 0 && (
+                  <ProductSection
+                    key={categoryId}
+                    title={categoryData.name}
+                    products={categoryData.products}
+                    onAddToCart={handleAddToCart}
+                    onUpdateQuantity={handleUpdateQuantity}
+                    cartQuantityGetter={getCartQuantity}
+                  />
+                )
+            )}
 
             {filteredProducts.length === 0 && (
               <div className="text-center py-12">
-                <p className="text-gray-500 text-lg">No matching products found.</p>
+                <p className="text-gray-500 text-lg">
+                  No matching products found.
+                </p>
               </div>
             )}
           </>
@@ -143,7 +149,7 @@ const Index = () => {
         isOpen={showLocationPopup}
         onClose={() => setShowLocationPopup(false)}
         onLocationSet={(location) => {
-          console.log('Location set:', location);
+          console.log("Location set:", location);
           setShowLocationPopup(false);
         }}
       />
