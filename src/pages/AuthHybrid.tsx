@@ -6,6 +6,7 @@ import { useAuthContext } from "@/contexts/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 import OTPVerificationModal from "@/components/OTPVerificationModal";
 import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
 
 const AuthHybrid = () => {
   const [email, setEmail] = useState("");
@@ -105,6 +106,19 @@ const AuthHybrid = () => {
             lastActivity: Date.now(),
           })
         );
+
+        const { error: profileError } = await supabase
+          .from("profiles")
+          .upsert({ id: user.id, email }, { onConflict: "id" });
+
+        if (profileError) {
+          toast({
+            title: "Profile Error",
+            description:
+              "Failed to save email to profile: " + profileError.message,
+            variant: "destructive",
+          });
+        }
 
         toast({
           title: "Email Verified Successfully",
