@@ -78,7 +78,7 @@ const AppContent = () => {
         <Route path="/" element={<Index />} />
         <Route path="/categories" element={<AllCategories />} />
         <Route path="/category/:categoryName/products" element={<CategoryProducts />} />
-        <Route path="/categories/:categoryId" element={<CategoryProducts />} />
+        <Route path="/categories/:slug" element={<CategoryProducts />} />
         <Route path="/product/:id" element={<ProductDetails />} />
         <Route path="/search" element={<SearchResults />} />
         <Route path="/cart" element={<CartPage />} />
@@ -325,3 +325,4 @@ function App() {
 }
 
 export default App;
+
