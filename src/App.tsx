@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/contexts/AuthProvider";
 import { CartProvider } from "@/contexts/CartContext";
-import { ToastProvider } from "@/components/Toast";
+import { ToastProvider, useSetGlobalToast } from "@/components/Toast";
 import { useActivityTracker } from '@/hooks/useActivityTracker';
 import { useSessionPersistence } from '@/hooks/useSessionPersistence';
 import { RoleProtectedRoute } from "@/components/RoleProtectedRoute";
@@ -67,6 +67,7 @@ const queryClient = new QueryClient();
 
 // Component to handle activity tracking and session persistence
 const AppContent = () => {
+  useSetGlobalToast();
   useActivityTracker();
   useSessionPersistence();
 
@@ -311,15 +312,15 @@ const AppContent = () => {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ToastProvider>
         <AuthProvider>
           <CartProvider>
             <Router>
+              <ToastProvider>
               <AppContent />
+              </ToastProvider>
             </Router>
           </CartProvider>
         </AuthProvider>
-      </ToastProvider>
     </QueryClientProvider>
   );
 }
