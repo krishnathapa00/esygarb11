@@ -36,20 +36,14 @@ export function useUserProfile() {
   }, [user]);
 
   const updateProfile = useCallback(
-    async (updates: ProfileUpdate) => {
+    async (updates?: ProfileUpdate) => {
       if (!user) return { error: { message: "Not authenticated" } };
 
-      const { error } = await supabase
-        .from("profiles")
-        .upsert({
-          id: user.id,
-          full_name: updates.full_name,
-          phone: updates.phone,
-          address: updates.address,
-          location: updates.location,
-          avatar_url: updates.avatar_url,
-          updated_at: new Date().toISOString(),
-        });
+      const { error } = await supabase.from("profiles").upsert({
+        id: user.id,
+        ...updates,
+        updated_at: new Date().toISOString(),
+      });
 
       if (error) {
         console.error("Error updating profile", error);
