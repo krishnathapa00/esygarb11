@@ -40,6 +40,7 @@ const OrderConfirmation = () => {
       setCanCancel(remainingSec > 0);
     }, 1000);
 
+    // Clear interval when component unmounts
     return () => clearInterval(interval);
   }, [orderData, navigate]);
 
@@ -55,6 +56,7 @@ const OrderConfirmation = () => {
 
         alert("Order cancelled successfully.");
         setCanCancel(false);
+        setTimeLeft(0);
       } catch (error) {
         console.error("Error cancelling order:", error);
         alert("Failed to cancel order. Please try again.");
