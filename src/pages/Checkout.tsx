@@ -369,10 +369,12 @@ const Checkout = () => {
       {/* Modals */}
       <ProfileCompletionModal
         isOpen={showProfileModal}
-        onClose={(updated) => {
-          setShowProfileModal(false);
+        onClose={async (updated) => {
           if (updated) {
+            await updateProfile();
             handlePlaceOrder();
+          } else {
+            setShowProfileModal(false);
           }
         }}
       />
