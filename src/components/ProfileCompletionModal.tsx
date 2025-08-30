@@ -106,9 +106,10 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
   };
 
   const handleSubmit = async () => {
-    if (!user) return;
+    const fullName = formData.full_name.trim();
+    const phone = formData.phone.trim();
 
-    if (isNewUser && (!formData.full_name.trim() || !formData.phone.trim())) {
+    if (isNewUser && (!fullName || !phone)) {
       toast({
         title: "Required fields missing",
         description: "Please fill in your full name and contact number",
@@ -119,7 +120,7 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
 
     setLoading(true);
     try {
-      // Prefer address from localStorage if exists
+      // upsert profile
       const savedLocation = localStorage.getItem("esygrab_user_location");
       let addressFromStorage = formData.address.trim();
       if (savedLocation) {
@@ -129,14 +130,14 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
             addressFromStorage = locationData.address;
           }
         } catch (e) {
-          console.error("Error parsing saved location:", e);
+          console.error(e);
         }
       }
 
       const { error } = await supabase.from("profiles").upsert({
-        id: user.id,
-        full_name: formData.full_name.trim(),
-        phone: formData.phone.trim(),
+        id: user?.id,
+        full_name: fullName,
+        phone: phone,
         address: addressFromStorage,
         updated_at: new Date().toISOString(),
       });
@@ -148,14 +149,10 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
         description: "Your profile has been saved successfully",
       });
 
-      // ✅ Refresh profile context so checkout sees updated info
-      // If you have useUserProfile or similar hook
-      // await updateProfile();  <-- call here if available
-
-      // Pass back updated state to Checkout
+      // close modal
       onClose(true);
     } catch (error: any) {
-      console.error("Error saving profile:", error);
+      console.error(error);
       toast({
         title: "Save failed",
         description: error.message || "Failed to save profile",
