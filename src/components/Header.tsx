@@ -7,6 +7,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuthContext } from "@/contexts/AuthProvider";
 import SearchBar from "./SearchBar";
 import { useCart } from "@/contexts/CartContext";
+import EsyLogo from "@/assets/logo/Esy.jpg";
 
 const Header = () => {
   const [userLocation, setUserLocation] = useState<string>(() => {
@@ -37,7 +38,7 @@ const Header = () => {
       if (showLocationPopup && !userLocation) {
         const popupStartTime = sessionStorage.getItem("locationPopupStartTime");
         if (popupStartTime && Date.now() - parseInt(popupStartTime) > 3000) {
-          console.log('Auto-dismissing popup after 3 seconds of interaction');
+          console.log("Auto-dismissing popup after 3 seconds of interaction");
           setShowLocationPopup(false);
           sessionStorage.setItem("locationPopupDismissed", "true");
         }
@@ -45,18 +46,18 @@ const Header = () => {
     };
 
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         setShowLocationPopup(false);
         sessionStorage.setItem("locationPopupDismissed", "true");
       }
     };
 
-    document.addEventListener('click', handleInteraction);
-    document.addEventListener('keydown', handleEscape);
-    
+    document.addEventListener("click", handleInteraction);
+    document.addEventListener("keydown", handleEscape);
+
     return () => {
-      document.removeEventListener('click', handleInteraction);
-      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener("click", handleInteraction);
+      document.removeEventListener("keydown", handleEscape);
     };
   }, [showLocationPopup, userLocation]);
 
@@ -73,15 +74,20 @@ const Header = () => {
     const alreadyHandled = sessionStorage.getItem("locationPopupHandled");
     const dismissed = sessionStorage.getItem("locationPopupDismissed");
 
-    console.log('Location popup logic:', { hasLocation, alreadyHandled, dismissed, userLocation });
+    console.log("Location popup logic:", {
+      hasLocation,
+      alreadyHandled,
+      dismissed,
+      userLocation,
+    });
 
     if (!hasLocation && !alreadyHandled && !dismissed) {
-      console.log('Setting showLocationPopup to true');
+      console.log("Setting showLocationPopup to true");
       setShowLocationPopup(true);
       sessionStorage.setItem("locationPopupHandled", "true");
       sessionStorage.setItem("locationPopupStartTime", Date.now().toString());
     } else {
-      console.log('Not showing location popup');
+      console.log("Not showing location popup");
       setShowLocationPopup(false);
     }
   }, [userLocation]);
@@ -150,7 +156,11 @@ const Header = () => {
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
-                <Package className="h-5 w-5 text-white" />
+                <img
+                  src={EsyLogo}
+                  alt="EsyGrab Logo"
+                  className="w-full h-full object-cover"
+                />
               </div>
               <h1 className="text-xl font-bold font-poppins bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                 EsyGrab
@@ -174,7 +184,7 @@ const Header = () => {
                   </span>
                 </div>
               </Button>
-              
+
               {/* Desktop Search Bar - centered with proper spacing */}
               {shouldShowSearchBar && (
                 <div className="flex-1 max-w-md mx-auto px-8">
@@ -288,18 +298,15 @@ const Header = () => {
             to={user ? "/profile" : "/auth"}
             icon={User}
             label="Profile"
-            isActive={location.pathname === "/profile" || (!user && location.pathname === "/auth")}
+            isActive={
+              location.pathname === "/profile" ||
+              (!user && location.pathname === "/auth")
+            }
           />
         </div>
       </div>
     </>
   );
 };
-
-const Package = ({ className }: { className?: string }) => (
-  <svg className={className} fill="currentColor" viewBox="0 0 20 20">
-    <path d="M10 2L3 7v10l7 5 7-5V7l-7-5z" />
-  </svg>
-);
 
 export default Header;
