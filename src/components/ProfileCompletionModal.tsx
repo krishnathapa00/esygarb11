@@ -108,7 +108,6 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
   const handleSubmit = async () => {
     if (!user) return;
 
-    // Validate required fields for new users
     if (isNewUser && (!formData.full_name.trim() || !formData.phone.trim())) {
       toast({
         title: "Required fields missing",
@@ -120,11 +119,25 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
 
     setLoading(true);
     try {
+      // Prefer address from localStorage if exists
+      const savedLocation = localStorage.getItem("esygrab_user_location");
+      let addressFromStorage = formData.address.trim();
+      if (savedLocation) {
+        try {
+          const locationData = JSON.parse(savedLocation);
+          if (locationData.address) {
+            addressFromStorage = locationData.address;
+          }
+        } catch (e) {
+          console.error("Error parsing saved location:", e);
+        }
+      }
+
       const { error } = await supabase.from("profiles").upsert({
         id: user.id,
         full_name: formData.full_name.trim(),
         phone: formData.phone.trim(),
-        address: formData.address.trim(),
+        address: addressFromStorage,
         updated_at: new Date().toISOString(),
       });
 
@@ -135,6 +148,11 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
         description: "Your profile has been saved successfully",
       });
 
+      // ✅ Refresh profile context so checkout sees updated info
+      // If you have useUserProfile or similar hook
+      // await updateProfile();  <-- call here if available
+
+      // Pass back updated state to Checkout
       onClose(true);
     } catch (error: any) {
       console.error("Error saving profile:", error);
