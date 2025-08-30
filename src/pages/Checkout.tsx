@@ -15,7 +15,6 @@ import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import ProfileCompletionModal from "@/components/ProfileCompletionModal";
-import AddressConfirmationModal from "@/components/AddressConfirmationModal";
 import EsewaLogo from "../assets/payments/esewa.jpg";
 import LocationDisplay from "@/components/LocationDisplay";
 import KhaltiLogo from "../assets/payments/khalti.jpg";
@@ -55,7 +54,7 @@ const Checkout = () => {
   const totalAmount = totalPrice + deliveryFee;
 
   const [selectedPayment, setSelectedPayment] = useState("cod");
-  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(true);
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [deliveryAddress, setDeliveryAddress] = useState("");
 
@@ -370,11 +369,9 @@ const Checkout = () => {
       <ProfileCompletionModal
         isOpen={showProfileModal}
         onClose={async (updated) => {
+          setShowProfileModal(false);
           if (updated) {
             await updateProfile();
-            handlePlaceOrder();
-          } else {
-            setShowProfileModal(false);
           }
         }}
       />
