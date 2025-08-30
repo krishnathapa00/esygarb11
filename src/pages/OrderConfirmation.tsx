@@ -5,6 +5,7 @@ import { ArrowLeft, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { showToast } from "@/components/Toast";
 
 const OrderConfirmation = () => {
   const location = useLocation();
@@ -17,8 +18,11 @@ const OrderConfirmation = () => {
 
   const [canCancel, setCanCancel] = useState(false);
   const [timeLeft, setTimeLeft] = useState(120);
+  const [isCancelled, setIsCancelled] = useState(false);
 
   useEffect(() => {
+    if (isCancelled) return;
+
     if (!orderData) {
       navigate("/");
       return;
@@ -42,7 +46,7 @@ const OrderConfirmation = () => {
 
     // Clear interval when component unmounts
     return () => clearInterval(interval);
-  }, [orderData, navigate]);
+  }, [orderData, navigate, isCancelled]);
 
   const handleCancelOrder = async () => {
     if (confirm("Are you sure you want to cancel this order?")) {
@@ -54,12 +58,12 @@ const OrderConfirmation = () => {
 
         if (error) throw error;
 
-        alert("Order cancelled successfully.");
-        setCanCancel(false);
-        setTimeLeft(0);
+        showToast("Your order has been cancelled successfully.", "success");
+
+        navigate("/");
       } catch (error) {
         console.error("Error cancelling order:", error);
-        alert("Failed to cancel order. Please try again.");
+        showToast("Failed to cancel order. Please try again.", "error");
       }
     }
   };
@@ -143,7 +147,7 @@ const OrderConfirmation = () => {
 
           <div className="mt-8 space-y-4">
             {/* Cancellation Notice */}
-            {canCancel && (
+            {!isCancelled && canCancel && (
               <div className="mb-4 flex items-center justify-between bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-yellow-800 text-sm">
                 <span>
                   ⚠️ Cancellation allowed for {Math.floor(timeLeft / 60)}:
