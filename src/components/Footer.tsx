@@ -19,9 +19,9 @@ const Footer = () => {
   return (
     <footer className="hidden md:block bg-gray-900 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {/* Company Info */}
-          <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Left - Company Info */}
+          <div className="text-left">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
                 <img
@@ -32,95 +32,81 @@ const Footer = () => {
               </div>
               <h3 className="text-xl font-bold">EsyGrab</h3>
             </div>
-            <p className="text-gray-300 text-sm leading-relaxed">
+            <p className="text-gray-300 text-sm leading-relaxed mt-4">
               Nepal's leading quick commerce company delivering fresh groceries
               to your doorstep in just 10 minutes. Quality products, unbeatable
               convenience.
             </p>
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2 text-sm text-gray-300">
-                <Phone className="h-4 w-4 text-green-400" />
+            <div className="mt-4 space-y-2 text-sm text-gray-300">
+              <div className="flex items-start space-x-2">
+                <Phone className="h-4 w-4 text-green-400 mt-1" />
                 <span>+9779865053325 / +9779868293232</span>
               </div>
-              <div className="flex items-center space-x-2 text-sm text-gray-300">
-                <Mail className="h-4 w-4 text-green-400" />
+              <div className="flex items-start space-x-2">
+                <Mail className="h-4 w-4 text-green-400 mt-1" />
                 <span>support@esygrab.com</span>
               </div>
-              <div className="flex items-center space-x-2 text-sm text-gray-300">
-                <MapPin className="h-4 w-4 text-green-400" />
+              <div className="flex items-start space-x-2">
+                <MapPin className="h-4 w-4 text-green-400 mt-1" />
                 <span>New Baneshwor, Kathmandu, Nepal</span>
               </div>
             </div>
           </div>
 
-          {/* Categories (replacing Quick Links) */}
-          <div className="space-y-4">
-            <h4 className="text-lg font-semibold">Categories</h4>
-            <div className="space-y-2">
-              {categories.slice(0, 5).map((category) => (
-                <Link
-                  key={category.id}
-                  to={`/subcategories/${category.name
-                    .toLowerCase()
-                    .replace(/\s+/g, "-")}`}
-                  className="block text-gray-300 hover:text-green-400 transition-colors text-sm"
-                >
-                  {category.name}
-                </Link>
-              ))}
+          {/* Center - Categories */}
+          <div className="flex justify-center">
+            <div className="text-left">
+              <h4 className="text-lg font-semibold mb-4">Categories</h4>
+              <div className="space-y-2">
+                {categories.slice(0, 6).map((category) => (
+                  <Link
+                    key={category.id}
+                    to={`/subcategories/${category.name
+                      .toLowerCase()
+                      .replace(/\s+/g, "-")}`}
+                    className="block text-sm text-gray-300 hover:text-green-400 transition-colors"
+                  >
+                    {category.name}
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* More Categories */}
-          <div className="space-y-4">
-            <h4 className="text-lg font-semibold">More Categories</h4>
-            <div className="space-y-2">
-              {categories.slice(5, 10).map((category) => (
+          {/* Right - Support */}
+          <div className="flex justify-end">
+            <div className="text-left">
+              <h4 className="text-lg font-semibold mb-4">Support</h4>
+              <div className="space-y-2">
                 <Link
-                  key={category.id}
-                  to={`/subcategories/${category.name
-                    .toLowerCase()
-                    .replace(/\s+/g, "-")}`}
-                  className="block text-gray-300 hover:text-green-400 transition-colors text-sm"
+                  to="/help-center"
+                  className="block text-sm text-gray-300 hover:text-green-400"
                 >
-                  {category.name}
+                  Help Center
                 </Link>
-              ))}
-            </div>
-          </div>
-
-          {/* Support */}
-          <div className="space-y-4">
-            <h4 className="text-lg font-semibold">Support</h4>
-            <div className="space-y-2">
-              <Link
-                to="/help-center"
-                className="block text-gray-300 hover:text-green-400 transition-colors text-sm"
-              >
-                Help Center
-              </Link>
-              <Link
-                to="/returns-refunds"
-                className="block text-gray-300 hover:text-green-400 transition-colors text-sm"
-              >
-                Returns & Refunds
-              </Link>
-              <Link
-                to="/privacy-policy"
-                className="block text-gray-300 hover:text-green-400 transition-colors text-sm"
-              >
-                Privacy Policy
-              </Link>
-              <Link
-                to="/terms-of-service"
-                className="block text-gray-300 hover:text-green-400 transition-colors text-sm"
-              >
-                Terms of Service
-              </Link>
-              <div className="pt-2">
-                <div className="flex items-center space-x-2 text-sm text-gray-300">
-                  <Clock className="h-4 w-4 text-green-400" />
-                  <span>24/7 Customer Support</span>
+                <Link
+                  to="/returns-refunds"
+                  className="block text-sm text-gray-300 hover:text-green-400"
+                >
+                  Returns & Refunds
+                </Link>
+                <Link
+                  to="/privacy-policy"
+                  className="block text-sm text-gray-300 hover:text-green-400"
+                >
+                  Privacy Policy
+                </Link>
+                <Link
+                  to="/terms-of-service"
+                  className="block text-sm text-gray-300 hover:text-green-400"
+                >
+                  Terms of Service
+                </Link>
+                <div className="pt-2">
+                  <div className="flex items-start space-x-2 text-sm text-gray-300">
+                    <Clock className="h-4 w-4 text-green-400 mt-1" />
+                    <span>24/7 Customer Support</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -175,4 +161,3 @@ const Footer = () => {
 };
 
 export default Footer;
-
