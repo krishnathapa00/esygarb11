@@ -325,7 +325,7 @@ const CartPage = () => {
                   </p>
                 ) : (
                   <p className="text-xs text-gray-500">
-                    📦 Rs 10 delivery fee applies after 3 free orders.
+                    Rs 10 delivery fee applies after 3 free orders.
                   </p>
                 )}
                 {appliedPromo && (
