@@ -258,6 +258,7 @@ const Checkout = () => {
                       address={deliveryAddress}
                       fallback="Please set delivery address"
                       className="text-sm text-green-700"
+                      truncate={false}
                     />
                   </div>
                 </div>
