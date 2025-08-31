@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import {
@@ -25,14 +25,39 @@ const CartPage = () => {
   const [appliedPromo, setAppliedPromo] = useState<any>(null);
   const [promoDiscount, setPromoDiscount] = useState(0);
 
+  const [orderCount, setOrderCount] = useState<number | null>(null);
+
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = cart.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
-  const deliveryFee = totalPrice > 200 ? 0 : 20;
+
+  const hasExpensiveItem = cart.some((item) => item.price > 200);
+  const deliveryFee = hasExpensiveItem ? 0 : 10;
+
   const discountAmount = promoDiscount;
   const totalAmount = totalPrice + deliveryFee - discountAmount;
+
+  useEffect(() => {
+    const fetchOrderCount = async () => {
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("orders")
+        .select("id", { count: "exact" })
+        .eq("user_id", user.id);
+
+      if (error) {
+        console.error("Error fetching order count:", error);
+        return;
+      }
+
+      setOrderCount(data.length); // or data?.count
+    };
+
+    fetchOrderCount();
+  }, [user]);
 
   const handleUpdateQuantity = (productId: number, newQuantity: number) => {
     if (newQuantity <= 0) {
@@ -289,6 +314,20 @@ const CartPage = () => {
                   <span>Delivery Fee</span>
                   <span>Rs {deliveryFee}</span>
                 </div>
+                {orderCount < 3 ? (
+                  <p className="text-xs text-green-600">
+                    Free delivery for your first {3 - orderCount} order
+                    {3 - orderCount > 1 ? "s" : ""}!
+                  </p>
+                ) : hasExpensiveItem ? (
+                  <p className="text-xs text-green-600">
+                    Free delivery on items costing over Rs 200
+                  </p>
+                ) : (
+                  <p className="text-xs text-gray-500">
+                    📦 Rs 10 delivery fee applies after 3 free orders.
+                  </p>
+                )}
                 {appliedPromo && (
                   <div className="flex justify-between text-green-600">
                     <span>Promo Discount</span>
