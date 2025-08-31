@@ -164,16 +164,21 @@ const OrderConfirmation = () => {
               </div>
             )}
 
-            <Link to={`/order-tracking/${orderData.orderId}`}>
-              <Button className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 w-full sm:w-auto">
-                Track Order
-              </Button>
-            </Link>
-            <Link to="/">
-              <Button variant="outline" className="w-full sm:w-auto">
-                Continue Shopping
-              </Button>
-            </Link>
+            <div className="mt-8 flex flex-col sm:flex-row sm:items-center sm:justify-center sm:space-x-4 space-y-4 sm:space-y-0">
+              <Link
+                to={`/order-tracking/${orderData.orderId}`}
+                className="w-full sm:w-auto"
+              >
+                <Button className="w-full sm:w-auto bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700">
+                  Track Order
+                </Button>
+              </Link>
+              <Link to="/" className="w-full sm:w-auto">
+                <Button variant="outline" className="w-full sm:w-auto">
+                  Continue Shopping
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
