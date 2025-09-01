@@ -14,6 +14,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
 
 const CartPage = () => {
   const { cart, updateQuantity, removeItem } = useCart();
@@ -33,8 +34,29 @@ const CartPage = () => {
     0
   );
 
-  const hasExpensiveItem = cart.some((item) => item.price > 200);
-  const deliveryFee = hasExpensiveItem ? 0 : 10;
+  const { data: deliveryConfig } = useQuery({
+    queryKey: ["delivery-config"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("delivery_config")
+        .select("*")
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const baseDeliveryFee = deliveryConfig?.delivery_fee ?? 10;
+
+  const deliveryFee =
+    orderCount !== null && orderCount < 3
+      ? 0
+      : totalPrice > 200
+      ? 0
+      : baseDeliveryFee;
 
   const discountAmount = promoDiscount;
   const totalAmount = totalPrice + deliveryFee - discountAmount;
@@ -314,20 +336,22 @@ const CartPage = () => {
                   <span>Delivery Fee</span>
                   <span>Rs {deliveryFee}</span>
                 </div>
-                {orderCount < 3 ? (
+                {orderCount !== null && (orderCount < 3 || totalPrice > 200) ? (
                   <p className="text-xs text-green-600">
-                    Free delivery for your first {3 - orderCount} order
-                    {3 - orderCount > 1 ? "s" : ""}!
-                  </p>
-                ) : hasExpensiveItem ? (
-                  <p className="text-xs text-green-600">
-                    Free delivery on items costing over Rs 200
+                    Free delivery{" "}
+                    {orderCount < 3
+                      ? `for your first ${3 - orderCount} order${
+                          3 - orderCount > 1 ? "s" : ""
+                        }`
+                      : "because order total exceeds ₹200"}
+                    !
                   </p>
                 ) : (
                   <p className="text-xs text-gray-500">
-                    Rs 10 delivery fee applies after 3 free orders.
+                    Rs {baseDeliveryFee} delivery fee applies.
                   </p>
                 )}
+
                 {appliedPromo && (
                   <div className="flex justify-between text-green-600">
                     <span>Promo Discount</span>
