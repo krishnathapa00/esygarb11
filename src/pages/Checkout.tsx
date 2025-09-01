@@ -25,13 +25,14 @@ const Checkout = () => {
   const { profile, updateProfile } = useUserProfile();
   const navigate = useNavigate();
 
+  const [orderCount, setOrderCount] = useState<number | null>(null);
+
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = cart.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
 
-  // Fetch current delivery config for dynamic delivery fee
   const { data: deliveryConfig, isLoading: configLoading } = useQuery({
     queryKey: ["delivery-config"],
     queryFn: async () => {
@@ -50,7 +51,15 @@ const Checkout = () => {
     },
   });
 
-  const deliveryFee = deliveryConfig?.delivery_fee || 15;
+  const baseDeliveryFee = deliveryConfig?.delivery_fee ?? 15;
+
+  const deliveryFee =
+    orderCount !== null && orderCount < 3
+      ? 0
+      : totalPrice > 200
+      ? 0
+      : baseDeliveryFee;
+
   const totalAmount = totalPrice + deliveryFee;
 
   const [selectedPayment, setSelectedPayment] = useState("cod");
@@ -66,6 +75,26 @@ const Checkout = () => {
     const stored = localStorage.getItem("esygrab_user_location");
     setDeliveryAddress(stored ? JSON.parse(stored).address : "");
   }, []);
+
+  useEffect(() => {
+    const fetchOrderCount = async () => {
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("orders")
+        .select("id", { count: "exact" })
+        .eq("user_id", user.id);
+
+      if (error) {
+        console.error("Failed to fetch order count:", error);
+        return;
+      }
+
+      setOrderCount(data?.length || 0);
+    };
+
+    fetchOrderCount();
+  }, [user]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -335,6 +364,21 @@ const Checkout = () => {
                 <span>Delivery Fee</span>
                 <span>Rs {deliveryFee}</span>
               </div>
+              {orderCount !== null && (orderCount < 3 || totalPrice > 200) ? (
+                <p className="text-xs text-green-600 mt-1">
+                  Free delivery{" "}
+                  {orderCount < 3
+                    ? `for your first ${3 - orderCount} order${
+                        3 - orderCount > 1 ? "s" : ""
+                      }`
+                    : "because order total exceeds ₹200"}
+                  !
+                </p>
+              ) : (
+                <p className="text-xs text-gray-500 mt-1">
+                  Rs {baseDeliveryFee} delivery fee applies.
+                </p>
+              )}
               <div className="border-t pt-2 mt-3">
                 <div className="flex justify-between font-semibold text-base lg:text-lg">
                   <span>Total</span>
