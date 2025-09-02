@@ -16,17 +16,27 @@ import { useAuthContext } from "@/contexts/AuthProvider";
 interface ProfileCompletionModalProps {
   isOpen: boolean;
   onClose: (updated: boolean) => void;
+  defaultAddress?: string;
 }
 
 const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
   isOpen,
   onClose,
+  defaultAddress,
 }) => {
   const { user } = useAuthContext();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [isNewUser, setIsNewUser] = useState(true);
   const [hasChanges, setHasChanges] = useState(false);
+
+  const [address, setAddress] = useState(defaultAddress || "");
+
+  useEffect(() => {
+    if (defaultAddress) {
+      setAddress(defaultAddress);
+    }
+  }, [defaultAddress]);
 
   const [formData, setFormData] = useState({
     full_name: "",
@@ -70,7 +80,7 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
           full_name: profile?.full_name || "",
           phone: profile?.phone || "",
           email: user.email || "",
-          address: profile?.address || addressFromStorage,
+          address: defaultAddress || profile?.address || addressFromStorage,
         };
 
         setFormData(profileData);
