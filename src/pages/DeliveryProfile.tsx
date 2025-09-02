@@ -260,7 +260,6 @@ const DeliveryProfile = () => {
             </Button>
             <h1 className="text-2xl font-bold">Delivery Partner Profile</h1>
           </div>
-          {getKYCStatusBadge()}
           <div className="flex items-center gap-4">
             {getKYCStatusBadge()}
             <Button
