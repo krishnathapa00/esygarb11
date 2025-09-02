@@ -336,16 +336,17 @@ const CartPage = () => {
                   <span>Delivery Fee</span>
                   <span>Rs {deliveryFee}</span>
                 </div>
-                {orderCount !== null && (orderCount < 3 || totalPrice > 200) ? (
-                  <p className="text-xs text-green-600">
-                    Free delivery{" "}
-                    {orderCount < 3
-                      ? `for your first ${3 - orderCount} order${
-                          3 - orderCount > 1 ? "s" : ""
-                        }`
-                      : "because order total exceeds ₹200"}
-                    !
-                  </p>
+                {deliveryFee === 0 ? (
+                  orderCount !== null && orderCount < 3 ? (
+                    <p className="text-xs text-green-600">
+                      Free delivery for your first {3 - orderCount} order
+                      {3 - orderCount > 1 ? "s" : ""}!
+                    </p>
+                  ) : (
+                    <p className="text-xs text-green-600">
+                      Free delivery because order total exceeds ₹200!
+                    </p>
+                  )
                 ) : (
                   <p className="text-xs text-gray-500">
                     Rs {baseDeliveryFee} delivery fee applies.
@@ -357,11 +358,6 @@ const CartPage = () => {
                     <span>Promo Discount</span>
                     <span>-Rs {promoDiscount}</span>
                   </div>
-                )}
-                {deliveryFee === 0 && (
-                  <p className="text-xs text-green-600">
-                    Free delivery on orders over Rs 200!
-                  </p>
                 )}
                 <div className="border-t pt-2 mt-3">
                   <div className="flex justify-between font-semibold text-base lg:text-lg">
