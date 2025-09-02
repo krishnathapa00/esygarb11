@@ -1,53 +1,72 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { FileText, Upload, CheckCircle, Clock, XCircle } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import PDFUpload from './PDFUpload';
+import React, { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { FileText, Upload, CheckCircle, Clock, XCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import PDFUpload from "./PDFUpload";
 
 const KYCSubmission = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [documents, setDocuments] = useState({
-    citizenship_document_url: '',
-    license_document_url: '',
-    pan_document_url: ''
+    citizenship_document_url: "",
+    license_document_url: "",
+    pan_document_url: "",
   });
 
   // Fetch existing KYC status
   const { data: kycStatus, refetch } = useQuery({
-    queryKey: ['kyc-status', user?.id],
+    queryKey: ["kyc-status", user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      
+
       const { data, error } = await supabase
-        .from('kyc_verifications')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
+        .from("kyc_verifications")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      
-      if (error && error.code !== 'PGRST116') {
+
+      if (error && error.code !== "PGRST116") {
         throw error;
       }
-      
+
       return data;
     },
-    enabled: !!user?.id
+    enabled: !!user?.id,
   });
 
+  useEffect(() => {
+    if (kycStatus) {
+      setDocuments({
+        citizenship_document_url: kycStatus.citizenship_document_url || "",
+        license_document_url: kycStatus.license_document_url || "",
+        pan_document_url: kycStatus.pan_document_url || "",
+      });
+    }
+  }, [kycStatus]);
+
+  const extractFileName = (url: string) => {
+    if (!url) return "";
+    try {
+      return decodeURIComponent(url.split("/").pop() || "");
+    } catch {
+      return url.split("/").pop() || "";
+    }
+  };
+
   const handleDocumentUpload = (field: string, url: string) => {
-    setDocuments(prev => ({
+    setDocuments((prev) => ({
       ...prev,
-      [field]: url
+      [field]: url,
     }));
-    
+
     if (url) {
       toast({
         title: "Document uploaded successfully",
@@ -58,57 +77,60 @@ const KYCSubmission = () => {
 
   const submitKYCMutation = useMutation({
     mutationFn: async () => {
-      if (!user?.id) throw new Error('User not authenticated');
-      
+      if (!user?.id) throw new Error("User not authenticated");
+
       // Check if all documents are uploaded
-      const allDocumentsUploaded = Object.values(documents).every(url => url);
+      const allDocumentsUploaded = Object.values(documents).every((url) => url);
       if (!allDocumentsUploaded) {
-        throw new Error('Please upload all required documents before submitting.');
+        throw new Error(
+          "Please upload all required documents before submitting."
+        );
       }
 
-      const { error } = await supabase
-        .from('kyc_verifications')
-        .insert([{
+      const { error } = await supabase.from("kyc_verifications").insert([
+        {
           user_id: user.id,
           citizenship_document_url: documents.citizenship_document_url,
           license_document_url: documents.license_document_url,
           pan_document_url: documents.pan_document_url,
-          verification_status: 'pending',
-          submitted_at: new Date().toISOString()
-        }]);
+          verification_status: "pending",
+          submitted_at: new Date().toISOString(),
+        },
+      ]);
 
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['kyc-status', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["kyc-status", user?.id] });
       toast({
         title: "KYC Submitted Successfully!",
-        description: "Your documents have been submitted for review. You'll be notified once verified."
+        description:
+          "Your documents have been submitted for review. You'll be notified once verified.",
       });
-      
+
       // Reset form
       setDocuments({
-        citizenship_document_url: '',
-        license_document_url: '',
-        pan_document_url: ''
+        citizenship_document_url: "",
+        license_document_url: "",
+        pan_document_url: "",
       });
     },
     onError: (error: any) => {
       toast({
         title: "Submission Failed",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
       });
-    }
+    },
   });
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'approved':
+      case "approved":
         return <CheckCircle className="h-5 w-5 text-green-600" />;
-      case 'rejected':
+      case "rejected":
         return <XCircle className="h-5 w-5 text-red-600" />;
-      case 'pending':
+      case "pending":
       default:
         return <Clock className="h-5 w-5 text-yellow-600" />;
     }
@@ -116,13 +138,13 @@ const KYCSubmission = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'approved':
-        return 'bg-green-100 text-green-800';
-      case 'rejected':
-        return 'bg-red-100 text-red-800';
-      case 'pending':
+      case "approved":
+        return "bg-green-100 text-green-800";
+      case "rejected":
+        return "bg-red-100 text-red-800";
+      case "pending":
       default:
-        return 'bg-yellow-100 text-yellow-800';
+        return "bg-yellow-100 text-yellow-800";
     }
   };
 
@@ -133,7 +155,7 @@ const KYCSubmission = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-3">
-              {getStatusIcon(kycStatus.verification_status || 'pending')}
+              {getStatusIcon(kycStatus.verification_status || "pending")}
               KYC Verification Status
             </CardTitle>
           </CardHeader>
@@ -141,29 +163,43 @@ const KYCSubmission = () => {
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium">Status:</span>
-                <Badge className={getStatusColor(kycStatus.verification_status || 'pending')}>
-                  {(kycStatus.verification_status || 'pending').toUpperCase()}
+                <Badge
+                  className={getStatusColor(
+                    kycStatus.verification_status || "pending"
+                  )}
+                >
+                  {(kycStatus.verification_status || "pending").toUpperCase()}
                 </Badge>
               </div>
-              
+
               <div className="text-sm text-muted-foreground">
-                <p>Submitted: {new Date(kycStatus.submitted_at).toLocaleDateString()}</p>
+                <p>
+                  Submitted:{" "}
+                  {new Date(kycStatus.submitted_at).toLocaleDateString()}
+                </p>
                 {kycStatus.reviewed_at && (
-                  <p>Reviewed: {new Date(kycStatus.reviewed_at).toLocaleDateString()}</p>
+                  <p>
+                    Reviewed:{" "}
+                    {new Date(kycStatus.reviewed_at).toLocaleDateString()}
+                  </p>
                 )}
               </div>
 
               {kycStatus.admin_comments && (
                 <div className="mt-3 p-3 bg-gray-50 rounded-lg">
                   <p className="text-sm font-medium">Admin Comments:</p>
-                  <p className="text-sm text-gray-600">{kycStatus.admin_comments}</p>
+                  <p className="text-sm text-gray-600">
+                    {kycStatus.admin_comments}
+                  </p>
                 </div>
               )}
 
-              {kycStatus.verification_status === 'approved' && (
+              {kycStatus.verification_status === "approved" && (
                 <div className="flex items-center gap-2 text-green-600">
                   <CheckCircle className="h-4 w-4" />
-                  <span className="text-sm font-medium">You are verified and can start accepting deliveries!</span>
+                  <span className="text-sm font-medium">
+                    You are verified and can start accepting deliveries!
+                  </span>
                 </div>
               )}
             </div>
@@ -172,7 +208,9 @@ const KYCSubmission = () => {
       )}
 
       {/* KYC Submission Form - Hide if approved */}
-      {(!kycStatus || (kycStatus.verification_status !== 'approved' && kycStatus.verification_status !== 'pending')) && (
+      {(!kycStatus ||
+        (kycStatus.verification_status !== "approved" &&
+          kycStatus.verification_status !== "pending")) && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-3">
@@ -191,8 +229,11 @@ const KYCSubmission = () => {
                   )}
                 </div>
                 <PDFUpload
-                  onFileUpload={(url) => handleDocumentUpload('citizenship_document_url', url)}
+                  onFileUpload={(url) =>
+                    handleDocumentUpload("citizenship_document_url", url)
+                  }
                   currentFile={documents.citizenship_document_url}
+                  fileName={extractFileName(documents.citizenship_document_url)}
                   folder="kyc-documents"
                   label="Citizenship Document"
                 />
@@ -210,8 +251,11 @@ const KYCSubmission = () => {
                   )}
                 </div>
                 <PDFUpload
-                  onFileUpload={(url) => handleDocumentUpload('license_document_url', url)}
+                  onFileUpload={(url) =>
+                    handleDocumentUpload("license_document_url", url)
+                  }
                   currentFile={documents.license_document_url}
+                  fileName={extractFileName(documents.citizenship_document_url)}
                   folder="kyc-documents"
                   label="Driving License"
                 />
@@ -229,8 +273,11 @@ const KYCSubmission = () => {
                   )}
                 </div>
                 <PDFUpload
-                  onFileUpload={(url) => handleDocumentUpload('pan_document_url', url)}
+                  onFileUpload={(url) =>
+                    handleDocumentUpload("pan_document_url", url)
+                  }
                   currentFile={documents.pan_document_url}
+                  fileName={extractFileName(documents.citizenship_document_url)}
                   folder="kyc-documents"
                   label="PAN Card"
                 />
@@ -243,7 +290,10 @@ const KYCSubmission = () => {
             <div className="pt-4 border-t">
               <Button
                 onClick={() => submitKYCMutation.mutate()}
-                disabled={submitKYCMutation.isPending || !Object.values(documents).every(url => url)}
+                disabled={
+                  submitKYCMutation.isPending ||
+                  !Object.values(documents).every((url) => url)
+                }
                 className="w-full"
               >
                 {submitKYCMutation.isPending ? (
