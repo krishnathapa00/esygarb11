@@ -1,69 +1,85 @@
-
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
-import { Eye, FileText, UserCheck, UserX, Trash2, Phone } from 'lucide-react';
-import AdminLayout from './components/AdminLayout';
+import React, { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { Eye, FileText, UserCheck, UserX, Trash2, Phone } from "lucide-react";
+import AdminLayout from "./components/AdminLayout";
 
 const ManageKYC = () => {
   const [selectedKYC, setSelectedKYC] = useState(null);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
-  const [adminComments, setAdminComments] = useState('');
+  const [adminComments, setAdminComments] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: kycVerifications = [], isLoading } = useQuery({
-    queryKey: ['admin-kyc-verifications'],
+    queryKey: ["admin-kyc-verifications"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('kyc_verifications')
-        .select(`
+        .from("kyc_verifications")
+        .select(
+          `
           *,
           profiles!kyc_verifications_user_id_fkey(
             full_name,
             phone_number,
             role
           )
-        `)
-        .order('submitted_at', { ascending: false });
-      
+        `
+        )
+        .order("submitted_at", { ascending: false });
+
       if (error) throw error;
       return data;
-    }
+    },
   });
 
   const updateKYCMutation = useMutation({
-    mutationFn: async ({ id, status, comments }: { id: string; status: string; comments: string }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      
+    mutationFn: async ({
+      id,
+      status,
+      comments,
+    }: {
+      id: string;
+      status: string;
+      comments: string;
+    }) => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       const { error } = await supabase
-        .from('kyc_verifications')
+        .from("kyc_verifications")
         .update({
           verification_status: status,
           admin_comments: comments,
           reviewed_at: new Date().toISOString(),
-          reviewed_by: user?.id
+          reviewed_by: user?.id,
         })
-        .eq('id', id);
+        .eq("id", id);
 
       if (error) throw error;
 
       // Update profile kyc_verified status
-      if (status === 'approved') {
+      if (status === "approved") {
         await supabase
-          .from('profiles')
+          .from("profiles")
           .update({ kyc_verified: true })
-          .eq('id', selectedKYC.user_id);
+          .eq("id", selectedKYC.user_id);
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-kyc-verifications'] });
+      queryClient.invalidateQueries({ queryKey: ["admin-kyc-verifications"] });
       setReviewModalOpen(false);
       toast({
         title: "KYC Updated",
@@ -76,20 +92,20 @@ const ManageKYC = () => {
         description: "Failed to update KYC verification.",
         variant: "destructive",
       });
-    }
+    },
   });
 
   const deleteKYCMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from('kyc_verifications')
+        .from("kyc_verifications")
         .delete()
-        .eq('id', id);
+        .eq("id", id);
 
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-kyc-verifications'] });
+      queryClient.invalidateQueries({ queryKey: ["admin-kyc-verifications"] });
       toast({
         title: "KYC Deleted",
         description: "KYC verification has been deleted successfully.",
@@ -101,21 +117,60 @@ const ManageKYC = () => {
         description: "Failed to delete KYC verification.",
         variant: "destructive",
       });
-    }
+    },
   });
 
-  const handleReview = (kyc: any) => {
-    setSelectedKYC(kyc);
-    setAdminComments(kyc.admin_comments || '');
+  const handleReview = async (kyc: any) => {
+    const signedCitizenship = kyc.citizenship_document_url
+      ? await getSignedUrl(kyc.citizenship_document_url)
+      : null;
+
+    const signedLicense = kyc.license_document_url
+      ? await getSignedUrl(kyc.license_document_url)
+      : null;
+
+    const signedPAN = kyc.pan_document_url
+      ? await getSignedUrl(kyc.pan_document_url)
+      : null;
+
+    setSelectedKYC({
+      ...kyc,
+      signedUrls: {
+        citizenship: signedCitizenship,
+        license: signedLicense,
+        pan: signedPAN,
+      },
+    });
+    setAdminComments(kyc.admin_comments || "");
     setReviewModalOpen(true);
+  };
+
+  const getSignedUrl = async (url: string) => {
+    const filePath = url;
+
+    if (!filePath) {
+      console.error("Cannot generate signed URL: file path is empty");
+      return url; // fallback
+    }
+
+    const { data, error } = await supabase.storage
+      .from("kyc-documents")
+      .createSignedUrl(filePath, 3600);
+
+    if (error) {
+      console.error("Failed to generate signed URL:", error.message);
+      return url;
+    }
+
+    return data.signedUrl;
   };
 
   const handleApprove = () => {
     if (selectedKYC) {
       updateKYCMutation.mutate({
         id: selectedKYC.id,
-        status: 'approved',
-        comments: adminComments
+        status: "approved",
+        comments: adminComments,
       });
     }
   };
@@ -124,19 +179,27 @@ const ManageKYC = () => {
     if (selectedKYC) {
       updateKYCMutation.mutate({
         id: selectedKYC.id,
-        status: 'rejected',
-        comments: adminComments
+        status: "rejected",
+        comments: adminComments,
       });
     }
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'pending':
-        return <Badge variant="outline" className="text-yellow-600">Pending</Badge>;
-      case 'approved':
-        return <Badge variant="outline" className="text-green-600">Approved</Badge>;
-      case 'rejected':
+      case "pending":
+        return (
+          <Badge variant="outline" className="text-yellow-600">
+            Pending
+          </Badge>
+        );
+      case "approved":
+        return (
+          <Badge variant="outline" className="text-green-600">
+            Approved
+          </Badge>
+        );
+      case "rejected":
         return <Badge variant="destructive">Rejected</Badge>;
       default:
         return <Badge variant="outline">Unknown</Badge>;
@@ -147,25 +210,28 @@ const ManageKYC = () => {
     if (url) {
       try {
         // Extract the file path from the URL
-        const filePath = url.replace(/^.*\/storage\/v1\/object\/public\/kyc-documents\//, '');
-        
+        const filePath = url.replace(
+          /^.*\/storage\/v1\/object\/public\/kyc-documents\//,
+          ""
+        );
+
         // Create signed URL for viewing
         const { data: signedUrlData, error } = await supabase.storage
-          .from('kyc-documents')
+          .from("kyc-documents")
           .createSignedUrl(filePath, 3600); // 1 hour expiry
 
         if (error) {
-          console.error('Signed URL error:', error);
+          console.error("Signed URL error:", error);
           // Fallback to direct URL if signed URL fails
-          window.open(url, '_blank');
+          window.open(url, "_blank");
           return;
         }
-        
-        window.open(signedUrlData.signedUrl, '_blank');
+
+        window.open(signedUrlData.signedUrl, "_blank");
       } catch (error) {
-        console.error('Error viewing document:', error);
+        console.error("Error viewing document:", error);
         // Fallback to direct URL
-        window.open(url, '_blank');
+        window.open(url, "_blank");
       }
     }
   };
@@ -182,7 +248,9 @@ const ManageKYC = () => {
             <div className="flex justify-center py-12">
               <div className="text-center space-y-3">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                <p className="text-muted-foreground">Loading KYC verifications...</p>
+                <p className="text-muted-foreground">
+                  Loading KYC verifications...
+                </p>
               </div>
             </div>
           ) : kycVerifications.length === 0 ? (
@@ -194,45 +262,61 @@ const ManageKYC = () => {
             </div>
           ) : (
             kycVerifications.map((kyc) => (
-              <Card key={kyc.id} className="p-4 hover:shadow-md transition-shadow">
+              <Card
+                key={kyc.id}
+                className="p-4 hover:shadow-md transition-shadow"
+              >
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center gap-4 mb-2">
-                      <h3 className="font-semibold text-lg">{kyc.profiles?.full_name || 'Unknown User'}</h3>
+                      <h3 className="font-semibold text-lg">
+                        {kyc.profiles?.full_name || "Unknown User"}
+                      </h3>
                       {getStatusBadge(kyc.verification_status)}
-                      <Badge variant="outline" className="text-blue-600">{kyc.profiles?.role || 'Unknown'}</Badge>
+                      <Badge variant="outline" className="text-blue-600">
+                        {kyc.profiles?.role || "Unknown"}
+                      </Badge>
                     </div>
                     <div className="space-y-1 mb-3">
                       <p className="text-sm text-muted-foreground">
                         <Phone className="inline w-4 h-4 mr-1" />
-                        Phone: {kyc.profiles?.phone_number || 'Not provided'}
+                        Phone: {kyc.profiles?.phone_number || "Not provided"}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        Submitted: {new Date(kyc.submitted_at).toLocaleDateString()} at {new Date(kyc.submitted_at).toLocaleTimeString()}
+                        Submitted:{" "}
+                        {new Date(kyc.submitted_at).toLocaleDateString()} at{" "}
+                        {new Date(kyc.submitted_at).toLocaleTimeString()}
                       </p>
                       {kyc.reviewed_at && (
                         <p className="text-sm text-muted-foreground">
-                          Reviewed: {new Date(kyc.reviewed_at).toLocaleDateString()}
+                          Reviewed:{" "}
+                          {new Date(kyc.reviewed_at).toLocaleDateString()}
                         </p>
                       )}
                     </div>
                     {kyc.admin_comments && (
                       <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                         <p className="text-sm">
-                          <strong className="text-blue-800">Admin Comments:</strong>
-                          <span className="ml-2 text-blue-700">{kyc.admin_comments}</span>
+                          <strong className="text-blue-800">
+                            Admin Comments:
+                          </strong>
+                          <span className="ml-2 text-blue-700">
+                            {kyc.admin_comments}
+                          </span>
                         </p>
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="flex flex-col gap-2 ml-4">
                     <div className="flex flex-wrap gap-2">
                       {kyc.citizenship_document_url && (
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => openDocument(kyc.citizenship_document_url)}
+                          onClick={() =>
+                            openDocument(kyc.citizenship_document_url)
+                          }
                           className="text-xs"
                         >
                           <FileText className="w-3 h-3 mr-1" />
@@ -262,9 +346,9 @@ const ManageKYC = () => {
                         </Button>
                       )}
                     </div>
-                    
+
                     <div className="flex gap-2">
-                      {kyc.verification_status === 'pending' && (
+                      {kyc.verification_status === "pending" && (
                         <Button
                           size="sm"
                           onClick={() => handleReview(kyc)}
@@ -274,7 +358,7 @@ const ManageKYC = () => {
                           Review & Decide
                         </Button>
                       )}
-                      {kyc.verification_status === 'approved' && (
+                      {kyc.verification_status === "approved" && (
                         <Button
                           size="sm"
                           variant="outline"
@@ -284,7 +368,7 @@ const ManageKYC = () => {
                           View Details
                         </Button>
                       )}
-                      {kyc.verification_status === 'rejected' && (
+                      {kyc.verification_status === "rejected" && (
                         <>
                           <Button
                             size="sm"
@@ -316,11 +400,15 @@ const ManageKYC = () => {
             <DialogHeader>
               <DialogTitle>Review KYC Documents</DialogTitle>
             </DialogHeader>
-            
+
             <div className="space-y-6">
               <div>
-                <h4 className="font-semibold mb-2">Applicant: {selectedKYC?.profiles?.full_name}</h4>
-                <p className="text-sm text-muted-foreground">Role: {selectedKYC?.profiles?.role}</p>
+                <h4 className="font-semibold mb-2">
+                  Applicant: {selectedKYC?.profiles?.full_name}
+                </h4>
+                <p className="text-sm text-muted-foreground">
+                  Role: {selectedKYC?.profiles?.role}
+                </p>
               </div>
 
               {/* Document Previews */}
@@ -329,16 +417,20 @@ const ManageKYC = () => {
                   <div className="space-y-2">
                     <p className="text-sm font-medium">Citizenship Document</p>
                     <div className="border rounded-lg p-2">
-                      <img 
-                        src={selectedKYC.citizenship_document_url} 
+                      <img
+                        src={selectedKYC.citizenship_document_url}
                         alt="Citizenship Document"
                         className="w-full h-48 object-cover rounded cursor-pointer"
-                        onClick={() => openDocument(selectedKYC.citizenship_document_url)}
+                        onClick={() =>
+                          openDocument(selectedKYC.citizenship_document_url)
+                        }
                       />
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => openDocument(selectedKYC.citizenship_document_url)}
+                        onClick={() =>
+                          openDocument(selectedKYC.citizenship_document_url)
+                        }
                         className="w-full mt-2"
                       >
                         View Full Size
@@ -346,21 +438,25 @@ const ManageKYC = () => {
                     </div>
                   </div>
                 )}
-                
+
                 {selectedKYC?.license_document_url && (
                   <div className="space-y-2">
                     <p className="text-sm font-medium">License Document</p>
                     <div className="border rounded-lg p-2">
-                      <img 
-                        src={selectedKYC.license_document_url} 
+                      <img
+                        src={selectedKYC.license_document_url}
                         alt="License Document"
                         className="w-full h-48 object-cover rounded cursor-pointer"
-                        onClick={() => openDocument(selectedKYC.license_document_url)}
+                        onClick={() =>
+                          openDocument(selectedKYC.license_document_url)
+                        }
                       />
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => openDocument(selectedKYC.license_document_url)}
+                        onClick={() =>
+                          openDocument(selectedKYC.license_document_url)
+                        }
                         className="w-full mt-2"
                       >
                         View Full Size
@@ -368,21 +464,25 @@ const ManageKYC = () => {
                     </div>
                   </div>
                 )}
-                
+
                 {selectedKYC?.pan_document_url && (
                   <div className="space-y-2">
                     <p className="text-sm font-medium">PAN Document</p>
                     <div className="border rounded-lg p-2">
-                      <img 
-                        src={selectedKYC.pan_document_url} 
+                      <img
+                        src={selectedKYC.pan_document_url}
                         alt="PAN Document"
                         className="w-full h-48 object-cover rounded cursor-pointer"
-                        onClick={() => openDocument(selectedKYC.pan_document_url)}
+                        onClick={() =>
+                          openDocument(selectedKYC.pan_document_url)
+                        }
                       />
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => openDocument(selectedKYC.pan_document_url)}
+                        onClick={() =>
+                          openDocument(selectedKYC.pan_document_url)
+                        }
                         className="w-full mt-2"
                       >
                         View Full Size
@@ -393,7 +493,9 @@ const ManageKYC = () => {
               </div>
 
               <div>
-                <label className="text-sm font-medium mb-2 block">Admin Comments</label>
+                <label className="text-sm font-medium mb-2 block">
+                  Admin Comments
+                </label>
                 <Textarea
                   value={adminComments}
                   onChange={(e) => setAdminComments(e.target.value)}
