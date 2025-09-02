@@ -413,6 +413,7 @@ const Checkout = () => {
       {/* Modals */}
       <ProfileCompletionModal
         isOpen={showProfileModal}
+        defaultAddress={deliveryAddress}
         onClose={async (updated) => {
           setShowProfileModal(false);
           if (updated) {
