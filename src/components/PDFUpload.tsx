@@ -1,26 +1,37 @@
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Upload, Eye, FileText, Trash2, Loader2 } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Upload, Eye, FileText, Trash2, Loader2 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PDFUploadProps {
   onFileUpload: (url: string) => void;
   currentFile?: string;
   folder?: string;
+  fileName?: string;
   label: string;
 }
 
-const PDFUpload = ({ onFileUpload, currentFile, folder = 'kyc-documents', label }: PDFUploadProps) => {
+const PDFUpload = ({
+  onFileUpload,
+  currentFile,
+  fileName,
+  folder = "kyc-documents",
+  label,
+}: PDFUploadProps) => {
   const [uploading, setUploading] = useState(false);
-  const [fileName, setFileName] = useState<string>('');
+  const [fileNameState, setFileNameState] = useState<string>("");
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const displayFileName = fileName || fileNameState || "PDF Document";
+
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     // Validate file type
-    if (file.type !== 'application/pdf') {
+    if (file.type !== "application/pdf") {
       toast({
         title: "Invalid file type",
         description: "Please upload a PDF file only.",
@@ -40,19 +51,23 @@ const PDFUpload = ({ onFileUpload, currentFile, folder = 'kyc-documents', label 
     }
 
     setUploading(true);
-    setFileName(file.name);
+    setFileNameState(file.name);
 
     try {
       // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
 
-      const fileExt = 'pdf';
-      const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const fileExt = "pdf";
+      const fileName = `${Date.now()}_${Math.random()
+        .toString(36)
+        .substring(7)}.${fileExt}`;
       const filePath = `${user.id}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('kyc-documents')
+        .from("kyc-documents")
         .upload(filePath, file);
 
       if (uploadError) {
@@ -61,23 +76,26 @@ const PDFUpload = ({ onFileUpload, currentFile, folder = 'kyc-documents', label 
 
       // Store the file path for later signed URL generation
       onFileUpload(filePath);
-      
+
       toast({
         title: "File uploaded successfully",
         description: `${label} has been uploaded.`,
       });
     } catch (error: any) {
-      console.error('Upload error:', error);
+      console.error("Upload error:", error);
       toast({
         title: "Upload failed",
-        description: error.message || "Failed to upload document. Please try again.",
+        description:
+          error.message || "Failed to upload document. Please try again.",
         variant: "destructive",
       });
     } finally {
       setUploading(false);
       // Reset file input
-      const fileInput = document.getElementById(`pdf-upload-${label}`) as HTMLInputElement;
-      if (fileInput) fileInput.value = '';
+      const fileInput = document.getElementById(
+        `pdf-upload-${label}`
+      ) as HTMLInputElement;
+      if (fileInput) fileInput.value = "";
     }
   };
 
@@ -85,28 +103,30 @@ const PDFUpload = ({ onFileUpload, currentFile, folder = 'kyc-documents', label 
     if (currentFile) {
       try {
         const { data: signedUrlData, error } = await supabase.storage
-          .from('kyc-documents')
+          .from("kyc-documents")
           .createSignedUrl(currentFile, 3600); // 1 hour expiry
 
         if (error) throw error;
-        window.open(signedUrlData.signedUrl, '_blank');
+        window.open(signedUrlData.signedUrl, "_blank");
       } catch (error) {
-        console.error('Error viewing file:', error);
+        console.error("Error viewing file:", error);
         toast({
           title: "Error",
           description: "Failed to open document",
-          variant: "destructive"
+          variant: "destructive",
         });
       }
     }
   };
 
   const handleRemove = () => {
-    onFileUpload('');
-    setFileName('');
+    onFileUpload("");
+    setFileNameState("");
     // Reset file input
-    const fileInput = document.getElementById(`pdf-upload-${label}`) as HTMLInputElement;
-    if (fileInput) fileInput.value = '';
+    const fileInput = document.getElementById(
+      `pdf-upload-${label}`
+    ) as HTMLInputElement;
+    if (fileInput) fileInput.value = "";
   };
 
   return (
@@ -117,7 +137,7 @@ const PDFUpload = ({ onFileUpload, currentFile, folder = 'kyc-documents', label 
             <div className="flex items-center justify-center space-x-2">
               <FileText className="h-8 w-8 text-red-600" />
               <span className="text-sm font-medium text-gray-700">
-                {fileName || 'PDF Document'}
+                {displayFileName}
               </span>
             </div>
             <div className="flex space-x-2 justify-center">
