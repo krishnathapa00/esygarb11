@@ -55,7 +55,7 @@ const ProductDetails = () => {
               <img
                 src={product.image}
                 alt={product.name}
-                className="w-full h-96 object-cover rounded-lg"
+                className="w-full h-96 object-contain rounded-lg"
               />
               {product.discount && (
                 <Badge className="absolute top-4 left-4 bg-red-500 hover:bg-red-500">
