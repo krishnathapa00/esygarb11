@@ -219,27 +219,32 @@ const SubCategoriesPage = () => {
           <div className="flex-1">
             {filteredProducts.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {filteredProducts.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={{
-                      id: product.id,
-                      name: product.name,
-                      price: product.price,
-                      originalPrice: product.original_price,
-                      image: product.image_url || "/placeholder.svg",
-                      weight: product.weight || "",
-                      discount: product.discount,
-                      deliveryTime: "10 min",
-                      category: category?.name || "",
-                    }}
-                    onAddToCart={() => handleAddToCart(product)}
-                    onUpdateQuantity={(productId, quantity) =>
-                      handleUpdateQuantity(productId, quantity)
-                    }
-                    cartQuantity={getCartQuantity(product.id)}
-                  />
-                ))}
+                {filteredProducts.map((product) => {
+                  const mappedProduct = {
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    originalPrice: product.original_price,
+                    image: product.image_url || "/placeholder.svg",
+                    weight: product.weight || "",
+                    discount: product.discount,
+                    deliveryTime: "10 min",
+                    category: category?.name || "",
+                    categoryId: product.category_id,
+                  };
+
+                  return (
+                    <ProductCard
+                      key={product.id}
+                      product={mappedProduct}
+                      onAddToCart={() => handleAddToCart(mappedProduct)}
+                      onUpdateQuantity={(productId, quantity) =>
+                        handleUpdateQuantity(productId, quantity)
+                      }
+                      cartQuantity={getCartQuantity(product.id)}
+                    />
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-12">
