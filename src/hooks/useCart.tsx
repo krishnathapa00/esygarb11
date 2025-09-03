@@ -11,6 +11,7 @@ export const useCartActions = () => {
       image: product.image,
       weight: product.weight,
       quantity: 1,
+      category_id: product.categoryId,
     });
   };
 
@@ -36,4 +37,3 @@ export const useCartActions = () => {
     getCartQuantity,
   };
 };
-
