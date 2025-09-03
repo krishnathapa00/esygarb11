@@ -84,49 +84,6 @@ const CartPage = () => {
     fetchOrderCount();
   }, [user]);
 
-  useEffect(() => {
-    if (isManualPromo || appliedPromo || !user) return;
-
-    if (totalPrice > 400) {
-      const discount = Math.floor(totalPrice * 0.2);
-      setPromoDiscount(discount);
-      setAppliedPromo({
-        code: "SAVE20",
-        name: "20% OFF on orders above Rs400",
-        discount_type: "percentage",
-        discount_value: 20,
-      });
-      toast({ title: `20% OFF applied! You saved Rs ${discount}` });
-    } else if (hasFruitsAndVeg) {
-      const discount = 50;
-      setPromoDiscount(discount);
-      setAppliedPromo({
-        code: "FRUIT50",
-        name: "Rs 50 OFF on Fruits & Vegetables",
-        discount_type: "flat",
-        discount_value: 50,
-      });
-      toast({ title: `Rs 50 OFF applied on Fruits & Vegetables!` });
-    }
-  }, [
-    orderCount,
-    totalPrice,
-    hasFruitsAndVeg,
-    user,
-    appliedPromo,
-    isManualPromo,
-  ]);
-
-  useEffect(() => {
-    if (appliedPromo?.code === "FRUIT50" && !hasFruitsAndVeg) {
-      setAppliedPromo(null);
-      setPromoDiscount(0);
-      toast({
-        title: "Rs 50 OFF promo removed as no Fruits & Vegetables in cart.",
-      });
-    }
-  }, [cart, appliedPromo]);
-
   const handleUpdateQuantity = (productId: number, newQuantity: number) => {
     if (newQuantity <= 0) {
       removeItem(productId);
@@ -352,22 +309,43 @@ const CartPage = () => {
                   </div>
                 </div>
               ) : (
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Enter promo code"
-                    value={promoCode}
-                    onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                    className="flex-1 px-2 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
-                  />
-                  <Button
-                    onClick={handleApplyPromo}
-                    variant="outline"
-                    className="px-4 py-2 border-green-200 hover:bg-green-50 text-sm"
-                  >
-                    Apply
-                  </Button>
-                </div>
+                <>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Enter promo code"
+                      value={promoCode}
+                      onChange={(e) =>
+                        setPromoCode(e.target.value.toUpperCase())
+                      }
+                      disabled={cart.length === 0 || !user}
+                      className={`flex-1 px-2 py-2 border rounded-lg focus:outline-none text-sm ${
+                        cart.length === 0 || !user
+                          ? "border-gray-200 bg-gray-100 cursor-not-allowed"
+                          : "border-gray-300 focus:ring-2 focus:ring-green-500"
+                      }`}
+                    />
+                    <Button
+                      onClick={handleApplyPromo}
+                      variant="outline"
+                      disabled={cart.length === 0 || !user}
+                      className={`px-4 py-2 border-green-200 text-sm ${
+                        cart.length === 0 || !user
+                          ? "opacity-50 cursor-not-allowed"
+                          : "hover:bg-green-50"
+                      }`}
+                    >
+                      Apply
+                    </Button>
+                  </div>
+                  {(cart.length === 0 || !user) && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      {!user
+                        ? "Please login to apply promo codes."
+                        : "Add items to your cart to use promo codes."}
+                    </p>
+                  )}
+                </>
               )}
             </div>
 
