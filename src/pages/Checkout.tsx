@@ -18,12 +18,16 @@ import ProfileCompletionModal from "@/components/ProfileCompletionModal";
 import EsewaLogo from "../assets/payments/esewa.jpg";
 import LocationDisplay from "@/components/LocationDisplay";
 import KhaltiLogo from "../assets/payments/khalti.jpg";
+import { useLocation } from "react-router-dom";
 
 const Checkout = () => {
   const { cart, resetCart, mergeGuestCart } = useCart();
   const { user, loading } = useAuth();
   const { profile, updateProfile } = useUserProfile();
   const navigate = useNavigate();
+
+  const location = useLocation();
+  const { appliedPromo, promoDiscount } = location.state || {};
 
   const [orderCount, setOrderCount] = useState<number | null>(null);
 
@@ -60,7 +64,8 @@ const Checkout = () => {
       ? 0
       : baseDeliveryFee;
 
-  const totalAmount = totalPrice + deliveryFee;
+  const discount = promoDiscount ?? 0;
+  const totalAmount = totalPrice + deliveryFee - discount;
 
   const [selectedPayment, setSelectedPayment] = useState("cod");
   const [showProfileModal, setShowProfileModal] = useState(true);
@@ -177,6 +182,8 @@ const Checkout = () => {
           delivery_address: deliveryAddress,
           estimated_delivery: "10 mins",
           status: "pending",
+          promo_code: appliedPromo?.code ?? null,
+          promo_discount: discount,
         })
         .select()
         .single();
@@ -364,6 +371,20 @@ const Checkout = () => {
                 <span>Delivery Fee</span>
                 <span>Rs {deliveryFee}</span>
               </div>
+
+              {appliedPromo?.code === "FIRST20" && (
+                <p className="text-green-700 text-xs mt-1">
+                  20% OFF on your first order applied!
+                </p>
+              )}
+
+              {discount > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <span>Promo Discount</span>
+                  <span>-Rs {discount}</span>
+                </div>
+              )}
+
               {orderCount !== null && (orderCount < 3 || totalPrice > 200) ? (
                 <p className="text-xs text-green-600 mt-1">
                   Free delivery{" "}
