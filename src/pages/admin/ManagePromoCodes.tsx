@@ -1,15 +1,24 @@
-import React, { useState } from 'react';
-import { Search, Plus, Edit2, Trash2, Tag, Calendar, DollarSign, Users } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
+import React, { useState } from "react";
+import {
+  Search,
+  Plus,
+  Edit2,
+  Trash2,
+  Tag,
+  Calendar,
+  DollarSign,
+  Users,
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -18,10 +27,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Label } from '@/components/ui/label';
-import AdminLayout from './components/AdminLayout';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Label } from "@/components/ui/label";
+import AdminLayout from "./components/AdminLayout";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
 interface PromoCode {
@@ -36,41 +45,55 @@ interface PromoCode {
   expires_at?: string;
   is_active: boolean;
   created_at: string;
+  category_ids?: string[];
 }
 
 const ManagePromoCodes = () => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPromo, setEditingPromo] = useState<PromoCode | null>(null);
   const [loading, setLoading] = useState(false);
-  
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   // Form state
   const [promoForm, setPromoForm] = useState({
-    code: '',
-    discount_type: 'percentage' as 'percentage' | 'fixed',
-    discount_value: '',
-    min_order_amount: '',
-    max_discount_amount: '',
-    usage_limit: '',
-    expiry_date: '',
-    is_active: true
+    code: "",
+    discount_type: "percentage" as "percentage" | "fixed",
+    discount_value: "",
+    min_order_amount: "",
+    max_discount_amount: "",
+    usage_limit: "",
+    expiry_date: "",
+    is_active: true,
+    category_ids: [],
   });
 
   // Fetch promo codes
   const { data: promoCodes = [], refetch } = useQuery({
-    queryKey: ['admin-promo-codes'],
+    queryKey: ["admin-promo-codes"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('promo_codes')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .from("promo_codes")
+        .select("*")
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data || [];
-    }
+    },
+  });
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("id, name")
+        .order("name");
+      if (error) throw error;
+      return data || [];
+    },
   });
 
   const filteredPromoCodes = (promoCodes || []).filter((promo: any) =>
@@ -80,14 +103,15 @@ const ManagePromoCodes = () => {
   const handleAdd = () => {
     setEditingPromo(null);
     setPromoForm({
-      code: '',
-      discount_type: 'percentage',
-      discount_value: '',
-      min_order_amount: '',
-      max_discount_amount: '',
-      usage_limit: '',
-      expiry_date: '',
-      is_active: true
+      code: "",
+      discount_type: "percentage",
+      discount_value: "",
+      min_order_amount: "",
+      max_discount_amount: "",
+      usage_limit: "",
+      expiry_date: "",
+      is_active: true,
+      category_ids: [],
     });
     setModalOpen(true);
   };
@@ -96,13 +120,14 @@ const ManagePromoCodes = () => {
     setEditingPromo(promo);
     setPromoForm({
       code: promo.code,
-      discount_type: promo.discount_type as 'percentage' | 'fixed',
+      discount_type: promo.discount_type as "percentage" | "fixed",
       discount_value: promo.discount_value.toString(),
-      min_order_amount: promo.min_order_amount?.toString() || '',
-      max_discount_amount: promo.max_discount_amount?.toString() || '',
-      usage_limit: promo.usage_limit?.toString() || '',
-      expiry_date: promo.expires_at ? promo.expires_at.split('T')[0] : '',
-      is_active: promo.is_active
+      min_order_amount: promo.min_order_amount?.toString() || "",
+      max_discount_amount: promo.max_discount_amount?.toString() || "",
+      usage_limit: promo.usage_limit?.toString() || "",
+      expiry_date: promo.expires_at ? promo.expires_at.split("T")[0] : "",
+      is_active: promo.is_active,
+      category_ids: promo.category_ids || [],
     });
     setModalOpen(true);
   };
@@ -111,34 +136,42 @@ const ManagePromoCodes = () => {
     setLoading(true);
     try {
       if (!promoForm.code.trim() || !promoForm.discount_value) {
-        throw new Error('Code and discount value are required');
+        throw new Error("Code and discount value are required");
       }
 
       const payload = {
         code: promoForm.code.trim().toUpperCase(),
         discount_type: promoForm.discount_type,
         discount_value: parseFloat(promoForm.discount_value),
-        min_order_amount: promoForm.min_order_amount ? parseFloat(promoForm.min_order_amount) : null,
-        max_discount_amount: promoForm.max_discount_amount ? parseFloat(promoForm.max_discount_amount) : null,
-        usage_limit: promoForm.usage_limit ? parseInt(promoForm.usage_limit) : null,
+        min_order_amount: promoForm.min_order_amount
+          ? parseFloat(promoForm.min_order_amount)
+          : null,
+        max_discount_amount: promoForm.max_discount_amount
+          ? parseFloat(promoForm.max_discount_amount)
+          : null,
+        usage_limit: promoForm.usage_limit
+          ? parseInt(promoForm.usage_limit)
+          : null,
         expires_at: promoForm.expiry_date || null,
         is_active: promoForm.is_active,
-        used_count: 0
+        used_count: 0,
+        category_ids:
+          promoForm.category_ids.length > 0 ? promoForm.category_ids : null,
       };
 
       if (editingPromo) {
         const { error } = await supabase
-          .from('promo_codes')
+          .from("promo_codes")
           .update(payload)
-          .eq('id', editingPromo.id);
-        
+          .eq("id", editingPromo.id);
+
         if (error) throw error;
         toast({ title: "Promo code updated successfully!" });
       } else {
         const { error } = await supabase
-          .from('promo_codes')
-          .insert([{...payload, name: payload.code}]);
-        
+          .from("promo_codes")
+          .insert([{ ...payload, name: payload.code }]);
+
         if (error) throw error;
         toast({ title: "Promo code created successfully!" });
       }
@@ -149,7 +182,7 @@ const ManagePromoCodes = () => {
       toast({
         title: "Failed to save promo code",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -157,15 +190,15 @@ const ManagePromoCodes = () => {
   };
 
   const handleDelete = async (promoId: string) => {
-    if (!confirm('Are you sure you want to delete this promo code?')) {
+    if (!confirm("Are you sure you want to delete this promo code?")) {
       return;
     }
 
     try {
       const { error } = await supabase
-        .from('promo_codes')
+        .from("promo_codes")
         .delete()
-        .eq('id', promoId);
+        .eq("id", promoId);
 
       if (error) throw error;
 
@@ -175,7 +208,7 @@ const ManagePromoCodes = () => {
       toast({
         title: "Failed to delete promo code",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
@@ -183,21 +216,23 @@ const ManagePromoCodes = () => {
   const toggleActive = async (promo: PromoCode) => {
     try {
       const { error } = await supabase
-        .from('promo_codes')
+        .from("promo_codes")
         .update({ is_active: !promo.is_active })
-        .eq('id', promo.id);
+        .eq("id", promo.id);
 
       if (error) throw error;
 
-      toast({ 
-        title: `Promo code ${!promo.is_active ? 'activated' : 'deactivated'} successfully!` 
+      toast({
+        title: `Promo code ${
+          !promo.is_active ? "activated" : "deactivated"
+        } successfully!`,
       });
       await refetch();
     } catch (error: any) {
       toast({
         title: "Failed to update promo code",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
@@ -207,7 +242,10 @@ const ManagePromoCodes = () => {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
           <h1 className="text-2xl font-bold">Promo Codes Management</h1>
-          <Button onClick={handleAdd} className="bg-primary hover:bg-primary/90">
+          <Button
+            onClick={handleAdd}
+            className="bg-primary hover:bg-primary/90"
+          >
             <Plus className="h-4 w-4 mr-2" />
             Add Promo Code
           </Button>
@@ -230,12 +268,24 @@ const ManagePromoCodes = () => {
             <table className="min-w-full divide-y divide-border">
               <thead className="bg-muted/50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Code</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Discount</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Conditions</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Usage</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Status</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
+                    Code
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
+                    Discount
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
+                    Conditions
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
+                    Usage
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-card divide-y divide-border">
@@ -245,16 +295,24 @@ const ManagePromoCodes = () => {
                       <div className="flex items-center">
                         <Tag className="h-4 w-4 mr-2 text-primary" />
                         <div>
-                          <div className="text-sm font-medium text-foreground">{promo.code}</div>
-                           <div className="text-xs text-muted-foreground">
-                             {promo.expires_at ? `Expires: ${new Date(promo.expires_at).toLocaleDateString()}` : 'No expiry'}
-                           </div>
+                          <div className="text-sm font-medium text-foreground">
+                            {promo.code}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {promo.expires_at
+                              ? `Expires: ${new Date(
+                                  promo.expires_at
+                                ).toLocaleDateString()}`
+                              : "No expiry"}
+                          </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-foreground">
-                        {promo.discount_type === 'percentage' ? `${promo.discount_value}%` : `NPR ${promo.discount_value}`}
+                        {promo.discount_type === "percentage"
+                          ? `${promo.discount_value}%`
+                          : `NPR ${promo.discount_value}`}
                       </div>
                       {promo.max_discount_amount && (
                         <div className="text-xs text-muted-foreground">
@@ -264,44 +322,46 @@ const ManagePromoCodes = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-muted-foreground">
-                        {promo.min_order_amount ? `Min order: NPR ${promo.min_order_amount}` : 'No minimum'}
+                        {promo.min_order_amount
+                          ? `Min order: NPR ${promo.min_order_amount}`
+                          : "No minimum"}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-foreground">
-                        {promo.used_count} / {promo.usage_limit || '∞'}
+                        {promo.used_count} / {promo.usage_limit || "∞"}
                       </div>
                       <div className="text-xs text-muted-foreground">used</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge 
+                      <Badge
                         variant={promo.is_active ? "default" : "secondary"}
                         className={promo.is_active ? "bg-primary" : ""}
                       >
-                        {promo.is_active ? 'Active' : 'Inactive'}
+                        {promo.is_active ? "Active" : "Inactive"}
                       </Badge>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => toggleActive(promo)}
                         className="mr-2"
                       >
-                        {promo.is_active ? 'Deactivate' : 'Activate'}
+                        {promo.is_active ? "Deactivate" : "Activate"}
                       </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => handleEdit(promo)}
                         className="mr-2"
                       >
                         <Edit2 className="h-4 w-4 mr-1" />
                         Edit
                       </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         className="text-destructive hover:text-destructive hover:bg-destructive/10"
                         onClick={() => handleDelete(promo.id)}
                       >
@@ -313,7 +373,10 @@ const ManagePromoCodes = () => {
                 ))}
                 {filteredPromoCodes.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">
+                    <td
+                      colSpan={6}
+                      className="px-6 py-8 text-center text-muted-foreground"
+                    >
                       No promo codes found
                     </td>
                   </tr>
@@ -328,13 +391,15 @@ const ManagePromoCodes = () => {
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
               <DialogTitle>
-                {editingPromo ? 'Edit Promo Code' : 'Add New Promo Code'}
+                {editingPromo ? "Edit Promo Code" : "Add New Promo Code"}
               </DialogTitle>
               <DialogDescription>
-                {editingPromo ? 'Update the promo code details.' : 'Create a new promotional discount code.'}
+                {editingPromo
+                  ? "Update the promo code details."
+                  : "Create a new promotional discount code."}
               </DialogDescription>
             </DialogHeader>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="code">Promo Code*</Label>
@@ -342,16 +407,21 @@ const ManagePromoCodes = () => {
                   id="code"
                   placeholder="WELCOME10"
                   value={promoForm.code}
-                  onChange={(e) => setPromoForm({...promoForm, code: e.target.value.toUpperCase()})}
+                  onChange={(e) =>
+                    setPromoForm({
+                      ...promoForm,
+                      code: e.target.value.toUpperCase(),
+                    })
+                  }
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="discount_type">Discount Type*</Label>
-                <Select 
-                  value={promoForm.discount_type} 
-                  onValueChange={(value: 'percentage' | 'fixed') => 
-                    setPromoForm({...promoForm, discount_type: value})
+                <Select
+                  value={promoForm.discount_type}
+                  onValueChange={(value: "percentage" | "fixed") =>
+                    setPromoForm({ ...promoForm, discount_type: value })
                   }
                 >
                   <SelectTrigger>
@@ -366,14 +436,22 @@ const ManagePromoCodes = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="discount_value">
-                  Discount Value* {promoForm.discount_type === 'percentage' ? '(%)' : '(NPR)'}
+                  Discount Value*{" "}
+                  {promoForm.discount_type === "percentage" ? "(%)" : "(NPR)"}
                 </Label>
                 <Input
                   id="discount_value"
                   type="number"
-                  placeholder={promoForm.discount_type === 'percentage' ? '10' : '100'}
+                  placeholder={
+                    promoForm.discount_type === "percentage" ? "10" : "100"
+                  }
                   value={promoForm.discount_value}
-                  onChange={(e) => setPromoForm({...promoForm, discount_value: e.target.value})}
+                  onChange={(e) =>
+                    setPromoForm({
+                      ...promoForm,
+                      discount_value: e.target.value,
+                    })
+                  }
                 />
               </div>
 
@@ -384,19 +462,31 @@ const ManagePromoCodes = () => {
                   type="number"
                   placeholder="500"
                   value={promoForm.min_order_amount}
-                  onChange={(e) => setPromoForm({...promoForm, min_order_amount: e.target.value})}
+                  onChange={(e) =>
+                    setPromoForm({
+                      ...promoForm,
+                      min_order_amount: e.target.value,
+                    })
+                  }
                 />
               </div>
 
-              {promoForm.discount_type === 'percentage' && (
+              {promoForm.discount_type === "percentage" && (
                 <div className="space-y-2">
-                  <Label htmlFor="max_discount_amount">Max Discount Amount (NPR)</Label>
+                  <Label htmlFor="max_discount_amount">
+                    Max Discount Amount (NPR)
+                  </Label>
                   <Input
                     id="max_discount_amount"
                     type="number"
                     placeholder="200"
                     value={promoForm.max_discount_amount}
-                    onChange={(e) => setPromoForm({...promoForm, max_discount_amount: e.target.value})}
+                    onChange={(e) =>
+                      setPromoForm({
+                        ...promoForm,
+                        max_discount_amount: e.target.value,
+                      })
+                    }
                   />
                 </div>
               )}
@@ -408,7 +498,9 @@ const ManagePromoCodes = () => {
                   type="number"
                   placeholder="100"
                   value={promoForm.usage_limit}
-                  onChange={(e) => setPromoForm({...promoForm, usage_limit: e.target.value})}
+                  onChange={(e) =>
+                    setPromoForm({ ...promoForm, usage_limit: e.target.value })
+                  }
                 />
               </div>
 
@@ -418,15 +510,19 @@ const ManagePromoCodes = () => {
                   id="expiry_date"
                   type="date"
                   value={promoForm.expiry_date}
-                  onChange={(e) => setPromoForm({...promoForm, expiry_date: e.target.value})}
+                  onChange={(e) =>
+                    setPromoForm({ ...promoForm, expiry_date: e.target.value })
+                  }
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="is_active">Status</Label>
-                <Select 
-                  value={promoForm.is_active.toString()} 
-                  onValueChange={(value) => setPromoForm({...promoForm, is_active: value === 'true'})}
+                <Select
+                  value={promoForm.is_active.toString()}
+                  onValueChange={(value) =>
+                    setPromoForm({ ...promoForm, is_active: value === "true" })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -437,6 +533,35 @@ const ManagePromoCodes = () => {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="col-span-2 space-y-2">
+                <Label>
+                  Applicable Categories (Leave empty for all if not needed)
+                </Label>
+                <div className="max-h-40 overflow-y-auto border rounded p-2">
+                  {categories.map((cat) => (
+                    <label key={cat.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={promoForm.category_ids.includes(
+                          String(cat.id)
+                        )}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setPromoForm((prev) => {
+                            const newCatIds = checked
+                              ? [...prev.category_ids, String(cat.id)]
+                              : prev.category_ids.filter(
+                                  (id) => id !== String(cat.id)
+                                );
+                            return { ...prev, category_ids: newCatIds };
+                          });
+                        }}
+                      />
+                      <span>{cat.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <DialogFooter>
@@ -444,7 +569,7 @@ const ManagePromoCodes = () => {
                 Cancel
               </Button>
               <Button onClick={handleSubmit} disabled={loading}>
-                {loading ? 'Saving...' : editingPromo ? 'Update' : 'Create'}
+                {loading ? "Saving..." : editingPromo ? "Update" : "Create"}
               </Button>
             </DialogFooter>
           </DialogContent>
