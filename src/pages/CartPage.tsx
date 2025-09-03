@@ -75,11 +75,34 @@ const CartPage = () => {
         return;
       }
 
-      setOrderCount(data.length); // or data?.count
+      setOrderCount(data.length);
     };
 
     fetchOrderCount();
   }, [user]);
+
+  useEffect(() => {
+    if (
+      orderCount === 0 &&
+      totalPrice > 400 &&
+      !appliedPromo &&
+      user // make sure user is logged in
+    ) {
+      const discount = Math.floor(totalPrice * 0.2);
+
+      setPromoDiscount(discount);
+      setAppliedPromo({
+        code: "FIRST20",
+        name: "20% OFF on First Order",
+        discount_type: "percentage",
+        discount_value: 20,
+      });
+
+      toast({
+        title: `20% OFF applied on your first order! You saved Rs ${discount}`,
+      });
+    }
+  }, [orderCount, totalPrice, appliedPromo, user]);
 
   const handleUpdateQuantity = (productId: number, newQuantity: number) => {
     if (newQuantity <= 0) {
@@ -287,6 +310,11 @@ const CartPage = () => {
                       <p className="text-xs text-green-600">
                         Discount: Rs {promoDiscount}
                       </p>
+                      {appliedPromo?.code === "FIRST20" && (
+                        <p className="text-green-700 text-xs font-medium mt-2">
+                          20% OFF on your first order applied!
+                        </p>
+                      )}
                     </div>
                     <Button
                       variant="outline"
