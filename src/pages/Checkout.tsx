@@ -27,7 +27,18 @@ const Checkout = () => {
   const navigate = useNavigate();
 
   const location = useLocation();
-  const { appliedPromo, promoDiscount } = location.state || {};
+
+  const [promoDiscount, setPromoDiscount] = useState(() => {
+    if (location.state?.promoDiscount) return location.state.promoDiscount;
+    const stored = sessionStorage.getItem("promo_discount");
+    return stored ? Number(stored) : 0;
+  });
+
+  const [appliedPromo, setAppliedPromo] = useState(() => {
+    if (location.state?.appliedPromo) return location.state.appliedPromo;
+    const stored = sessionStorage.getItem("applied_promo");
+    return stored ? JSON.parse(stored) : null;
+  });
 
   const [orderCount, setOrderCount] = useState<number | null>(null);
 
@@ -36,6 +47,18 @@ const Checkout = () => {
     (sum, item) => sum + item.price * item.quantity,
     0
   );
+
+  useEffect(() => {
+    if (appliedPromo) {
+      sessionStorage.setItem("applied_promo", JSON.stringify(appliedPromo));
+    } else {
+      sessionStorage.removeItem("applied_promo");
+    }
+  }, [appliedPromo]);
+
+  useEffect(() => {
+    sessionStorage.setItem("promo_discount", String(promoDiscount));
+  }, [promoDiscount]);
 
   const { data: deliveryConfig, isLoading: configLoading } = useQuery({
     queryKey: ["delivery-config"],
@@ -224,6 +247,8 @@ const Checkout = () => {
       resetCart();
       sessionStorage.setItem("last_order", JSON.stringify(orderDetails));
       navigate("/order-confirmation", { state: orderDetails });
+      sessionStorage.removeItem("applied_promo");
+      sessionStorage.removeItem("promo_discount");
     } catch (error) {
       console.error("Error placing order:", error);
       alert("Failed to place order. Please try again.");
