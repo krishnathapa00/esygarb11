@@ -372,9 +372,9 @@ const Checkout = () => {
                 <span>Rs {deliveryFee}</span>
               </div>
 
-              {appliedPromo?.code === "FIRST20" && (
+              {appliedPromo?.code === "SAVE20" && (
                 <p className="text-green-700 text-xs mt-1">
-                  20% OFF on your first order applied!
+                  20% OFF on your order above Rs400 applied!
                 </p>
               )}
 
@@ -392,7 +392,7 @@ const Checkout = () => {
                     ? `for your first ${3 - orderCount} order${
                         3 - orderCount > 1 ? "s" : ""
                       }`
-                    : "because order total exceeds ₹200"}
+                    : "because order total exceeds Rs200"}
                   !
                 </p>
               ) : (
