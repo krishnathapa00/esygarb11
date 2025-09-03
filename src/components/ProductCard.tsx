@@ -13,6 +13,7 @@ export interface Product {
   discount?: number;
   deliveryTime: string;
   category: string;
+  category_id: number;
 }
 
 interface ProductCardProps {
