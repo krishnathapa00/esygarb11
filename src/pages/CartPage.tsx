@@ -87,17 +87,16 @@ const CartPage = () => {
   useEffect(() => {
     if (isManualPromo || appliedPromo || !user) return;
 
-    // First-time promo takes precedence
-    if (orderCount === 0 && totalPrice > 400) {
+    if (totalPrice > 400) {
       const discount = Math.floor(totalPrice * 0.2);
       setPromoDiscount(discount);
       setAppliedPromo({
-        code: "FIRST20",
-        name: "20% OFF on First Order",
+        code: "SAVE20",
+        name: "20% OFF on orders above Rs400",
         discount_type: "percentage",
         discount_value: 20,
       });
-      toast({ title: `20% OFF on your first order! Saved Rs ${discount}` });
+      toast({ title: `20% OFF applied! You saved Rs ${discount}` });
     } else if (hasFruitsAndVeg) {
       const discount = 50;
       setPromoDiscount(discount);
@@ -336,9 +335,9 @@ const CartPage = () => {
                       <p className="text-xs text-green-600">
                         Discount: Rs {promoDiscount}
                       </p>
-                      {appliedPromo?.code === "FIRST20" && (
+                      {appliedPromo?.code === "SAVE20" && (
                         <p className="text-green-700 text-xs font-medium mt-2">
-                          20% OFF on your first order applied!
+                          20% OFF on orders above Rs400 applied!
                         </p>
                       )}
                     </div>
@@ -398,7 +397,7 @@ const CartPage = () => {
                     </p>
                   ) : (
                     <p className="text-xs text-green-600">
-                      Free delivery because order total exceeds ₹200!
+                      Free delivery because order total exceeds Rs200!
                     </p>
                   )
                 ) : (
