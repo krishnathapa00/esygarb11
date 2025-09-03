@@ -27,8 +27,6 @@ const CartPage = () => {
   const [promoDiscount, setPromoDiscount] = useState(0);
   const [isManualPromo, setIsManualPromo] = useState(false);
 
-  const hasFruitsAndVeg = cart.some((item) => item.category_id === 1);
-
   const [orderCount, setOrderCount] = useState<number | null>(null);
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -84,6 +82,26 @@ const CartPage = () => {
     fetchOrderCount();
   }, [user]);
 
+  useEffect(() => {
+    if (appliedPromo && totalPrice < appliedPromo.min_order_amount) {
+      toast({
+        title: `Promo code removed - subtotal fell below Rs ${appliedPromo.min_order_amount}`,
+        variant: "destructive",
+      });
+      handleRemovePromo();
+    }
+  }, [totalPrice, appliedPromo]);
+
+  useEffect(() => {
+    if (appliedPromo) {
+      sessionStorage.setItem("applied_promo", JSON.stringify(appliedPromo));
+      sessionStorage.setItem("promo_discount", String(promoDiscount));
+    } else {
+      sessionStorage.removeItem("applied_promo");
+      sessionStorage.removeItem("promo_discount");
+    }
+  }, [appliedPromo, promoDiscount]);
+
   const handleUpdateQuantity = (productId: number, newQuantity: number) => {
     if (newQuantity <= 0) {
       removeItem(productId);
@@ -133,14 +151,18 @@ const CartPage = () => {
       }
 
       let discount = 0;
+
       if (promo.discount_type === "percentage") {
         discount = (totalPrice * promo.discount_value) / 100;
-        if (promo.max_discount_amount && discount > promo.max_discount_amount) {
-          discount = promo.max_discount_amount;
+
+        if (promo.max_discount_amount) {
+          discount = Math.min(discount, promo.max_discount_amount);
         }
-      } else {
+      } else if (promo.discount_type === "fixed") {
         discount = promo.discount_value;
       }
+
+      discount = Math.min(discount, totalPrice);
 
       setIsManualPromo(true);
       setAppliedPromo(promo);
@@ -292,11 +314,13 @@ const CartPage = () => {
                       <p className="text-xs text-green-600">
                         Discount: Rs {promoDiscount}
                       </p>
-                      {appliedPromo?.code === "SAVE20" && (
-                        <p className="text-green-700 text-xs font-medium mt-2">
-                          20% OFF on orders above Rs400 applied!
-                        </p>
-                      )}
+
+                      <p className="text-green-700 text-xs font-medium mt-2">
+                        {appliedPromo.discount_type === "percentage"
+                          ? `${appliedPromo.discount_value}% OFF up to Rs ${appliedPromo.max_discount_amount}`
+                          : `Flat Rs ${appliedPromo.discount_value} OFF`}{" "}
+                        on orders above Rs {appliedPromo.min_order_amount}
+                      </p>
                     </div>
                     <Button
                       variant="outline"
