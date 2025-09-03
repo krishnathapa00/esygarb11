@@ -4,12 +4,15 @@ import Header from "@/components/Header";
 import ProductCard from "@/components/ProductCard";
 import { useProducts } from "@/hooks/useProducts";
 import { Product } from "@/hooks/useProducts";
+import { useCartActions } from "@/hooks/useCart";
 
 const SearchResults = () => {
   const [searchParams] = useSearchParams();
   const query = searchParams.get("query")?.toLowerCase() || "";
   const { data: products = [], isLoading, isError } = useProducts();
   const [searchQuery, setSearchQuery] = useState(query);
+  const { handleAddToCart, getCartQuantity, handleUpdateQuantity } =
+    useCartActions();
 
   useEffect(() => {
     setSearchQuery(query);
@@ -45,11 +48,9 @@ const SearchResults = () => {
               <ProductCard
                 key={product.id}
                 product={product}
-                onAddToCart={() => console.log("Add to cart", product)}
-                cartQuantity={0}
-                onUpdateQuantity={(id, qty) =>
-                  console.log("Update quantity", id, qty)
-                }
+                onAddToCart={() => handleAddToCart(product)}
+                cartQuantity={getCartQuantity(product.id)}
+                onUpdateQuantity={(id, qty) => handleUpdateQuantity(id, qty)}
               />
             ))}
           </div>
