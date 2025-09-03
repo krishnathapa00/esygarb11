@@ -25,6 +25,9 @@ const CartPage = () => {
   const [promoCode, setPromoCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<any>(null);
   const [promoDiscount, setPromoDiscount] = useState(0);
+  const [isManualPromo, setIsManualPromo] = useState(false);
+
+  const hasFruitsAndVeg = cart.some((item) => item.category_id === 1);
 
   const [orderCount, setOrderCount] = useState<number | null>(null);
 
@@ -82,14 +85,11 @@ const CartPage = () => {
   }, [user]);
 
   useEffect(() => {
-    if (
-      orderCount === 0 &&
-      totalPrice > 400 &&
-      !appliedPromo &&
-      user // make sure user is logged in
-    ) {
-      const discount = Math.floor(totalPrice * 0.2);
+    if (isManualPromo || appliedPromo || !user) return;
 
+    // First-time promo takes precedence
+    if (orderCount === 0 && totalPrice > 400) {
+      const discount = Math.floor(totalPrice * 0.2);
       setPromoDiscount(discount);
       setAppliedPromo({
         code: "FIRST20",
@@ -97,12 +97,36 @@ const CartPage = () => {
         discount_type: "percentage",
         discount_value: 20,
       });
+      toast({ title: `20% OFF on your first order! Saved Rs ${discount}` });
+    } else if (hasFruitsAndVeg) {
+      const discount = 50;
+      setPromoDiscount(discount);
+      setAppliedPromo({
+        code: "FRUIT50",
+        name: "Rs 50 OFF on Fruits & Vegetables",
+        discount_type: "flat",
+        discount_value: 50,
+      });
+      toast({ title: `Rs 50 OFF applied on Fruits & Vegetables!` });
+    }
+  }, [
+    orderCount,
+    totalPrice,
+    hasFruitsAndVeg,
+    user,
+    appliedPromo,
+    isManualPromo,
+  ]);
 
+  useEffect(() => {
+    if (appliedPromo?.code === "FRUIT50" && !hasFruitsAndVeg) {
+      setAppliedPromo(null);
+      setPromoDiscount(0);
       toast({
-        title: `20% OFF applied on your first order! You saved Rs ${discount}`,
+        title: "Rs 50 OFF promo removed as no Fruits & Vegetables in cart.",
       });
     }
-  }, [orderCount, totalPrice, appliedPromo, user]);
+  }, [cart, appliedPromo]);
 
   const handleUpdateQuantity = (productId: number, newQuantity: number) => {
     if (newQuantity <= 0) {
@@ -162,6 +186,7 @@ const CartPage = () => {
         discount = promo.discount_value;
       }
 
+      setIsManualPromo(true);
       setAppliedPromo(promo);
       setPromoDiscount(discount);
       toast({ title: `Promo code applied! Saved Rs ${discount}` });
@@ -175,6 +200,7 @@ const CartPage = () => {
     setAppliedPromo(null);
     setPromoDiscount(0);
     setPromoCode("");
+    setIsManualPromo(false);
     toast({ title: "Promo code removed" });
   };
 
