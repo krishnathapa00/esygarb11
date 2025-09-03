@@ -7,6 +7,7 @@ export interface CartItem {
   image: string;
   weight: string;
   quantity: number;
+  category_id: number;
 }
 
 type CartState = CartItem[];
@@ -61,8 +62,8 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
 
     case "MERGE_CART": {
       const merged = [...state];
-      action.payload.forEach(guestItem => {
-        const existing = merged.find(item => item.id === guestItem.id);
+      action.payload.forEach((guestItem) => {
+        const existing = merged.find((item) => item.id === guestItem.id);
         if (existing) {
           existing.quantity += guestItem.quantity;
         } else {
@@ -105,7 +106,14 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({
 
   return (
     <CartContext.Provider
-      value={{ cart, addToCart, updateQuantity, removeItem, resetCart, mergeGuestCart }}
+      value={{
+        cart,
+        addToCart,
+        updateQuantity,
+        removeItem,
+        resetCart,
+        mergeGuestCart,
+      }}
     >
       {children}
     </CartContext.Provider>
