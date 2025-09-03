@@ -16,6 +16,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 
+interface PromoCode {
+  id: string;
+  code: string;
+  discount_type: "percentage" | "fixed";
+  discount_value: number;
+  min_order_amount?: number;
+  max_discount_amount?: number;
+  usage_limit?: number;
+  used_count: number;
+  expires_at?: string;
+  is_active: boolean;
+  created_at: string;
+  category_ids?: number[];
+  category_names?: string[];
+}
+
 const CartPage = () => {
   const { cart, updateQuantity, removeItem } = useCart();
   const { toast } = useToast();
@@ -93,6 +109,48 @@ const CartPage = () => {
   }, [totalPrice, appliedPromo]);
 
   useEffect(() => {
+    if (
+      appliedPromo &&
+      Array.isArray(appliedPromo.category_ids) &&
+      appliedPromo.category_ids.length > 0
+    ) {
+      const hasMatchingItem = cart.some((item) =>
+        appliedPromo.category_ids.includes(item.category_id)
+      );
+
+      if (!hasMatchingItem) {
+        toast({
+          title: "Promo code removed - applicable items not in cart",
+          variant: "destructive",
+        });
+        handleRemovePromo();
+      }
+    }
+  }, [cart, appliedPromo]);
+
+  useEffect(() => {
+    if (!appliedPromo) return;
+
+    const stillEligible =
+      (!appliedPromo.min_order_amount ||
+        totalPrice >= appliedPromo.min_order_amount) &&
+      (!appliedPromo.category_ids ||
+        appliedPromo.category_ids.length === 0 ||
+        cart.some((item) =>
+          appliedPromo.category_ids.includes(item.category_id)
+        ));
+
+    if (!stillEligible) {
+      toast({
+        title: "Promo code removed",
+        description: "Your cart no longer meets the promo conditions.",
+        variant: "destructive",
+      });
+      handleRemovePromo();
+    }
+  }, [totalPrice, cart, appliedPromo]);
+
+  useEffect(() => {
     if (appliedPromo) {
       sessionStorage.setItem("applied_promo", JSON.stringify(appliedPromo));
       sessionStorage.setItem("promo_discount", String(promoDiscount));
@@ -122,10 +180,25 @@ const CartPage = () => {
         .select("*")
         .eq("code", promoCode.toUpperCase())
         .eq("is_active", true)
-        .single();
+        .single<PromoCode>();
 
       if (error || !promo) {
         toast({ title: "Invalid promo code", variant: "destructive" });
+        return;
+      }
+
+      promo.category_ids = promo.category_ids?.map(Number) || [];
+
+      if (
+        promo.category_ids &&
+        promo.category_ids.length > 0 &&
+        !cart.some((item) => promo.category_ids.includes(item.category_id))
+      ) {
+        toast({
+          title: `This promo code is only valid for selected categories.`,
+          description: `Add eligible items to your cart.`,
+          variant: "destructive",
+        });
         return;
       }
 
@@ -317,9 +390,20 @@ const CartPage = () => {
 
                       <p className="text-green-700 text-xs font-medium mt-2">
                         {appliedPromo.discount_type === "percentage"
-                          ? `${appliedPromo.discount_value}% OFF up to Rs ${appliedPromo.max_discount_amount}`
-                          : `Flat Rs ${appliedPromo.discount_value} OFF`}{" "}
-                        on orders above Rs {appliedPromo.min_order_amount}
+                          ? `${appliedPromo.discount_value}% OFF${
+                              appliedPromo.max_discount_amount
+                                ? ` up to Rs ${appliedPromo.max_discount_amount}`
+                                : ""
+                            }`
+                          : `Flat Rs ${appliedPromo.discount_value} OFF`}
+
+                        {appliedPromo.min_order_amount
+                          ? ` on orders above Rs ${appliedPromo.min_order_amount}`
+                          : ""}
+
+                        {appliedPromo.category_names?.length
+                          ? ` on selected categories`
+                          : ""}
                       </p>
                     </div>
                     <Button
