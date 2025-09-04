@@ -52,41 +52,40 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
     address: "",
   });
 
-  // Load existing profile data
   useEffect(() => {
     const loadProfile = async () => {
       if (!user) return;
 
+      // Get address only from localStorage or defaultAddress
+      let addressFromStorage = "";
+      const savedLocation = localStorage.getItem("esygrab_user_location");
+      if (savedLocation) {
+        try {
+          const locationData = JSON.parse(savedLocation);
+          addressFromStorage = locationData.address || "";
+        } catch (e) {
+          console.error("Error parsing saved location:", e);
+        }
+      }
+
       try {
+        // Fetch profile, but only full_name and phone (remove address)
         const { data: profile } = await supabase
           .from("profiles")
-          .select("full_name, phone, address")
+          .select("full_name, phone")
           .eq("id", user.id)
           .single();
-
-        // Get saved address from localStorage
-        const savedLocation = localStorage.getItem("esygrab_user_location");
-        let addressFromStorage = "";
-        if (savedLocation) {
-          try {
-            const locationData = JSON.parse(savedLocation);
-            addressFromStorage = locationData.address || "";
-          } catch (e) {
-            console.error("Error parsing saved location:", e);
-          }
-        }
 
         const profileData = {
           full_name: profile?.full_name || "",
           phone: profile?.phone || "",
           email: user.email || "",
-          address: defaultAddress || profile?.address || addressFromStorage,
+          address: addressFromStorage || defaultAddress || "",
         };
 
         setFormData(profileData);
         setOriginalData(profileData);
 
-        // Determine if this is a new user
         const isNew = !profile?.full_name || !profile?.phone;
         setIsNewUser(isNew);
         setHasChanges(false);
@@ -99,7 +98,7 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
     if (isOpen && user) {
       loadProfile();
     }
-  }, [isOpen, user]);
+  }, [isOpen, user, defaultAddress]);
 
   // Check for changes
   useEffect(() => {
@@ -153,6 +152,19 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
       });
 
       if (error) throw error;
+
+      const savedLocationStr = localStorage.getItem("esygrab_user_location");
+      let addressFromStorageStr = formData.address.trim();
+      if (savedLocationStr) {
+        try {
+          const locationData = JSON.parse(savedLocationStr);
+          if (locationData.address) {
+            addressFromStorageStr = locationData.address;
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
 
       toast({
         title: "Profile updated",
