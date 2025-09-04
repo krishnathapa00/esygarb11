@@ -97,7 +97,7 @@ const Checkout = () => {
 
   // Check if user needs to complete profile - only for new users with missing data
   const needsProfileCompletion =
-    user && (!profile.full_name || !profile.phone) && !profile.address;
+    user && (!profile.full_name || !profile.phone) && !deliveryAddress;
 
   useEffect(() => {
     if (!user) return;
