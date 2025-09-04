@@ -108,17 +108,17 @@ const Checkout = () => {
     const fetchOrderCount = async () => {
       if (!user) return;
 
-      const { data, error } = await supabase
+      const response = await supabase
         .from("orders")
         .select("id", { count: "exact" })
         .eq("user_id", user.id);
 
-      if (error) {
-        console.error("Failed to fetch order count:", error);
+      if (response.error) {
+        console.error("Failed to fetch order count:", response.error);
         return;
       }
 
-      setOrderCount(data?.length || 0);
+      setOrderCount(response.count || 0);
     };
 
     fetchOrderCount();
