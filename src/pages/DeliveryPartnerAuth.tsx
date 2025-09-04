@@ -1,27 +1,27 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Truck } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuthContext } from '@/contexts/AuthProvider';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, Truck } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuthContext } from "@/contexts/AuthProvider";
 
 const DeliveryPartnerAuth = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [vehicleType, setVehicleType] = useState('');
-  const [licenseNumber, setLicenseNumber] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [vehicleType, setVehicleType] = useState("");
+  const [licenseNumber, setLicenseNumber] = useState("");
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('signup');
-  
+  const [activeTab, setActiveTab] = useState("signup");
+
   const { toast } = useToast();
   const navigate = useNavigate();
   const { signInWithPassword, signUp } = useAuthContext();
-  
+
   const handleSignUp = async () => {
     if (!email || !password || !fullName || !vehicleType || !licenseNumber) {
       toast({
@@ -40,17 +40,17 @@ const DeliveryPartnerAuth = () => {
       });
       return;
     }
-    
+
     setLoading(true);
-    
+
     try {
       const { data, error } = await signUp(email, password, {
         full_name: fullName,
-        role: 'delivery_partner',
+        role: "delivery_partner",
         vehicle_type: vehicleType,
         license_number: licenseNumber,
       });
-      
+
       if (error) {
         toast({
           title: "Signup Error",
@@ -60,14 +60,15 @@ const DeliveryPartnerAuth = () => {
       } else {
         toast({
           title: "Account Created Successfully!",
-          description: "Please check your email to verify your account, then login below.",
+          description:
+            "Please check your email to verify your account, then login below.",
         });
-        setActiveTab('login');
-        setEmail('');
-        setPassword('');
-        setFullName('');
-        setVehicleType('');
-        setLicenseNumber('');
+        setActiveTab("login");
+        setEmail("");
+        setPassword("");
+        setFullName("");
+        setVehicleType("");
+        setLicenseNumber("");
       }
     } catch (error: any) {
       toast({
@@ -76,15 +77,26 @@ const DeliveryPartnerAuth = () => {
         variant: "destructive",
       });
     }
-    
+
     setLoading(false);
   };
-  
+
+  const requestNotificationPermission = () => {
+    if ("Notification" in window && Notification.permission !== "granted") {
+      Notification.requestPermission().then((permission) => {
+        localStorage.setItem("notificationPermission", permission);
+      });
+    }
+  };
+
   const handleLogin = async () => {
-    console.log('handleLogin function called!', { email, password: password ? 'provided' : 'missing' });
-    
+    console.log("handleLogin function called!", {
+      email,
+      password: password ? "provided" : "missing",
+    });
+
     if (!email || !password) {
-      console.log('Missing email or password');
+      console.log("Missing email or password");
       toast({
         title: "Missing Information",
         description: "Please enter both email and password",
@@ -92,41 +104,43 @@ const DeliveryPartnerAuth = () => {
       });
       return;
     }
-    
+
     setLoading(true);
-    console.log('Starting login process...', { email });
-    
+    console.log("Starting login process...", { email });
+
     try {
       const { data, error } = await signInWithPassword(email, password);
-      
-      console.log('Auth result:', { data: !!data, error: error?.message });
-      
+
       if (error) {
-        console.error('Login error:', error);
-        
+        console.error("Login error:", error);
+
         let errorMessage = error.message;
-        if (error.message.includes('Email not confirmed')) {
-          errorMessage = 'Please check your email and click the confirmation link before logging in. Or ask the admin to disable email confirmation in Supabase settings.';
+        if (error.message.includes("Email not confirmed")) {
+          errorMessage =
+            "Please check your email and click the confirmation link before logging in. Or ask the admin to disable email confirmation in Supabase settings.";
         }
-        
+
         toast({
           title: "Login Error",
           description: errorMessage,
           variant: "destructive",
         });
       } else if (data?.user) {
-        console.log('Login successful, auth context will handle role validation');
-        
+        console.log(
+          "Login successful, auth context will handle role validation"
+        );
+
         toast({
           title: "Welcome Back!",
-          description: "You have successfully logged in to your delivery partner account.",
+          description:
+            "You have successfully logged in to your delivery partner account.",
         });
-        
-        // For delivery partners, navigate to their dashboard
-        // AuthGuard will validate the role
-        window.location.href = '/delivery-partner/dashboard';
+
+        requestNotificationPermission();
+
+        window.location.href = "/delivery-partner/dashboard";
       } else {
-        console.error('No user data received');
+        console.error("No user data received");
         toast({
           title: "Login Error",
           description: "No user data received",
@@ -134,23 +148,23 @@ const DeliveryPartnerAuth = () => {
         });
       }
     } catch (error: any) {
-      console.error('Unexpected login error:', error);
+      console.error("Unexpected login error:", error);
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",
         variant: "destructive",
       });
     }
-    
+
     setLoading(false);
   };
 
   const resetForm = () => {
-    setEmail('');
-    setPassword('');
-    setFullName('');
-    setVehicleType('');
-    setLicenseNumber('');
+    setEmail("");
+    setPassword("");
+    setFullName("");
+    setVehicleType("");
+    setLicenseNumber("");
   };
 
   return (
@@ -163,7 +177,7 @@ const DeliveryPartnerAuth = () => {
           </Button>
         </Link>
       </div>
-      
+
       <div className="flex-1 flex items-center justify-center px-3 md:px-4 py-6 md:py-8">
         <div className="w-full max-w-md">
           <div className="text-center mb-6 md:mb-8">
@@ -172,21 +186,35 @@ const DeliveryPartnerAuth = () => {
                 <Truck className="h-5 w-5 md:h-6 md:w-6 text-white" />
               </div>
             </div>
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900">Delivery Partner Portal</h1>
-            <p className="text-gray-600 mt-1 md:mt-2 text-sm md:text-base">Join EsyGrab's delivery network</p>
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900">
+              Delivery Partner Portal
+            </h1>
+            <p className="text-gray-600 mt-1 md:mt-2 text-sm md:text-base">
+              Join EsyGrab's delivery network
+            </p>
           </div>
-          
+
           <div className="bg-white rounded-xl shadow-sm p-4 md:p-8">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="w-full"
+            >
               <TabsList className="grid w-full grid-cols-2 mb-4 md:mb-6">
-                <TabsTrigger value="signup" className="text-xs md:text-sm">Join Us</TabsTrigger>
-                <TabsTrigger value="login" className="text-xs md:text-sm">Partner Login</TabsTrigger>
+                <TabsTrigger value="signup" className="text-xs md:text-sm">
+                  Join Us
+                </TabsTrigger>
+                <TabsTrigger value="login" className="text-xs md:text-sm">
+                  Partner Login
+                </TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="signup">
                 <div className="space-y-3 md:space-y-4">
                   <div>
-                    <Label htmlFor="signupName" className="text-sm">Full Name</Label>
+                    <Label htmlFor="signupName" className="text-sm">
+                      Full Name
+                    </Label>
                     <Input
                       id="signupName"
                       placeholder="Enter your full name"
@@ -196,7 +224,9 @@ const DeliveryPartnerAuth = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="signupEmail" className="text-sm">Email Address</Label>
+                    <Label htmlFor="signupEmail" className="text-sm">
+                      Email Address
+                    </Label>
                     <Input
                       id="signupEmail"
                       placeholder="Enter your email address"
@@ -207,7 +237,9 @@ const DeliveryPartnerAuth = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="signupPassword" className="text-sm">Password</Label>
+                    <Label htmlFor="signupPassword" className="text-sm">
+                      Password
+                    </Label>
                     <Input
                       id="signupPassword"
                       placeholder="Enter your password (min. 6 characters)"
@@ -218,7 +250,9 @@ const DeliveryPartnerAuth = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="vehicleType" className="text-sm">Vehicle Type</Label>
+                    <Label htmlFor="vehicleType" className="text-sm">
+                      Vehicle Type
+                    </Label>
                     <Input
                       id="vehicleType"
                       placeholder="e.g., Motorcycle, Bicycle, Scooter"
@@ -228,7 +262,9 @@ const DeliveryPartnerAuth = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="licenseNumber" className="text-sm">License/Vehicle Number</Label>
+                    <Label htmlFor="licenseNumber" className="text-sm">
+                      License/Vehicle Number
+                    </Label>
                     <Input
                       id="licenseNumber"
                       placeholder="Enter license or vehicle number"
@@ -237,20 +273,29 @@ const DeliveryPartnerAuth = () => {
                       className="text-sm"
                     />
                   </div>
-                  <Button 
+                  <Button
                     className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-sm"
                     onClick={handleSignUp}
-                    disabled={!email || !password || !fullName || !vehicleType || !licenseNumber || loading}
+                    disabled={
+                      !email ||
+                      !password ||
+                      !fullName ||
+                      !vehicleType ||
+                      !licenseNumber ||
+                      loading
+                    }
                   >
-                    {loading ? 'Creating Account...' : 'Create Partner Account'}
+                    {loading ? "Creating Account..." : "Create Partner Account"}
                   </Button>
                 </div>
               </TabsContent>
-              
+
               <TabsContent value="login">
                 <div className="space-y-3 md:space-y-4">
                   <div>
-                    <Label htmlFor="loginEmail" className="text-sm">Email Address</Label>
+                    <Label htmlFor="loginEmail" className="text-sm">
+                      Email Address
+                    </Label>
                     <Input
                       id="loginEmail"
                       placeholder="Enter your registered email address"
@@ -261,7 +306,9 @@ const DeliveryPartnerAuth = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="loginPassword" className="text-sm">Password</Label>
+                    <Label htmlFor="loginPassword" className="text-sm">
+                      Password
+                    </Label>
                     <Input
                       id="loginPassword"
                       placeholder="Enter your password"
@@ -271,23 +318,23 @@ const DeliveryPartnerAuth = () => {
                       className="text-sm"
                     />
                   </div>
-                  <Button 
+                  <Button
                     className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-sm"
                     onClick={() => {
-                      console.log('Login button clicked!');
+                      console.log("Login button clicked!");
                       handleLogin();
                     }}
                     disabled={!email || !password || loading}
                   >
-                    {loading ? 'Logging in...' : 'Login to Dashboard'}
+                    {loading ? "Logging in..." : "Login to Dashboard"}
                   </Button>
                 </div>
               </TabsContent>
             </Tabs>
-            
+
             <div className="mt-4 md:mt-6 pt-4 md:pt-6 border-t border-gray-200 text-center space-y-2">
               <p className="text-xs md:text-sm text-gray-600">
-                <a 
+                <a
                   href="/auth/reset"
                   className="text-green-600 hover:text-green-700"
                 >
