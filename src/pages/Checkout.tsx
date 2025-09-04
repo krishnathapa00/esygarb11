@@ -205,7 +205,7 @@ const Checkout = () => {
           delivery_address: deliveryAddress,
           estimated_delivery: "10 mins",
           status: "pending",
-          promo_code: appliedPromo?.code ?? null,
+          promo_code_id: appliedPromo?.id ?? null,
           promo_discount: discount,
         })
         .select()
