@@ -105,6 +105,8 @@ const UserProfile: React.FC = () => {
   const handleLogout = async () => {
     try {
       await signOut();
+      setProfile(null);
+      reset();
       toast({
         title: "Logged out",
         description: "You have been logged out successfully",
