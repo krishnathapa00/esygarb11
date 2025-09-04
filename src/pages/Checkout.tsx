@@ -100,9 +100,18 @@ const Checkout = () => {
     user && (!profile.full_name || !profile.phone) && !profile.address;
 
   useEffect(() => {
+    if (!user) return;
+
+    const storedUserId = localStorage.getItem("esygrab_user_id");
+
+    if (storedUserId !== user.id) {
+      localStorage.removeItem("esygrab_user_location");
+      localStorage.setItem("esygrab_user_id", user.id);
+    }
+
     const stored = localStorage.getItem("esygrab_user_location");
     setDeliveryAddress(stored ? JSON.parse(stored).address : "");
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     const fetchOrderCount = async () => {
