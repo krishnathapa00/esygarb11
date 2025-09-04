@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { useSetGlobalToast } from "@/components/Toast";
+import { showToast, useSetGlobalToast } from "@/components/Toast";
 import { useRefreshOnWindowFocus } from "@/hooks/useRefreshOnWindowFocus";
 import {
   Package,
@@ -119,6 +119,39 @@ const DeliveryDashboard = () => {
   useEffect(() => {
     if (!user?.id || !isOnline || kycStatus !== "approved") return;
 
+    const savedPermission = localStorage.getItem("notificationPermission");
+
+    if (savedPermission !== "granted") {
+      showToast(
+        "Notifications are not enabled. Please enable notifications for real-time updates.",
+        "info"
+      );
+      return;
+    }
+
+    const playNotificationSound = () => {
+      const audio = new Audio("/sounds/notification.wav");
+      audio.play().catch(() => {});
+    };
+
+    const vibrateDevice = () => {
+      if ("vibrate" in navigator) navigator.vibrate([200, 100, 200]);
+    };
+
+    const showPushNotification = (order) => {
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification("New Order Ready for Pickup", {
+          body: `Order #${order.id} is ready!`,
+          icon: "/logo/Esy.jpg",
+          tag: `order-${order.id}`,
+        });
+
+        if ("vibrate" in navigator) {
+          navigator.vibrate([200, 100, 200]);
+        }
+      }
+    };
+
     const channel = supabase
       .channel("order-updates")
       .on(
@@ -127,11 +160,20 @@ const DeliveryDashboard = () => {
           event: "UPDATE",
           schema: "public",
           table: "orders",
-          filter: "status=eq.ready_for_pickup",
         },
-        () => {
-          // Refetch orders when a new order becomes ready for pickup
-          fetchOrders();
+        (payload) => {
+          const newStatus = payload.new?.status;
+          const oldStatus = payload.old?.status;
+
+          if (
+            oldStatus !== "ready_for_pickup" &&
+            newStatus === "ready_for_pickup"
+          ) {
+            fetchOrders();
+            playNotificationSound();
+            vibrateDevice();
+            showPushNotification(payload.new);
+          }
         }
       )
       .on(
@@ -141,9 +183,13 @@ const DeliveryDashboard = () => {
           schema: "public",
           table: "orders",
         },
-        () => {
-          // Refetch orders when a new order is created
-          fetchOrders();
+        (payload) => {
+          if (payload.new?.status === "ready_for_pickup") {
+            fetchOrders();
+            playNotificationSound();
+            vibrateDevice();
+            showPushNotification(payload.new);
+          }
         }
       )
       .subscribe();
