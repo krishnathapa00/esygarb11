@@ -8,8 +8,17 @@ import { useAuthContext } from "@/contexts/AuthProvider";
 import SearchBar from "./SearchBar";
 import { useCart } from "@/contexts/CartContext";
 import EsyLogo from "@/assets/logo/Esy.jpg";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Header = () => {
+  const location = useLocation();
+  const isMobile = useIsMobile();
+  const { user, signOut } = useAuthContext();
+  const { cart } = useCart();
+
+  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+
   const [userLocation, setUserLocation] = useState<string>(() => {
     try {
       const saved = localStorage.getItem("esygrab_user_location");
@@ -30,6 +39,30 @@ const Header = () => {
   });
 
   const [showLocationPopup, setShowLocationPopup] = useState(false);
+
+  useEffect(() => {
+    const syncAddressFromProfile = async () => {
+      if (!user) return;
+
+      const location = localStorage.getItem("esygrab_user_location");
+      if (location) return; // already set
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("address")
+        .eq("id", user.id)
+        .single();
+
+      if (profile?.address) {
+        localStorage.setItem(
+          "esygrab_user_location",
+          JSON.stringify({ address: profile.address })
+        );
+      }
+    };
+
+    syncAddressFromProfile();
+  }, [user]);
 
   // Safety mechanism to ensure no stuck dialogs and force close on page interaction
   useEffect(() => {
@@ -60,13 +93,6 @@ const Header = () => {
       document.removeEventListener("keydown", handleEscape);
     };
   }, [showLocationPopup, userLocation]);
-
-  const location = useLocation();
-  const isMobile = useIsMobile();
-  const { user, signOut } = useAuthContext();
-  const { cart } = useCart();
-
-  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   // Show popup only if no location set and popup not dismissed this session
   useEffect(() => {
