@@ -151,8 +151,14 @@ const ManageProducts = () => {
     const payload: any = {
       name: productData.name,
       price: Number(productData.price),
+      original_price: productData.original_price
+        ? Number(productData.original_price)
+        : null,
       category_id: productData.category_id
         ? Number(productData.category_id)
+        : null,
+      subcategory_id: productData.subcategory_id
+        ? Number(productData.subcategory_id)
         : null,
       discount: productData.discount ? Number(productData.discount) : null,
       image_url: productData.image_url,
@@ -544,7 +550,7 @@ const ManageProducts = () => {
                             Original Price (Rs) *
                           </label>
                           <Input
-                            name="price"
+                            name="original_price"
                             type="number"
                             placeholder="0"
                             value={productData.original_price}
