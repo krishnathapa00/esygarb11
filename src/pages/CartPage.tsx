@@ -30,6 +30,7 @@ interface PromoCode {
   created_at: string;
   category_ids?: number[];
   category_names?: string[];
+  product_ids?: number[];
 }
 
 const CartPage = () => {
@@ -50,6 +51,50 @@ const CartPage = () => {
     (sum, item) => sum + item.price * item.quantity,
     0
   );
+
+  const validatePromoAgainstCart = (promo: PromoCode | null) => {
+    if (!promo) return false;
+
+    // Check min order amount
+    if (promo.min_order_amount && totalPrice < promo.min_order_amount) {
+      return false;
+    }
+
+    // Check product_ids if any
+    if (
+      promo.product_ids &&
+      promo.product_ids.length > 0 &&
+      !cart.some((item) => promo.product_ids!.includes(item.id))
+    ) {
+      return false;
+    }
+
+    // Check category_ids if any
+    if (
+      promo.category_ids &&
+      promo.category_ids.length > 0 &&
+      !cart.some((item) => promo.category_ids!.includes(item.category_id))
+    ) {
+      return false;
+    }
+
+    return true;
+  };
+
+  useEffect(() => {
+    if (!appliedPromo) return;
+
+    const isValid = validatePromoAgainstCart(appliedPromo);
+
+    if (!isValid) {
+      toast({
+        title: "Promo code removed",
+        description: "Your cart no longer meets the promo conditions.",
+        variant: "destructive",
+      });
+      handleRemovePromo();
+    }
+  }, [cart, appliedPromo]);
 
   const { data: deliveryConfig } = useQuery({
     queryKey: ["delivery-config"],
@@ -188,6 +233,7 @@ const CartPage = () => {
       }
 
       promo.category_ids = promo.category_ids?.map(Number) || [];
+      promo.product_ids = promo.product_ids?.map(Number) || [];
 
       if (
         promo.category_ids &&
@@ -201,6 +247,37 @@ const CartPage = () => {
         });
         return;
       }
+
+      if (
+        promo.product_ids &&
+        promo.product_ids.length > 0 &&
+        !cart.some((item) => promo.product_ids.includes(item.id))
+      ) {
+        toast({
+          title: `This promo code is only valid for selected products.`,
+          description: `Add eligible products to your cart.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      let discount = 0;
+
+      if (promo.discount_type === "percentage") {
+        discount = (totalPrice * promo.discount_value) / 100;
+
+        if (promo.max_discount_amount) {
+          discount = Math.min(discount, promo.max_discount_amount);
+        }
+      } else if (promo.discount_type === "fixed") {
+        discount = promo.discount_value;
+      }
+
+      discount = Math.min(discount, totalPrice);
+
+      setAppliedPromo(promo);
+      setPromoDiscount(discount);
+      toast({ title: `Promo code applied! Saved Rs ${discount}` });
 
       if (promo.expires_at && new Date(promo.expires_at) < new Date()) {
         toast({ title: "Promo code has expired", variant: "destructive" });
@@ -223,24 +300,7 @@ const CartPage = () => {
         return;
       }
 
-      let discount = 0;
-
-      if (promo.discount_type === "percentage") {
-        discount = (totalPrice * promo.discount_value) / 100;
-
-        if (promo.max_discount_amount) {
-          discount = Math.min(discount, promo.max_discount_amount);
-        }
-      } else if (promo.discount_type === "fixed") {
-        discount = promo.discount_value;
-      }
-
-      discount = Math.min(discount, totalPrice);
-
       setIsManualPromo(true);
-      setAppliedPromo(promo);
-      setPromoDiscount(discount);
-      toast({ title: `Promo code applied! Saved Rs ${discount}` });
     } catch (error) {
       console.error("Error applying promo:", error);
       toast({ title: "Error applying promo code", variant: "destructive" });
