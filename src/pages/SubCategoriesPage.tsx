@@ -224,7 +224,11 @@ const SubCategoriesPage = () => {
                     id: product.id,
                     name: product.name,
                     price: product.price,
-                    originalPrice: product.original_price,
+                    originalPrice:
+                      product.original_price && product.original_price > 0
+                        ? product.original_price
+                        : undefined,
+
                     image: product.image_url || "/placeholder.svg",
                     weight: product.weight || "",
                     discount: product.discount,
