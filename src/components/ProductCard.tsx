@@ -67,7 +67,7 @@ const ProductCard = ({
             <span className="font-bold text-gray-900 text-sm">
               Rs{product.price}
             </span>
-            {product.originalPrice && (
+            {product.price > 0 && product.originalPrice && (
               <span className="text-xs text-gray-400 line-through">
                 Rs{product.originalPrice}
               </span>
