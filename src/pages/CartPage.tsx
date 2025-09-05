@@ -579,7 +579,10 @@ const CartPage = () => {
 
             {/* Mobile Sticky Checkout Bar */}
             <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4 z-50">
-              <Button onClick={handleProceedToCheckout}>
+              <Button
+                onClick={handleProceedToCheckout}
+                className="w-full py-3 text-base font-medium bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-md"
+              >
                 Proceed to Checkout
               </Button>
             </div>
