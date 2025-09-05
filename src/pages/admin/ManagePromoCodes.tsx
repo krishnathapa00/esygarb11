@@ -1,14 +1,5 @@
-import React, { useState } from "react";
-import {
-  Search,
-  Plus,
-  Edit2,
-  Trash2,
-  Tag,
-  Calendar,
-  DollarSign,
-  Users,
-} from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Search, Plus, Edit2, Trash2, Tag } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -46,6 +37,7 @@ interface PromoCode {
   is_active: boolean;
   created_at: string;
   category_ids?: string[];
+  product_ids?: string[];
 }
 
 const ManagePromoCodes = () => {
@@ -53,6 +45,11 @@ const ManagePromoCodes = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPromo, setEditingPromo] = useState<PromoCode | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const [productSearch, setProductSearch] = useState("");
+  const [filteredProducts, setFilteredProducts] = useState<
+    { id: number; name: string }[]
+  >([]);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -68,6 +65,7 @@ const ManagePromoCodes = () => {
     expiry_date: "",
     is_active: true,
     category_ids: [],
+    product_ids: [],
   });
 
   // Fetch promo codes
@@ -96,6 +94,31 @@ const ManagePromoCodes = () => {
     },
   });
 
+  const { data: products = [] } = useQuery({
+    queryKey: ["admin-products"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name")
+        .order("name");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  useEffect(() => {
+    if (productSearch.length === 0) {
+      setFilteredProducts([]);
+      return;
+    }
+
+    const lower = productSearch.toLowerCase();
+    const results = products.filter((p) =>
+      p.name.toLowerCase().includes(lower)
+    );
+    setFilteredProducts(results);
+  }, [productSearch, products]);
+
   const filteredPromoCodes = (promoCodes || []).filter((promo: any) =>
     promo.code.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -112,6 +135,7 @@ const ManagePromoCodes = () => {
       expiry_date: "",
       is_active: true,
       category_ids: [],
+      product_ids: [],
     });
     setModalOpen(true);
   };
@@ -128,6 +152,7 @@ const ManagePromoCodes = () => {
       expiry_date: promo.expires_at ? promo.expires_at.split("T")[0] : "",
       is_active: promo.is_active,
       category_ids: promo.category_ids || [],
+      product_ids: promo.product_ids || [],
     });
     setModalOpen(true);
   };
@@ -157,6 +182,8 @@ const ManagePromoCodes = () => {
         used_count: 0,
         category_ids:
           promoForm.category_ids.length > 0 ? promoForm.category_ids : null,
+        product_ids:
+          promoForm.product_ids?.length > 0 ? promoForm.product_ids : null,
       };
 
       if (editingPromo) {
@@ -388,7 +415,7 @@ const ManagePromoCodes = () => {
 
         {/* Add/Edit Modal */}
         <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-          <DialogContent className="sm:max-w-[600px]">
+          <DialogContent className="sm:max-w-[600px] max-h-[95vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingPromo ? "Edit Promo Code" : "Add New Promo Code"}
@@ -533,38 +560,129 @@ const ManagePromoCodes = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="col-span-2 space-y-2">
-                <Label>
-                  Applicable Categories (Leave empty for all if not needed)
-                </Label>
-                <div className="max-h-40 overflow-y-auto border rounded p-2">
-                  {categories.map((cat) => (
-                    <label key={cat.id} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={promoForm.category_ids.includes(
-                          String(cat.id)
-                        )}
-                        onChange={(e) => {
-                          const checked = e.target.checked;
-                          setPromoForm((prev) => {
-                            const newCatIds = checked
-                              ? [...prev.category_ids, String(cat.id)]
-                              : prev.category_ids.filter(
-                                  (id) => id !== String(cat.id)
-                                );
-                            return { ...prev, category_ids: newCatIds };
-                          });
-                        }}
-                      />
-                      <span>{cat.name}</span>
-                    </label>
-                  ))}
+              <div
+                className={`flex flex-col space-y-4 ${
+                  promoForm.discount_type === "percentage"
+                    ? "md:flex-row md:space-x-6 md:space-y-0"
+                    : ""
+                }`}
+              >
+                {/* Categories */}
+                <div className="flex-1 min-w-[250px] max-w-md">
+                  <Label>
+                    Applicable Categories (Leave empty for all if not needed)
+                  </Label>
+                  <div className="max-h-40 overflow-y-auto border rounded p-2">
+                    {categories.map((cat) => (
+                      <label
+                        key={cat.id}
+                        className="flex items-center space-x-2 py-1 hover:bg-gray-100 rounded cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={promoForm.category_ids.includes(
+                            String(cat.id)
+                          )}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setPromoForm((prev) => {
+                              const newCatIds = checked
+                                ? [...prev.category_ids, String(cat.id)]
+                                : prev.category_ids.filter(
+                                    (id) => id !== String(cat.id)
+                                  );
+                              return { ...prev, category_ids: newCatIds };
+                            });
+                          }}
+                        />
+                        <span>{cat.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Products Search */}
+                <div className="flex-1 min-w-[250px] max-w-md flex flex-col">
+                  <Label className="mb-2">
+                    Applicable Products
+                    <span className="pl-1 text-sm text-gray-500">
+                      (optional)
+                    </span>
+                  </Label>
+                  <Input
+                    placeholder="Search products..."
+                    value={productSearch}
+                    onChange={(e) => setProductSearch(e.target.value)}
+                    className="mb-2"
+                  />
+                  {filteredProducts.length > 0 && (
+                    <div className="border rounded p-2 max-h-20 overflow-y-auto">
+                      {filteredProducts.map((prod) => (
+                        <div
+                          key={prod.id}
+                          className="flex justify-between items-center hover:bg-gray-100 px-2 py-1 rounded cursor-pointer"
+                          onClick={() => {
+                            if (
+                              !promoForm.product_ids.includes(String(prod.id))
+                            ) {
+                              setPromoForm((prev) => ({
+                                ...prev,
+                                product_ids: [
+                                  ...prev.product_ids,
+                                  String(prod.id),
+                                ],
+                              }));
+                            }
+                          }}
+                        >
+                          <span>{prod.name}</span>
+                          <Plus className="w-4 h-4 text-primary" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {promoForm.product_ids.length > 0 && (
+                    <div
+                      className={`flex flex-wrap gap-2 mt-2 ${
+                        promoForm.product_ids.length > 1
+                          ? "max-h-20 overflow-y-auto pr-1"
+                          : ""
+                      }`}
+                    >
+                      {promoForm.product_ids.map((id) => {
+                        const prod = products.find((p) => String(p.id) === id);
+                        if (!prod) return null;
+                        return (
+                          <Badge
+                            key={id}
+                            className="bg-emerald-100 text-emerald-700 flex items-center space-x-1"
+                          >
+                            <span>{prod.name}</span>
+                            <button
+                              type="button"
+                              className="ml-1 text-sm"
+                              onClick={() =>
+                                setPromoForm((prev) => ({
+                                  ...prev,
+                                  product_ids: prev.product_ids.filter(
+                                    (pid) => pid !== id
+                                  ),
+                                }))
+                              }
+                            >
+                              ×
+                            </button>
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
-            <DialogFooter>
+            <DialogFooter className="flex-shrink-0">
               <Button variant="outline" onClick={() => setModalOpen(false)}>
                 Cancel
               </Button>
