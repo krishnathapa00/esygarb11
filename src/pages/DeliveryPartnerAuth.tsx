@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,10 +17,16 @@ const DeliveryPartnerAuth = () => {
   const [licenseNumber, setLicenseNumber] = useState("");
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("signup");
+  const navigate = useNavigate();
 
   const { toast } = useToast();
-  const navigate = useNavigate();
-  const { signInWithPassword, signUp } = useAuthContext();
+  const { user, signInWithPassword, signUp } = useAuthContext();
+
+  useEffect(() => {
+    if (user) {
+      navigate("/delivery-partner/dashboard");
+    }
+  }, [user, navigate]);
 
   const handleSignUp = async () => {
     if (!email || !password || !fullName || !vehicleType || !licenseNumber) {
