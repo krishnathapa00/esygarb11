@@ -18,6 +18,17 @@ const AuthHybrid = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const checkSupabaseSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data?.session) {
+        navigate("/");
+      }
+    };
+
+    checkSupabaseSession();
+  }, [navigate]);
+
   const handleSendOTP = async () => {
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       toast({
