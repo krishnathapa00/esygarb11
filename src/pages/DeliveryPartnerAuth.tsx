@@ -132,19 +132,23 @@ const DeliveryPartnerAuth = () => {
           variant: "destructive",
         });
       } else if (data?.user) {
-        console.log(
-          "Login successful, auth context will handle role validation"
-        );
-
-        toast({
-          title: "Welcome Back!",
-          description:
-            "You have successfully logged in to your delivery partner account.",
-        });
+        if (data.user.role === "delivery_partner") {
+          toast({
+            title: "Welcome Back!",
+            description:
+              "You have successfully logged in to your delivery partner account.",
+          });
+          navigate("/delivery-partner/dashboard");
+        } else {
+          toast({
+            title: "Access Denied",
+            description:
+              "You are not authorized to access the delivery partner dashboard.",
+            variant: "destructive",
+          });
+        }
 
         requestNotificationPermission();
-
-        window.location.href = "/delivery-partner/dashboard";
       } else {
         console.error("No user data received");
         toast({
