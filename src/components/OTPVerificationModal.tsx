@@ -51,8 +51,8 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
         inputsRef.current[idx - 1]?.focus();
         inputsRef.current[idx - 1].value = "";
       }
-    } else if (e.key.match(/[0-9]/)) {
-      target.value = "";
+    } else if (!e.key.match(/[0-9]/)) {
+      e.preventDefault();
     }
   };
 
@@ -95,7 +95,7 @@ const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
               inputMode="numeric"
               maxLength={1}
               className="w-10 h-12 text-center text-xl font-mono tracking-wider"
-              ref={(el) => (inputsRef.current[i] = el!)}
+              ref={(el) => el && (inputsRef.current[i] = el)}
               onChange={(e) => handleChange(e, i)}
               onKeyDown={(e) => handleKeyDown(e, i)}
               onPaste={handlePaste}
