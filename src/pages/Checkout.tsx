@@ -28,6 +28,29 @@ const Checkout = () => {
 
   const location = useLocation();
 
+  const OFFICE_COORDS = { lat: 27.700769, lng: 85.30014 };
+  const MAX_DISTANCE_KM = 2;
+  const [deliveryCoords, setDeliveryCoords] = useState(null);
+  const [isWithinRange, setIsWithinRange] = useState(true);
+
+  function getDistanceInKm(lat1, lng1, lat2, lng2) {
+    const toRad = (value) => (value * Math.PI) / 180;
+    const R = 6371; // Earth's radius in km
+
+    const dLat = toRad(lat2 - lat1);
+    const dLng = toRad(lng2 - lng1);
+
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(lat1)) *
+        Math.cos(toRad(lat2)) *
+        Math.sin(dLng / 2) *
+        Math.sin(dLng / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
   const [promoDiscount, setPromoDiscount] = useState(() => {
     if (location.state?.promoDiscount) return location.state.promoDiscount;
     const stored = sessionStorage.getItem("promo_discount");
@@ -110,8 +133,26 @@ const Checkout = () => {
     }
 
     const stored = localStorage.getItem("esygrab_user_location");
-    setDeliveryAddress(stored ? JSON.parse(stored).address : "");
+    if (stored) {
+      const location = JSON.parse(stored);
+      setDeliveryAddress(location.address || "");
+      setDeliveryCoords({ lat: location.lat, lng: location.lng });
+    }
   }, [user]);
+
+  useEffect(() => {
+    if (!deliveryCoords) {
+      setIsWithinRange(false);
+      return;
+    }
+    const dist = getDistanceInKm(
+      OFFICE_COORDS.lat,
+      OFFICE_COORDS.lng,
+      deliveryCoords.lat,
+      deliveryCoords.lng
+    );
+    setIsWithinRange(dist <= MAX_DISTANCE_KM);
+  }, [deliveryCoords]);
 
   useEffect(() => {
     const fetchOrderCount = async () => {
@@ -196,8 +237,24 @@ const Checkout = () => {
       return;
     }
 
-    if (!deliveryAddress) {
+    if (!deliveryAddress || !deliveryCoords) {
       alert("Please set your delivery address.");
+      return;
+    }
+
+    const distance = getDistanceInKm(
+      OFFICE_COORDS.lat,
+      OFFICE_COORDS.lng,
+      deliveryCoords.lat,
+      deliveryCoords.lng
+    );
+
+    if (distance > MAX_DISTANCE_KM) {
+      alert(
+        `Sorry, we only deliver within ${MAX_DISTANCE_KM} km from the office. Your selected location is approximately ${distance.toFixed(
+          2
+        )} km away.`
+      );
       return;
     }
 
@@ -336,6 +393,13 @@ const Checkout = () => {
               <Button onClick={handleAddressChange} variant="outline" size="sm">
                 Change Address
               </Button>
+
+              {!isWithinRange && (
+                <p className="text-red-600 text-sm mt-2">
+                  Sorry, we only deliver within {MAX_DISTANCE_KM} km from the
+                  office. Your address is out of delivery range.
+                </p>
+              )}
             </div>
             {/* Payment Method */}
             <div className="bg-white rounded-lg p-4 shadow-sm">
@@ -444,14 +508,16 @@ const Checkout = () => {
 
             <Button
               onClick={handlePlaceOrder}
-              disabled={totalItems === 0}
+              disabled={totalItems === 0 || !isWithinRange}
               className={`w-full py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all ${
-                totalItems === 0
+                totalItems === 0 || !isWithinRange
                   ? "bg-gray-300 cursor-not-allowed text-gray-600"
                   : "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white hover:scale-105"
               }`}
             >
-              {totalItems === 0
+              {!isWithinRange
+                ? "Delivery address is out of range"
+                : totalItems === 0
                 ? "Cart is empty"
                 : needsProfileCompletion
                 ? "Complete Profile & Place Order"
