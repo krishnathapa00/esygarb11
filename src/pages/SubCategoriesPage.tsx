@@ -32,6 +32,7 @@ interface Product {
   discount?: number;
   subcategory_id: number;
   category_id: number;
+  stock_quantity: number;
 }
 
 const SubCategoriesPage = () => {
@@ -235,6 +236,7 @@ const SubCategoriesPage = () => {
                     deliveryTime: "10 min",
                     category: category?.name || "",
                     categoryId: product.category_id,
+                    stock_quantity: product.stock_quantity,
                   };
 
                   return (
