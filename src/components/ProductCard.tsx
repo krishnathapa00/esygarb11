@@ -14,6 +14,7 @@ export interface Product {
   deliveryTime: string;
   category: string;
   categoryId: number;
+  stock_quantity: number;
 }
 
 interface ProductCardProps {
@@ -75,17 +76,22 @@ const ProductCard = ({
           </div>
 
           {/* Right side - Add/Quantity Button */}
+          {/* Right side - Add/Quantity Button */}
           <div className="flex-shrink-0 min-w-[60px] sm:min-w-[70px]">
-            {cartQuantity === 0 ? (
+            {product.stock_quantity === 0 ? (
+              <span className="text-red-600 text-[10px] sm:text-xs font-semibold">
+                Out of Stock
+              </span>
+            ) : cartQuantity === 0 ? (
               <Button
                 onClick={(e) => {
                   e.preventDefault();
                   onAddToCart(product);
                 }}
                 className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 
-                 text-white border-0 text-[10px] sm:text-xs font-semibold 
-                 h-7 sm:h-7 px-2 sm:px-2 rounded-lg 
-                 transition-all duration-200 shadow-sm hover:shadow-md w-full"
+       text-white border-0 text-[10px] sm:text-xs font-semibold 
+       h-7 sm:h-7 px-2 sm:px-2 rounded-lg 
+       transition-all duration-200 shadow-sm hover:shadow-md w-full"
               >
                 ADD
               </Button>
@@ -108,11 +114,14 @@ const ProductCard = ({
                 <Button
                   onClick={(e) => {
                     e.preventDefault();
-                    onUpdateQuantity(product.id, cartQuantity + 1);
+                    if (cartQuantity < product.stock_quantity) {
+                      onUpdateQuantity(product.id, cartQuantity + 1);
+                    }
                   }}
                   variant="ghost"
                   size="sm"
-                  className="w-5 h-5 sm:w-5 sm:h-5 p-0 text-white hover:bg-green-700 rounded text-[12px] sm:text-xs font-medium"
+                  disabled={cartQuantity >= product.stock_quantity}
+                  className="w-5 h-5 sm:w-5 sm:h-5 p-0 text-white hover:bg-green-700 disabled:opacity-50 rounded text-[12px] sm:text-xs font-medium"
                 >
                   +
                 </Button>
