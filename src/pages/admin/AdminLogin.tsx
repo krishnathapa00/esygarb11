@@ -16,17 +16,9 @@ const AdminLogin = () => {
   const navigate = useNavigate();
   const { user, signInWithPassword, resetPassword } = useAuthContext();
 
-  useEffect(() => {
-    if (user) {
-      navigate("/admin/dashboard");
-    }
-  }, [user, navigate]);
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
-    console.log("AdminLogin: Starting login for email:", email);
 
     const { data, error } = await signInWithPassword(email, password);
 
@@ -41,7 +33,6 @@ const AdminLogin = () => {
     }
 
     if (data?.user) {
-      console.log("AdminLogin: Login successful, checking user role...");
       setLoading(false);
 
       toast({
@@ -54,6 +45,28 @@ const AdminLogin = () => {
       navigate("/admin/dashboard");
     } else {
       setLoading(false);
+      toast({
+        title: "Login Error",
+        description: "Authentication failed. Please try again.",
+        variant: "destructive",
+      });
+    }
+
+    if (data?.user) {
+      if (data.user.role === "admin") {
+        toast({
+          title: "Login successful!",
+          description: "Welcome to the admin panel.",
+        });
+        navigate("/admin/dashboard");
+      } else {
+        toast({
+          title: "Access Denied",
+          description: "You are not authorized to access the admin panel.",
+          variant: "destructive",
+        });
+      }
+    } else {
       toast({
         title: "Login Error",
         description: "Authentication failed. Please try again.",
