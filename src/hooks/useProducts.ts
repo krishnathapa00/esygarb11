@@ -17,7 +17,7 @@ export interface Product {
   category: string;
   categoryId: number;
   categorySlug: string;
-  stockQuantity?: number;
+  stock_quantity: number;
   isActive?: boolean;
 }
 
@@ -56,7 +56,7 @@ export const useProducts = () => {
         category: product.categories?.name || "Unknown",
         categoryId: product.categories?.id ?? -1,
         categorySlug: product.categories?.slug || "Unknown",
-        stockQuantity: product.stock_quantity,
+        stock_quantity: product.stock_quantity,
         rating: 4.5,
         reviews: 50,
         inStock: (product.stock_quantity ?? 0) > 0,
@@ -98,7 +98,7 @@ export const useProductsByCategory = (categoryId: number) => {
         weight: product.weight || "1 unit",
         deliveryTime: product.delivery_time || "10 mins",
         category: product.categories?.name || "Unknown",
-        stockQuantity: product.stock_quantity,
+        stock_quantity: product.stock_quantity,
         rating: 4.5,
         reviews: 50,
         inStock: (product.stock_quantity ?? 0) > 0,
@@ -107,4 +107,3 @@ export const useProductsByCategory = (categoryId: number) => {
     },
   });
 };
-
