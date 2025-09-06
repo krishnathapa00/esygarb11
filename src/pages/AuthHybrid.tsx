@@ -6,7 +6,6 @@ import { useAuthContext } from "@/contexts/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 import OTPVerificationModal from "@/components/OTPVerificationModal";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
 
 const AuthHybrid = () => {
   const [email, setEmail] = useState("");
@@ -14,26 +13,24 @@ const AuthHybrid = () => {
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
 
-  const { signInWithOtp, verifyOtp } = useAuthContext();
+  const {
+    user,
+    loading: authLoading,
+    signInWithOtp,
+    verifyOtp,
+  } = useAuthContext();
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const checkSupabaseSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data?.session) {
-        navigate("/");
-      }
-    };
-
-    checkSupabaseSession();
-  }, [navigate]);
+    if (user) navigate("/");
+  }, [user, navigate]);
 
   const handleSendOTP = async () => {
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       toast({
         title: "Invalid Email",
-        description: "Please enter a valid email address",
+        description: "Enter a valid email",
         variant: "destructive",
       });
       return;
@@ -42,7 +39,7 @@ const AuthHybrid = () => {
     if (cooldown > 0) {
       toast({
         title: "Please Wait",
-        description: `Please wait ${cooldown} seconds before requesting another OTP`,
+        description: `Wait ${cooldown}s before requesting another OTP`,
         variant: "destructive",
       });
       return;
@@ -53,23 +50,20 @@ const AuthHybrid = () => {
     setLoading(false);
 
     if (error) {
-      let errorMessage = error.message || "Could not send OTP";
-      if (error.message.includes("after 1 seconds")) {
-        errorMessage = "Please wait before requesting another OTP";
-      }
       toast({
         title: "OTP Error",
-        description: errorMessage,
+        description: error.message || "Could not send OTP",
         variant: "destructive",
       });
-    } else {
-      setIsOtpModalOpen(true);
-      setCooldown(30);
-      toast({
-        title: "OTP Sent Successfully",
-        description: "Please check your email for the verification code.",
-      });
+      return;
     }
+
+    setIsOtpModalOpen(true);
+    setCooldown(30);
+    toast({
+      title: "OTP Sent",
+      description: "Check your email for the verification code.",
+    });
   };
 
   const handleVerifyOTP = async (otp: string) => {
@@ -109,28 +103,6 @@ const AuthHybrid = () => {
       const { user, session } = data;
 
       if (user && session) {
-        localStorage.setItem(
-          "esygrab_session",
-          JSON.stringify({
-            user,
-            expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
-            lastActivity: Date.now(),
-          })
-        );
-
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .upsert({ id: user.id, email }, { onConflict: "id" });
-
-        if (profileError) {
-          toast({
-            title: "Profile Error",
-            description:
-              "Failed to save email to profile: " + profileError.message,
-            variant: "destructive",
-          });
-        }
-
         toast({
           title: "Email Verified Successfully",
           description: "Welcome to Esygrab!",
