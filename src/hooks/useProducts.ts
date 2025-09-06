@@ -1,63 +1,109 @@
-import { useSearchParams } from "react-router-dom";
-import { useEffect, useMemo, useState } from "react";
-import Header from "@/components/Header";
-import ProductCard from "@/components/ProductCard";
-import { useProducts } from "@/hooks/useProducts";
-import { Product } from "@/hooks/useProducts";
-import { useCartActions } from "@/hooks/useCart";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
-const SearchResults = () => {
-  const [searchParams] = useSearchParams();
-  const query = searchParams.get("query")?.toLowerCase() || "";
-  const { data: products = [], isLoading, isError } = useProducts();
-  const [searchQuery, setSearchQuery] = useState(query);
-  const { handleAddToCart, getCartQuantity, handleUpdateQuantity } =
-    useCartActions();
+export interface Product {
+  id: number;
+  name: string;
+  description?: string;
+  price: number;
+  originalPrice?: number;
+  discount?: number;
+  image: string;
+  weight: string;
+  rating: number;
+  reviews: number;
+  inStock: boolean;
+  deliveryTime: string;
+  category: string;
+  categoryId: number;
+  categorySlug: string;
+  stock_quantity: number;
+  isActive?: boolean;
+}
 
-  useEffect(() => {
-    setSearchQuery(query);
-  }, [query]);
+export const useProducts = () => {
+  return useQuery({
+    queryKey: ["products"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select(
+          `
+          *,
+          categories:category_id (
+            id,
+            name,
+            slug
+          )
+        `
+        )
+        .eq("is_active", true);
 
-  const filteredProducts = useMemo(() => {
-    if (!searchQuery.trim()) return [];
-    return products.filter((product: Product) =>
-      product.name.toLowerCase().includes(searchQuery)
-    );
-  }, [products, searchQuery]);
+      if (error) throw error;
 
-  return (
-    <>
-      <Header />
-
-      <div className="p-4 max-w-7xl mx-auto">
-        {isLoading ? (
-          <div className="text-center py-12 text-gray-600">
-            Loading products...
-          </div>
-        ) : isError ? (
-          <div className="text-center py-12 text-red-500">
-            Failed to load products.
-          </div>
-        ) : filteredProducts.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
-            No products found for "{searchQuery}"
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {filteredProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onAddToCart={() => handleAddToCart(product)}
-                cartQuantity={getCartQuantity(product.id)}
-                onUpdateQuantity={(id, qty) => handleUpdateQuantity(id, qty)}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    </>
-  );
+      return (data || []).map((product) => ({
+        id: product.id,
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        originalPrice: product.original_price || undefined,
+        discount: product.discount,
+        image:
+          product.image_url ||
+          "https://via.placeholder.com/300x300?text=No+Image",
+        weight: product.weight || "1 unit",
+        deliveryTime: product.delivery_time || "10 mins",
+        category: product.categories?.name || "Unknown",
+        categoryId: product.categories?.id ?? -1,
+        categorySlug: product.categories?.slug || "Unknown",
+        stock_quantity: product.stock_quantity,
+        rating: 4.5,
+        reviews: 50,
+        inStock: (product.stock_quantity ?? 0) > 0,
+        isActive: product.is_active,
+      })) as Product[];
+    },
+  });
 };
 
-export default SearchResults;
+export const useProductsByCategory = (categoryId: number) => {
+  return useQuery({
+    queryKey: ["products", "category", categoryId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select(
+          `
+          *,
+          categories:category_id (
+            name
+          )
+        `
+        )
+        .eq("category_id", categoryId)
+        .eq("is_active", true);
+
+      if (error) throw error;
+
+      return (data || []).map((product) => ({
+        id: product.id,
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        originalPrice: product.original_price || undefined,
+        discount: product.discount,
+        image:
+          product.image_url ||
+          "https://via.placeholder.com/300x300?text=No+Image",
+        weight: product.weight || "1 unit",
+        deliveryTime: product.delivery_time || "10 mins",
+        category: product.categories?.name || "Unknown",
+        stock_quantity: product.stock_quantity,
+        rating: 4.5,
+        reviews: 50,
+        inStock: (product.stock_quantity ?? 0) > 0,
+        isActive: product.is_active,
+      })) as Product[];
+    },
+  });
+};
