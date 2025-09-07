@@ -9,6 +9,7 @@ interface InputFieldProps {
   required?: boolean;
   pattern?: { value: RegExp; message: string };
   error?: FieldError | null;
+  inputProps?: React.InputHTMLAttributes<HTMLInputElement>;
 }
 
 const InputField: React.FC<InputFieldProps> = ({
@@ -18,6 +19,7 @@ const InputField: React.FC<InputFieldProps> = ({
   required,
   pattern,
   error,
+  inputProps = {},
 }) => (
   <div>
     <label htmlFor={name} className="block text-sm font-medium mb-1">
@@ -27,6 +29,7 @@ const InputField: React.FC<InputFieldProps> = ({
       id={name}
       type="text"
       {...register(name, { required, pattern })}
+      {...inputProps}
       className={`w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 ${
         error ? "border-red-500 focus:ring-red-500" : "focus:ring-green-500"
       }`}
