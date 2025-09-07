@@ -160,7 +160,24 @@ const DeliveryProfile = () => {
     }
   }, [profile]);
 
+  const validateForm = () => {
+    if (!formData.phone_number) {
+      return "Phone number is required.";
+    }
+
+    if (!/^\d{10}$/.test(formData.phone_number)) {
+      return "Phone number must be exactly 10 digits.";
+    }
+
+    return null;
+  };
+
   const handleSave = () => {
+    const error = validateForm();
+    if (error) {
+      return;
+    }
+
     updateProfileMutation.mutate(formData);
   };
 
@@ -394,9 +411,15 @@ const DeliveryProfile = () => {
                   <Input
                     id="phone_number"
                     value={formData.phone_number}
-                    onChange={(e) =>
-                      setFormData({ ...formData, phone_number: e.target.value })
-                    }
+                    maxLength={10}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (/^\d*$/.test(value)) {
+                        setFormData({ ...formData, phone_number: value });
+                      }
+                    }}
+                    inputMode="numeric"
+                    pattern="\d*"
                   />
                 </div>
 
@@ -596,4 +619,3 @@ const DeliveryProfile = () => {
 };
 
 export default DeliveryProfile;
-
