@@ -28,14 +28,14 @@ const Checkout = () => {
 
   const location = useLocation();
 
-  const OFFICE_COORDS = { lat: 27.700769, lng: 85.30014 };
+  const OFFICE_COORDS = { lat: 27.687441, lng: 85.340829 };
   const MAX_DISTANCE_KM = 2;
   const [deliveryCoords, setDeliveryCoords] = useState(null);
   const [isWithinRange, setIsWithinRange] = useState(true);
 
   function getDistanceInKm(lat1, lng1, lat2, lng2) {
     const toRad = (value) => (value * Math.PI) / 180;
-    const R = 6371; // Earth's radius in km
+    const R = 6371;
 
     const dLat = toRad(lat2 - lat1);
     const dLng = toRad(lng2 - lng1);
@@ -136,7 +136,10 @@ const Checkout = () => {
     if (stored) {
       const location = JSON.parse(stored);
       setDeliveryAddress(location.address || "");
-      setDeliveryCoords({ lat: location.lat, lng: location.lng });
+      setDeliveryCoords({
+        lat: location.coordinates.lat,
+        lng: location.coordinates.lng,
+      });
     }
   }, [user]);
 
@@ -215,6 +218,7 @@ const Checkout = () => {
       const location = JSON.parse(stored);
       setDeliveryAddress(location.address || "");
       setShowAddressModal(true);
+      setDeliveryCoords({ lat: location.lat, lng: location.lng });
     }
   };
 
