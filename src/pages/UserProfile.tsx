@@ -371,10 +371,18 @@ const UserProfile: React.FC = () => {
                       register={register}
                       required
                       pattern={{
-                        value: /^\+?[0-9\s\-]{7,15}$/,
-                        message: "Invalid phone number",
+                        value: /^\d{10}$/,
+                        message: "Phone number must be exactly 10 digits",
+                      }}
+                      inputProps={{
+                        inputMode: "numeric",
+                        maxLength: 10,
+                        onInput: (e: React.ChangeEvent<HTMLInputElement>) => {
+                          e.target.value = e.target.value.replace(/\D/g, "");
+                        },
                       }}
                     />
+
                     <TextAreaField
                       label="Address"
                       name="address"
