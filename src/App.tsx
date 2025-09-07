@@ -316,7 +316,8 @@ function App() {
           <CartProvider>
             <Router>
               <ToastProvider>
-              <AppContent />
+                <AppContent />
+                <Toaster />
               </ToastProvider>
             </Router>
           </CartProvider>
