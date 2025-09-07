@@ -276,8 +276,9 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
               id="address"
               value={formData.address}
               onChange={(e) => handleInputChange("address", e.target.value)}
-              placeholder="Enter your delivery address"
+              placeholder="Click on edit for setting your delivery address"
               className="min-h-[60px]"
+              readOnly
             />
           </div>
         </div>
