@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
+import { showToast } from "@/components/Toast";
 
 const GOOGLE_MAPS_API_KEY = "AIzaSyADxM5y7WrXu3BRJ_hJQZhh6FLXWyO3E1g";
 
@@ -50,14 +51,15 @@ const MapLocationEnhanced = () => {
   const checkDeliveryRange = (lat: number, lng: number) => {
     const distance = getDistanceFromOffice(lat, lng);
     const inRange = distance <= MAX_DISTANCE_KM;
-    setIsWithinRange(inRange); // update UI state
+    setIsWithinRange(inRange);
+
     if (!inRange) {
-      toast({
-        title: "Out of Delivery Range",
-        description: `This location is more than ${MAX_DISTANCE_KM} km from our office.`,
-        variant: "destructive",
-      });
+      showToast(
+        "Sorry, we currently do not deliver to this location.",
+        "error"
+      );
     }
+
     return inRange;
   };
 
