@@ -88,10 +88,21 @@ const DeliveryPartnerAuth = () => {
   };
 
   const requestNotificationPermission = () => {
-    if ("Notification" in window && Notification.permission !== "granted") {
-      Notification.requestPermission().then((permission) => {
-        localStorage.setItem("notificationPermission", permission);
-      });
+    if ("Notification" in window) {
+      const currentPermission = Notification.permission;
+
+      if (currentPermission === "default") {
+        Notification.requestPermission().then((permission) => {
+          localStorage.setItem("notificationPermission", permission);
+        });
+      } else if (currentPermission === "denied") {
+        toast({
+          title: "Enable Notifications",
+          description:
+            "Notifications are blocked. Please enable them in your browser settings to receive delivery updates.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
