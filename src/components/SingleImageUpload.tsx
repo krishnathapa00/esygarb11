@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { Upload, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import React, { useState } from "react";
+import { Upload, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface SingleImageUploadProps {
   onImageUpload: (url: string) => void;
@@ -10,24 +10,26 @@ interface SingleImageUploadProps {
   folder?: string;
 }
 
-const SingleImageUpload: React.FC<SingleImageUploadProps> = ({ 
-  onImageUpload, 
-  currentImage, 
-  folder = 'products' 
+const SingleImageUpload: React.FC<SingleImageUploadProps> = ({
+  onImageUpload,
+  currentImage,
+  folder = "products",
 }) => {
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     // Validate file type
-    if (!file.type.startsWith('image/')) {
+    if (!file.type.startsWith("image/")) {
       toast({
         title: "Invalid file type",
         description: "Please select an image file",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -37,7 +39,7 @@ const SingleImageUpload: React.FC<SingleImageUploadProps> = ({
       toast({
         title: "File too large",
         description: "Please select an image smaller than 5MB",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -45,36 +47,37 @@ const SingleImageUpload: React.FC<SingleImageUploadProps> = ({
     setUploading(true);
 
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${Date.now()}_${Math.random()
+        .toString(36)
+        .substring(2)}.${fileExt}`;
       const filePath = `${folder}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('user-avatars')
+        .from("product-images")
         .upload(filePath, file);
 
       if (uploadError) {
         throw uploadError;
       }
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('user-avatars')
-        .getPublicUrl(filePath);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("product-images").getPublicUrl(filePath);
 
       // Force re-render with timestamp to show updated image
       const timestampedUrl = `${publicUrl}?t=${Date.now()}`;
       onImageUpload(timestampedUrl);
-      
+
       toast({
         title: "Image uploaded successfully",
-        description: "Your image has been uploaded and saved"
+        description: "Your image has been uploaded and saved",
       });
-
     } catch (error: any) {
       toast({
         title: "Upload failed",
         description: error.message || "Failed to upload image",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setUploading(false);
@@ -92,9 +95,9 @@ const SingleImageUpload: React.FC<SingleImageUploadProps> = ({
             </p>
             <p className="text-xs text-gray-500">PNG, JPG, GIF up to 5MB</p>
           </div>
-          <input 
-            type="file" 
-            className="hidden" 
+          <input
+            type="file"
+            className="hidden"
             accept="image/*"
             onChange={handleImageUpload}
             disabled={uploading}
@@ -104,9 +107,9 @@ const SingleImageUpload: React.FC<SingleImageUploadProps> = ({
 
       {currentImage && (
         <div className="relative">
-          <img 
-            src={currentImage} 
-            alt="Current image" 
+          <img
+            src={currentImage}
+            alt="Current image"
             className="w-full h-32 object-cover rounded-lg border"
           />
           <Button
@@ -114,7 +117,7 @@ const SingleImageUpload: React.FC<SingleImageUploadProps> = ({
             variant="destructive"
             size="sm"
             className="absolute top-2 right-2"
-            onClick={() => onImageUpload('')}
+            onClick={() => onImageUpload("")}
           >
             <X className="h-4 w-4" />
           </Button>
