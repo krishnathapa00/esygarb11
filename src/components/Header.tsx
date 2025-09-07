@@ -9,7 +9,6 @@ import SearchBar from "./SearchBar";
 import { useCart } from "@/contexts/CartContext";
 import EsyLogo from "@/assets/logo/Esy.jpg";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
 
 const Header = () => {
   const location = useLocation();
@@ -71,7 +70,6 @@ const Header = () => {
       if (showLocationPopup && !userLocation) {
         const popupStartTime = sessionStorage.getItem("locationPopupStartTime");
         if (popupStartTime && Date.now() - parseInt(popupStartTime) > 3000) {
-          console.log("Auto-dismissing popup after 3 seconds of interaction");
           setShowLocationPopup(false);
           sessionStorage.setItem("locationPopupDismissed", "true");
         }
@@ -100,20 +98,11 @@ const Header = () => {
     const alreadyHandled = sessionStorage.getItem("locationPopupHandled");
     const dismissed = sessionStorage.getItem("locationPopupDismissed");
 
-    console.log("Location popup logic:", {
-      hasLocation,
-      alreadyHandled,
-      dismissed,
-      userLocation,
-    });
-
     if (!hasLocation && !alreadyHandled && !dismissed) {
-      console.log("Setting showLocationPopup to true");
       setShowLocationPopup(true);
       sessionStorage.setItem("locationPopupHandled", "true");
       sessionStorage.setItem("locationPopupStartTime", Date.now().toString());
     } else {
-      console.log("Not showing location popup");
       setShowLocationPopup(false);
     }
   }, [userLocation]);
@@ -221,9 +210,12 @@ const Header = () => {
 
             {/* Right side actions - Desktop */}
             <div className="hidden md:flex items-center space-x-4">
-              <div className="flex items-center space-x-1 text-sm text-green-600">
-                <Clock className="h-4 w-4" />
-                <span className="font-medium">10 mins</span>
+              <div className="flex flex-col items-start text-sm text-green-600 leading-tight">
+                <div className="flex items-center space-x-1">
+                  <Clock className="h-4 w-4" />
+                  <span className="font-medium">10 mins</span>
+                </div>
+                <span className="text-sm">Service Time : 10am-5pm</span>
               </div>
 
               {user ? (
@@ -261,7 +253,13 @@ const Header = () => {
               </Link>
             </div>
 
+            <span className="text-xs whitespace-nowrap flex-shrink-0 flex flex-col items-center">
+              <span>Service Time:</span>
+              <span className="font-semibold">10am - 5pm</span>
+            </span>
+
             {/* Mobile Location Button */}
+
             <div className="md:hidden">
               <Button
                 variant="ghost"
@@ -270,6 +268,11 @@ const Header = () => {
                 className="p-2"
               >
                 <MapPin className="h-5 w-5 text-green-600" />
+                {userLocation && (
+                  <span className="text-xs font-medium text-gray-700 truncate max-w-[100px]">
+                    {userLocation}
+                  </span>
+                )}
               </Button>
             </div>
           </div>
