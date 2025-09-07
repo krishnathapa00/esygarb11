@@ -232,9 +232,15 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
             <Input
               id="phone"
               value={formData.phone}
-              onChange={(e) => handleInputChange("phone", e.target.value)}
+              onChange={(e) => {
+                const onlyDigits = e.target.value.replace(/\D/g, "");
+                if (onlyDigits.length <= 10) {
+                  handleInputChange("phone", onlyDigits);
+                }
+              }}
               placeholder="Enter your contact number"
               required={isNewUser}
+              maxLength={10}
             />
           </div>
 
