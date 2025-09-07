@@ -9,7 +9,7 @@ import { toast } from "@/hooks/use-toast";
 const GOOGLE_MAPS_API_KEY = "AIzaSyADxM5y7WrXu3BRJ_hJQZhh6FLXWyO3E1g";
 
 const OFFICE_COORDS = { lat: 27.687441, lng: 85.340829 };
-const MAX_DISTANCE_KM = 2;
+const MAX_DISTANCE_KM = 1.5;
 
 declare global {
   interface Window {
@@ -367,8 +367,8 @@ const MapLocationEnhanced = () => {
             <Input
               id="location"
               value={selectedLocation}
-              onChange={(e) => setSelectedLocation(e.target.value)}
-              placeholder="Enter your address or search above"
+              readOnly
+              placeholder="Search your location above"
               className="mt-1"
             />
           </div>
