@@ -253,14 +253,13 @@ const Header = () => {
               </Link>
             </div>
 
-            <span className="text-xs whitespace-nowrap flex-shrink-0 flex flex-col items-center">
-              <span>Service Time:</span>
-              <span className="font-semibold">10am - 5pm</span>
-            </span>
-
             {/* Mobile Location Button */}
 
-            <div className="md:hidden">
+            <div className="md:hidden flex items-center space-x-5">
+              <div className="flex flex-col text-green-600 text-xs leading-tight whitespace-nowrap">
+                <span>Service Time</span>
+                <span className="font-semibold">10am - 5pm</span>
+              </div>
               <Button
                 variant="ghost"
                 size="sm"
