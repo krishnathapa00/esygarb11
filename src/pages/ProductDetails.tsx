@@ -122,47 +122,63 @@ const ProductDetails = () => {
               <div className="space-y-4">
                 <div className="flex items-center space-x-4">
                   <span className="font-medium">Quantity:</span>
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      variant="outline"
-                      size="sm"
-                      className="w-8 h-8 p-0"
-                    >
-                      -
-                    </Button>
-                    <span className="font-semibold mx-3">{quantity}</span>
-                    <Button
-                      onClick={() => setQuantity(quantity + 1)}
-                      variant="outline"
-                      size="sm"
-                      className="w-8 h-8 p-0"
-                    >
-                      +
-                    </Button>
-                  </div>
+                  {product.stock_quantity === 0 ? (
+                    <span className="text-red-600 font-semibold text-sm">
+                      Out of Stock
+                    </span>
+                  ) : (
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                        variant="outline"
+                        size="sm"
+                        className="w-8 h-8 p-0"
+                      >
+                        -
+                      </Button>
+                      <span className="font-semibold mx-3">{quantity}</span>
+                      <Button
+                        onClick={() => setQuantity(quantity + 1)}
+                        variant="outline"
+                        size="sm"
+                        className="w-8 h-8 p-0"
+                      >
+                        +
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
-                <Button
-                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-3 text-base font-medium"
-                  size="lg"
-                  onClick={() => {
-                    handleAddToCart({
-                      id: product.id,
-                      name: product.name,
-                      price: product.price,
-                      image: product.image,
-                      weight: product.weight,
-                      quantity,
-                    });
-                    toast({
-                      title: "Added to cart",
-                      description: `${quantity} x ${product.name} added to cart successfully.`,
-                    });
-                  }}
-                >
-                  Add {quantity} to Cart - Rs.{product.price * quantity}
-                </Button>
+                {product.stock_quantity === 0 ? (
+                  <Button
+                    className="w-full bg-red-100 text-red-600 py-3 text-base font-medium cursor-not-allowed"
+                    size="lg"
+                    disabled
+                  >
+                    Out of Stock
+                  </Button>
+                ) : (
+                  <Button
+                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-3 text-base font-medium"
+                    size="lg"
+                    onClick={() => {
+                      handleAddToCart({
+                        id: product.id,
+                        name: product.name,
+                        price: product.price,
+                        image: product.image,
+                        weight: product.weight,
+                        quantity,
+                      });
+                      toast({
+                        title: "Added to cart",
+                        description: `${quantity} x ${product.name} added to cart successfully.`,
+                      });
+                    }}
+                  >
+                    Add {quantity} to Cart - Rs.{product.price * quantity}
+                  </Button>
+                )}
               </div>
             </div>
           </div>
