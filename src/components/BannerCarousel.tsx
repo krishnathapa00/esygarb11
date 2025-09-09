@@ -13,7 +13,7 @@ const banners = [
       </>
     ),
     subtitle: "All services are available during our standard operating hours.",
-    backgroundColor: "from-red-600 to-yellow-400",
+    backgroundColor: "from-green-600 to-emerald-600",
     image: null,
     altText: "Service Hours",
   },
