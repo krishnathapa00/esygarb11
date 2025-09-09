@@ -189,8 +189,10 @@ const AuthHybrid = () => {
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <div className="mb-4">
-              <div className="w-16 h-16 bg-gradient-to-r from-emerald-500 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl font-bold text-white">EG</span>
+              <div className="w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <h1 className="text-xl font-bold font-poppins bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                  EsyGrab
+                </h1>
               </div>
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
