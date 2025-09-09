@@ -7,6 +7,7 @@ interface UseOrderTimerProps {
   acceptedAt?: string | null;
   deliveredAt?: string | null;
   totalDeliveryMinutes?: number;
+  isCancelled?: boolean;
 }
 
 export const useOrderTimer = ({
@@ -16,16 +17,25 @@ export const useOrderTimer = ({
   acceptedAt,
   deliveredAt,
   totalDeliveryMinutes = 10,
+  isCancelled = false,
 }: UseOrderTimerProps) => {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [remainingSeconds, setRemainingSeconds] = useState(
     totalDeliveryMinutes * 60
   );
   const [isRunning, setIsRunning] = useState(false);
+
   const [isOverdue, setIsOverdue] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Calculate times based on order status and timestamps
+  const stopTimer = () => {
+    setIsRunning(false);
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  };
+
   useEffect(() => {
     if (!orderCreatedAt) return;
 
@@ -33,7 +43,6 @@ export const useOrderTimer = ({
     const totalDeliveryMs = totalDeliveryMinutes * 60 * 1000;
 
     if (orderStatus === "delivered" && deliveredAt) {
-      // Order is completed - show final delivery time
       const deliveredTime = new Date(deliveredAt).getTime();
       const finalElapsed = Math.floor((deliveredTime - orderStartTime) / 1000);
       setElapsedSeconds(finalElapsed);
@@ -52,7 +61,6 @@ export const useOrderTimer = ({
     setRemainingSeconds(Math.floor(currentRemaining));
     setIsOverdue(currentRemaining <= 0);
 
-    // Timer should run for active orders regardless of remaining time
     const activeStatuses = [
       "confirmed",
       "ready_for_pickup",
@@ -61,13 +69,21 @@ export const useOrderTimer = ({
       "pending",
     ];
     const shouldRun =
-      activeStatuses.includes(orderStatus) && orderStatus !== "cancelled";
+      activeStatuses.includes(orderStatus) &&
+      !isCancelled &&
+      orderStatus !== "cancelled";
+
     setIsRunning(shouldRun);
   }, [orderCreatedAt, orderStatus, deliveredAt, totalDeliveryMinutes]);
 
-  // Main timer interval - runs continuously when active
   useEffect(() => {
-    if (!isRunning || orderStatus === "cancelled" || !orderCreatedAt) return;
+    if (
+      !isRunning ||
+      isCancelled ||
+      orderStatus === "cancelled" ||
+      !orderCreatedAt
+    )
+      return;
 
     intervalRef.current = setInterval(() => {
       const orderStartTime = new Date(orderCreatedAt).getTime();
@@ -102,7 +118,6 @@ export const useOrderTimer = ({
     };
   }, [isRunning, orderCreatedAt, orderStatus, totalDeliveryMinutes]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (intervalRef.current) {
@@ -140,11 +155,9 @@ export const useOrderTimer = ({
     const totalDeliveryMs = totalDeliveryMinutes * 60 * 1000;
     const now = new Date().getTime();
 
-    // Calculate how much time was used before delivery partner accepted
     const timeUsedBeforeAccept = acceptTime - orderStartTime;
     const remainingAtAccept = totalDeliveryMs - timeUsedBeforeAccept;
 
-    // Calculate current remaining time for delivery partner
     const timeUsedByPartner = now - acceptTime;
     const partnerRemaining = (remainingAtAccept - timeUsedByPartner) / 1000;
 
@@ -164,5 +177,6 @@ export const useOrderTimer = ({
       const partnerRemaining = getDeliveryPartnerRemainingTime();
       return partnerRemaining !== null ? formatTime(partnerRemaining) : null;
     },
+    stopTimer,
   };
 };
