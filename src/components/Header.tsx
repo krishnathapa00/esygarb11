@@ -203,12 +203,11 @@ const Header = () => {
 
             {/* Right side actions - Desktop */}
             <div className="hidden md:flex items-center space-x-4">
-              <div className="flex flex-col items-start text-sm text-green-600 leading-tight">
+              <div className="flex-col items-start text-sm text-green-600 leading-tight">
                 <div className="flex items-center space-x-1">
                   <Clock className="h-4 w-4" />
                   <span className="font-medium">10 mins</span>
                 </div>
-                <span className="text-sm">Service Time : 10am-5pm</span>
               </div>
 
               {user ? (
@@ -249,10 +248,6 @@ const Header = () => {
             {/* Mobile Location Button */}
 
             <div className="md:hidden flex items-center space-x-5">
-              <div className="flex flex-col text-green-600 text-xs leading-tight whitespace-nowrap">
-                <span>Service Time</span>
-                <span className="font-semibold">10am - 5pm</span>
-              </div>
               <Button
                 variant="ghost"
                 size="sm"
