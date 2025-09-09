@@ -22,6 +22,7 @@ import AdminLayout from "./components/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "react-router-dom";
 
 const ManageOrders = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -347,16 +348,17 @@ const ManageOrders = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex gap-1 justify-end">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            window.open(`/admin/orders/${order.id}`, "_blank");
-                          }}
+                        <Link
+                          to={`/admin/orders/${order.id}`}
+                          state={{ order }}
+                          rel="noopener noreferrer"
                         >
-                          <Eye className="h-4 w-4 mr-1" />
-                          View
-                        </Button>
+                          <Button variant="ghost" size="sm">
+                            <Eye className="h-4 w-4 mr-1" />
+                            View
+                          </Button>
+                        </Link>
+
                         {(order.status === "confirmed" ||
                           order.status === "pending") && (
                           <Button
