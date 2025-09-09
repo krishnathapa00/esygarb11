@@ -1,6 +1,6 @@
-import React from 'react';
-import { Navigate } from 'react-router-dom';
-import { useAuthContext } from '@/contexts/AuthProvider';
+import React from "react";
+import { Navigate } from "react-router-dom";
+import { useAuthContext } from "@/contexts/AuthProvider";
 
 interface RoleProtectedRouteProps {
   children: React.ReactNode;
@@ -11,7 +11,7 @@ interface RoleProtectedRouteProps {
 export const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
   children,
   allowedRoles,
-  redirectTo = '/auth'
+  redirectTo = "/auth",
 }) => {
   const { user, isAuthenticated, loading } = useAuthContext();
 
@@ -44,14 +44,18 @@ export const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
   const userRole = user.role;
 
   if (!allowedRoles.includes(userRole)) {
-    console.log(`RoleProtectedRoute: Access denied. User role: ${userRole}, Allowed roles: ${allowedRoles.join(', ')}`);
-    // Redirect based on actual user role to prevent wrong redirects
-    if (userRole === 'admin' || userRole === 'super_admin') {
+    console.log(
+      `RoleProtectedRoute: Access denied. User role: ${userRole}, Allowed roles: ${allowedRoles.join(
+        ", "
+      )}`
+    );
+    
+    if (userRole === "admin" || userRole === "super_admin") {
       return <Navigate to="/admin/dashboard" replace />;
-    } else if (userRole === 'delivery_partner') {
+    } else if (userRole === "delivery_partner") {
       return <Navigate to="/delivery-partner/dashboard" replace />;
     }
-    // Customer users trying to access admin/delivery routes get unauthorized
+    
     return <Navigate to="/unauthorized" replace />;
   }
 
