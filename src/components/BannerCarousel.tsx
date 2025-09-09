@@ -12,7 +12,8 @@ const banners = [
         10 AM - 5 PM
       </>
     ),
-    subtitle: "All services are available during our standard operating hours.",
+    subtitle:
+      "All services are available during our standard operating hours. Expect delivery within 10 minutes.",
     backgroundColor: "from-green-600 to-emerald-600",
     image: null,
     altText: "Service Hours",
