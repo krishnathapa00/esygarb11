@@ -1,30 +1,49 @@
-
-import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const banners = [
   {
     id: 1,
-    title: "Fresh Groceries Delivered in 10 Minutes!",
-    subtitle: "Get farm-fresh vegetables, fruits, and daily essentials delivered to your doorstep",
-    backgroundColor: "from-green-500 to-emerald-600",
-    image: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=600&h=300&fit=crop"
+    title: (
+      <>
+        Service Hours:
+        <br />
+        10 AM - 5 PM
+      </>
+    ),
+    subtitle: "All services are available during our standard operating hours.",
+    backgroundColor: "from-red-600 to-yellow-400",
+    image: null,
+    altText: "Service Hours",
   },
   {
     id: 2,
-    title: "Save Big on Your Daily Essentials",
-    subtitle: "Up to 30% off on fruits, vegetables, and household items this week",
-    backgroundColor: "from-blue-500 to-cyan-600",
-    image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=300&fit=crop"
+    title: "Fresh Groceries Delivered in 10 Minutes!",
+    subtitle:
+      "Get farm-fresh vegetables, fruits, and daily essentials delivered to your doorstep",
+    backgroundColor: "from-green-500 to-emerald-600",
+    image:
+      "https://images.unsplash.com/photo-1542838132-92c53300491e?w=600&h=300&fit=crop",
   },
   {
     id: 3,
+    title: "Save Big on Your Daily Essentials",
+    subtitle:
+      "Up to 30% off on fruits, vegetables, and household items this week",
+    backgroundColor: "from-blue-500 to-cyan-600",
+    image:
+      "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=300&fit=crop",
+  },
+  {
+    id: 4,
     title: "Premium Quality, Guaranteed Fresh",
-    subtitle: "Hand-picked produce from local farms, quality assured by our experts",
+    subtitle:
+      "Hand-picked produce from local farms, quality assured by our experts",
     backgroundColor: "from-orange-500 to-amber-600",
-    image: "https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=600&h=300&fit=crop"
-  }
+    image:
+      "https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=600&h=300&fit=crop",
+  },
 ];
 
 const BannerCarousel = () => {
@@ -48,7 +67,7 @@ const BannerCarousel = () => {
 
   return (
     <div className="relative overflow-hidden rounded-2xl h-48 md:h-64 lg:h-80 mb-8">
-      <div 
+      <div
         className="flex transition-transform duration-500 ease-in-out h-full"
         style={{ transform: `translateX(-${currentSlide * 100}%)` }}
       >
@@ -57,25 +76,39 @@ const BannerCarousel = () => {
             key={banner.id}
             className={`w-full h-full flex-shrink-0 bg-gradient-to-r ${banner.backgroundColor} relative`}
           >
-            <div className="absolute inset-0 flex items-center justify-between p-6 md:p-8 lg:p-12">
-              <div className="flex-1 text-white z-10">
-                <h2 className="text-xl md:text-2xl lg:text-4xl font-bold mb-2 md:mb-4">
+            <div
+              className={`absolute inset-0 flex flex-col justify-center items-center text-center p-6 md:p-8 lg:p-12 ${
+                banner.image
+                  ? "md:flex-row md:justify-between md:text-left"
+                  : ""
+              }`}
+            >
+              <div className="text-white z-10 max-w-xl">
+                <h2 className="text-2xl md:text-4xl lg:text-5xl font-extrabold mb-2 md:mb-4">
                   {banner.title}
                 </h2>
-                <p className="text-sm md:text-base lg:text-lg text-white/90 mb-4 md:mb-6 max-w-md">
-                  {banner.subtitle}
-                </p>
-                <Button className="bg-white text-gray-900 hover:bg-gray-100 font-medium">
-                  Shop Now
-                </Button>
+                {banner.subtitle && (
+                  <p className="text-sm md:text-base lg:text-lg text-white/90 mb-4 md:mb-6">
+                    {banner.subtitle}
+                  </p>
+                )}
               </div>
-              <div className="hidden md:block flex-1 max-w-xs lg:max-w-md">
-                <img
-                  src={banner.image}
-                  alt={banner.title}
-                  className="w-full h-40 lg:h-48 object-cover rounded-xl shadow-lg"
-                />
-              </div>
+
+              {banner.image && (
+                <div className="hidden md:block flex-1 max-w-xs lg:max-w-md">
+                  <img
+                    src={banner.image}
+                    alt={
+                      banner.altText
+                        ? banner.altText
+                        : typeof banner.title === "string"
+                        ? banner.title
+                        : "Banner image"
+                    }
+                    className="w-full h-40 lg:h-48 object-cover rounded-xl shadow-lg"
+                  />
+                </div>
+              )}
             </div>
           </div>
         ))}
@@ -106,7 +139,7 @@ const BannerCarousel = () => {
             key={index}
             onClick={() => setCurrentSlide(index)}
             className={`w-2 h-2 rounded-full transition-all ${
-              index === currentSlide ? 'bg-white w-6' : 'bg-white/50'
+              index === currentSlide ? "bg-white w-6" : "bg-white/50"
             }`}
           />
         ))}
