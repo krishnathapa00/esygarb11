@@ -73,22 +73,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   /** ----- AUTH STATE CHANGE LISTENER ----- */
   useEffect(() => {
+    const localSession = localStorage.getItem("esygrab_session");
+
+    if (localSession) {
+      const parsed = JSON.parse(localSession);
+      if (parsed.user && parsed.expiresAt > Date.now()) {
+        setUser(parsed.user);
+        setLoading(false);
+
+        // Fetch fresh data async but keep loading state for smoother UX
+        supabase.auth.getSession().then(({ data: sessionData }) => {
+          if (sessionData?.session?.user) {
+            setAuthUser(sessionData.session.user);
+          }
+        });
+
+        return;
+      }
+    } else {
+      localStorage.removeItem("esygrab_session");
+    }
+
+    // Subscribe to auth state changes
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED")
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
         setAuthUser(session?.user || null);
-      if (event === "SIGNED_OUT") setUser(null);
+      }
+      if (event === "SIGNED_OUT") {
+        setUser(null);
+        setLoading(false);
+      }
     });
 
     const init = async () => {
       const { data: sessionData } = await supabase.auth.getSession();
-      if (sessionData?.session?.user)
+      if (sessionData?.session?.user) {
         await setAuthUser(sessionData.session.user);
+      }
       setLoading(false);
     };
 
     init();
 
-    return () => data.subscription.unsubscribe();
+    return () => data?.subscription.unsubscribe();
   }, [setAuthUser]);
 
   /** ----- AUTH METHODS ----- */
