@@ -1,49 +1,108 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Package, Truck, CheckCircle, Clock, MapPin, Phone, Timer, AlertCircle, Map } from 'lucide-react';
-import Header from '@/components/Header';
-import { useOrderTimer } from '@/hooks/useOrderTimer';
-import { formatLocationName } from '@/utils/geocoding';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import React, { useState, useEffect, useRef } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import {
+  ArrowLeft,
+  Package,
+  Truck,
+  CheckCircle,
+  Clock,
+  MapPin,
+  Phone,
+  Timer,
+  AlertCircle,
+  Map,
+} from "lucide-react";
+import Header from "@/components/Header";
+import { useOrderTimer } from "@/hooks/useOrderTimer";
+import { formatLocationName } from "@/utils/geocoding";
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 
-const MAPBOX_TOKEN = 'pk.eyJ1Ijoia3Jpc2huYTEyNDMzNCIsImEiOiJjbWVodG1mZjcwMjhwMnJxczZ1ZWQyeTNlIn0.pl7sk2526OEU-Ub-hB0QTQ';
+const MAPBOX_TOKEN =
+  "pk.eyJ1Ijoia3Jpc2huYTEyNDMzNCIsImEiOiJjbWVodG1mZjcwMjhwMnJxczZ1ZWQyeTNlIn0.pl7sk2526OEU-Ub-hB0QTQ";
 
 const OrderTrackingWithMap = () => {
   const { orderId } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
-  
+
   // Map refs and state
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const deliveryMarker = useRef<mapboxgl.Marker | null>(null);
   const customerMarker = useRef<mapboxgl.Marker | null>(null);
-  
-  const [customerLocation, setCustomerLocation] = useState<{lat: number, lng: number} | null>(null);
-  const [deliveryLocation, setDeliveryLocation] = useState<{lat: number, lng: number} | null>(null);
-  const [customerLocationName, setCustomerLocationName] = useState<string>('');
+
+  const [customerLocation, setCustomerLocation] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+  const [deliveryLocation, setDeliveryLocation] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+  const [customerLocationName, setCustomerLocationName] = useState<string>("");
+
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelled, setCancelled] = useState(false);
+
+  const isCancellationAllowed = () => {
+    if (!order || cancelled) return false;
+    if (order.status !== "pending" && order.status !== "confirmed")
+      return false;
+    const orderCreated = new Date(order.created_at).getTime();
+    const now = Date.now();
+    const diffMinutes = (now - orderCreated) / 1000 / 60;
+    return diffMinutes <= 2;
+  };
+
+  const cancelOrder = async () => {
+    if (!orderId) return;
+    setIsCancelling(true);
+    try {
+      const { data, error } = await supabase
+        .from("orders")
+        .update({ status: "cancelled" })
+        .eq("id", orderId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setCancelled(true);
+      orderTimer.stopTimer?.();
+      await refetch();
+    } catch (err) {
+      console.error("Cancel order error:", err);
+    } finally {
+      setIsCancelling(false);
+    }
+  };
 
   // Fetch order details
-  const { data: order, isLoading } = useQuery({
-    queryKey: ['order-tracking', orderId],
+  const {
+    data: order,
+    isLoading,
+    refetch,
+  } = useQuery({
+    queryKey: ["order-tracking", orderId],
     queryFn: async () => {
-      if (!orderId) throw new Error('Order ID is required');
+      if (!orderId) throw new Error("Order ID is required");
 
       // Check if orderId is an order number (starts with "ORD") or a UUID
-      const isOrderNumber = orderId.startsWith('ORD');
-      const queryField = isOrderNumber ? 'order_number' : 'id';
+      const isOrderNumber = orderId.startsWith("ORD");
+      const queryField = isOrderNumber ? "order_number" : "id";
 
       const { data, error } = await supabase
-        .from('orders')
-        .select(`
+        .from("orders")
+        .select(
+          `
           *,
           order_items (
             id,
@@ -58,7 +117,8 @@ const OrderTrackingWithMap = () => {
             full_name,
             phone_number
           )
-        `)
+        `
+        )
         .eq(queryField, orderId)
         .maybeSingle();
 
@@ -66,16 +126,17 @@ const OrderTrackingWithMap = () => {
       return data;
     },
     enabled: !!orderId,
-    refetchInterval: 5000 // Refresh every 5 seconds
+    refetchInterval: 5000, // Refresh every 5 seconds
   });
 
   // Order timer for 10-minute delivery tracking
   const orderTimer = useOrderTimer({
-    orderId: orderId || '',
-    orderStatus: order?.status || 'pending',
-    orderCreatedAt: order?.created_at || '',
+    orderId: orderId || "",
+    orderStatus: order?.status || "pending",
+    orderCreatedAt: order?.created_at || "",
     acceptedAt: order?.accepted_at,
-    deliveredAt: order?.delivered_at
+    deliveredAt: order?.delivered_at,
+    isCancelled: cancelled,
   });
 
   // Initialize map when order is loaded
@@ -83,15 +144,15 @@ const OrderTrackingWithMap = () => {
     if (!mapContainer.current || !order) return;
 
     mapboxgl.accessToken = MAPBOX_TOKEN;
-    
+
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/satellite-streets-v12',
-      center: [85.3240, 27.7172], // Default Kathmandu center
-      zoom: 14
+      style: "mapbox://styles/mapbox/satellite-streets-v12",
+      center: [85.324, 27.7172],
+      zoom: 14,
     });
 
-    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    map.current.addControl(new mapboxgl.NavigationControl(), "top-right");
 
     // Geocode customer address
     geocodeAddress(order.delivery_address);
@@ -110,52 +171,68 @@ const OrderTrackingWithMap = () => {
       setCustomerLocationName(locationName);
 
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${MAPBOX_TOKEN}&country=NP&limit=1`
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+          address
+        )}.json?access_token=${MAPBOX_TOKEN}&country=NP&limit=1`
       );
-      
+
       if (response.ok) {
         const data = await response.json();
         if (data.features && data.features.length > 0) {
           const [lng, lat] = data.features[0].center;
           setCustomerLocation({ lat, lng });
-          
+
           // Add customer marker
           if (map.current) {
-            customerMarker.current = new mapboxgl.Marker({ 
-              color: '#ef4444',
-              scale: 1.2 
+            customerMarker.current = new mapboxgl.Marker({
+              color: "#ef4444",
+              scale: 1.2,
             })
-            .setLngLat([lng, lat])
-            .setPopup(new mapboxgl.Popup().setHTML('<div><strong>Delivery Location</strong><br>' + locationName + '</div>'))
-            .addTo(map.current);
-            
+              .setLngLat([lng, lat])
+              .setPopup(
+                new mapboxgl.Popup().setHTML(
+                  "<div><strong>Delivery Location</strong><br>" +
+                    locationName +
+                    "</div>"
+                )
+              )
+              .addTo(map.current);
+
             map.current.setCenter([lng, lat]);
           }
         }
       }
     } catch (error) {
-      console.error('Geocoding error:', error);
+      console.error("Geocoding error:", error);
       setCustomerLocationName(address); // Fallback to original address
     }
   };
 
   const getOrderProgress = (status: string) => {
     switch (status) {
-      case 'pending': return 10;
-      case 'confirmed': return 25;
-      case 'ready_for_pickup': return 40;
-      case 'dispatched': return 60;
-      case 'out_for_delivery': return 80;
-      case 'delivered': return 100;
-      default: return 0;
+      case "pending":
+        return 10;
+      case "confirmed":
+        return 25;
+      case "ready_for_pickup":
+        return 40;
+      case "dispatched":
+        return 60;
+      case "out_for_delivery":
+        return 80;
+      case "delivered":
+        return 100;
+      default:
+        return 0;
     }
   };
 
   const getStatusIcon = (status: string, currentStatus: string) => {
-    const isCompleted = getOrderProgress(status) <= getOrderProgress(currentStatus);
+    const isCompleted =
+      getOrderProgress(status) <= getOrderProgress(currentStatus);
     const isCurrent = status === currentStatus;
 
-    if (status === 'delivered' && isCompleted) {
+    if (status === "delivered" && isCompleted) {
       return <CheckCircle className="h-6 w-6 text-green-600" />;
     }
 
@@ -172,23 +249,54 @@ const OrderTrackingWithMap = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'confirmed': return 'bg-blue-100 text-blue-800';
-      case 'ready_for_pickup': return 'bg-purple-100 text-purple-800';
-      case 'dispatched': return 'bg-orange-100 text-orange-800';
-      case 'out_for_delivery': return 'bg-indigo-100 text-indigo-800';
-      case 'delivered': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "confirmed":
+        return "bg-blue-100 text-blue-800";
+      case "ready_for_pickup":
+        return "bg-purple-100 text-purple-800";
+      case "dispatched":
+        return "bg-orange-100 text-orange-800";
+      case "out_for_delivery":
+        return "bg-indigo-100 text-indigo-800";
+      case "delivered":
+        return "bg-green-100 text-green-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   const statusSteps = [
-    { status: 'pending', label: 'Order Placed', description: 'Your order has been received' },
-    { status: 'confirmed', label: 'Processing', description: 'Order is being prepared' },
-    { status: 'ready_for_pickup', label: 'Ready', description: 'Order ready for pickup' },
-    { status: 'dispatched', label: 'Picked Up', description: 'Delivery partner assigned' },
-    { status: 'out_for_delivery', label: 'On the Way', description: 'Order is being delivered' },
-    { status: 'delivered', label: 'Delivered', description: 'Order delivered successfully' }
+    {
+      status: "pending",
+      label: "Order Placed",
+      description: "Your order has been received",
+    },
+    {
+      status: "confirmed",
+      label: "Processing",
+      description: "Order is being prepared",
+    },
+    {
+      status: "ready_for_pickup",
+      label: "Ready",
+      description: "Order ready for pickup",
+    },
+    {
+      status: "dispatched",
+      label: "Picked Up",
+      description: "Delivery partner assigned",
+    },
+    {
+      status: "out_for_delivery",
+      label: "On the Way",
+      description: "Order is being delivered",
+    },
+    {
+      status: "delivered",
+      label: "Delivered",
+      description: "Order delivered successfully",
+    },
   ];
 
   if (isLoading) {
@@ -198,7 +306,9 @@ const OrderTrackingWithMap = () => {
         <div className="container mx-auto p-4">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-4 text-muted-foreground">Loading order details...</p>
+            <p className="mt-4 text-muted-foreground">
+              Loading order details...
+            </p>
           </div>
         </div>
       </div>
@@ -212,7 +322,7 @@ const OrderTrackingWithMap = () => {
         <div className="container mx-auto p-4">
           <div className="text-center py-12">
             <p className="text-muted-foreground">Order not found</p>
-            <Button onClick={() => navigate('/')} className="mt-4">
+            <Button onClick={() => navigate("/")} className="mt-4">
               Back to Home
             </Button>
           </div>
@@ -227,7 +337,11 @@ const OrderTrackingWithMap = () => {
       <div className="container mx-auto p-4 space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={() => navigate('/profile')}>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => navigate("/profile")}
+          >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
@@ -237,7 +351,8 @@ const OrderTrackingWithMap = () => {
         </div>
 
         {/* Live Map - Only show if order is dispatched or out for delivery */}
-        {(order.status === 'dispatched' || order.status === 'out_for_delivery') && (
+        {(order.status === "dispatched" ||
+          order.status === "out_for_delivery") && (
           <Card className="mb-6">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -246,13 +361,11 @@ const OrderTrackingWithMap = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <div 
-                ref={mapContainer}
-                className="w-full h-80 rounded-b-lg"
-              />
+              <div ref={mapContainer} className="w-full h-80 rounded-b-lg" />
               <div className="p-4 bg-gray-50 border-t">
                 <p className="text-sm text-muted-foreground text-center">
-                  📍 Your order is on the way! Track your delivery partner's location in real-time.
+                  📍 Your order is on the way! Track your delivery partner's
+                  location in real-time.
                 </p>
               </div>
             </CardContent>
@@ -265,30 +378,57 @@ const OrderTrackingWithMap = () => {
             <div className="flex justify-between items-center mb-4">
               <div>
                 <Badge className={getStatusColor(order.status)}>
-                  {order.status.replace('_', ' ').toUpperCase()}
+                  {cancelled
+                    ? "CANCELLED"
+                    : order.status.replace("_", " ").toUpperCase()}
                 </Badge>
                 <p className="text-sm text-muted-foreground mt-1">
                   Estimated delivery: {order.estimated_delivery}
                 </p>
               </div>
-              <div className="text-right space-y-1">
-                <div className="flex items-center gap-2 justify-end">
-                  <Timer className="h-4 w-4 text-primary" />
-                  <p className="text-2xl font-bold text-primary">{orderTimer.formatRemaining()}</p>
-                </div>
-                <p className="text-sm text-muted-foreground">Remaining time</p>
-                {orderTimer.isOverdue && (
-                  <div className="flex items-center gap-1 text-red-600">
-                    <AlertCircle className="h-3 w-3" />
-                    <span className="text-xs">Overdue</span>
+
+              {cancelled ? (
+                <p className="text-red-600 font-semibold">Order Cancelled</p>
+              ) : (
+                <div className="text-right space-y-1">
+                  <div className="flex items-center gap-2 justify-end">
+                    <Timer className="h-4 w-4 text-primary" />
+                    <p className="text-2xl font-bold text-primary">
+                      {orderTimer.formatRemaining()}
+                    </p>
                   </div>
-                )}
-              </div>
+                  <p className="text-sm text-muted-foreground">
+                    Remaining time
+                  </p>
+                  {orderTimer.isOverdue && (
+                    <div className="flex items-center gap-1 text-red-600">
+                      <AlertCircle className="h-3 w-3" />
+                      <span className="text-xs">Overdue</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
+
+            {isCancellationAllowed() && !cancelled && (
+              <div className="flex justify-end mt-2">
+                <Button
+                  variant="destructive"
+                  disabled={isCancelling}
+                  onClick={cancelOrder}
+                >
+                  {isCancelling ? "Cancelling..." : "Cancel Order"}
+                </Button>
+              </div>
+            )}
+
             <div className="flex justify-between text-sm text-muted-foreground mb-2">
               <span>Time elapsed: {orderTimer.formatElapsed()}</span>
-              {order.status === 'delivered' && order.delivery_time_minutes && (
-                <span>Total delivery time: {Math.floor(order.delivery_time_minutes)} minutes</span>
+              {order.status === "delivered" && order.delivery_time_minutes && (
+                <span>
+                  Total delivery time: {Math.floor(order.delivery_time_minutes)}{" "}
+                  minutes
+                </span>
               )}
             </div>
             <Progress value={getOrderProgress(order.status)} className="h-2" />
@@ -307,10 +447,14 @@ const OrderTrackingWithMap = () => {
                   {getStatusIcon(step.status, order.status)}
                   <div className="flex-1">
                     <h3 className="font-medium">{step.label}</h3>
-                    <p className="text-sm text-muted-foreground">{step.description}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {step.description}
+                    </p>
                   </div>
                   {step.status === order.status && (
-                    <Badge variant="outline" className="text-blue-600">Current</Badge>
+                    <Badge variant="outline" className="text-blue-600">
+                      Current
+                    </Badge>
                   )}
                 </div>
               ))}
@@ -353,7 +497,9 @@ const OrderTrackingWithMap = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm">{customerLocationName || order.delivery_address}</p>
+            <p className="text-sm">
+              {customerLocationName || order.delivery_address}
+            </p>
           </CardContent>
         </Card>
 
@@ -368,24 +514,33 @@ const OrderTrackingWithMap = () => {
           <CardContent>
             <div className="space-y-3">
               {order.order_items?.map((item: any, index: number) => (
-                <div key={item.id} className="flex items-center gap-3 p-2 border rounded-lg">
+                <div
+                  key={item.id}
+                  className="flex items-center gap-3 p-2 border rounded-lg"
+                >
                   <img
-                    src={item.products?.image_url || '/placeholder.svg'}
+                    src={item.products?.image_url || "/placeholder.svg"}
                     alt={item.products?.name}
                     className="h-12 w-12 object-cover rounded"
                   />
                   <div className="flex-1">
                     <p className="font-medium">{item.products?.name}</p>
-                    <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Qty: {item.quantity}
+                    </p>
                   </div>
-                  <p className="font-medium">Rs {parseFloat(item.price).toFixed(2)}</p>
+                  <p className="font-medium">
+                    Rs {parseFloat(item.price).toFixed(2)}
+                  </p>
                 </div>
               ))}
             </div>
             <div className="border-t pt-3 mt-3">
               <div className="flex justify-between items-center font-medium">
                 <span>Total Amount</span>
-                <span>Rs {parseFloat(String(order.total_amount)).toFixed(2)}</span>
+                <span>
+                  Rs {parseFloat(String(order.total_amount)).toFixed(2)}
+                </span>
               </div>
             </div>
           </CardContent>
