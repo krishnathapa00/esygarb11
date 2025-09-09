@@ -6,7 +6,6 @@ import {
   User,
   MapPin,
   Clock,
-  CreditCard,
   CheckCircle,
   Truck,
   Timer,
@@ -66,8 +65,8 @@ const OrderDetails = () => {
       return { ...orderResponse.data, delivery_fee: deliveryFee } as any;
     },
     enabled: !!orderId,
-    staleTime: 30000, // Cache for 30 seconds for faster loading
-    gcTime: 60000, // Keep in cache for 1 minute
+    staleTime: 30000,
+    gcTime: 60000,
   });
 
   // Order timer for admin tracking
