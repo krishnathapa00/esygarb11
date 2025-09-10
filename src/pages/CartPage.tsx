@@ -127,9 +127,9 @@ const CartPage = () => {
     const fetchOrderCount = async () => {
       if (!user) return;
 
-      const { data, error } = await supabase
+      const { count, error } = await supabase
         .from("orders")
-        .select("id", { count: "exact" })
+        .select("*", { count: "exact", head: true })
         .eq("user_id", user.id);
 
       if (error) {
@@ -137,7 +137,7 @@ const CartPage = () => {
         return;
       }
 
-      setOrderCount(data.length);
+      setOrderCount(count || 0);
     };
 
     fetchOrderCount();
