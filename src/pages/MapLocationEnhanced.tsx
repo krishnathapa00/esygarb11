@@ -10,7 +10,7 @@ import { showToast } from "@/components/Toast";
 const GOOGLE_MAPS_API_KEY = "AIzaSyADxM5y7WrXu3BRJ_hJQZhh6FLXWyO3E1g";
 
 const OFFICE_COORDS = { lat: 27.687441, lng: 85.340829 };
-const MAX_DISTANCE_KM = 1.5;
+const MAX_DISTANCE_KM = 1;
 
 declare global {
   interface Window {
