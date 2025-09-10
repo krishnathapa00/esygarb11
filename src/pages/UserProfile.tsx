@@ -388,6 +388,7 @@ const UserProfile: React.FC = () => {
                       name="address"
                       register={register}
                       rows={3}
+                      required
                     />
                     <div className="flex gap-4">
                       <Button
