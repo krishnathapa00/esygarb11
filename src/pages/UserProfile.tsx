@@ -107,10 +107,10 @@ const UserProfile: React.FC = () => {
       await signOut();
       setProfile(null);
       reset();
-      toast({
-        title: "Logged out",
-        description: "You have been logged out successfully",
-      });
+
+      localStorage.removeItem("esygrab_user_location");
+      localStorage.removeItem("esygrab_session");
+
       navigate("/");
     } catch {
       toast({
