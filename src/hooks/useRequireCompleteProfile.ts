@@ -20,6 +20,8 @@ export const useRequireCompleteProfile = () => {
     const checkProfile = async () => {
       if (!user || loading || hasShownToastRef.current) return;
 
+      hasShownToastRef.current = true;
+
       try {
         const profile = await fetchUserProfile();
 
@@ -28,7 +30,6 @@ export const useRequireCompleteProfile = () => {
           !profile.phone?.trim() ||
           !profile.address?.trim()
         ) {
-          hasShownToastRef.current = true;
           showToast("Please complete your profile before proceeding.", "error");
 
           if (window.location.pathname !== "/profile") {
