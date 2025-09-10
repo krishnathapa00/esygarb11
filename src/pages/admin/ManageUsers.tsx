@@ -4,23 +4,26 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import {
   Search,
   RefreshCw,
   UserCheck,
-  UserX,
   Phone,
   Package,
   Clock,
+  Eye,
 } from "lucide-react";
 import AdminLayout from "./components/AdminLayout";
+import UserDetailsModal from "@/components/UserDetailsModal";
 
 const ManageUsers = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const [selectedUser, setSelectedUser] = useState(null);
 
   const {
     data: users = [],
@@ -65,31 +68,6 @@ const ManageUsers = () => {
       toast({
         title: "Error",
         description: "Failed to update user role.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const deleteUserMutation = useMutation({
-    mutationFn: async (userId: string) => {
-      const { error } = await supabase
-        .from("profiles")
-        .delete()
-        .eq("id", userId);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
-      toast({
-        title: "Success",
-        description: "User deleted successfully.",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to delete user.",
         variant: "destructive",
       });
     },
@@ -322,18 +300,25 @@ const ManageUsers = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {new Date(user.created_at).toLocaleDateString()}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         {user.role !== "super_admin" && (
                           <Button
                             size="sm"
-                            variant="destructive"
-                            onClick={() => deleteUserMutation.mutate(user.id)}
-                            className="opacity-70 hover:opacity-100"
+                            variant="outline"
+                            onClick={() => setSelectedUser(user)}
+                            className="hover:opacity-100"
                           >
-                            <UserX className="w-4 h-4" />
+                            <Eye className="w-4 h-4" />
+                            View
                           </Button>
                         )}
                       </td>
+                      {selectedUser && (
+                        <UserDetailsModal
+                          user={selectedUser}
+                          onClose={() => setSelectedUser(null)}
+                        />
+                      )}
                     </tr>
                   ))
                 )}
