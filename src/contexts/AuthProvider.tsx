@@ -46,19 +46,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const setAuthUser = useCallback(async (user: User | null) => {
     if (!user) return setUser(null);
 
-    // fetch profile
     const { data: profile, error } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
-    if (error) return console.error(error);
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    if (!profile) {
+      const { error: insertError } = await supabase.from("profiles").insert({
+        id: user.id,
+        email: user.email,
+        role: "customer",
+        updated_at: new Date().toISOString(),
+      });
+
+      if (insertError) {
+        console.error(insertError);
+        return;
+      }
+
+      setUser({
+        id: user.id,
+        email: user.email,
+        role: "customer",
+        isVerified: true,
+      });
+
+      return;
+    }
 
     setUser({
       id: user.id,
-      email: user.email || "",
-      role: profile.role || "customer",
+      email: user.email,
+      role: profile.role,
       isVerified: true,
     });
 
