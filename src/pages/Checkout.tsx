@@ -29,7 +29,7 @@ const Checkout = () => {
   const location = useLocation();
 
   const OFFICE_COORDS = { lat: 27.687441, lng: 85.340829 };
-  const MAX_DISTANCE_KM = 1.5;
+  const MAX_DISTANCE_KM = 1;
 
   const [deliveryCoords, setDeliveryCoords] = useState(null);
   const [isWithinRange, setIsWithinRange] = useState(true);
