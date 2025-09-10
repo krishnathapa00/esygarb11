@@ -6,6 +6,7 @@ import { useAuthContext } from "@/contexts/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 import OTPVerificationModal from "@/components/OTPVerificationModal";
 import { Input } from "@/components/ui/input";
+import { fetchUserProfile } from "@/services/profileService";
 
 const AuthHybrid = () => {
   const [email, setEmail] = useState("");
@@ -111,7 +112,22 @@ const AuthHybrid = () => {
 
         setIsOtpModalOpen(false);
 
-        navigate("/");
+        const profile = await fetchUserProfile();
+
+        if (
+          !profile.full_name?.trim() ||
+          !profile.phone?.trim() ||
+          !profile.address?.trim()
+        ) {
+          toast({
+            title: "Complete Your Profile",
+            description: "Please complete your profile before proceeding.",
+            variant: "destructive",
+          });
+          navigate("/profile");
+        } else {
+          navigate("/");
+        }
       } else {
         toast({
           title: "Session Error",
