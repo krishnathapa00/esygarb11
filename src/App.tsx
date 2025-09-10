@@ -63,6 +63,8 @@ import Careers from './pages/Careers';
 import ContactUs from './pages/ContactUs';
 import SupportPage from './pages/SupportPage';
 
+import { useRequireCompleteProfile } from "./hooks/useRequireCompleteProfile";
+
 const queryClient = new QueryClient();
 
 // Component to handle activity tracking and session persistence
@@ -70,6 +72,7 @@ const AppContent = () => {
   useSetGlobalToast();
   useActivityTracker();
   useSessionPersistence();
+  useRequireCompleteProfile();
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
