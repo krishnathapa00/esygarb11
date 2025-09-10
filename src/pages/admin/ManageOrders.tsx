@@ -23,6 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
+import { showToast } from "@/components/Toast";
 
 const ManageOrders = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -62,9 +63,10 @@ const ManageOrders = () => {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "orders" },
         (payload) => {
-          console.log("New order received:", payload.new);
           // Refetch orders when a new order is inserted
           refetchOrders();
+
+          showToast(`New order placed: #${payload.new.order_number}`, "info");
         }
       )
       .subscribe();
