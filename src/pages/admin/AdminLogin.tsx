@@ -104,7 +104,13 @@ const AdminLogin = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">EsyGrab Admin</h1>
+          <h1 className="text-3xl font-bold text-gray-900">
+            <span className="font-bold font-poppins bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+              EsyGrab
+            </span>{" "}
+            Admin
+          </h1>
+
           <p className="text-gray-600 mt-2">Login to access the admin panel</p>
         </div>
 
