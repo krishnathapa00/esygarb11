@@ -21,12 +21,19 @@ import {
 } from "lucide-react";
 import Header from "@/components/Header";
 import { useOrderTimer } from "@/hooks/useOrderTimer";
-import { formatLocationName } from "@/utils/geocoding";
-import mapboxgl from "mapbox-gl";
-import "mapbox-gl/dist/mapbox-gl.css";
+import { GoogleMap, Marker, useLoadScript } from "@react-google-maps/api";
 
-const MAPBOX_TOKEN =
-  "pk.eyJ1Ijoia3Jpc2huYTEyNDMzNCIsImEiOiJjbWVodG1mZjcwMjhwMnJxczZ1ZWQyeTNlIn0.pl7sk2526OEU-Ub-hB0QTQ";
+const GOOGLE_MAPS_API_KEY = "AIzaSyADxM5y7WrXu3BRJ_hJQZhh6FLXWyO3E1g";
+
+const containerStyle = {
+  width: "100%",
+  height: "320px",
+};
+
+const centerDefault = {
+  lat: 27.7172,
+  lng: 85.324,
+};
 
 const OrderTrackingWithMap = () => {
   const { orderId } = useParams();
@@ -48,6 +55,10 @@ const OrderTrackingWithMap = () => {
     lng: number;
   } | null>(null);
   const [customerLocationName, setCustomerLocationName] = useState<string>("");
+
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
+  });
 
   const [isCancelling, setIsCancelling] = useState(false);
   const [cancelled, setCancelled] = useState(false);
@@ -139,74 +150,32 @@ const OrderTrackingWithMap = () => {
     isCancelled: cancelled,
   });
 
-  // Initialize map when order is loaded
-  useEffect(() => {
-    if (!mapContainer.current || !order) return;
-
-    mapboxgl.accessToken = MAPBOX_TOKEN;
-
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: "mapbox://styles/mapbox/satellite-streets-v12",
-      center: [85.324, 27.7172],
-      zoom: 14,
-    });
-
-    map.current.addControl(new mapboxgl.NavigationControl(), "top-right");
-
-    // Geocode customer address
-    geocodeAddress(order.delivery_address);
-
-    return () => {
-      if (map.current) {
-        map.current.remove();
-      }
-    };
-  }, [order]);
-
   const geocodeAddress = async (address: string) => {
     try {
-      // First format the location name
-      const locationName = await formatLocationName(address);
-      setCustomerLocationName(locationName);
-
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
           address
-        )}.json?access_token=${MAPBOX_TOKEN}&country=NP&limit=1`
+        )}&key=${GOOGLE_MAPS_API_KEY}`
       );
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.features && data.features.length > 0) {
-          const [lng, lat] = data.features[0].center;
-          setCustomerLocation({ lat, lng });
-
-          // Add customer marker
-          if (map.current) {
-            customerMarker.current = new mapboxgl.Marker({
-              color: "#ef4444",
-              scale: 1.2,
-            })
-              .setLngLat([lng, lat])
-              .setPopup(
-                new mapboxgl.Popup().setHTML(
-                  "<div><strong>Delivery Location</strong><br>" +
-                    locationName +
-                    "</div>"
-                )
-              )
-              .addTo(map.current);
-
-            map.current.setCenter([lng, lat]);
-          }
-        }
+      const data = await response.json();
+      if (data.status === "OK") {
+        const location = data.results[0].geometry.location;
+        setCustomerLocation({ lat: location.lat, lng: location.lng });
+        setCustomerLocationName(data.results[0].formatted_address);
+      } else {
+        setCustomerLocationName(address);
       }
-    } catch (error) {
-      console.error("Geocoding error:", error);
-      setCustomerLocationName(address); // Fallback to original address
+    } catch (err) {
+      console.error("Google geocode error:", err);
+      setCustomerLocationName(address);
     }
   };
+
+  useEffect(() => {
+    if (order && order.delivery_address) {
+      geocodeAddress(order.delivery_address);
+    }
+  }, [order]);
 
   const getOrderProgress = (status: string) => {
     switch (status) {
@@ -330,6 +299,8 @@ const OrderTrackingWithMap = () => {
       </div>
     );
   }
+  if (loadError) return <div>Error loading maps</div>;
+  if (!isLoaded) return <div>Loading map...</div>;
 
   return (
     <div className="min-h-screen bg-background">
@@ -361,10 +332,22 @@ const OrderTrackingWithMap = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <div ref={mapContainer} className="w-full h-80 rounded-b-lg" />
+              <GoogleMap
+                mapContainerStyle={containerStyle}
+                center={customerLocation || centerDefault}
+                zoom={14}
+              >
+                {customerLocation && (
+                  <Marker
+                    position={customerLocation}
+                    label="Delivery Location"
+                  />
+                )}
+                {/* Add delivery partner marker similarly when you have their location */}
+              </GoogleMap>
               <div className="p-4 bg-gray-50 border-t">
                 <p className="text-sm text-muted-foreground text-center">
-                  📍 Your order is on the way! Track your delivery partner's
+                  Your order is on the way! Track your delivery partner's
                   location in real-time.
                 </p>
               </div>
@@ -393,7 +376,11 @@ const OrderTrackingWithMap = () => {
                 <div className="text-right space-y-1">
                   <div className="flex items-center gap-2 justify-end">
                     <Timer className="h-4 w-4 text-primary" />
-                    <p className="text-2xl font-bold text-primary">
+                    <p
+                      className={`text-2xl font-bold ${
+                        orderTimer.isOverdue ? "text-red-600" : "text-primary"
+                      }`}
+                    >
                       {orderTimer.formatRemaining()}
                     </p>
                   </div>
