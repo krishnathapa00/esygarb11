@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import OTPVerificationModal from "@/components/OTPVerificationModal";
 import { Input } from "@/components/ui/input";
 import { fetchUserProfile } from "@/services/profileService";
+import EsyLogo from "@/assets/logo/Esy.jpg";
 
 const AuthHybrid = () => {
   const [email, setEmail] = useState("");
@@ -206,14 +207,20 @@ const AuthHybrid = () => {
           <div className="text-center mb-8">
             <div className="mb-4">
               <div className="w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <h1 className="text-xl font-bold font-poppins bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                  EsyGrab
-                </h1>
+                <img
+                  src={EsyLogo}
+                  alt="EsyGrab Logo"
+                  className="h-16 w-auto rounded-md"
+                />
               </div>
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Welcome to Esygrab
+              Welcome to{" "}
+              <span className="font-bold font-poppins bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                EsyGrab
+              </span>
             </h1>
+
             <p className="text-gray-600">
               Quick & secure login with your email
             </p>
