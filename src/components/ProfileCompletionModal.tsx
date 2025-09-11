@@ -221,8 +221,8 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
             <Input
               id="full_name"
               value={formData.full_name}
-              onChange={(e) => handleInputChange("full_name", e.target.value)}
-              placeholder="Enter your full name"
+              readOnly
+              className="bg-gray-50 text-gray-500"
               required={isNewUser}
             />
           </div>
@@ -232,12 +232,8 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
             <Input
               id="phone"
               value={formData.phone}
-              onChange={(e) => {
-                const onlyDigits = e.target.value.replace(/\D/g, "");
-                if (onlyDigits.length <= 10) {
-                  handleInputChange("phone", onlyDigits);
-                }
-              }}
+              readOnly
+              className="bg-gray-50 text-gray-500"
               placeholder="Enter your contact number"
               required={isNewUser}
               maxLength={10}
