@@ -135,27 +135,34 @@ const Index = () => {
             </section>
 
             {/* Display products by category dynamically */}
-            {sortedCategories.map(
-              ([categoryId, categoryData]) =>
-                categoryData.products.length > 0 && (
-                  <ProductSection
-                    key={categoryId}
-                    title={categoryData.name}
-                    slug={categoryData.slug}
-                    products={categoryData.products}
-                    onAddToCart={handleAddToCart}
-                    onUpdateQuantity={handleUpdateQuantity}
-                    cartQuantityGetter={getCartQuantity}
-                  />
-                )
-            )}
-
-            {filteredProducts.length === 0 && (
+            {isLoading ? (
               <div className="text-center py-12">
-                <p className="text-gray-500 text-lg">
-                  No matching products found.
-                </p>
+                <p className="text-gray-500 text-lg">Loading products...</p>
               </div>
+            ) : (
+              <>
+                {sortedCategories.map(
+                  ([categoryId, categoryData]) =>
+                    categoryData.products.length > 0 && (
+                      <ProductSection
+                        key={categoryId}
+                        title={categoryData.name}
+                        slug={categoryData.slug}
+                        products={categoryData.products}
+                        onAddToCart={handleAddToCart}
+                        onUpdateQuantity={handleUpdateQuantity}
+                        cartQuantityGetter={getCartQuantity}
+                      />
+                    )
+                )}
+                {!isLoading && filteredProducts.length === 0 && (
+                  <div className="text-center py-12">
+                    <p className="text-gray-500 text-lg">
+                      No matching products found.
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </>
         )}
@@ -169,7 +176,6 @@ const Index = () => {
         isOpen={showLocationPopup}
         onClose={() => setShowLocationPopup(false)}
         onLocationSet={(location) => {
-          console.log("Location set:", location);
           setShowLocationPopup(false);
         }}
       />
