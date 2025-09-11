@@ -8,7 +8,7 @@ import {
   Facebook,
   Twitter,
   Instagram,
-  Youtube,
+  Linkedin,
 } from "lucide-react";
 import { useCategories } from "@/hooks/useCategories";
 import EsyLogo from "@/assets/logo/Esy.jpg";
@@ -141,18 +141,21 @@ const Footer = () => {
                 <Instagram className="h-5 w-5" />
               </a>
               <a
-                href="#"
+                href="https://www.linkedin.com/company/esygrab/"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-gray-400 hover:text-green-400 transition-colors"
+                aria-label="LinkedIn"
               >
-                <Youtube className="h-5 w-5" />
+                <Linkedin className="h-5 w-5" />
               </a>
             </div>
 
             {/* App Links */}
-            <div className="flex items-center space-x-3">
+{/*             <div className="flex items-center space-x-3">
               <img src="/placeholder.svg" alt="App Store" className="h-8" />
               <img src="/placeholder.svg" alt="Google Play" className="h-8" />
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
