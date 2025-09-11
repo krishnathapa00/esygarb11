@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import EsyLogo from "@/assets/logo/Esy.jpg";
 import { useAuthContext } from "@/contexts/AuthProvider";
 
 const DeliveryPartnerAuth = () => {
@@ -203,8 +203,12 @@ const DeliveryPartnerAuth = () => {
         <div className="w-full max-w-md">
           <div className="text-center mb-6 md:mb-8">
             <div className="flex items-center justify-center mb-3 md:mb-4">
-              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
-                <Truck className="h-5 w-5 md:h-6 md:w-6 text-white" />
+              <div className="w-16 h-16 md:w-16 md:h-16 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
+                <img
+                  src={EsyLogo}
+                  alt="EsyGrab Logo"
+                  className="h-16 w-auto rounded-md"
+                />
               </div>
             </div>
             <h1 className="text-xl md:text-2xl font-bold text-gray-900">
