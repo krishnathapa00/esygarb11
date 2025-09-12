@@ -309,3 +309,4 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
 };
 
 export default ProfileCompletionModal;
+
