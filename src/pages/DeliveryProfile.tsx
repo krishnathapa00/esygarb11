@@ -284,7 +284,7 @@ const DeliveryProfile = () => {
               size="sm"
               onClick={async () => {
                 await supabase.auth.signOut();
-                navigate("/delivery-partner");
+                navigate("/delivery-partner", { replace: true });
               }}
             >
               <LogOut className="w-4 h-2 mr-2" />
