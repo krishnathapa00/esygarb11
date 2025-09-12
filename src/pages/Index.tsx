@@ -16,6 +16,7 @@ const Index = () => {
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [showLocationPopup, setShowLocationPopup] = useState(false);
   const [serviceAvailable, setServiceAvailable] = useState(true);
+  const [hasCheckedLocation, setHasCheckedLocation] = useState(false);
 
   const { data: products = [], isLoading } = useProducts();
   const { user } = useAuthContext();
@@ -25,28 +26,34 @@ const Index = () => {
     useCartActions();
 
   useEffect(() => {
+    if (hasCheckedLocation) return;
+
+    const checkLocation = () => {
+      const storedLocation = localStorage.getItem("esygrab_user_location");
+
+      if (!storedLocation) {
+        setShowLocationPopup(true);
+        return;
+      }
+
+      try {
+        const location = JSON.parse(storedLocation);
+        setServiceAvailable(location.serviceAvailable !== false);
+      } catch (error) {
+        console.error("Error parsing stored location:", error);
+        setShowLocationPopup(true);
+      }
+    };
+
+    checkLocation();
+    setHasCheckedLocation(true); // ✅ Only run once
+
     document.body.classList.add("with-search-bar");
-
-    // Check if user has location set and service availability
-    const storedLocation = localStorage.getItem("esygrab_user_location");
-    if (!storedLocation) {
-      // Block access without location - show location popup immediately
-      setShowLocationPopup(true);
-      return;
-    }
-
-    try {
-      const location = JSON.parse(storedLocation);
-      setServiceAvailable(location.serviceAvailable !== false);
-    } catch (error) {
-      console.error("Error parsing stored location:", error);
-      setShowLocationPopup(true);
-    }
 
     return () => {
       document.body.classList.remove("with-search-bar");
     };
-  }, []);
+  }, [hasCheckedLocation]);
 
   const handleCategorySelect = (categoryId: number) => {
     console.log("Category selected:", categoryId);
