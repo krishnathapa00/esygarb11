@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import CategoryGrid from "../components/CategoryGrid";
@@ -16,7 +16,6 @@ const Index = () => {
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [showLocationPopup, setShowLocationPopup] = useState(false);
   const [serviceAvailable, setServiceAvailable] = useState(true);
-  const hasLocationPopupInitialized = useRef(false);
 
   const { data: products = [], isLoading } = useProducts();
   const { user } = useAuthContext();
@@ -26,9 +25,6 @@ const Index = () => {
     useCartActions();
 
   useEffect(() => {
-    if (hasLocationPopupInitialized.current) return;
-    hasLocationPopupInitialized.current = true;
-
     document.body.classList.add("with-search-bar");
 
     // Check if user has location set and service availability
