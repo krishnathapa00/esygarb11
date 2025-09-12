@@ -18,6 +18,8 @@ const Header = () => {
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
+  const [showLocationPopup, setShowLocationPopup] = useState(false);
+
   const [userLocation, setUserLocation] = useState<string>(() => {
     try {
       const saved = localStorage.getItem("esygrab_user_location");
@@ -37,8 +39,6 @@ const Header = () => {
     return "";
   });
 
-  const [showLocationPopup, setShowLocationPopup] = useState(false);
-
   useEffect(() => {
     if (!user) {
       localStorage.removeItem("esygrab_user_location");
@@ -50,8 +50,8 @@ const Header = () => {
     const syncAddressFromProfile = async () => {
       if (!user) return;
 
-      const location = localStorage.getItem("esygrab_user_location");
-      if (location) return; // already set
+      const storedlocation = localStorage.getItem("esygrab_user_location");
+      if (storedlocation) return;
 
       const { data: profile } = await supabase
         .from("profiles")
