@@ -10,7 +10,6 @@ interface Profile {
   full_name?: string;
   phone?: string;
   address?: string;
-  location?: string;
   avatar_url?: string;
 }
 
@@ -24,7 +23,7 @@ export function useUserProfile() {
     setLoading(true);
     const { data, error } = await supabase
       .from("profiles")
-      .select("full_name, phone, address, location, avatar_url")
+      .select("full_name, phone, address, avatar_url")
       .eq("id", user.id)
       .single();
     if (error && error.code !== "PGRST116") {
