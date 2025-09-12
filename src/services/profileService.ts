@@ -4,7 +4,6 @@ export interface ProfileFormValues {
   full_name: string;
   phone: string;
   address: string;
-  location: string;
   avatar_url: string;
 }
 
@@ -19,7 +18,7 @@ export const fetchUserProfile = async (): Promise<ProfileFormValues> => {
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("full_name, phone, address, avatar_url, location")
+    .select("full_name, phone, address, avatar_url")
     .eq("id", userId)
     .single();
 
@@ -44,11 +43,15 @@ export const updateUserProfile = async (
 
   const userId = userData.user.id;
 
-  const { data, error } = await supabase.from("profiles").upsert({
-    id: userId,
-    ...profile,
-    updated_at: new Date().toISOString(),
-  }).select().single();
+  const { data, error } = await supabase
+    .from("profiles")
+    .upsert({
+      id: userId,
+      ...profile,
+      updated_at: new Date().toISOString(),
+    })
+    .select()
+    .single();
 
   if (error) {
     throw new Error(error.message);
