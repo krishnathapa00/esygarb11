@@ -307,7 +307,6 @@ const AppContent = () => {
         <Route path="/unauthorized" element={<Unauthorized />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
-      <Toaster />
     </div>
   );
 };
