@@ -206,7 +206,7 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
       }}
     >
       <DialogContent
-        className="sm:max-w-md"
+        className="sm:max-w-md rounded-2xl"
         onPointerDownOutside={(e) => e.preventDefault()}
       >
         <DialogHeader>
@@ -309,4 +309,3 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
 };
 
 export default ProfileCompletionModal;
-
