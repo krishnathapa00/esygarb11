@@ -123,8 +123,11 @@ const Footer = () => {
             {/* Social Media */}
             <div className="flex items-center space-x-4">
               <a
-                href="#"
+                href="https://www.facebook.com/profile.php?id=61578579404748"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-gray-400 hover:text-green-400 transition-colors"
+                aria-label="Instagram"
               >
                 <Facebook className="h-5 w-5" />
               </a>
