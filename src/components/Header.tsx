@@ -40,6 +40,13 @@ const Header = () => {
   const [showLocationPopup, setShowLocationPopup] = useState(false);
 
   useEffect(() => {
+    if (!user) {
+      localStorage.removeItem("esygrab_user_location");
+      setUserLocation("");
+    }
+  }, [user]);
+
+  useEffect(() => {
     const syncAddressFromProfile = async () => {
       if (!user) return;
 
