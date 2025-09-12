@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { showToast } from "@/components/Toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuthContext } from "@/contexts/AuthProvider";
 
 const GOOGLE_MAPS_API_KEY = "AIzaSyADxM5y7WrXu3BRJ_hJQZhh6FLXWyO3E1g";
 
@@ -21,6 +23,9 @@ declare global {
 
 const MapLocationEnhanced = () => {
   const navigate = useNavigate();
+
+  const { user } = useAuthContext();
+
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<any>(null);
   const marker = useRef<any>(null);
@@ -31,8 +36,7 @@ const MapLocationEnhanced = () => {
   const [isDetecting, setIsDetecting] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [markerPosition, setMarkerPosition] = useState(OFFICE_COORDS);
-  const [mapError, setMapError] = useState<string | null>(null);
-  const [isWithinRange, setIsWithinRange] = useState(true); // new state
+  const [isWithinRange, setIsWithinRange] = useState(true);
 
   // ------------------- Distance & Range -------------------
   const getDistanceFromOffice = (lat: number, lng: number) => {
@@ -242,7 +246,7 @@ const MapLocationEnhanced = () => {
   };
 
   // ------------------- Save Location -------------------
-  const handleSaveLocation = () => {
+  const handleSaveLocation = async () => {
     if (!selectedLocation.trim()) {
       toast({
         title: "No location selected",
@@ -258,6 +262,28 @@ const MapLocationEnhanced = () => {
       "esygrab_user_location",
       JSON.stringify({ address: selectedLocation, coordinates: markerPosition })
     );
+
+    if (user) {
+      try {
+        const { error } = await supabase.from("profiles").upsert({
+          id: user.id,
+          address: selectedLocation,
+          updated_at: new Date().toISOString(),
+        });
+
+        if (error) {
+          console.error("Error saving to Supabase:", error);
+          toast({
+            title: "Error",
+            description: "Could not update your address. Please try again.",
+            variant: "destructive",
+          });
+          return;
+        }
+      } catch (err) {
+        console.error("Supabase update failed:", err);
+      }
+    }
 
     toast({
       title: "Location saved",
