@@ -135,8 +135,11 @@ const Footer = () => {
                 <Twitter className="h-5 w-5" />
               </a>
               <a
-                href="#"
+                href="https://www.instagram.com/esygrab_official/"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-gray-400 hover:text-green-400 transition-colors"
+                aria-label="Instagram"
               >
                 <Instagram className="h-5 w-5" />
               </a>
@@ -152,10 +155,10 @@ const Footer = () => {
             </div>
 
             {/* App Links */}
-{/*             <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-3">
               <img src="/placeholder.svg" alt="App Store" className="h-8" />
               <img src="/placeholder.svg" alt="Google Play" className="h-8" />
-            </div> */}
+            </div>
           </div>
         </div>
       </div>
