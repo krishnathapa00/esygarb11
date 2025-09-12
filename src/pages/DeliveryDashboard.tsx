@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,8 +25,23 @@ const DeliveryDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  const [deliveryPartnerName, setDeliveryPartnerName] = useState("");
   const [isOnline, setIsOnline] = useState(false);
   const [kycStatus, setKycStatus] = useState("pending");
+  const audio = useRef(null);
+
+  useEffect(() => {
+    audio.current = new Audio("/sounds/notification.wav");
+  }, []);
+
+  const playNotificationSound = () => {
+    if (audio.current) {
+      audio.current.play().catch((err) => {
+        console.error("Audio play failed:", err);
+      });
+    }
+  };
 
   // Initialize global toast
   useSetGlobalToast();
@@ -129,11 +144,6 @@ const DeliveryDashboard = () => {
       return;
     }
 
-    const playNotificationSound = () => {
-      const audio = new Audio("/sounds/notification.wav");
-      audio.play().catch(() => {});
-    };
-
     const vibrateDevice = () => {
       if ("vibrate" in navigator) navigator.vibrate([200, 100, 200]);
     };
@@ -229,12 +239,14 @@ const DeliveryDashboard = () => {
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select("is_online")
+        .select("is_online, full_name")
         .eq("id", user.id)
         .single();
 
       if (error) throw error;
+
       setIsOnline(data?.is_online || false);
+      setDeliveryPartnerName(data?.full_name || "");
     } catch (error) {
       console.error("Error fetching online status:", error);
     }
@@ -401,7 +413,9 @@ const DeliveryDashboard = () => {
                   Delivery Dashboard
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  Welcome back, manage your deliveries
+                  Welcome back{" "}
+                  <span className="font-medium">{deliveryPartnerName}</span>,
+                  manage your deliveries
                 </p>
               </div>
 
