@@ -524,11 +524,11 @@ const Checkout = () => {
               }`}
             >
               {!isWithinRange
-                ? "Delivery address is out of range"
+                ? "Order can't be placed"
                 : totalItems === 0
                 ? "Cart is empty"
                 : needsProfileCompletion
-                ? "Complete Profile & Place Order"
+                ? "Complete Profile First"
                 : selectedPayment === "cod"
                 ? "Place Order"
                 : `Pay with ${
