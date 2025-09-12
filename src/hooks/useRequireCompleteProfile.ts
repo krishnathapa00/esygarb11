@@ -20,6 +20,8 @@ export const useRequireCompleteProfile = () => {
     const checkProfile = async () => {
       if (!user || loading || hasShownToastRef.current) return;
 
+      if (user.role !== "customer") return;
+
       hasShownToastRef.current = true;
 
       try {
