@@ -216,10 +216,13 @@ const Checkout = () => {
     setShowProfileModal(false);
     const stored = localStorage.getItem("esygrab_user_location");
     if (stored) {
-      const location = JSON.parse(stored);
-      setDeliveryAddress(location.address || "");
+      const storedLocation = JSON.parse(stored);
+      setDeliveryAddress(storedLocation.address || "");
       setShowAddressModal(true);
-      setDeliveryCoords({ lat: location.lat, lng: location.lng });
+      setDeliveryCoords({
+        lat: storedLocation.coordinates?.lat,
+        lng: storedLocation.coordinates?.lng,
+      });
     }
   };
 
