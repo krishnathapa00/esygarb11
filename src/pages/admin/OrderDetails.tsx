@@ -124,6 +124,42 @@ const OrderDetails = () => {
     },
   });
 
+  const cancelOrderMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      // Update the order status to "cancelled"
+      const { data, error } = await supabase
+        .from("orders")
+        .update({ status: "cancelled" })
+        .eq("id", orderId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      await supabase.from("order_status_history").insert({
+        order_id: orderId,
+        status: "cancelled",
+        notes: "Order cancelled by admin upon user request",
+      });
+
+      return data;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Order Cancelled",
+        description: "The order has been successfully cancelled.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["order-details", orderId] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error Cancelling Order",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   // Dispatch order to available delivery partners
   const dispatchOrderMutation = useMutation({
     mutationFn: async (orderId: string) => {
@@ -231,10 +267,21 @@ const OrderDetails = () => {
     setIsUpdating(false);
   };
 
-  const handleDispatchOrder = () => {
-    setIsUpdating(true);
-    dispatchOrderMutation.mutate(orderId!);
-    setIsUpdating(false);
+  const handleCancelOrder = () => {
+    if (window.confirm("Are you sure you want to cancel this order?")) {
+      setIsUpdating(true);
+      cancelOrderMutation.mutate(orderId!);
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDispatchOrder = async () => {
+    try {
+      setIsUpdating(true);
+      await dispatchOrderMutation.mutateAsync(orderId!);
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   if (isLoading) {
@@ -286,6 +333,17 @@ const OrderDetails = () => {
 
           {/* Action Buttons */}
           <div className="flex gap-2">
+            {order.status !== "cancelled" && (
+              <Button
+                onClick={handleCancelOrder}
+                disabled={isUpdating}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                <AlertCircle className="h-4 w-4 mr-2" />
+                Cancel Order
+              </Button>
+            )}
+
             {(order.status === "pending" || order.status === "confirmed") && (
               <Button
                 onClick={handleMarkReady}
