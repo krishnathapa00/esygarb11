@@ -16,6 +16,16 @@ const AdminLogin = () => {
   const navigate = useNavigate();
   const { user, signInWithPassword, resetPassword } = useAuthContext();
 
+  useEffect(() => {
+    if (!loading && user) {
+      if (user.role === "admin" || user.role === "super_admin") {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/");
+      }
+    }
+  }, [user, loading, navigate]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
