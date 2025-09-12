@@ -7,7 +7,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuthContext } from "@/contexts/AuthProvider";
 import SearchBar from "./SearchBar";
 import { useCart } from "@/contexts/CartContext";
-import EsyLogo from "@/assets/logo/Esy.jpg";
 import { supabase } from "@/integrations/supabase/client";
 
 const Header = () => {
