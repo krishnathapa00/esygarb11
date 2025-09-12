@@ -107,13 +107,7 @@ const DeliveryPartnerAuth = () => {
   };
 
   const handleLogin = async () => {
-    console.log("handleLogin function called!", {
-      email,
-      password: password ? "provided" : "missing",
-    });
-
     if (!email || !password) {
-      console.log("Missing email or password");
       toast({
         title: "Missing Information",
         description: "Please enter both email and password",
@@ -123,7 +117,6 @@ const DeliveryPartnerAuth = () => {
     }
 
     setLoading(true);
-    console.log("Starting login process...", { email });
 
     try {
       const { data, error } = await signInWithPassword(email, password);
@@ -346,7 +339,6 @@ const DeliveryPartnerAuth = () => {
                   <Button
                     className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-sm"
                     onClick={() => {
-                      console.log("Login button clicked!");
                       handleLogin();
                     }}
                     disabled={!email || !password || loading}
