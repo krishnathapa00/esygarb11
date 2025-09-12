@@ -536,3 +536,9 @@
 // };
 
 // export default OrderTrackingWithMap;
+
+const OrderTrackingWithMap = () => {
+  console.log("Hello");
+};
+
+export default OrderTrackingWithMap;
