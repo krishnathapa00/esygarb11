@@ -434,7 +434,7 @@ const MapLocationEnhanced = () => {
             className="w-full h-96"
             style={{ minHeight: "400px" }}
           />
-          {/* ✅ Delivery area notice */}
+          {/* Delivery area notice */}
           <div className="mt-4 p-4 bg-blue-50 border-t text-center text-sm text-blue-800">
             Our delivery area is limited to the region highlighted on the map.
             Thank you for your understanding.
