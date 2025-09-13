@@ -118,12 +118,12 @@ const Footer = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-green-400 transition-colors"
-                aria-label="Instagram"
+                aria-label="Facebook"
               >
                 <img
                   src="/images/Facebook.png"
-                  alt="TikTok"
-                  className="h-5 w-5 rounded-full"
+                  alt="Facebook"
+                  className="h-7 w-7 rounded-full"
                 />
               </a>
               <a
@@ -135,8 +135,8 @@ const Footer = () => {
               >
                 <img
                   src="/images/Instagram.png"
-                  alt="TikTok"
-                  className="h-5 w-5 rounded-full"
+                  alt="Instagram"
+                  className="h-7 w-7 rounded-full"
                 />
               </a>
               <a
@@ -149,7 +149,7 @@ const Footer = () => {
                 <img
                   src="/images/Linkedin.png"
                   alt="TikTok"
-                  className="h-5 w-5 rounded-full"
+                  className="h-7 w-7 rounded-full"
                 />
               </a>
               <a
@@ -162,7 +162,7 @@ const Footer = () => {
                 <img
                   src="/images/Tiktok.png"
                   alt="TikTok"
-                  className="h-5 w-5 rounded-full"
+                  className="h-7 w-7 rounded-full"
                 />
               </a>
             </div>
