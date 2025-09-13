@@ -11,8 +11,33 @@ import { useAuthContext } from "@/contexts/AuthProvider";
 
 const GOOGLE_MAPS_API_KEY = "AIzaSyADxM5y7WrXu3BRJ_hJQZhh6FLXWyO3E1g";
 
-const OFFICE_COORDS = { lat: 27.687441, lng: 85.340829 };
-const MAX_DISTANCE_KM = 1;
+const DELIVERY_AREA_COORDS = [
+  { lat: 27.70293080822624, lng: 85.33598020683337 },
+  { lat: 27.69944302860847, lng: 85.33468509953883 },
+  { lat: 27.699681921179774, lng: 85.3312314800852 },
+  { lat: 27.698583011023402, lng: 85.33096166606589 },
+  { lat: 27.697292971939234, lng: 85.33236469896912 },
+  { lat: 27.69490397040785, lng: 85.33026014961513 },
+  { lat: 27.692467134980745, lng: 85.3295046703592 },
+  { lat: 27.690269158328192, lng: 85.32880315390844 },
+  { lat: 27.68701989439539, lng: 85.3278857862419 },
+  { lat: 27.685060732650868, lng: 85.33139336849746 },
+  { lat: 27.68486959303783, lng: 85.33668172328419 },
+  { lat: 27.68486959303783, lng: 85.34159233844287 },
+  { lat: 27.686446484840374, lng: 85.34358896218816 },
+  { lat: 27.68797557029555, lng: 85.34477614387566 },
+  { lat: 27.689217936460736, lng: 85.34785202369966 },
+  { lat: 27.691320370074777, lng: 85.34698861883663 },
+  { lat: 27.693613887840485, lng: 85.35130564315165 },
+  { lat: 27.696194037729, lng: 85.34731239566105 },
+  { lat: 27.697914103771865, lng: 85.34558558593511 },
+  { lat: 27.699060799407334, lng: 85.34655691640518 },
+  { lat: 27.700159704752807, lng: 85.34337311097238 },
+  { lat: 27.70130637679368, lng: 85.34040515675537 },
+  { lat: 27.702787477014084, lng: 85.33608813244047 },
+];
+
+const MAP_CENTER = { lat: 27.69397, lng: 85.338207 };
 
 declare global {
   interface Window {
@@ -35,37 +60,10 @@ const MapLocationEnhanced = () => {
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isDetecting, setIsDetecting] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const [markerPosition, setMarkerPosition] = useState(OFFICE_COORDS);
+  const [markerPosition, setMarkerPosition] = useState(MAP_CENTER);
   const [isWithinRange, setIsWithinRange] = useState(true);
 
-  // ------------------- Distance & Range -------------------
-  const getDistanceFromOffice = (lat: number, lng: number) => {
-    const toRad = (x: number) => (x * Math.PI) / 180;
-    const R = 6371;
-    const dLat = toRad(lat - OFFICE_COORDS.lat);
-    const dLon = toRad(lng - OFFICE_COORDS.lng);
-    const a =
-      Math.sin(dLat / 2) ** 2 +
-      Math.cos(toRad(OFFICE_COORDS.lat)) *
-        Math.cos(toRad(lat)) *
-        Math.sin(dLon / 2) ** 2;
-    return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  };
-
-  const checkDeliveryRange = (lat: number, lng: number) => {
-    const distance = getDistanceFromOffice(lat, lng);
-    const inRange = distance <= MAX_DISTANCE_KM;
-    setIsWithinRange(inRange);
-
-    if (!inRange) {
-      showToast(
-        "Sorry, we currently do not deliver to this location.",
-        "error"
-      );
-    }
-
-    return inRange;
-  };
+  const deliveryPolygon = useRef<any>(null);
 
   // ------------------- Marker Utility -------------------
   const updateMarker = (lat: number, lng: number) => {
@@ -107,7 +105,7 @@ const MapLocationEnhanced = () => {
       }
 
       const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places,marker&callback=initGoogleMaps`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places,geometry,marker&callback=initGoogleMaps`;
       script.async = true;
       script.defer = true;
       window.initGoogleMaps = () => initMap();
@@ -119,29 +117,28 @@ const MapLocationEnhanced = () => {
 
       const mapInstance = new window.google.maps.Map(mapContainer.current, {
         zoom: 15,
-        center: OFFICE_COORDS,
+        center: MAP_CENTER,
         mapTypeControl: true,
       });
 
-      // Office marker
+      // Map center marker
       marker.current = new window.google.maps.Marker({
-        position: OFFICE_COORDS,
+        position: MAP_CENTER,
         map: mapInstance,
         draggable: true,
-        title: "Your Location",
+        title: "Selected Location",
         animation: window.google.maps.Animation.DROP,
       });
 
-      // Delivery circle
-      const deliveryCircle = new window.google.maps.Circle({
-        map: mapInstance,
-        center: OFFICE_COORDS,
-        radius: MAX_DISTANCE_KM * 1000,
+      // Delivery Polygon
+      deliveryPolygon.current = new window.google.maps.Polygon({
+        paths: DELIVERY_AREA_COORDS,
         strokeColor: "#10B981",
         strokeOpacity: 0.8,
         strokeWeight: 2,
         fillColor: "#10B981",
         fillOpacity: 0.1,
+        map: mapInstance,
       });
 
       marker.current.addListener("dragend", (e: any) => {
@@ -157,11 +154,38 @@ const MapLocationEnhanced = () => {
       });
 
       map.current = mapInstance;
-      placeMarkerAt(OFFICE_COORDS.lat, OFFICE_COORDS.lng);
+      placeMarkerAt(MAP_CENTER.lat, MAP_CENTER.lng);
     };
 
     loadGoogleMaps();
   }, []);
+
+  const checkDeliveryRange = (lat: number, lng: number) => {
+    if (
+      !window.google ||
+      !window.google.maps.geometry ||
+      !deliveryPolygon.current
+    ) {
+      return false;
+    }
+
+    const point = new window.google.maps.LatLng(lat, lng);
+    const isInside = window.google.maps.geometry.poly.containsLocation(
+      point,
+      deliveryPolygon.current
+    );
+
+    setIsWithinRange(isInside);
+
+    if (!isInside) {
+      showToast(
+        "Sorry, we currently do not deliver to this location.",
+        "error"
+      );
+    }
+
+    return isInside;
+  };
 
   // ------------------- Auto Detect -------------------
   const handleAutoDetect = () => {
@@ -169,6 +193,15 @@ const MapLocationEnhanced = () => {
       toast({
         title: "GPS Not Available",
         description: "Your browser does not support geolocation.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!map.current) {
+      toast({
+        title: "Map Loading",
+        description: "Please wait for the map to load before detecting.",
         variant: "destructive",
       });
       return;
@@ -182,10 +215,12 @@ const MapLocationEnhanced = () => {
         placeMarkerAt(lat, lng);
         setIsDetecting(false);
       },
-      () => {
+      (err) => {
+        console.error("Geolocation error:", err);
         toast({
           title: "GPS Error",
-          description: "Unable to detect location.",
+          description:
+            "Unable to detect location. Please allow location access.",
           variant: "destructive",
         });
         setIsDetecting(false);
@@ -401,7 +436,7 @@ const MapLocationEnhanced = () => {
           />
           {/* ✅ Delivery area notice */}
           <div className="mt-4 p-4 bg-blue-50 border-t text-center text-sm text-blue-800">
-            Our delivery area is limited to the region shown inside the circle.
+            Our delivery area is limited to the region highlighted on the map.
             Thank you for your understanding.
           </div>
         </div>
@@ -420,8 +455,8 @@ const MapLocationEnhanced = () => {
           </div>
           {!isWithinRange && (
             <p className="text-sm text-red-500">
-              This location is outside our {MAX_DISTANCE_KM} km delivery range.
-              Please move the marker closer to continue.
+              This location is outside our delivery range. Please move the
+              marker closer to continue.
             </p>
           )}
           <div className="flex space-x-3">
