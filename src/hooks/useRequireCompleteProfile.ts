@@ -18,31 +18,37 @@ export const useRequireCompleteProfile = () => {
 
   useEffect(() => {
     const checkProfile = async () => {
-      if (!user || loading || hasShownToastRef.current) return;
+      if (!user || loading) return;
 
+      // Only for customer
       if (user.role !== "customer") return;
-
-      hasShownToastRef.current = true;
 
       try {
         const profile = await fetchUserProfile();
 
-        if (
+        const isIncomplete =
           !profile.full_name?.trim() ||
           !profile.phone?.trim() ||
-          !profile.address?.trim()
-        ) {
-          showToast("Please complete your profile before proceeding.", "error");
+          !profile.address?.trim();
 
-          if (window.location.pathname !== "/profile") {
+        if (isIncomplete) {
+          if (!hasShownToastRef.current) {
+            showToast(
+              "Please complete your profile before proceeding.",
+              "error"
+            );
+            hasShownToastRef.current = true;
+          }
+
+          if (location.pathname !== "/profile") {
             navigate("/profile");
           }
         }
       } catch (error) {
-        console.error(error);
+        console.error("Failed to fetch user profile:", error);
       }
     };
 
     checkProfile();
-  }, [user, loading, navigate]);
+  }, [user, loading, location.pathname, navigate]);
 };
