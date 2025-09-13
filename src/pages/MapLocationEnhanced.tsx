@@ -123,12 +123,25 @@ const MapLocationEnhanced = () => {
         mapTypeControl: true,
       });
 
+      // Office marker
       marker.current = new window.google.maps.Marker({
         position: OFFICE_COORDS,
         map: mapInstance,
         draggable: true,
         title: "Your Location",
         animation: window.google.maps.Animation.DROP,
+      });
+
+      // Delivery circle
+      const deliveryCircle = new window.google.maps.Circle({
+        map: mapInstance,
+        center: OFFICE_COORDS,
+        radius: MAX_DISTANCE_KM * 1000,
+        strokeColor: "#10B981",
+        strokeOpacity: 0.8,
+        strokeWeight: 2,
+        fillColor: "#10B981",
+        fillOpacity: 0.1,
       });
 
       marker.current.addListener("dragend", (e: any) => {
@@ -386,6 +399,11 @@ const MapLocationEnhanced = () => {
             className="w-full h-96"
             style={{ minHeight: "400px" }}
           />
+          {/* ✅ Delivery area notice */}
+          <div className="mt-4 p-4 bg-blue-50 border-t text-center text-sm text-blue-800">
+            Our delivery area is limited to the region shown inside the circle.
+            Thank you for your understanding.
+          </div>
         </div>
 
         {/* Selected Location */}
@@ -402,8 +420,8 @@ const MapLocationEnhanced = () => {
           </div>
           {!isWithinRange && (
             <p className="text-sm text-red-500">
-              This location is outside our 2 km delivery range. Please move the
-              marker closer to continue.
+              This location is outside our {MAX_DISTANCE_KM} km delivery range.
+              Please move the marker closer to continue.
             </p>
           )}
           <div className="flex space-x-3">
