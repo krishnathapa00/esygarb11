@@ -4,7 +4,6 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuthContext } from "@/contexts/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 import Header from "@/components/Header";
 import InputField from "@/components/InputField";
@@ -12,15 +11,7 @@ import TextAreaField from "@/components/TextAreaField";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-import {
-  User,
-  History,
-  Package,
-  HelpCircle,
-  LogOut,
-  ArrowLeft,
-  ArrowRight,
-} from "lucide-react";
+import { History, Package, HelpCircle, LogOut, ArrowRight } from "lucide-react";
 import {
   fetchUserProfile,
   updateUserProfile,
@@ -31,7 +22,6 @@ const UserProfile: React.FC = () => {
   const navigate = useNavigate();
   const { user, signOut, loading, isAuthenticated } = useAuthContext();
   const { toast } = useToast();
-  const isMobile = useIsMobile();
 
   const [profile, setProfile] = useState<ProfileFormValues | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
@@ -129,7 +119,6 @@ const UserProfile: React.FC = () => {
         full_name: data.full_name || "",
         phone: data.phone || "",
         address: data.address || "",
-        location: data.location || "",
         avatar_url: data.avatar_url || "",
       });
       setProfile(updatedProfile);
@@ -173,91 +162,6 @@ const UserProfile: React.FC = () => {
     },
   ];
 
-  // ------------------- Mobile Layout -------------------
-  if (isMobile) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="px-4 py-8 pt-20 pb-24 space-y-6">
-          <div className="flex items-center mb-6">
-            <Link to="/">
-              <Button variant="ghost" size="sm" className="mr-3 p-2">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <h1 className="text-2xl font-bold text-foreground">My Account</h1>
-          </div>
-
-          <Card className="border-border">
-            <CardHeader className="pb-3 flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-                  <User className="h-8 w-8 text-primary" />
-                </div>
-                <div>
-                  <CardTitle className="text-sm text-foreground">
-                    {user.email}
-                  </CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    Member since {new Date().getFullYear()}
-                  </p>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsEditing(true)}
-              >
-                Edit
-              </Button>
-            </CardHeader>
-          </Card>
-
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-foreground mb-3">
-              Quick Actions
-            </h3>
-            {quickActions.map((action, i) => (
-              <Link key={i} to={action.href}>
-                <Card className="border-border hover:bg-accent/50 transition-colors">
-                  <CardContent className="p-4 flex justify-between items-center">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                        <action.icon className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-foreground">
-                          {action.label}
-                        </h4>
-                        <p className="text-sm text-muted-foreground">
-                          {action.description}
-                        </p>
-                      </div>
-                    </div>
-                    <ArrowRight className="h-5 w-5 text-muted-foreground" />
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-
-          <Card className="border-border">
-            <CardContent className="p-4">
-              <Button
-                variant="destructive"
-                className="w-full flex items-center justify-center"
-                onClick={handleLogout}
-              >
-                <LogOut className="h-4 w-4 mr-2" /> Sign Out
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  // ------------------- Desktop Layout -------------------
   if (loadingProfile)
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -268,20 +172,21 @@ const UserProfile: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50">
       <Header />
-      <main className="max-w-6xl mx-auto px-4 py-8">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 pb-20">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2">
           My Profile
         </h1>
+
         <p className="text-gray-600 mb-8">
           Manage your account settings and preferences
         </p>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
           {/* Profile Card */}
           <div className="lg:col-span-1">
             <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
-              <CardContent className="p-8 text-center">
-                <div className="w-32 h-32 mx-auto mb-6 relative group">
+              <CardContent className="p-4 sm:p-6 md:p-8 text-center">
+                <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 mx-auto mb-4 sm:mb-5 md:mb-6 relative group">
                   <input
                     type="file"
                     accept="image/*"
@@ -303,16 +208,18 @@ const UserProfile: React.FC = () => {
                       className="w-full h-full rounded-full border-4 border-green-100 object-cover group-hover:opacity-75 transition-all shadow-lg"
                     />
                     <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                      <span className="text-white text-sm font-medium">
+                      <span className="text-white text-xs sm:text-sm font-medium">
                         Change Photo
                       </span>
                     </div>
                   </label>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900">
+                <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
                   {profile?.full_name || "Your Name"}
                 </h2>
-                <p className="text-green-600 font-medium">{user.email}</p>
+                <p className="text-green-600 text-sm sm:text-base font-medium break-words">
+                  {user.email}
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -423,7 +330,7 @@ const UserProfile: React.FC = () => {
               <h3 className="text-lg font-semibold text-foreground mb-3">
                 Quick Actions
               </h3>
-              <div className="grid md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {quickActions.map((action, i) => (
                   <Link key={i} to={action.href}>
                     <Card className="border-border hover:bg-accent/50 transition-colors">
@@ -450,17 +357,15 @@ const UserProfile: React.FC = () => {
             </div>
 
             {/* Logout */}
-            <Card className="bg-red-50 border-red-200 shadow-xl mt-6">
-              <CardContent className="p-6 text-center">
-                <Button
-                  onClick={handleLogout}
-                  variant="destructive"
-                  className="w-full flex items-center justify-center"
-                >
-                  <LogOut className="h-5 w-5 mr-2" /> Sign Out
-                </Button>
-              </CardContent>
-            </Card>
+            <div className="mt-6 p-6 text-center rounded">
+              <Button
+                onClick={handleLogout}
+                variant="destructive"
+                className="w-full max-w-xs mx-auto flex items-center justify-center"
+              >
+                <LogOut className="h-5 w-5 mr-2" /> Sign Out
+              </Button>
+            </div>
           </div>
         </div>
       </main>
