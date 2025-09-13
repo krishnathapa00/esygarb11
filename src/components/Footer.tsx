@@ -1,15 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import {
-  Phone,
-  Mail,
-  MapPin,
-  Clock,
-  Facebook,
-  Twitter,
-  Instagram,
-  Linkedin,
-} from "lucide-react";
+import { Phone, Mail, MapPin, Clock } from "lucide-react";
 import { useCategories } from "@/hooks/useCategories";
 import EsyLogo from "@/assets/logo/Esy.jpg";
 
@@ -129,13 +120,11 @@ const Footer = () => {
                 className="text-gray-400 hover:text-green-400 transition-colors"
                 aria-label="Instagram"
               >
-                <Facebook className="h-5 w-5" />
-              </a>
-              <a
-                href="#"
-                className="text-gray-400 hover:text-green-400 transition-colors"
-              >
-                <Twitter className="h-5 w-5" />
+                <img
+                  src="/images/Facebook.png"
+                  alt="TikTok"
+                  className="h-5 w-5 rounded-full"
+                />
               </a>
               <a
                 href="https://www.instagram.com/esygrab_official/"
@@ -144,7 +133,11 @@ const Footer = () => {
                 className="text-gray-400 hover:text-green-400 transition-colors"
                 aria-label="Instagram"
               >
-                <Instagram className="h-5 w-5" />
+                <img
+                  src="/images/Instagram.png"
+                  alt="TikTok"
+                  className="h-5 w-5 rounded-full"
+                />
               </a>
               <a
                 href="https://www.linkedin.com/company/esygrab/"
@@ -153,14 +146,35 @@ const Footer = () => {
                 className="text-gray-400 hover:text-green-400 transition-colors"
                 aria-label="LinkedIn"
               >
-                <Linkedin className="h-5 w-5" />
+                <img
+                  src="/images/Linkedin.png"
+                  alt="TikTok"
+                  className="h-5 w-5 rounded-full"
+                />
+              </a>
+              <a
+                href="https://www.tiktok.com/@esygrab_official"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-green-400 transition-colors"
+                aria-label="TikTok"
+              >
+                <img
+                  src="/images/Tiktok.png"
+                  alt="TikTok"
+                  className="h-5 w-5 rounded-full"
+                />
               </a>
             </div>
 
             {/* App Links */}
             <div className="flex items-center space-x-3">
-              <img src="/placeholder.svg" alt="App Store" className="h-8" />
-              <img src="/placeholder.svg" alt="Google Play" className="h-8" />
+              <img src="/images/AppStore.png" alt="App Store" className="h-8" />
+              <img
+                src="/images/GooglePlay.png"
+                alt="Google Play"
+                className="h-8"
+              />
             </div>
           </div>
         </div>
