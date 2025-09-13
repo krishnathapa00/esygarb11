@@ -69,50 +69,6 @@ const Header = () => {
     syncAddressFromProfile();
   }, [user]);
 
-  // Safety mechanism to ensure no stuck dialogs and force close on page interaction
-  useEffect(() => {
-    const handleInteraction = () => {
-      // If user clicks anywhere and popup has been showing for more than 3 seconds, dismiss it
-      if (showLocationPopup && !userLocation) {
-        const popupStartTime = sessionStorage.getItem("locationPopupStartTime");
-        if (popupStartTime && Date.now() - parseInt(popupStartTime) > 3000) {
-          setShowLocationPopup(false);
-          sessionStorage.setItem("locationPopupDismissed", "true");
-        }
-      }
-    };
-
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setShowLocationPopup(false);
-        sessionStorage.setItem("locationPopupDismissed", "true");
-      }
-    };
-
-    document.addEventListener("click", handleInteraction);
-    document.addEventListener("keydown", handleEscape);
-
-    return () => {
-      document.removeEventListener("click", handleInteraction);
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [showLocationPopup, userLocation]);
-
-  // Show popup only if no location set and popup not dismissed this session
-  useEffect(() => {
-    const hasLocation = !!userLocation;
-    const alreadyHandled = sessionStorage.getItem("locationPopupHandled");
-    const dismissed = sessionStorage.getItem("locationPopupDismissed");
-
-    if (!hasLocation && !alreadyHandled && !dismissed) {
-      setShowLocationPopup(true);
-      sessionStorage.setItem("locationPopupHandled", "true");
-      sessionStorage.setItem("locationPopupStartTime", Date.now().toString());
-    } else {
-      setShowLocationPopup(false);
-    }
-  }, [userLocation]);
-
   const handleLocationSet = (location: string) => {
     let simplifiedLocation = location;
     if (location.length > 25) {
