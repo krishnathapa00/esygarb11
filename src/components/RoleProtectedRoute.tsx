@@ -11,7 +11,7 @@ interface RoleProtectedRouteProps {
 export const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
   children,
   allowedRoles,
-  redirectTo = "/auth",
+  redirectTo = "/",
 }) => {
   const { user, isAuthenticated, loading } = useAuthContext();
 
@@ -49,13 +49,13 @@ export const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
         ", "
       )}`
     );
-    
+    // Redirect based on actual user role to prevent wrong redirects
     if (userRole === "admin" || userRole === "super_admin") {
       return <Navigate to="/admin/dashboard" replace />;
     } else if (userRole === "delivery_partner") {
       return <Navigate to="/delivery-partner/dashboard" replace />;
     }
-    
+    // Customer users trying to access admin/delivery routes get unauthorized
     return <Navigate to="/unauthorized" replace />;
   }
 
