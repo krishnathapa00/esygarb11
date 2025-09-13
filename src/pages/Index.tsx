@@ -5,7 +5,6 @@ import CategoryGrid from "../components/CategoryGrid";
 import ProductSection from "../components/ProductSection";
 import BannerCarousel from "../components/BannerCarousel";
 import Footer from "../components/Footer";
-import LocationDetectionPopup from "../components/LocationDetectionPopup";
 import ServiceUnavailableMessage from "../components/ServiceUnavailableMessage";
 import { Product, useProducts } from "../hooks/useProducts";
 import { useAuthContext } from "@/contexts/AuthProvider";
@@ -14,7 +13,6 @@ import { useCartActions } from "@/hooks/useCart";
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [dropdownVisible, setDropdownVisible] = useState(false);
-  const [showLocationPopup, setShowLocationPopup] = useState(false);
   const [serviceAvailable, setServiceAvailable] = useState(true);
 
   const { data: products = [], isLoading } = useProducts();
@@ -26,22 +24,6 @@ const Index = () => {
 
   useEffect(() => {
     document.body.classList.add("with-search-bar");
-
-    // Check if user has location set and service availability
-    const storedLocation = localStorage.getItem("esygrab_user_location");
-    if (!storedLocation) {
-      // Block access without location - show location popup immediately
-      setShowLocationPopup(true);
-      return;
-    }
-
-    try {
-      const location = JSON.parse(storedLocation);
-      setServiceAvailable(location.serviceAvailable !== false);
-    } catch (error) {
-      console.error("Error parsing stored location:", error);
-      setShowLocationPopup(true);
-    }
 
     return () => {
       document.body.classList.remove("with-search-bar");
@@ -170,14 +152,6 @@ const Index = () => {
       <div className="hidden md:block">
         <Footer />
       </div>
-
-      <LocationDetectionPopup
-        isOpen={showLocationPopup}
-        onClose={() => setShowLocationPopup(false)}
-        onLocationSet={(location) => {
-          setShowLocationPopup(false);
-        }}
-      />
     </div>
   );
 };
