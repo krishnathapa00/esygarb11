@@ -42,6 +42,12 @@ const DeliveryProfile = () => {
     darkstore_id: "",
   });
 
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    localStorage.removeItem("esygrab_session");
+    navigate("/delivery-partner", { replace: true });
+  };
+
   // Fetch delivery partner profile
   const {
     data: profile,
@@ -279,14 +285,7 @@ const DeliveryProfile = () => {
           </div>
           <div className="flex items-center gap-4">
             {getKYCStatusBadge()}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={async () => {
-                await supabase.auth.signOut();
-                navigate("/delivery-partner", { replace: true });
-              }}
-            >
+            <Button variant="outline" size="sm" onClick={handleSignOut}>
               <LogOut className="w-4 h-2 mr-2" />
               Logout
             </Button>
