@@ -28,7 +28,7 @@ const Checkout = () => {
 
   const location = useLocation();
 
-  const OFFICE_COORDS = { lat: 27.687441, lng: 85.340829 };
+  const MAP_CENTER = { lat: 27.69397, lng: 85.338207 };
   const MAX_DISTANCE_KM = 1;
 
   const [deliveryCoords, setDeliveryCoords] = useState(null);
@@ -150,8 +150,8 @@ const Checkout = () => {
       return;
     }
     const dist = getDistanceInKm(
-      OFFICE_COORDS.lat,
-      OFFICE_COORDS.lng,
+      MAP_CENTER.lat,
+      MAP_CENTER.lng,
       deliveryCoords.lat,
       deliveryCoords.lng
     );
@@ -251,17 +251,15 @@ const Checkout = () => {
     }
 
     const distance = getDistanceInKm(
-      OFFICE_COORDS.lat,
-      OFFICE_COORDS.lng,
+      MAP_CENTER.lat,
+      MAP_CENTER.lng,
       deliveryCoords.lat,
       deliveryCoords.lng
     );
 
     if (distance > MAX_DISTANCE_KM) {
       alert(
-        `Sorry, we only deliver within ${MAX_DISTANCE_KM} km from the office. Your selected location is approximately ${distance.toFixed(
-          2
-        )} km away.`
+        `We're sorry! Your location is currently outside our delivery area. We're working on expanding soon.`
       );
       return;
     }
@@ -404,8 +402,8 @@ const Checkout = () => {
 
               {!isWithinRange && (
                 <p className="text-red-600 text-sm mt-2">
-                  Sorry, we only deliver within {MAX_DISTANCE_KM} km from the
-                  office. Your address is out of delivery range.
+                  We're sorry! Your location is currently outside our delivery
+                  area. We're working on expanding soon.
                 </p>
               )}
             </div>
