@@ -74,7 +74,7 @@ const OrderConfirmation = () => {
     <div className="min-h-screen bg-gray-50">
       <Header />
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-20">
         <div className="flex items-center mb-6">
           <Link to="/">
             <Button variant="ghost" size="sm" className="mr-3">
