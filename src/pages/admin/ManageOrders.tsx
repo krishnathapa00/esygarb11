@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useEffect } from "react";
-import { Search, Eye, Trash2, Users } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { Search, Eye, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +29,6 @@ const ManageOrders = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [assignModalOpen, setAssignModalOpen] = useState(false);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [selectedDeliveryPartner, setSelectedDeliveryPartner] = useState("");
   const { toast } = useToast();
@@ -193,65 +192,6 @@ const ManageOrders = () => {
     }
   };
 
-  const handleDeleteOrder = async () => {
-    if (!selectedOrder) return;
-
-    try {
-      // Use CASCADE delete - just delete the order and let foreign key constraints handle order_items
-      const { error } = await supabase
-        .from("orders")
-        .delete()
-        .eq("id", selectedOrder.id);
-
-      if (error) {
-        throw error;
-      }
-
-      toast({ title: "Success", description: "Order deleted successfully." });
-      setDeleteModalOpen(false);
-      setSelectedOrder(null);
-      refetchOrders();
-    } catch (error: any) {
-      console.error("Delete error:", error);
-
-      // If foreign key constraint error, handle it specifically
-      if (error.message?.includes("violates foreign key constraint")) {
-        try {
-          // First delete order items manually
-          await supabase
-            .from("order_items")
-            .delete()
-            .eq("order_id", selectedOrder.id);
-
-          // Then delete the order
-          const { error: orderError } = await supabase
-            .from("orders")
-            .delete()
-            .eq("id", selectedOrder.id);
-
-          if (!orderError) {
-            toast({
-              title: "Success",
-              description: "Order deleted successfully.",
-            });
-            setDeleteModalOpen(false);
-            setSelectedOrder(null);
-            refetchOrders();
-            return;
-          }
-        } catch (retryError) {
-          console.error("Retry delete error:", retryError);
-        }
-      }
-
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete order.",
-        variant: "destructive",
-      });
-    }
-  };
-
   return (
     <AdminLayout onRefresh={() => refetchOrders()}>
       <div className="space-y-6">
@@ -376,20 +316,6 @@ const ManageOrders = () => {
                             Assign
                           </Button>
                         )}
-                        {isSuperAdmin && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-600 hover:bg-red-50"
-                            onClick={() => {
-                              setSelectedOrder(order);
-                              setDeleteModalOpen(true);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4 mr-1" />
-                            Delete
-                          </Button>
-                        )}
                       </div>
                     </td>
                   </tr>
@@ -436,30 +362,6 @@ const ManageOrders = () => {
                 disabled={!selectedDeliveryPartner}
               >
                 Assign
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Delete Modal */}
-        <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Delete Order</DialogTitle>
-              <DialogDescription>
-                Delete order {selectedOrder?.order_number}? This cannot be
-                undone.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setDeleteModalOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button variant="destructive" onClick={handleDeleteOrder}>
-                Delete
               </Button>
             </DialogFooter>
           </DialogContent>
