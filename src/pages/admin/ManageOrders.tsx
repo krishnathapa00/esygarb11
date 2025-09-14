@@ -68,6 +68,21 @@ const ManageOrders = () => {
           showToast(`New order placed: #${payload.new.order_number}`, "info");
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "orders" },
+        (payload) => {
+          refetchOrders();
+          if (payload.new.status === "cancelled") {
+            showToast(
+              `Order #${payload.new.order_number} was cancelled.`,
+              "info"
+            );
+          } else {
+            showToast(`Order #${payload.new.order_number} updated.`, "info");
+          }
+        }
+      )
       .subscribe();
 
     return () => {
