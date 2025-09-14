@@ -27,16 +27,18 @@ const SearchBar: React.FC<SearchBarProps> = ({ initialQuery = "" }) => {
       return;
     }
 
+    const queryLower = searchQuery.toLowerCase();
+
     const filtered = products
-      .filter((product) =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+      .filter((product) => {
+        return product.name.toLowerCase().includes(queryLower);
+      })
       .map((product) => product.name)
       .slice(0, 5);
 
     setSuggestions(filtered);
-    setHighlightedIndex(-1); // reset when query changes
-  }, [searchQuery, products.length]); // Fix: Only depend on products.length to avoid infinite loop
+    setHighlightedIndex(-1);
+  }, [searchQuery, products.length]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "ArrowDown") {
