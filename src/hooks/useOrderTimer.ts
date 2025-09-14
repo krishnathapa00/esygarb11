@@ -39,11 +39,13 @@ export const useOrderTimer = ({
 
   useEffect(() => {
     if (isCancelled || orderStatus === "cancelled") {
+      setIsRunning(false);
+      setRemainingSeconds(0);
       stopTimer();
       return;
     }
 
-    if (!isRunning || !orderCreatedAt) return;
+    if (!orderCreatedAt) return;
 
     const orderStartTime = new Date(orderCreatedAt).getTime();
     const totalDeliveryMs = totalDeliveryMinutes * 60 * 1000;
