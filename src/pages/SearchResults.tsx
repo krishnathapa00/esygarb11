@@ -20,9 +20,39 @@ const SearchResults = () => {
 
   const filteredProducts = useMemo(() => {
     if (!searchQuery.trim()) return [];
-    return products.filter((product: Product) =>
-      product.name.toLowerCase().includes(searchQuery)
+
+    const queryLower = searchQuery.toLowerCase();
+
+    const exactMatches = products.filter(
+      (product: Product) => product.name.toLowerCase() === queryLower
     );
+
+    const otherMatches = products.filter(
+      (product: Product) =>
+        product.name.toLowerCase().includes(queryLower) ||
+        product.subcategory?.toLowerCase().includes(queryLower) ||
+        product.description?.toLowerCase().includes(queryLower)
+    );
+
+    const matchedSubcategories = new Set(
+      exactMatches
+        .concat(otherMatches)
+        .map((p) => p.subcategory)
+        .filter(Boolean)
+    );
+
+    const expandedResults = products.filter(
+      (product) =>
+        matchedSubcategories.has(product.subcategory) ||
+        exactMatches.includes(product)
+    );
+
+    const sortedResults = [
+      ...exactMatches,
+      ...expandedResults.filter((p) => !exactMatches.includes(p)),
+    ];
+
+    return sortedResults;
   }, [products, searchQuery]);
 
   return (
@@ -43,17 +73,22 @@ const SearchResults = () => {
             No products found for "{searchQuery}"
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {filteredProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onAddToCart={() => handleAddToCart(product)}
-                cartQuantity={getCartQuantity(product.id)}
-                onUpdateQuantity={(id, qty) => handleUpdateQuantity(id, qty)}
-              />
-            ))}
-          </div>
+          <>
+            <h2 className="text-lg font-semibold mb-4">
+              Search results for "{searchQuery}"
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {filteredProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onAddToCart={() => handleAddToCart(product)}
+                  cartQuantity={getCartQuantity(product.id)}
+                  onUpdateQuantity={(id, qty) => handleUpdateQuantity(id, qty)}
+                />
+              ))}
+            </div>
+          </>
         )}
       </div>
     </>
