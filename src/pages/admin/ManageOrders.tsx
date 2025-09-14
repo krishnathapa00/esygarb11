@@ -24,6 +24,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { showToast } from "@/components/Toast";
+import PaginationControls from "@/components/PaginationControls";
 
 const ManageOrders = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -32,6 +33,9 @@ const ManageOrders = () => {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [selectedDeliveryPartner, setSelectedDeliveryPartner] = useState("");
   const { toast } = useToast();
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Fixed query functions to prevent re-renders
   const { data: orders = [], refetch: refetchOrders } = useQuery({
@@ -155,6 +159,11 @@ const ManageOrders = () => {
     });
   }, [orders, searchTerm, statusFilter]);
 
+  const paginatedOrders = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredOrders.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredOrders, currentPage]);
+
   // Event handlers
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     try {
@@ -271,7 +280,7 @@ const ManageOrders = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredOrders.map((order) => (
+                {paginatedOrders.map((order) => (
                   <tr key={order.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
@@ -337,6 +346,11 @@ const ManageOrders = () => {
                 ))}
               </tbody>
             </table>
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={Math.ceil(filteredOrders.length / itemsPerPage)}
+              onPageChange={setCurrentPage}
+            />
           </div>
         </div>
 
