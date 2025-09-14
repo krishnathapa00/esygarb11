@@ -62,13 +62,23 @@ const ManageProducts = () => {
   const to = from + itemsPerPage - 1;
 
   const { data: totalCount = 0 } = useQuery({
-    queryKey: ["admin-products-count"],
+    queryKey: ["admin-products-count", searchTerm],
     queryFn: async () => {
-      const { count, error } = await supabase
+      let countQuery = supabase
         .from("products")
         .select("*", { count: "exact", head: true });
 
-      if (error) return 0;
+      if (searchTerm.trim()) {
+        countQuery = countQuery.ilike("name", `%${searchTerm.trim()}%`);
+      }
+
+      const { count, error } = await countQuery;
+
+      if (error) {
+        console.error("Count error:", error);
+        return 0;
+      }
+
       return count || 0;
     },
   });
@@ -79,18 +89,24 @@ const ManageProducts = () => {
     refetch,
     isLoading,
   } = useQuery<ProductRow[]>({
-    queryKey: ["admin-products", currentPage],
+    queryKey: ["admin-products", currentPage, searchTerm],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("products")
         .select(
           `
-        id, name, price, original_price, category_id, subcategory_id, discount, offer, image_url, stock_quantity, weight, delivery_time, description, is_active,
-        categories:category_id ( name )
-      `
+          id, name, price, original_price, category_id, subcategory_id, discount, offer, image_url, stock_quantity, weight, delivery_time, description, is_active,
+          categories:category_id ( name )
+        `
         )
         .range(from, to)
         .order("created_at", { ascending: false });
+
+      if (searchTerm.trim()) {
+        query = query.ilike("name", `%${searchTerm.trim()}%`);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         toast({ title: "Error loading products", description: error.message });
@@ -100,11 +116,6 @@ const ManageProducts = () => {
       return data || [];
     },
   });
-
-  // Filtered products for search
-  const filteredProducts = products.filter((product) =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   // Fetch categories
   const { data: categories = [] } = useQuery({
@@ -374,8 +385,20 @@ const ManageProducts = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {(filteredProducts.length ? filteredProducts : products).map(
-                  (product) => (
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={7} className="text-center py-6">
+                      Loading...
+                    </td>
+                  </tr>
+                ) : products.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="text-center py-6">
+                      No products found.
+                    </td>
+                  </tr>
+                ) : (
+                  products.map((product) => (
                     <tr key={product.id}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
@@ -458,7 +481,7 @@ const ManageProducts = () => {
                         </Button>
                       </td>
                     </tr>
-                  )
+                  ))
                 )}
               </tbody>
             </table>
@@ -761,4 +784,3 @@ const ManageProducts = () => {
 };
 
 export default ManageProducts;
-
