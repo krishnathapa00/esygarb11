@@ -11,6 +11,9 @@ import {
   LogOut,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useOrderAlert } from "@/hooks/useOrderAlert";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -20,6 +23,26 @@ interface AdminLayoutProps {
 const AdminLayout = ({ children }: AdminLayoutProps) => {
   const { signOut } = useAuth();
   const navigate = useNavigate();
+
+  const { data: orders = [], refetch: refetchOrders } = useQuery({
+    queryKey: ["admin-orders-stable"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select(
+          `*, profiles!orders_user_id_fkey ( full_name ), order_items ( quantity )`
+        )
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
+
+  useOrderAlert(refetchOrders);
 
   const handleSignOut = async () => {
     await signOut();
