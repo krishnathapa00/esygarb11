@@ -29,6 +29,7 @@ export const useOrderTimer = ({
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const stopTimer = () => {
+    if (!isRunning) return;
     setIsRunning(false);
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
@@ -37,7 +38,12 @@ export const useOrderTimer = ({
   };
 
   useEffect(() => {
-    if (!orderCreatedAt) return;
+    if (isCancelled || orderStatus === "cancelled") {
+      stopTimer();
+      return;
+    }
+
+    if (!isRunning || !orderCreatedAt) return;
 
     const orderStartTime = new Date(orderCreatedAt).getTime();
     const totalDeliveryMs = totalDeliveryMinutes * 60 * 1000;
@@ -73,8 +79,18 @@ export const useOrderTimer = ({
       !isCancelled &&
       orderStatus !== "cancelled";
 
-    setIsRunning(shouldRun);
-  }, [orderCreatedAt, orderStatus, deliveredAt, totalDeliveryMinutes]);
+    if (shouldRun) {
+      setIsRunning(true);
+    } else {
+      stopTimer();
+    }
+  }, [
+    isRunning,
+    isCancelled,
+    orderCreatedAt,
+    orderStatus,
+    totalDeliveryMinutes,
+  ]);
 
   useEffect(() => {
     if (
