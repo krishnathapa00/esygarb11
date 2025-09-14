@@ -25,7 +25,9 @@ const OrderDetails = () => {
   const { orderId } = useParams();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isLocallyCancelled, setIsLocallyCancelled] = useState(false);
 
   // Fetch order data with delivery config
   const { data: order, isLoading } = useQuery({
@@ -76,6 +78,7 @@ const OrderDetails = () => {
     orderCreatedAt: order?.created_at || "",
     acceptedAt: order?.accepted_at,
     deliveredAt: order?.delivered_at,
+    isCancelled: order?.status === "cancelled" || isLocallyCancelled,
   });
 
   // Update order status mutation
@@ -270,8 +273,14 @@ const OrderDetails = () => {
   const handleCancelOrder = () => {
     if (window.confirm("Are you sure you want to cancel this order?")) {
       setIsUpdating(true);
-      cancelOrderMutation.mutate(orderId!);
-      setIsUpdating(false);
+      cancelOrderMutation.mutate(orderId!, {
+        onSuccess: () => {
+          setIsLocallyCancelled(true);
+        },
+        onSettled: () => {
+          setIsUpdating(false);
+        },
+      });
     }
   };
 
@@ -445,46 +454,50 @@ const OrderDetails = () => {
                   </div>
 
                   {/* Timer Display */}
-                  <div className="border-t pt-3 space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600 flex items-center gap-1">
-                        <Timer className="h-4 w-4" />
-                        Remaining Time
-                      </span>
-                      <div className="text-right">
-                        <span
-                          className={`font-bold text-lg ${
-                            orderTimer.isOverdue
-                              ? "text-red-600"
-                              : "text-primary"
-                          }`}
-                        >
-                          {orderTimer.formatRemaining()}
+                  {order.status !== "casncelled" && (
+                    <div className="border-t pt-3 space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 flex items-center gap-1">
+                          <Timer className="h-4 w-4" />
+                          Remaining Time
                         </span>
-                        {orderTimer.isOverdue && (
-                          <div className="flex items-center gap-1 text-red-600">
-                            <AlertCircle className="h-3 w-3" />
-                            <span className="text-xs">Overdue</span>
+                        <div className="text-right">
+                          <span
+                            className={`font-bold text-lg ${
+                              orderTimer.isOverdue
+                                ? "text-red-600"
+                                : "text-primary"
+                            }`}
+                          >
+                            {orderTimer.formatRemaining()}
+                          </span>
+                          {orderTimer.isOverdue && (
+                            <div className="flex items-center gap-1 text-red-600">
+                              <AlertCircle className="h-3 w-3" />
+                              <span className="text-xs">Overdue</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Time Elapsed</span>
+                        <span>{orderTimer.formatElapsed()}</span>
+                      </div>
+
+                      {order.status === "delivered" &&
+                        order.delivery_time_minutes && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">
+                              Total Delivery Time
+                            </span>
+                            <span className="font-medium">
+                              {Math.floor(order.delivery_time_minutes)} minutes
+                            </span>
                           </div>
                         )}
-                      </div>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Time Elapsed</span>
-                      <span>{orderTimer.formatElapsed()}</span>
-                    </div>
-                    {order.status === "delivered" &&
-                      order.delivery_time_minutes && (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-600">
-                            Total Delivery Time
-                          </span>
-                          <span className="font-medium">
-                            {Math.floor(order.delivery_time_minutes)} minutes
-                          </span>
-                        </div>
-                      )}
-                  </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
