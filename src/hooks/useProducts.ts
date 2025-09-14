@@ -17,6 +17,7 @@ export interface Product {
   category: string;
   categoryId: number;
   categorySlug: string;
+  subcategory?: string;
   stock_quantity: number;
   isActive?: boolean;
 }
@@ -34,6 +35,10 @@ export const useProducts = () => {
             id,
             name,
             slug
+          ),
+          subcategories:subcategory_id (
+            id,
+            name
           )
         `
         )
@@ -56,6 +61,7 @@ export const useProducts = () => {
         category: product.categories?.name || "Unknown",
         categoryId: product.categories?.id ?? -1,
         categorySlug: product.categories?.slug || "Unknown",
+        subcategory: product.subcategories?.name || "",
         stock_quantity: product.stock_quantity,
         rating: 4.5,
         reviews: 50,
