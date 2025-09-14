@@ -22,22 +22,31 @@ const PaginationControls = ({
 
   const visiblePages: (number | string)[] = [];
 
-  // Always show the first 3 pages (if available)
-  const firstPages = [1, 2, 3].filter((page) => page <= totalPages);
-  visiblePages.push(...firstPages);
+  visiblePages.push(1);
 
-  // Add ellipsis and last page if needed
-  if (totalPages > 4) {
-    // Only add ellipsis if last page isn't already in the first 3
-    if (
-      !firstPages.includes(totalPages - 1) &&
-      !firstPages.includes(totalPages)
-    ) {
-      visiblePages.push("...");
+  if (totalPages <= 7) {
+    for (let i = 2; i <= totalPages; i++) {
+      visiblePages.push(i);
     }
-
-    // Only add the last page if not already included
-    if (!firstPages.includes(totalPages)) {
+  } else {
+    if (currentPage <= 4) {
+      for (let i = 2; i <= 5; i++) {
+        visiblePages.push(i);
+      }
+      visiblePages.push("...");
+      visiblePages.push(totalPages);
+    } else if (currentPage >= totalPages - 3) {
+      visiblePages.push("...");
+      for (let i = totalPages - 4; i < totalPages; i++) {
+        visiblePages.push(i);
+      }
+      visiblePages.push(totalPages);
+    } else {
+      visiblePages.push("...");
+      for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+        visiblePages.push(i);
+      }
+      visiblePages.push("...");
       visiblePages.push(totalPages);
     }
   }
@@ -67,7 +76,7 @@ const PaginationControls = ({
               </PaginationItem>
             ) : (
               <PaginationItem key={index}>
-                <span className="px-2 text-gray-500">...</span>
+                <span className="px-2 text-gray-500 select-none">{page}</span>
               </PaginationItem>
             )
           )}
