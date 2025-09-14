@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import Header from "../components/Header";
@@ -19,38 +19,18 @@ import EsewaLogo from "../assets/payments/esewa.jpg";
 import LocationDisplay from "@/components/LocationDisplay";
 import KhaltiLogo from "../assets/payments/khalti.jpg";
 import { useLocation } from "react-router-dom";
+import { DELIVERY_AREA_COORDS } from "./MapLocationEnhanced";
 
 const Checkout = () => {
   const { cart, resetCart, mergeGuestCart } = useCart();
   const { user, loading } = useAuth();
   const { profile, updateProfile } = useUserProfile();
+
   const navigate = useNavigate();
-
   const location = useLocation();
-
-  const MAP_CENTER = { lat: 27.69397, lng: 85.338207 };
-  const MAX_DISTANCE_KM = 1;
 
   const [deliveryCoords, setDeliveryCoords] = useState(null);
   const [isWithinRange, setIsWithinRange] = useState(true);
-
-  function getDistanceInKm(lat1, lng1, lat2, lng2) {
-    const toRad = (value) => (value * Math.PI) / 180;
-    const R = 6371;
-
-    const dLat = toRad(lat2 - lat1);
-    const dLng = toRad(lng2 - lng1);
-
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(toRad(lat1)) *
-        Math.cos(toRad(lat2)) *
-        Math.sin(dLng / 2) *
-        Math.sin(dLng / 2);
-
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-  }
 
   const [promoDiscount, setPromoDiscount] = useState(() => {
     if (location.state?.promoDiscount) return location.state.promoDiscount;
@@ -144,18 +124,38 @@ const Checkout = () => {
     }
   }, [user]);
 
+  function pointInPolygon(lat, lng, polygon) {
+    let inside = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      const xi = polygon[i].lng,
+        yi = polygon[i].lat;
+      const xj = polygon[j].lng,
+        yj = polygon[j].lat;
+
+      const intersect =
+        yi > lat !== yj > lat &&
+        lng < ((xj - xi) * (lat - yi)) / (yj - yi + Number.EPSILON) + xi;
+      if (intersect) inside = !inside;
+    }
+    return inside;
+  }
+
   useEffect(() => {
     if (!deliveryCoords) {
       setIsWithinRange(false);
       return;
     }
-    const dist = getDistanceInKm(
-      MAP_CENTER.lat,
-      MAP_CENTER.lng,
+
+    const insidePolygon = pointInPolygon(
       deliveryCoords.lat,
-      deliveryCoords.lng
+      deliveryCoords.lng,
+      DELIVERY_AREA_COORDS
     );
-    setIsWithinRange(dist <= MAX_DISTANCE_KM);
+
+    if (insidePolygon) {
+      setIsWithinRange(true);
+      return;
+    }
   }, [deliveryCoords]);
 
   useEffect(() => {
@@ -250,16 +250,9 @@ const Checkout = () => {
       return;
     }
 
-    const distance = getDistanceInKm(
-      MAP_CENTER.lat,
-      MAP_CENTER.lng,
-      deliveryCoords.lat,
-      deliveryCoords.lng
-    );
-
-    if (distance > MAX_DISTANCE_KM) {
+    if (!isWithinRange) {
       alert(
-        `We're sorry! Your location is currently outside our delivery area. We're working on expanding soon.`
+        "We're sorry! Your location is currently outside our delivery area."
       );
       return;
     }
