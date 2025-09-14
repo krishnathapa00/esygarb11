@@ -29,7 +29,7 @@ const SearchResults = () => {
     <>
       <Header />
 
-      <div className="p-4 max-w-7xl mx-auto">
+      <div className="px-4 pt-24 sm:pt-20 max-w-7xl mx-auto">
         {isLoading ? (
           <div className="text-center py-12 text-gray-600">
             Loading products...
