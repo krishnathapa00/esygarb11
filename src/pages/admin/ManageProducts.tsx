@@ -9,6 +9,7 @@ import SingleImageUpload from "@/components/SingleImageUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import PaginationControls from "@/components/PaginationControls";
 
 type ProductRow = {
   id: number;
@@ -29,12 +30,16 @@ type ProductRow = {
 
 const ManageProducts = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductRow | null>(null);
   const [creating, setCreating] = useState(false);
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Product fields for modal
   const [productData, setProductData] = useState({
@@ -52,32 +57,46 @@ const ManageProducts = () => {
     description: "",
   });
 
+  // Pagination Setup
+  const from = (currentPage - 1) * itemsPerPage;
+  const to = from + itemsPerPage - 1;
+
+  const { data: totalCount = 0 } = useQuery({
+    queryKey: ["admin-products-count"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("products")
+        .select("*", { count: "exact", head: true });
+
+      if (error) return 0;
+      return count || 0;
+    },
+  });
+
   // Fetch products from supabase
   const {
     data: products = [],
     refetch,
     isLoading,
   } = useQuery<ProductRow[]>({
-    queryKey: ["admin-products"],
+    queryKey: ["admin-products", currentPage],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
         .select(
           `
-          id, name, price, original_price, category_id, subcategory_id, discount, offer, image_url, stock_quantity, weight, delivery_time, description, is_active,
-          categories:category_id ( name )
-        `
+        id, name, price, original_price, category_id, subcategory_id, discount, offer, image_url, stock_quantity, weight, delivery_time, description, is_active,
+        categories:category_id ( name )
+      `
         )
+        .range(from, to)
         .order("created_at", { ascending: false });
 
       if (error) {
-        toast({
-          title: "Failed to load products",
-          description: error.message,
-          variant: "destructive",
-        });
+        toast({ title: "Error loading products", description: error.message });
         return [];
       }
+
       return data || [];
     },
   });
@@ -445,6 +464,12 @@ const ManageProducts = () => {
             </table>
           </div>
         </div>
+
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={Math.ceil(totalCount / itemsPerPage)}
+          onPageChange={(page) => setCurrentPage(page)}
+        />
 
         {/* Add Product Modal */}
         {showAddProduct && (
