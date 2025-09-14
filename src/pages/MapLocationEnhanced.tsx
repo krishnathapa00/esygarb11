@@ -11,7 +11,7 @@ import { useAuthContext } from "@/contexts/AuthProvider";
 
 const GOOGLE_MAPS_API_KEY = "AIzaSyADxM5y7WrXu3BRJ_hJQZhh6FLXWyO3E1g";
 
-const DELIVERY_AREA_COORDS = [
+export const DELIVERY_AREA_COORDS = [
   { lat: 27.70293080822624, lng: 85.33598020683337 },
   { lat: 27.69944302860847, lng: 85.33468509953883 },
   { lat: 27.699681921179774, lng: 85.3312314800852 },
