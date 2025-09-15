@@ -263,11 +263,15 @@ const OrderDetails = () => {
 
   const handleMarkReady = () => {
     setIsUpdating(true);
-    updateOrderMutation.mutate({
-      orderId: orderId!,
-      status: "ready_for_pickup",
-    });
-    setIsUpdating(false);
+    updateOrderMutation.mutate(
+      { orderId: orderId!, status: "ready_for_pickup" },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["admin-orders-stable"] });
+        },
+        onSettled: () => setIsUpdating(false),
+      }
+    );
   };
 
   const handleCancelOrder = () => {
@@ -276,6 +280,7 @@ const OrderDetails = () => {
       cancelOrderMutation.mutate(orderId!, {
         onSuccess: () => {
           setIsLocallyCancelled(true);
+          queryClient.invalidateQueries({ queryKey: ["admin-orders-stable"] });
         },
         onSettled: () => {
           setIsUpdating(false);
@@ -288,6 +293,7 @@ const OrderDetails = () => {
     try {
       setIsUpdating(true);
       await dispatchOrderMutation.mutateAsync(orderId!);
+      queryClient.invalidateQueries({ queryKey: ["admin-orders-stable"] });
     } finally {
       setIsUpdating(false);
     }
@@ -454,7 +460,7 @@ const OrderDetails = () => {
                   </div>
 
                   {/* Timer Display */}
-                  {order.status !== "casncelled" && (
+                  {order.status !== "cancelled" && (
                     <div className="border-t pt-3 space-y-2">
                       <div className="flex justify-between items-center">
                         <span className="text-gray-600 flex items-center gap-1">
