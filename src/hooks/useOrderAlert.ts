@@ -5,7 +5,7 @@ import { showToast } from "@/components/Toast";
 const playAlertSound = () => {
   const audio = new Audio("/sounds/notification.wav");
 
-  // Function to play a *new* audio instance each time (so it doesn't overlap or conflict)
+  
   const play = () => {
     const newAudio = new Audio("/sounds/notification.wav");
     newAudio.play().catch((error) => {
