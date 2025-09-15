@@ -24,7 +24,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { showToast } from "@/components/Toast";
-import PaginationControls from "@/components/PaginationControls";
 
 const ManageOrders = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -32,23 +31,22 @@ const ManageOrders = () => {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [selectedDeliveryPartner, setSelectedDeliveryPartner] = useState("");
+  const [orders, setOrders] = useState<any[]>([]);
+
   const { toast } = useToast();
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
-
   // Fixed query functions to prevent re-renders
-  const { data: orders = [], refetch: refetchOrders } = useQuery({
+  const { data: fetchedOrders = [], refetch: refetchOrders } = useQuery({
     queryKey: ["admin-orders-stable"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("orders")
         .select(
           `
-          *,
-          profiles!orders_user_id_fkey ( full_name ),
-          order_items ( quantity )
-        `
+        *,
+        profiles!orders_user_id_fkey ( full_name ),
+        order_items ( quantity )
+      `
         )
         .order("created_at", { ascending: false });
 
@@ -56,8 +54,11 @@ const ManageOrders = () => {
     },
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
-    retry: false,
   });
+
+  useEffect(() => {
+    setOrders(fetchedOrders);
+  }, [fetchedOrders]);
 
   useEffect(() => {
     const channel = supabase
@@ -66,9 +67,7 @@ const ManageOrders = () => {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "orders" },
         (payload) => {
-          // Refetch orders when a new order is inserted
-          refetchOrders();
-
+          setOrders((prev) => [payload.new, ...prev]);
           showToast(`New order placed: #${payload.new.order_number}`, "info");
         }
       )
@@ -76,15 +75,15 @@ const ManageOrders = () => {
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "orders" },
         (payload) => {
-          refetchOrders();
-          if (payload.new.status === "cancelled") {
-            showToast(
-              `Order #${payload.new.order_number} was cancelled.`,
-              "info"
-            );
-          } else {
-            showToast(`Order #${payload.new.order_number} updated.`, "info");
-          }
+          setOrders((prev) =>
+            prev.map((order) =>
+              order.id === payload.new.id ? payload.new : order
+            )
+          );
+          showToast(
+            `Order #${payload.new.order_number} status updated: ${payload.new.status}`,
+            "info"
+          );
         }
       )
       .subscribe();
@@ -92,7 +91,7 @@ const ManageOrders = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [refetchOrders]);
+  }, []);
 
   const { data: deliveryPartners = [] } = useQuery({
     queryKey: ["delivery-partners-stable"],
@@ -158,11 +157,6 @@ const ManageOrders = () => {
       return matchesSearch && matchesStatus;
     });
   }, [orders, searchTerm, statusFilter]);
-
-  const paginatedOrders = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredOrders.slice(startIndex, startIndex + itemsPerPage);
-  }, [filteredOrders, currentPage]);
 
   // Event handlers
   const handleStatusChange = async (orderId: string, newStatus: string) => {
@@ -280,7 +274,7 @@ const ManageOrders = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {paginatedOrders.map((order) => (
+                {filteredOrders.map((order) => (
                   <tr key={order.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
@@ -346,11 +340,6 @@ const ManageOrders = () => {
                 ))}
               </tbody>
             </table>
-            <PaginationControls
-              currentPage={currentPage}
-              totalPages={Math.ceil(filteredOrders.length / itemsPerPage)}
-              onPageChange={setCurrentPage}
-            />
           </div>
         </div>
 
@@ -401,4 +390,3 @@ const ManageOrders = () => {
 };
 
 export default ManageOrders;
-
