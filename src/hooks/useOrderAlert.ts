@@ -5,21 +5,9 @@ import { showToast } from "@/components/Toast";
 const playAlertSound = () => {
   const audio = new Audio("/sounds/notification.wav");
 
-  
-  const play = () => {
-    const newAudio = new Audio("/sounds/notification.wav");
-    newAudio.play().catch((error) => {
-      console.error("Error playing alert sound:", error);
-    });
-  };
-
-  play();
-
-  const interval = setInterval(play, 5000);
-
-  setTimeout(() => {
-    clearInterval(interval);
-  }, 5 * 1000);
+  audio.play().catch((error) => {
+    console.error("Error playing alert sound:", error);
+  });
 };
 
 export const useOrderAlert = (onNewOrder?: () => void) => {
@@ -30,7 +18,7 @@ export const useOrderAlert = (onNewOrder?: () => void) => {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "orders" },
         (payload) => {
-          playAlertSound();
+          playAlertSound(); 
           showToast(`New order placed: #${payload.new.order_number}`, "info");
           if (onNewOrder) onNewOrder();
         }
@@ -38,7 +26,7 @@ export const useOrderAlert = (onNewOrder?: () => void) => {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(channel); 
     };
   }, [onNewOrder]);
 };
