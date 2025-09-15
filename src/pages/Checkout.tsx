@@ -448,6 +448,11 @@ const Checkout = () => {
                   </div>
                 ))}
               </div>
+              <div className="mt-3 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 p-3 rounded-md text-sm font-medium">
+                <strong>Note:</strong> We currently only accept{" "}
+                <strong>Cash on Delivery (COD)</strong> as a payment method.
+                Other payment options will be available soon.
+              </div>
             </div>
           </div>
 
@@ -546,4 +551,3 @@ const Checkout = () => {
 };
 
 export default Checkout;
-
