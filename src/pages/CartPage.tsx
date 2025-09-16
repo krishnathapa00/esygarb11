@@ -319,15 +319,6 @@ const CartPage = () => {
       setIsManualPromo(true);
 
       toast({ title: `Promo code applied! Saved Rs ${discount}` });
-
-      await supabase.from("promo_code_usage").insert([
-        {
-          user_id: user.id,
-          promo_code_id: promo.id,
-          discount_amount: discount,
-          used_at: new Date().toISOString(),
-        },
-      ]);
     } catch (error) {
       console.error("Error applying promo:", error);
       toast({ title: "Error applying promo code", variant: "destructive" });
