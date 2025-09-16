@@ -232,16 +232,47 @@ const CartPage = () => {
         return;
       }
 
+      // Check if promo is expired
+      if (promo.expires_at && new Date(promo.expires_at) < new Date()) {
+        toast({ title: "Promo code has expired", variant: "destructive" });
+        return;
+      }
+
+      // Check if usage limit exceeded
+      if (promo.usage_limit && promo.used_count >= promo.usage_limit) {
+        toast({
+          title: "Promo code usage limit reached",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // CHECK IF USER HAS ALREADY USED THIS PROMO CODE
+      const { data: usage, error: usageError } = await supabase
+        .from("promo_code_usage")
+        .select("*")
+        .eq("user_id", user?.id)
+        .eq("promo_code_id", promo.id)
+        .single();
+
+      if (usage) {
+        toast({
+          title: "Promo code already used",
+          description: "You can only use this promo code once.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       promo.category_ids = promo.category_ids?.map(Number) || [];
       promo.product_ids = promo.product_ids?.map(Number) || [];
 
       if (
-        promo.category_ids &&
         promo.category_ids.length > 0 &&
         !cart.some((item) => promo.category_ids.includes(item.category_id))
       ) {
         toast({
-          title: `This promo code is only valid for selected categories.`,
+          title: "Promo code not applicable",
           description: `Add eligible items to your cart.`,
           variant: "destructive",
         });
@@ -249,44 +280,12 @@ const CartPage = () => {
       }
 
       if (
-        promo.product_ids &&
         promo.product_ids.length > 0 &&
         !cart.some((item) => promo.product_ids.includes(item.id))
       ) {
         toast({
-          title: `This promo code is only valid for selected products.`,
+          title: "Promo code not applicable",
           description: `Add eligible products to your cart.`,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      let discount = 0;
-
-      if (promo.discount_type === "percentage") {
-        discount = (totalPrice * promo.discount_value) / 100;
-
-        if (promo.max_discount_amount) {
-          discount = Math.min(discount, promo.max_discount_amount);
-        }
-      } else if (promo.discount_type === "fixed") {
-        discount = promo.discount_value;
-      }
-
-      discount = Math.min(discount, totalPrice);
-
-      setAppliedPromo(promo);
-      setPromoDiscount(discount);
-      toast({ title: `Promo code applied! Saved Rs ${discount}` });
-
-      if (promo.expires_at && new Date(promo.expires_at) < new Date()) {
-        toast({ title: "Promo code has expired", variant: "destructive" });
-        return;
-      }
-
-      if (promo.usage_limit && promo.used_count >= promo.usage_limit) {
-        toast({
-          title: "Promo code usage limit reached",
           variant: "destructive",
         });
         return;
@@ -300,7 +299,35 @@ const CartPage = () => {
         return;
       }
 
+      // CALCULATE DISCOUNT
+      let discount = 0;
+
+      if (promo.discount_type === "percentage") {
+        discount = (totalPrice * promo.discount_value) / 100;
+        if (promo.max_discount_amount) {
+          discount = Math.min(discount, promo.max_discount_amount);
+        }
+      } else if (promo.discount_type === "fixed") {
+        discount = promo.discount_value;
+      }
+
+      discount = Math.min(discount, totalPrice);
+
+      // APPLY PROMO LOCALLY
+      setAppliedPromo(promo);
+      setPromoDiscount(discount);
       setIsManualPromo(true);
+
+      toast({ title: `Promo code applied! Saved Rs ${discount}` });
+
+      await supabase.from("promo_code_usage").insert([
+        {
+          user_id: user.id,
+          promo_code_id: promo.id,
+          discount_amount: discount,
+          used_at: new Date().toISOString(),
+        },
+      ]);
     } catch (error) {
       console.error("Error applying promo:", error);
       toast({ title: "Error applying promo code", variant: "destructive" });
