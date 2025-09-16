@@ -1,16 +1,32 @@
-import React, { useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
-import { BarChart3, ShoppingBag, Users, TrendingUp, Package, UserCheck, Clock, RotateCcw, RefreshCw, Calendar } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import AdminLayout from './components/AdminLayout';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState, useCallback } from "react";
+import { Link } from "react-router-dom";
+import {
+  ShoppingBag,
+  Users,
+  TrendingUp,
+  Package,
+  UserCheck,
+  Clock,
+  RotateCcw,
+  RefreshCw,
+  Calendar,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import AdminLayout from "./components/AdminLayout";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
 const AdminDashboard = () => {
-  const [dateFilter, setDateFilter] = useState('today');
+  const [dateFilter, setDateFilter] = useState("today");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
 
@@ -19,9 +35,12 @@ const AdminDashboard = () => {
     try {
       // Simple queries without complex date filtering to prevent loops
       const [ordersResult, usersResult, productsResult] = await Promise.all([
-        supabase.from('orders').select('*').order('created_at', { ascending: false }),
-        supabase.from('profiles').select('*'),
-        supabase.from('products').select('*').lt('stock_quantity', 10)
+        supabase
+          .from("orders")
+          .select("*")
+          .order("created_at", { ascending: false }),
+        supabase.from("profiles").select("*"),
+        supabase.from("products").select("*").lt("stock_quantity", 10),
       ]);
 
       const orders = ordersResult.data || [];
@@ -30,10 +49,22 @@ const AdminDashboard = () => {
 
       // Calculate simple metrics
       const totalOrders = orders.length;
-      const totalRevenue = orders.reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
+      const deliveredOrders = orders.filter(
+        (order) => order.status === "delivered"
+      );
+
+      const totalRevenue = deliveredOrders.reduce(
+        (sum, order) => sum + Number(order.total_amount || 0),
+        0
+      );
+
       const totalUsers = users.length;
-      const pendingOrders = orders.filter(order => order.status === 'pending').length;
-      const refundsProcessed = orders.filter(order => order.payment_status === 'refunded').length;
+      const pendingOrders = orders.filter(
+        (order) => order.status === "pending"
+      ).length;
+      const refundsProcessed = orders.filter(
+        (order) => order.payment_status === "refunded"
+      ).length;
 
       return {
         totalOrders,
@@ -42,10 +73,10 @@ const AdminDashboard = () => {
         pendingOrders,
         refundsProcessed,
         recentOrders: orders.slice(0, 5),
-        lowStockProducts: products.slice(0, 5)
+        lowStockProducts: products.slice(0, 5),
       };
     } catch (error) {
-      console.error('Dashboard fetch error:', error);
+      console.error("Dashboard fetch error:", error);
       return {
         totalOrders: 0,
         totalRevenue: 0,
@@ -53,59 +84,59 @@ const AdminDashboard = () => {
         pendingOrders: 0,
         refundsProcessed: 0,
         recentOrders: [],
-        lowStockProducts: []
+        lowStockProducts: [],
       };
     }
   }, []);
 
   // Query with real-time updates
   const { data: dashboardData, refetch } = useQuery({
-    queryKey: ['admin-dashboard-simple'],
+    queryKey: ["admin-dashboard-simple"],
     queryFn: fetchDashboardData,
     staleTime: 0, // Always consider data stale for immediate updates
     refetchOnWindowFocus: true,
     refetchOnMount: true,
-    refetchInterval: 5 * 1000 // Auto-refresh every 5 seconds for real-time feel
+    refetchInterval: 5 * 1000, // Auto-refresh every 5 seconds for real-time feel
   });
 
   const handleRefund = async (orderId: string) => {
     try {
       const { error } = await supabase
-        .from('orders')
-        .update({ payment_status: 'refunded' })
-        .eq('id', orderId);
-      
+        .from("orders")
+        .update({ payment_status: "refunded" })
+        .eq("id", orderId);
+
       if (error) throw error;
-      
+
       toast({
         title: "Refund processed",
-        description: `Order ${orderId} has been refunded.`
+        description: `Order ${orderId} has been refunded.`,
       });
       refetch();
     } catch (error: any) {
       toast({
         title: "Refund failed",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
 
   const handleRefresh = useCallback(async () => {
     if (isRefreshing) return;
-    
+
     setIsRefreshing(true);
     try {
       await refetch();
       toast({
         title: "Data refreshed",
-        description: "Dashboard data has been updated."
+        description: "Dashboard data has been updated.",
       });
     } catch (error) {
       toast({
         title: "Refresh failed",
         description: "Failed to refresh data.",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
     // Use timeout to prevent state update loops
@@ -120,7 +151,7 @@ const AdminDashboard = () => {
     pendingOrders: 0,
     refundsProcessed: 0,
     recentOrders: [],
-    lowStockProducts: []
+    lowStockProducts: [],
   };
 
   return (
@@ -143,9 +174,16 @@ const AdminDashboard = () => {
                 <SelectItem value="year">This Year</SelectItem>
               </SelectContent>
             </Select>
-            <Button onClick={handleRefresh} variant="outline" size="sm" disabled={isRefreshing}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-              {isRefreshing ? 'Refreshing...' : 'Refresh'}
+            <Button
+              onClick={handleRefresh}
+              variant="outline"
+              size="sm"
+              disabled={isRefreshing}
+            >
+              <RefreshCw
+                className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`}
+              />
+              {isRefreshing ? "Refreshing..." : "Refresh"}
             </Button>
           </div>
         </div>
@@ -153,7 +191,9 @@ const AdminDashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">Total Orders</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-500">
+                Total Orders
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex justify-between items-center">
@@ -165,25 +205,31 @@ const AdminDashboard = () => {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">Revenue</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-500">
+                Revenue
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex justify-between items-center">
                 <div>
-                  <div className="text-2xl font-bold">Rs {data.totalRevenue.toLocaleString()}</div>
+                  <div className="text-2xl font-bold">
+                    Rs {data.totalRevenue.toLocaleString()}
+                  </div>
                   <p className="text-xs text-green-600">+Rs 0 today</p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-green-600 opacity-80" />
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">Users</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-500">
+                Users
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex justify-between items-center">
@@ -195,10 +241,12 @@ const AdminDashboard = () => {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">Pending Orders</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-500">
+                Pending Orders
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex justify-between items-center">
@@ -220,40 +268,53 @@ const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {data.recentOrders.length > 0 ? data.recentOrders.map((order: any) => (
-                  <div key={order.id} className="flex justify-between items-center border-b pb-2">
-                    <div>
-                      <p className="font-medium">{order.order_number}</p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(order.created_at).toLocaleDateString()} • Rs {Number(order.total_amount || 0).toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        order.status === 'pending' ? 'bg-amber-100 text-amber-700' :
-                        order.status === 'delivered' ? 'bg-green-100 text-green-700' :
-                        'bg-blue-100 text-blue-700'
-                      }`}>
-                        {order.status || 'pending'}
-                      </span>
-                      {order.status === 'delivered' && order.payment_status !== 'refunded' && (
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => handleRefund(order.id)}
-                          className="text-xs"
+                {data.recentOrders.length > 0 ? (
+                  data.recentOrders.map((order: any) => (
+                    <div
+                      key={order.id}
+                      className="flex justify-between items-center border-b pb-2"
+                    >
+                      <div>
+                        <p className="font-medium">{order.order_number}</p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(order.created_at).toLocaleDateString()} • Rs{" "}
+                          {Number(order.total_amount || 0).toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs ${
+                            order.status === "pending"
+                              ? "bg-amber-100 text-amber-700"
+                              : order.status === "delivered"
+                              ? "bg-green-100 text-green-700"
+                              : "bg-blue-100 text-blue-700"
+                          }`}
                         >
-                          <RotateCcw className="h-3 w-3 mr-1" />
-                          Refund
-                        </Button>
-                      )}
+                          {order.status || "pending"}
+                        </span>
+                        {order.status === "delivered" &&
+                          order.payment_status !== "refunded" && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleRefund(order.id)}
+                              className="text-xs"
+                            >
+                              <RotateCcw className="h-3 w-3 mr-1" />
+                              Refund
+                            </Button>
+                          )}
+                      </div>
                     </div>
-                  </div>
-                )) : (
-                  <p className="text-gray-500 text-center py-4">No recent orders found</p>
+                  ))
+                ) : (
+                  <p className="text-gray-500 text-center py-4">
+                    No recent orders found
+                  </p>
                 )}
               </div>
-              
+
               <div className="mt-4">
                 <Link to="/admin/orders">
                   <button className="text-sm text-green-600 hover:text-green-700 font-medium">
@@ -263,7 +324,7 @@ const AdminDashboard = () => {
               </div>
             </CardContent>
           </Card>
-          
+
           {/* Inventory Alerts */}
           <Card className="col-span-1">
             <CardHeader>
@@ -271,28 +332,41 @@ const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {data.lowStockProducts.length > 0 ? data.lowStockProducts.map((product: any) => (
-                  <div key={product.id} className="flex justify-between items-center border-b pb-2">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 bg-gray-100 rounded-md mr-3 overflow-hidden">
-                        {product.image_url && (
-                          <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
-                        )}
+                {data.lowStockProducts.length > 0 ? (
+                  data.lowStockProducts.map((product: any) => (
+                    <div
+                      key={product.id}
+                      className="flex justify-between items-center border-b pb-2"
+                    >
+                      <div className="flex items-center">
+                        <div className="w-10 h-10 bg-gray-100 rounded-md mr-3 overflow-hidden">
+                          {product.image_url && (
+                            <img
+                              src={product.image_url}
+                              alt={product.name}
+                              className="w-full h-full object-cover"
+                            />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium">{product.name}</p>
+                          <p className="text-xs text-gray-500">
+                            ID: {product.id}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium">{product.name}</p>
-                        <p className="text-xs text-gray-500">ID: {product.id}</p>
-                      </div>
+                      <span className="text-red-600 font-medium">
+                        {product.stock_quantity || 0} left
+                      </span>
                     </div>
-                    <span className="text-red-600 font-medium">
-                      {product.stock_quantity || 0} left
-                    </span>
-                  </div>
-                )) : (
-                  <p className="text-gray-500 text-center py-4">No low stock items</p>
+                  ))
+                ) : (
+                  <p className="text-gray-500 text-center py-4">
+                    No low stock items
+                  </p>
                 )}
               </div>
-              
+
               <div className="mt-4">
                 <Link to="/admin/products">
                   <button className="text-sm text-green-600 hover:text-green-700 font-medium">
