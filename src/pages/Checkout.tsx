@@ -280,6 +280,18 @@ const Checkout = () => {
         throw orderError;
       }
 
+      if (order && appliedPromo) {
+        await supabase.from("promo_code_usage").insert([
+          {
+            user_id: user.id,
+            promo_code_id: appliedPromo.id,
+            order_id: order.id,
+            discount_amount: promoDiscount,
+            used_at: new Date().toISOString(),
+          },
+        ]);
+      }
+
       // Save order items
       const orderItems = cart.map((item) => ({
         order_id: order.id,
