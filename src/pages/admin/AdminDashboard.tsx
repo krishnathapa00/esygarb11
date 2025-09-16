@@ -30,16 +30,46 @@ const AdminDashboard = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
 
-  // Simple dashboard data fetcher
   const fetchDashboardData = useCallback(async () => {
     try {
-      // Simple queries without complex date filtering to prevent loops
+      const now = new Date();
+      let startDate;
+
+      switch (dateFilter) {
+        case "today":
+          startDate = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate()
+          );
+          break;
+        case "week":
+          const day = now.getDay();
+          startDate = new Date(now);
+          startDate.setDate(now.getDate() - day);
+          break;
+        case "month":
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          break;
+        case "year":
+          startDate = new Date(now.getFullYear(), 0, 1);
+          break;
+        default:
+          startDate = null;
+      }
+
+      const ordersQuery = supabase
+        .from("orders")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (startDate) {
+        ordersQuery.gte("created_at", startDate.toISOString());
+      }
+
       const [ordersResult, usersResult, productsResult] = await Promise.all([
-        supabase
-          .from("orders")
-          .select("*")
-          .order("created_at", { ascending: false }),
-        supabase.from("profiles").select("*"),
+        ordersQuery,
+        supabase.from("profiles").select("*").eq("role", "customer"),
         supabase.from("products").select("*").lt("stock_quantity", 10),
       ]);
 
@@ -47,12 +77,11 @@ const AdminDashboard = () => {
       const users = usersResult.data || [];
       const products = productsResult.data || [];
 
-      // Calculate simple metrics
       const totalOrders = orders.length;
+
       const deliveredOrders = orders.filter(
         (order) => order.status === "delivered"
       );
-
       const totalRevenue = deliveredOrders.reduce(
         (sum, order) => sum + Number(order.total_amount || 0),
         0
@@ -87,7 +116,7 @@ const AdminDashboard = () => {
         lowStockProducts: [],
       };
     }
-  }, []);
+  }, [dateFilter]);
 
   // Query with real-time updates
   const { data: dashboardData, refetch } = useQuery({
