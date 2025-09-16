@@ -6,7 +6,8 @@ import { useAuthContext } from "@/contexts/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 import OTPVerificationModal from "@/components/OTPVerificationModal";
 import { Input } from "@/components/ui/input";
-import { fetchUserProfile } from "@/services/profileService";
+import { ProfileFormValues, fetchUserProfile } from "@/services/profileService";
+import { supabase } from "@/integrations/supabase/client";
 import EsyLogo from "@/assets/logo/Esy.jpg";
 
 const AuthHybrid = () => {
@@ -113,7 +114,35 @@ const AuthHybrid = () => {
 
         setIsOtpModalOpen(false);
 
-        const profile = await fetchUserProfile();
+        let profile: ProfileFormValues | null = null;
+
+        try {
+          profile = await fetchUserProfile();
+        } catch (err) {
+          // Profile not found, create one
+          const { error: insertError } = await supabase
+            .from("profiles")
+            .insert({
+              id: user.id,
+              email: user.email,
+              full_name: "",
+              phone: "",
+              address: "",
+              avatar_url: "",
+            });
+
+          if (insertError) {
+            toast({
+              title: "Profile Creation Failed",
+              description: insertError.message,
+              variant: "destructive",
+            });
+            return;
+          }
+
+          // Re-fetch
+          profile = await fetchUserProfile();
+        }
 
         if (
           !profile.full_name?.trim() ||
