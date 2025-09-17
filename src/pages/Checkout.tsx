@@ -136,6 +136,11 @@ const Checkout = () => {
           return;
         }
 
+        if (!data?.location) {
+          navigate("/map-location");
+          return;
+        }
+
         if (data?.address) setDeliveryAddress(data.address);
 
         if (data?.location) {
