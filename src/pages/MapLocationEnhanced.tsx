@@ -306,30 +306,33 @@ const MapLocationEnhanced = () => {
 
     if (!isWithinRange) return;
 
+    const coords = {
+      lat: Number(markerPosition?.lat ?? MAP_CENTER.lat),
+      lng: Number(markerPosition?.lng ?? MAP_CENTER.lng),
+    };
+
+    // Save locally
     localStorage.setItem(
       "esygrab_user_location",
-      JSON.stringify({ address: selectedLocation, coordinates: markerPosition })
+      JSON.stringify({ address: selectedLocation, coordinates: coords })
     );
 
+    // Save to Supabase profile with JSON location
     if (user) {
-      try {
-        const { error } = await supabase.from("profiles").upsert({
-          id: user.id,
-          address: selectedLocation,
-          updated_at: new Date().toISOString(),
-        });
+      const { error } = await supabase.from("profiles").upsert({
+        id: user.id,
+        address: selectedLocation,
+        location: JSON.stringify(coords),
+        updated_at: new Date().toISOString(),
+      });
 
-        if (error) {
-          console.error("Error saving to Supabase:", error);
-          toast({
-            title: "Error",
-            description: "Could not update your address. Please try again.",
-            variant: "destructive",
-          });
-          return;
-        }
-      } catch (err) {
-        console.error("Supabase update failed:", err);
+      if (error) {
+        console.error("Error saving location to Supabase:", error);
+        toast({
+          title: "Error",
+          description: "Could not update location on server.",
+          variant: "destructive",
+        });
       }
     }
 
