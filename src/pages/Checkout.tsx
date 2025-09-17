@@ -106,22 +106,66 @@ const Checkout = () => {
   useEffect(() => {
     if (!user) return;
 
-    const storedUserId = localStorage.getItem("esygrab_user_id");
+    const loadUserLocation = async () => {
+      try {
+        const stored = localStorage.getItem("esygrab_user_location");
+        if (stored) {
+          const storedLocation = JSON.parse(stored);
+          if (storedLocation.address)
+            setDeliveryAddress(storedLocation.address);
+          if (
+            storedLocation.coordinates?.lat &&
+            storedLocation.coordinates?.lng
+          ) {
+            setDeliveryCoords({
+              lat: Number(storedLocation.coordinates.lat),
+              lng: Number(storedLocation.coordinates.lng),
+            });
+            return;
+          }
+        }
 
-    if (storedUserId !== user.id) {
-      localStorage.removeItem("esygrab_user_location");
-      localStorage.setItem("esygrab_user_id", user.id);
-    }
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("address, location")
+          .eq("id", user.id)
+          .single();
 
-    const stored = localStorage.getItem("esygrab_user_location");
-    if (stored) {
-      const storedLocation = JSON.parse(stored);
-      setDeliveryAddress(storedLocation.address || "");
-      setDeliveryCoords({
-        lat: storedLocation.coordinates?.lat,
-        lng: storedLocation.coordinates?.lng,
-      });
-    }
+        if (error) {
+          console.error("Failed to load profile location:", error);
+          return;
+        }
+
+        if (data?.address) setDeliveryAddress(data.address);
+
+        if (data?.location) {
+          const location =
+            typeof data.location === "string"
+              ? JSON.parse(data.location)
+              : data.location;
+
+          if (location?.lat && location?.lng) {
+            setDeliveryCoords({
+              lat: Number(location.lat),
+              lng: Number(location.lng),
+            });
+
+            // ✅ update localStorage for faster next login
+            localStorage.setItem(
+              "esygrab_user_location",
+              JSON.stringify({
+                address: data.address,
+                coordinates: { lat: location.lat, lng: location.lng },
+              })
+            );
+          }
+        }
+      } catch (err) {
+        console.error("Unexpected error loading user location:", err);
+      }
+    };
+
+    loadUserLocation();
   }, [user]);
 
   function pointInPolygon(lat, lng, polygon) {
