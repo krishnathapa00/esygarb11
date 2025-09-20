@@ -7,6 +7,12 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { showToast } from "@/components/Toast";
 
+declare global {
+  interface Window {
+    fbq?: (...args: any[]) => void;
+  }
+}
+
 const OrderConfirmation = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -47,6 +53,22 @@ const OrderConfirmation = () => {
     // Clear interval when component unmounts
     return () => clearInterval(interval);
   }, [orderData, navigate, isCancelled]);
+
+  useEffect(() => {
+    if (!orderData || isCancelled) return;
+
+    if (typeof window !== "undefined" && typeof window.fbq === "function") {
+      window.fbq("track", "Purchase", {
+        value: orderData.totalAmount || 0,
+        currency: "NPR",
+        content_ids: [orderData.orderId],
+        content_type: "product",
+      });
+      console.log("Meta Pixel Purchase Event Fired", orderData);
+    } else {
+      console.warn("Meta Pixel fbq is not available yet");
+    }
+  }, [orderData, isCancelled]);
 
   const handleCancelOrder = async () => {
     if (confirm("Are you sure you want to cancel this order?")) {
