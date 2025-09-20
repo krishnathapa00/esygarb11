@@ -4,12 +4,9 @@ import {
   ShoppingBag,
   Users,
   TrendingUp,
-  Package,
-  UserCheck,
-  Clock,
   RotateCcw,
   RefreshCw,
-  Calendar,
+  Clock,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,15 +22,28 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
+interface DashboardData {
+  totalOrders: number;
+  totalRevenue: number;
+  totalUsers: number;
+  pendingOrders: number;
+  refundsProcessed: number;
+  recentOrders: any[];
+  lowStockProducts: any[];
+  todayOrdersCount: number;
+  todayRevenue: number;
+}
+
 const AdminDashboard = () => {
   const [dateFilter, setDateFilter] = useState("today");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
 
-  const fetchDashboardData = useCallback(async () => {
+  const fetchDashboardData = useCallback(async (): Promise<DashboardData> => {
     try {
       const now = new Date();
       let startDate;
+      let endDate;
 
       switch (dateFilter) {
         case "today":
@@ -42,20 +52,25 @@ const AdminDashboard = () => {
             now.getMonth(),
             now.getDate()
           );
+          endDate = new Date(now);
           break;
         case "week":
           const day = now.getDay();
           startDate = new Date(now);
           startDate.setDate(now.getDate() - day);
+          endDate = new Date(now);
           break;
         case "month":
           startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          endDate = new Date(now);
           break;
         case "year":
           startDate = new Date(now.getFullYear(), 0, 1);
+          endDate = new Date(now);
           break;
         default:
           startDate = null;
+          endDate = null;
       }
 
       const ordersQuery = supabase
@@ -65,6 +80,9 @@ const AdminDashboard = () => {
 
       if (startDate) {
         ordersQuery.gte("created_at", startDate.toISOString());
+      }
+      if (endDate) {
+        ordersQuery.lte("created_at", endDate.toISOString());
       }
 
       const [ordersResult, usersResult, productsResult] = await Promise.all([
@@ -82,10 +100,26 @@ const AdminDashboard = () => {
       const deliveredOrders = orders.filter(
         (order) => order.status === "delivered"
       );
+
       const totalRevenue = deliveredOrders.reduce(
         (sum, order) => sum + Number(order.total_amount || 0),
         0
       );
+
+      const todayOrders = orders.filter((order) => {
+        const orderDate = new Date(order.created_at);
+        return (
+          orderDate.getDate() === now.getDate() &&
+          orderDate.getMonth() === now.getMonth() &&
+          orderDate.getFullYear() === now.getFullYear()
+        );
+      });
+
+      const todayOrdersCount = todayOrders.length;
+
+      const todayRevenue = todayOrders
+        .filter((order) => order.status === "delivered")
+        .reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
 
       const totalUsers = users.length;
       const pendingOrders = orders.filter(
@@ -103,6 +137,8 @@ const AdminDashboard = () => {
         refundsProcessed,
         recentOrders: orders.slice(0, 5),
         lowStockProducts: products.slice(0, 5),
+        todayOrdersCount,
+        todayRevenue,
       };
     } catch (error) {
       console.error("Dashboard fetch error:", error);
@@ -114,6 +150,8 @@ const AdminDashboard = () => {
         refundsProcessed: 0,
         recentOrders: [],
         lowStockProducts: [],
+        todayOrdersCount: 0,
+        todayRevenue: 0,
       };
     }
   }, [dateFilter]);
@@ -122,10 +160,10 @@ const AdminDashboard = () => {
   const { data: dashboardData, refetch } = useQuery({
     queryKey: ["admin-dashboard-simple"],
     queryFn: fetchDashboardData,
-    staleTime: 0, // Always consider data stale for immediate updates
+    staleTime: 0,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
-    refetchInterval: 5 * 1000, // Auto-refresh every 5 seconds for real-time feel
+    refetchInterval: 5 * 1000,
   });
 
   const handleRefund = async (orderId: string) => {
@@ -181,6 +219,8 @@ const AdminDashboard = () => {
     refundsProcessed: 0,
     recentOrders: [],
     lowStockProducts: [],
+    todayOrdersCount: 0,
+    todayRevenue: 0,
   };
 
   return (
@@ -228,7 +268,9 @@ const AdminDashboard = () => {
               <div className="flex justify-between items-center">
                 <div>
                   <div className="text-2xl font-bold">{data.totalOrders}</div>
-                  <p className="text-xs text-green-600">+0 today</p>
+                  <p className="text-xs text-green-600">
+                    +{data.todayOrdersCount} today
+                  </p>
                 </div>
                 <ShoppingBag className="h-8 w-8 text-green-600 opacity-80" />
               </div>
@@ -247,7 +289,9 @@ const AdminDashboard = () => {
                   <div className="text-2xl font-bold">
                     Rs {data.totalRevenue.toLocaleString()}
                   </div>
-                  <p className="text-xs text-green-600">+Rs 0 today</p>
+                  <p className="text-xs text-green-600">
+                    +Rs {data.todayRevenue.toLocaleString()} today
+                  </p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-green-600 opacity-80" />
               </div>
