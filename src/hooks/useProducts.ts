@@ -9,6 +9,7 @@ export interface Product {
   originalPrice?: number;
   discount?: number;
   image: string;
+  image_urls?: string[];
   weight: string;
   rating: number;
   reviews: number;
@@ -39,7 +40,8 @@ export const useProducts = () => {
           subcategories:subcategory_id (
             id,
             name
-          )
+          ),
+          image_urls
         `
         )
         .eq("is_active", true);
@@ -56,6 +58,7 @@ export const useProducts = () => {
         image:
           product.image_url ||
           "https://via.placeholder.com/300x300?text=No+Image",
+        image_urls: product.image_urls || [],
         weight: product.weight || "1 unit",
         deliveryTime: product.delivery_time || "10 mins",
         category: product.categories?.name || "Unknown",
