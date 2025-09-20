@@ -509,6 +509,7 @@ export type Database = {
           discount: number | null;
           id: number;
           image_url: string | null;
+          image_urls: string[] | null;
           is_active: boolean | null;
           name: string;
           offer: string | null;
@@ -527,6 +528,7 @@ export type Database = {
           discount?: number | null;
           id?: number;
           image_url?: string | null;
+          image_urls?: string[] | null;
           is_active?: boolean | null;
           name: string;
           offer?: string | null;
@@ -545,6 +547,7 @@ export type Database = {
           discount?: number | null;
           id?: number;
           image_url?: string | null;
+          image_urls?: string[] | null;
           is_active?: boolean | null;
           name?: string;
           offer?: string | null;
