@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import PaginationControls from "@/components/PaginationControls";
+import MultipleImageUpload from "@/components/MultipleImageUpload";
 
 type ProductRow = {
   id: number;
@@ -21,6 +22,7 @@ type ProductRow = {
   discount: number | null;
   offer: string | null;
   image_url: string | null;
+  image_urls?: string[] | null;
   stock_quantity: number | null;
   weight: string | null;
   delivery_time: string | null;
@@ -51,6 +53,7 @@ const ManageProducts = () => {
     discount: "",
     offer: "",
     image_url: "",
+    image_urls: [],
     stock_quantity: "",
     weight: "",
     delivery_time: "",
@@ -95,7 +98,7 @@ const ManageProducts = () => {
         .from("products")
         .select(
           `
-          id, name, price, original_price, category_id, subcategory_id, discount, offer, image_url, stock_quantity, weight, delivery_time, description, is_active,
+          id, name, price, original_price, category_id, subcategory_id, discount, offer, image_url, image_urls, stock_quantity, weight, delivery_time, description, is_active,
           categories:category_id ( name )
         `
         )
@@ -155,6 +158,7 @@ const ManageProducts = () => {
       discount: "",
       offer: "",
       image_url: "",
+      image_urls: [],
       stock_quantity: "",
       weight: "",
       delivery_time: "",
@@ -192,6 +196,7 @@ const ManageProducts = () => {
         : null,
       discount: productData.discount ? Number(productData.discount) : null,
       image_url: productData.image_url,
+      image_urls: productData.image_urls,
       stock_quantity: productData.stock_quantity
         ? Number(productData.stock_quantity)
         : null,
@@ -250,6 +255,7 @@ const ManageProducts = () => {
       discount: product.discount?.toString() || "",
       offer: product.offer || "",
       image_url: product.image_url || "",
+      image_urls: product.image_urls || [],
       stock_quantity: product.stock_quantity?.toString() || "",
       weight: product.weight || "",
       delivery_time: product.delivery_time || "",
@@ -726,6 +732,23 @@ const ManageProducts = () => {
                           }
                           currentImage={productData.image_url}
                           folder="products"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Additional Images (up to 3)
+                        </label>
+                        <MultipleImageUpload
+                          onImagesUpload={(urls) =>
+                            setProductData((prev) => ({
+                              ...prev,
+                              image_urls: urls,
+                            }))
+                          }
+                          currentImages={productData.image_urls}
+                          maxImages={3}
+                          folder="products/additional"
                         />
                       </div>
 
