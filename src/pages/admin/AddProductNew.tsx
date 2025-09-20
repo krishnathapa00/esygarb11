@@ -20,6 +20,7 @@ import MultipleImageUpload from "@/components/MultipleImageUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
+import SingleImageUpload from "@/components/SingleImageUpload";
 
 interface Category {
   id: number;
@@ -35,8 +36,10 @@ interface SubCategory {
 const AddProductNew = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [mainImageIndex, setMainImageIndex] = useState(0);
+  const [mainImage, setMainImage] = useState<string | null>(null);
+  const [additionalImages, setAdditionalImages] = useState<string[]>([]);
+  const selectedImages = [mainImage, ...additionalImages].filter(Boolean);
 
   const [productData, setProductData] = useState({
     name: "",
@@ -93,16 +96,29 @@ const AddProductNew = () => {
     }));
   };
 
-  const handleImageUpload = (urls: string[]) => {
-    setSelectedImages(urls);
-    if (urls.length > 0 && mainImageIndex >= urls.length) {
-      setMainImageIndex(0);
+  const handleMainImageUpload = (url: string) => {
+    setMainImage(url);
+  };
+
+  const handleAdditionalImagesUpload = (urls: string[]) => {
+    if (urls.length > 3) {
+      toast({
+        title: "Image Limit Exceeded",
+        description: "You can upload up to 3 additional images.",
+      });
+      return;
     }
+    setAdditionalImages(urls);
+  };
+
+  const handleImageDelete = (index: number) => {
+    setAdditionalImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSaveProduct = async (isDraft: boolean = false) => {
     setLoading(true);
     try {
+      const selectedImages = [mainImage, ...additionalImages].filter(Boolean);
       if (!productData.name || !productData.price || !productData.category_id) {
         throw new Error(
           "Please fill in all required fields (Name, Price, Category)"
@@ -175,7 +191,8 @@ const AddProductNew = () => {
       delivery_time: "10 mins",
       status: true,
     });
-    setSelectedImages([]);
+    setMainImage(null);
+    setAdditionalImages([]);
     setMainImageIndex(0);
   };
 
@@ -479,46 +496,71 @@ const AddProductNew = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <MultipleImageUpload
-                  onImagesUpload={handleImageUpload}
-                  currentImages={selectedImages}
-                  maxImages={5}
+                <SingleImageUpload
+                  onImageUpload={handleMainImageUpload}
+                  currentImage={mainImage}
                   folder="products"
                 />
-                {selectedImages.length > 0 && (
+                {mainImage && (
                   <div className="mt-4">
                     <Label className="text-sm font-medium mb-2 block">
-                      Select Main Image
+                      Main Image Preview
                     </Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {selectedImages.map((url, index) => (
-                        <div
-                          key={index}
-                          className={`relative cursor-pointer border-2 rounded-lg overflow-hidden transition-all ${
-                            mainImageIndex === index
-                              ? "border-primary ring-2 ring-primary/20"
-                              : "border-border hover:border-primary/50"
-                          }`}
-                          onClick={() => setMainImageIndex(index)}
-                        >
-                          <img
-                            src={url}
-                            alt={`Product ${index + 1}`}
-                            className="w-full h-20 object-cover"
-                          />
-                          {mainImageIndex === index && (
-                            <div className="absolute top-1 right-1">
-                              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                            </div>
-                          )}
-                          <div className="absolute bottom-1 left-1">
-                            <Badge variant="secondary" className="text-xs">
-                              {index + 1}
-                            </Badge>
-                          </div>
-                        </div>
-                      ))}
+                    <div className="relative cursor-pointer border-2 rounded-lg overflow-hidden">
+                      <img
+                        src={mainImage}
+                        alt="Main Product"
+                        className="w-full h-20 object-cover"
+                      />
+                      <div className="absolute top-1 right-1">
+                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      </div>
                     </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Additional Images Upload */}
+            <Card className="border-l-4 border-l-purple-500">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Upload className="h-5 w-5 text-purple-500" />
+                  Additional Product Images (up to 3)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <MultipleImageUpload
+                  onImagesUpload={handleAdditionalImagesUpload}
+                  currentImages={additionalImages}
+                  maxImages={3} // Only allow 3 additional images
+                  folder="products"
+                />
+                {additionalImages.length > 0 && (
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    {additionalImages.map((url, index) => (
+                      <div
+                        key={index}
+                        className="relative border-2 rounded-lg overflow-hidden"
+                      >
+                        <img
+                          src={url}
+                          alt={`Additional Image ${index + 1}`}
+                          className="w-full h-20 object-cover"
+                        />
+                        <div className="absolute bottom-1 left-1">
+                          <Badge variant="secondary" className="text-xs">
+                            {index + 1}
+                          </Badge>
+                        </div>
+                        <div
+                          className="absolute top-1 right-1 cursor-pointer bg-gray-700 text-white rounded-full p-1"
+                          onClick={() => handleImageDelete(index)}
+                        >
+                          X
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </CardContent>
