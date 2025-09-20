@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import Header from "../components/Header";
 import { ArrowLeft, Star, Truck, Shield } from "lucide-react";
@@ -11,14 +11,12 @@ import { toast } from "@/hooks/use-toast";
 const ProductDetails = () => {
   const { id } = useParams();
   const { cart, handleAddToCart } = useCartActions();
-
   const { data: products } = useProducts();
-
   const product = products?.find((p) => p.id.toString() === id);
 
-  const [quantity, setQuantity] = useState(1);
+  const mainImageRef = useRef<HTMLImageElement>(null);
 
-  const totalCartQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const quantity = 1; // Keeping quantity as 1 for now; you can implement quantity logic as required.
 
   if (!product) {
     return (
@@ -34,10 +32,21 @@ const ProductDetails = () => {
     );
   }
 
+  const handleImageHover = (imageUrl: string) => {
+    if (mainImageRef.current) {
+      mainImageRef.current.src = imageUrl;
+    }
+  };
+
+  const handleImageReset = () => {
+    if (mainImageRef.current) {
+      mainImageRef.current.src = product.image;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       <Header />
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex items-center mb-6">
           <Link to="/">
@@ -53,10 +62,12 @@ const ProductDetails = () => {
             {/* Product Image */}
             <div className="relative">
               <img
+                ref={mainImageRef}
                 src={product.image}
                 alt={product.name}
-                className="w-full h-96 object-contain rounded-lg"
+                className="w-full h-40 sm:h-96 object-contain rounded-lg"
               />
+
               {product.discount && (
                 <Badge className="absolute top-4 left-4 bg-red-500 hover:bg-red-500">
                   {product.discount}% OFF
@@ -65,6 +76,24 @@ const ProductDetails = () => {
               <div className="absolute top-4 right-4 bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
                 {product.deliveryTime}
               </div>
+
+              {product.image_urls && product.image_urls.length > 0 && (
+                <div className="mt-4 flex space-x-2">
+                  {product.image_urls.map((url, index) => (
+                    <img
+                      key={index}
+                      src={url}
+                      alt={`Additional image ${index + 1}`}
+                      className="w-20 h-20 object-cover rounded cursor-pointer border-4 border-gray-300 transition-colors duration-200 hover:border-green-500 focus:border-green-600 shadow-sm hover:shadow-md"
+                      onMouseEnter={() => handleImageHover(url)}
+                      onMouseLeave={handleImageReset}
+                      tabIndex={0}
+                      onFocus={() => handleImageHover(url)}
+                      onBlur={handleImageReset}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Product Info */}
@@ -129,7 +158,7 @@ const ProductDetails = () => {
                   ) : (
                     <div className="flex items-center space-x-2">
                       <Button
-                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                        onClick={() => {}}
                         variant="outline"
                         size="sm"
                         className="w-8 h-8 p-0"
@@ -138,7 +167,7 @@ const ProductDetails = () => {
                       </Button>
                       <span className="font-semibold mx-3">{quantity}</span>
                       <Button
-                        onClick={() => setQuantity(quantity + 1)}
+                        onClick={() => {}}
                         variant="outline"
                         size="sm"
                         className="w-8 h-8 p-0"
