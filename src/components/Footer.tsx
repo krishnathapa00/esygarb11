@@ -1,8 +1,6 @@
-import React from "react";
 import { Link } from "react-router-dom";
 import { Phone, Mail, MapPin, Clock } from "lucide-react";
 import { useCategories } from "@/hooks/useCategories";
-import EsyLogo from "@/assets/logo/Esy.jpg";
 
 const Footer = () => {
   const { data: categories = [] } = useCategories();
@@ -14,14 +12,9 @@ const Footer = () => {
           {/* Left - Company Info */}
           <div className="text-left">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
-                <img
-                  src={EsyLogo}
-                  alt="EsyGrab Logo"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <h3 className="text-xl font-bold">EsyGrab</h3>
+              <h1 className="text-xl font-bold font-poppins bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                EsyGrab
+              </h1>
             </div>
             <p className="text-gray-300 text-sm leading-relaxed mt-4">
               Nepal's leading quick commerce company delivering fresh groceries
@@ -98,10 +91,6 @@ const Footer = () => {
                     <Clock className="h-4 w-4 text-green-400 mt-1" />
                     <span>24/7 Customer Support</span>
                   </div>
-                  <div className="flex items-start space-x-2 text-sm text-gray-300 mt-2">
-                    <Phone className="h-4 w-4 text-green-400 mt-1" />
-                    <span>WhatsApp: +9779865053325</span>{" "}
-                  </div>
                 </div>
               </div>
             </div>
@@ -152,7 +141,7 @@ const Footer = () => {
               >
                 <img
                   src="/images/Linkedin.png"
-                  alt="TikTok"
+                  alt="LinkedIn"
                   className="h-7 w-7 rounded-full"
                 />
               </a>
@@ -166,6 +155,19 @@ const Footer = () => {
                 <img
                   src="/images/Tiktok.png"
                   alt="TikTok"
+                  className="h-7 w-7 rounded-full"
+                />
+              </a>
+              <a
+                href="https://wa.me/9779865053325"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-green-400 transition-colors"
+                aria-label="Whatsapp"
+              >
+                <img
+                  src="/images/Whatsapp.png"
+                  alt="Whatsapp"
                   className="h-7 w-7 rounded-full"
                 />
               </a>
