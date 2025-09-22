@@ -98,6 +98,10 @@ const Footer = () => {
                     <Clock className="h-4 w-4 text-green-400 mt-1" />
                     <span>24/7 Customer Support</span>
                   </div>
+                  <div className="flex items-start space-x-2 text-sm text-gray-300 mt-2">
+                    <Phone className="h-4 w-4 text-green-400 mt-1" />
+                    <span>WhatsApp: +9779865053325</span>{" "}
+                  </div>
                 </div>
               </div>
             </div>
