@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { showToast } from "@/components/Toast";
+import WhatsappBanner from "@/components/WhatsappBanner";
 
 declare global {
   interface Window {
@@ -25,6 +26,10 @@ const OrderConfirmation = () => {
   const [canCancel, setCanCancel] = useState(false);
   const [timeLeft, setTimeLeft] = useState(120);
   const [isCancelled, setIsCancelled] = useState(false);
+
+  useEffect(() => {
+    localStorage.removeItem("hideWhatsappBanner");
+  }, [orderData?.orderId]);
 
   useEffect(() => {
     if (isCancelled) return;
@@ -224,6 +229,7 @@ const OrderConfirmation = () => {
           </div>
         )}
       </div>
+      <WhatsappBanner />
     </div>
   );
 };
