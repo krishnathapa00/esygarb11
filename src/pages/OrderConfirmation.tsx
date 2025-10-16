@@ -7,6 +7,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { showToast } from "@/components/Toast";
 import WhatsappBanner from "@/components/WhatsappBanner";
+import { handleInvoiceGeneration } from "@/services/generateInvoicePDF";
 
 declare global {
   interface Window {
@@ -69,10 +70,32 @@ const OrderConfirmation = () => {
         content_ids: [orderData.orderId],
         content_type: "product",
       });
-      console.log("Meta Pixel Purchase Event Fired", orderData);
     } else {
       console.warn("Meta Pixel fbq is not available yet");
     }
+  }, [orderData, isCancelled]);
+
+  useEffect(() => {
+    if (!orderData) {
+      console.warn("No order data available, skipping invoice generation");
+      return;
+    }
+
+    if (isCancelled) {
+      console.log("Order is cancelled");
+      return;
+    }
+
+    const generateInvoice = async () => {
+      try {
+        const url = await handleInvoiceGeneration(orderData);
+        sessionStorage.setItem("invoice_generated", "true");
+      } catch (err) {
+        console.error("Invoice generation failed:", err);
+      }
+    };
+
+    generateInvoice();
   }, [orderData, isCancelled]);
 
   const handleCancelOrder = async () => {
