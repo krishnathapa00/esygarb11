@@ -396,6 +396,7 @@ export type Database = {
           total_amount: number;
           updated_at: string | null;
           user_id: string | null;
+          invoice_url?: string | null;
         };
         Insert: {
           accepted_at?: string | null;
@@ -417,6 +418,7 @@ export type Database = {
           total_amount: number;
           updated_at?: string | null;
           user_id?: string | null;
+          invoice_url?: string | null;
         };
         Update: {
           accepted_at?: string | null;
@@ -438,6 +440,7 @@ export type Database = {
           total_amount?: number;
           updated_at?: string | null;
           user_id?: string | null;
+          invoice_url?: string | null;
         };
         Relationships: [
           {
