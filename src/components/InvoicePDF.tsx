@@ -186,3 +186,4 @@ export const InvoicePDF = ({ orderData }: { orderData: any }) => {
     </Document>
   );
 };
+
