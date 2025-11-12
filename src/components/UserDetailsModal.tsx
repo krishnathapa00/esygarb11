@@ -1,5 +1,3 @@
-// components/modals/UserDetailsModal.tsx
-
 import React from "react";
 import {
   Dialog,
@@ -114,3 +112,4 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
 };
 
 export default UserDetailsModal;
+
