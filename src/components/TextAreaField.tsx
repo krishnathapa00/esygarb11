@@ -9,6 +9,7 @@ interface TextAreaFieldProps {
   error?: any;
   rows?: number;
   required?: boolean;
+  inputProps?: React.TextareaHTMLAttributes<HTMLTextAreaElement>;
 }
 
 const TextAreaField: React.FC<TextAreaFieldProps> = ({
@@ -18,6 +19,7 @@ const TextAreaField: React.FC<TextAreaFieldProps> = ({
   required,
   error,
   rows = 3,
+  inputProps,
 }) => (
   <div>
     <label htmlFor={name} className="block text-sm font-medium mb-1">
@@ -27,6 +29,7 @@ const TextAreaField: React.FC<TextAreaFieldProps> = ({
       id={name}
       rows={rows}
       {...register(name, { required })}
+      {...inputProps}
       className={`w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 ${
         error ? "border-red-500 focus:ring-red-500" : "focus:ring-green-500"
       }`}
