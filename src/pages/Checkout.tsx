@@ -155,7 +155,7 @@ const Checkout = () => {
               lng: Number(location.lng),
             });
 
-            // ✅ update localStorage for faster next login
+            // update localStorage for faster next login
             localStorage.setItem(
               "esygrab_user_location",
               JSON.stringify({
@@ -358,11 +358,16 @@ const Checkout = () => {
       }
 
       const orderDetails = {
+        userId: user.id,
+        userEmail: user.email,
+        customerName: profile?.full_name || "Valued Customer",
         orderId: orderNumber,
         items: cart,
         totalItems,
         totalAmount,
         deliveryAddress,
+        deliveryFee,
+        discount,
         estimatedDelivery: "10 mins",
         paymentMethod:
           paymentOptions.find((p) => p.id === selectedPayment)?.label || "",
