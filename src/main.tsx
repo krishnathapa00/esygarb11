@@ -4,7 +4,7 @@ import "./index.css";
 import React from "react";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
+  //<React.StrictMode>    // enable strictmode when spotting bugs with side effects
     <App />
-  </React.StrictMode>
+  //</React.StrictMode>
 );
