@@ -271,6 +271,17 @@ const UserProfile: React.FC = () => {
                       name="full_name"
                       register={register}
                       required
+                      inputProps={{
+                        onInput: (e: React.ChangeEvent<HTMLInputElement>) => {
+                          const start = e.target.selectionStart;
+                          const end = e.target.selectionEnd;
+                          const value = e.target.value
+                            .toLowerCase()
+                            .replace(/\b\w/g, (char) => char.toUpperCase());
+                          e.target.value = value;
+                          e.target.setSelectionRange(start, end);
+                        },
+                      }}
                     />
                     <InputField
                       label="Phone Number"
@@ -296,6 +307,16 @@ const UserProfile: React.FC = () => {
                       register={register}
                       rows={3}
                       required
+                      inputProps={{
+                        onInput: (
+                          e: React.ChangeEvent<HTMLTextAreaElement>
+                        ) => {
+                          const value = e.target.value
+                            .toLowerCase()
+                            .replace(/\b\w/g, (char) => char.toUpperCase());
+                          e.target.value = value;
+                        },
+                      }}
                     />
                     <div className="flex gap-4">
                       <Button
