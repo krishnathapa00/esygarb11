@@ -42,7 +42,14 @@ const AddressInput: React.FC<AddressInputProps> = ({ value, setValue }) => {
     return <input placeholder="Loading..." value={value} readOnly />;
 
   return (
-    <Autocomplete onLoad={onLoad} onPlaceChanged={onPlaceChanged}>
+    <Autocomplete
+      onLoad={onLoad}
+      onPlaceChanged={onPlaceChanged}
+      options={{
+        types: ["address"],
+        componentRestrictions: { country: "np" },
+      }}
+    >
       <input
         type="text"
         placeholder="Select your address"
