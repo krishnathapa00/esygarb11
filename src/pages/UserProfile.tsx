@@ -212,6 +212,9 @@ const UserProfile: React.FC = () => {
                         Change Photo
                       </span>
                     </div>
+                    <div className="absolute bottom-0 right-0 bg-green-500 border-2 border-white w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center text-white text-lg font-bold shadow-lg">
+                      +
+                    </div>
                   </label>
                 </div>
                 <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
