@@ -46,13 +46,12 @@ const AddressInput: React.FC<AddressInputProps> = ({ value, setValue }) => {
       onLoad={onLoad}
       onPlaceChanged={onPlaceChanged}
       options={{
-        types: ["address"],
         componentRestrictions: { country: "np" },
       }}
     >
       <input
         type="text"
-        placeholder="Select your address"
+        placeholder="Try to enter full address like New Baneshwor..."
         value={inputValue}
         onChange={handleInputChange}
         readOnly={selected}
