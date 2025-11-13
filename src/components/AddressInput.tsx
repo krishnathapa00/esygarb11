@@ -1,8 +1,5 @@
-import {
-  useLoadScript,
-  Autocomplete as GoogleAutocomplete,
-} from "@react-google-maps/api";
-import { useRef } from "react";
+import { useLoadScript, Autocomplete } from "@react-google-maps/api";
+import { useState, useRef } from "react";
 
 interface AddressInputProps {
   value: string;
@@ -16,16 +13,28 @@ const AddressInput: React.FC<AddressInputProps> = ({ value, setValue }) => {
   });
 
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const [selected, setSelected] = useState(false);
+  const [inputValue, setInputValue] = useState(value);
 
   const onLoad = (autocomplete: google.maps.places.Autocomplete) => {
     autocompleteRef.current = autocomplete;
   };
 
   const onPlaceChanged = () => {
-    if (!autocompleteRef.current) return;
-    const place = autocompleteRef.current.getPlace();
-    if (place.formatted_address) {
-      setValue(place.formatted_address);
+    if (autocompleteRef.current) {
+      const place = autocompleteRef.current.getPlace();
+      if (place.formatted_address) {
+        setInputValue(place.formatted_address);
+        setValue(place.formatted_address);
+        setSelected(true); // lock input
+      }
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // prevent manual editing after selection
+    if (!selected) {
+      setInputValue(e.target.value);
     }
   };
 
@@ -33,15 +42,18 @@ const AddressInput: React.FC<AddressInputProps> = ({ value, setValue }) => {
     return <input placeholder="Loading..." value={value} readOnly />;
 
   return (
-    <GoogleAutocomplete onLoad={onLoad} onPlaceChanged={onPlaceChanged}>
+    <Autocomplete onLoad={onLoad} onPlaceChanged={onPlaceChanged}>
       <input
         type="text"
-        placeholder="Enter your address"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        className="w-full border rounded px-3 py-2"
+        placeholder="Select your address"
+        value={inputValue}
+        onChange={handleInputChange}
+        readOnly={selected}
+        className={`w-full border rounded px-3 py-2 ${
+          selected ? "bg-gray-100 cursor-not-allowed" : ""
+        }`}
       />
-    </GoogleAutocomplete>
+    </Autocomplete>
   );
 };
 
