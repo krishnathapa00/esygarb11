@@ -69,11 +69,11 @@ const UserProfile: React.FC = () => {
     const fileName = `${Date.now()}_${Math.random()
       .toString(36)
       .substring(2)}.${fileExt}`;
-    const filePath = `avatars/${fileName}`;
+    const filePath = `${user.id}/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from("user-avatars")
-      .upload(filePath, file);
+      .upload(filePath, file, { upsert: true });
     if (uploadError) throw uploadError;
 
     const {
