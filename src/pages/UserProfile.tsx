@@ -17,6 +17,7 @@ import {
   updateUserProfile,
   ProfileFormValues,
 } from "@/services/profileService";
+import AddressInput from "@/components/AddressInput";
 
 const UserProfile: React.FC = () => {
   const navigate = useNavigate();
@@ -304,23 +305,13 @@ const UserProfile: React.FC = () => {
                       }}
                     />
 
-                    <TextAreaField
-                      label="Address"
-                      name="address"
-                      register={register}
-                      rows={3}
-                      required
-                      inputProps={{
-                        onInput: (
-                          e: React.ChangeEvent<HTMLTextAreaElement>
-                        ) => {
-                          const value = e.target.value
-                            .toLowerCase()
-                            .replace(/\b\w/g, (char) => char.toUpperCase());
-                          e.target.value = value;
-                        },
-                      }}
-                    />
+                    <div>
+                      <AddressInput
+                        value={watch("address")}
+                        setValue={(val) => setValue("address", val)}
+                      />
+                    </div>
+
                     <div className="flex gap-4">
                       <Button
                         type="submit"
