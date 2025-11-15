@@ -7,7 +7,6 @@ import { useToast } from "@/hooks/use-toast";
 
 import Header from "@/components/Header";
 import InputField from "@/components/InputField";
-import TextAreaField from "@/components/TextAreaField";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -29,6 +28,8 @@ const UserProfile: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
+
+  const [isAddressValid, setIsAddressValid] = useState(false);
 
   const { register, handleSubmit, reset, watch, setValue } =
     useForm<ProfileFormValues>({
@@ -309,13 +310,14 @@ const UserProfile: React.FC = () => {
                       <AddressInput
                         value={watch("address")}
                         setValue={(val) => setValue("address", val)}
+                        onValidChange={setIsAddressValid}
                       />
                     </div>
 
                     <div className="flex gap-4">
                       <Button
                         type="submit"
-                        disabled={updating}
+                        disabled={updating || !isAddressValid}
                         className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white"
                       >
                         {updating ? "Saving..." : "Save Changes"}
