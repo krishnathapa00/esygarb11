@@ -402,6 +402,20 @@ const DeliveryProfile = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, full_name: e.target.value })
                     }
+                    onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      const start = e.target.selectionStart || 0;
+                      const end = e.target.selectionEnd || 0;
+
+                      const formatted = e.target.value
+                        .replace(/[^a-zA-Z\s]/g, "")
+                        .toLowerCase()
+                        .replace(/\b\w/g, (char) => char.toUpperCase());
+
+                      e.target.value = formatted;
+                      setFormData({ ...formData, full_name: formatted });
+
+                      e.target.setSelectionRange(start, end);
+                    }}
                   />
                 </div>
 
