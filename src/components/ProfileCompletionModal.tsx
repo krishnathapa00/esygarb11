@@ -253,29 +253,36 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
           <div className="space-y-2">
             <Label htmlFor="address" className="flex items-center gap-2">
               <MapPin className="h-4 w-4" />
-              Default Delivery Address
+              Select Delivery Address
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
                 onClick={() => {
-                  // Open location selector
                   window.location.href = "/map-location";
                 }}
                 className="ml-auto text-xs"
               >
                 <Edit3 className="h-3 w-3 mr-1" />
-                Edit
+                {formData.address ? "Change" : "Select"}
               </Button>
             </Label>
             <Input
               id="address"
-              value={formData.address}
-              onChange={(e) => handleInputChange("address", e.target.value)}
-              placeholder="Click on edit for setting your delivery address"
+              value={formData.address || ""}
+              placeholder={
+                formData.address
+                  ? ""
+                  : "Click on Select to choose your delivery address"
+              }
               className="min-h-[60px]"
               readOnly
             />
+            {!formData.address && (
+              <p className="text-red-500 text-xs mt-1">
+                Please select your delivery address
+              </p>
+            )}
           </div>
         </div>
 
