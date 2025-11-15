@@ -8,34 +8,9 @@ import { toast } from "@/hooks/use-toast";
 import { showToast } from "@/components/Toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthContext } from "@/contexts/AuthProvider";
+import { DELIVERY_AREA_COORDS } from "@/data/deliveryConsts";
 
 const GOOGLE_MAPS_API_KEY = "AIzaSyADxM5y7WrXu3BRJ_hJQZhh6FLXWyO3E1g";
-
-export const DELIVERY_AREA_COORDS = [
-  { lat: 27.70293080822624, lng: 85.33598020683337 },
-  { lat: 27.69944302860847, lng: 85.33468509953883 },
-  { lat: 27.699681921179774, lng: 85.3312314800852 },
-  { lat: 27.698583011023402, lng: 85.33096166606589 },
-  { lat: 27.697292971939234, lng: 85.33236469896912 },
-  { lat: 27.69490397040785, lng: 85.33026014961513 },
-  { lat: 27.692467134980745, lng: 85.3295046703592 },
-  { lat: 27.690269158328192, lng: 85.32880315390844 },
-  { lat: 27.68701989439539, lng: 85.3278857862419 },
-  { lat: 27.685060732650868, lng: 85.33139336849746 },
-  { lat: 27.68486959303783, lng: 85.33668172328419 },
-  { lat: 27.68486959303783, lng: 85.34159233844287 },
-  { lat: 27.686446484840374, lng: 85.34358896218816 },
-  { lat: 27.68797557029555, lng: 85.34477614387566 },
-  { lat: 27.689217936460736, lng: 85.34785202369966 },
-  { lat: 27.691320370074777, lng: 85.34698861883663 },
-  { lat: 27.693613887840485, lng: 85.35130564315165 },
-  { lat: 27.696194037729, lng: 85.34731239566105 },
-  { lat: 27.697914103771865, lng: 85.34558558593511 },
-  { lat: 27.699060799407334, lng: 85.34655691640518 },
-  { lat: 27.700159704752807, lng: 85.34337311097238 },
-  { lat: 27.70130637679368, lng: 85.34040515675537 },
-  { lat: 27.702787477014084, lng: 85.33608813244047 },
-];
 
 const MAP_CENTER = { lat: 27.69397, lng: 85.338207 };
 
@@ -321,7 +296,6 @@ const MapLocationEnhanced = () => {
     if (user) {
       const { error } = await supabase.from("profiles").upsert({
         id: user.id,
-        address: selectedLocation,
         location: JSON.stringify(coords),
         updated_at: new Date().toISOString(),
       });
