@@ -69,7 +69,7 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
       }
 
       try {
-        // Fetch profile, but only full_name and phone (remove address)
+        // Fetch profile, but only full_name and phone
         const { data: profile } = await supabase
           .from("profiles")
           .select("full_name, phone")
@@ -147,7 +147,6 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
         id: user?.id,
         full_name: fullName,
         phone: phone,
-        address: addressFromStorage,
         updated_at: new Date().toISOString(),
       });
 
