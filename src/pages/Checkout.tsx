@@ -456,7 +456,7 @@ const Checkout = () => {
                 </div>
               </div>
               <Button onClick={handleAddressChange} variant="outline" size="sm">
-                Change Address
+                Change Delivery Address
               </Button>
 
               {!isWithinRange && (
