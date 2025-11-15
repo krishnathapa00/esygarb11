@@ -19,7 +19,7 @@ import EsewaLogo from "../assets/payments/esewa.jpg";
 import LocationDisplay from "@/components/LocationDisplay";
 import KhaltiLogo from "../assets/payments/khalti.jpg";
 import { useLocation } from "react-router-dom";
-import { DELIVERY_AREA_COORDS } from "./MapLocationEnhanced";
+import { DELIVERY_AREA_COORDS } from "@/data/deliveryConsts";
 
 const Checkout = () => {
   const { cart, resetCart, mergeGuestCart } = useCart();
