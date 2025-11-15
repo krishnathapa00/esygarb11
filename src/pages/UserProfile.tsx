@@ -281,6 +281,7 @@ const UserProfile: React.FC = () => {
                           const start = e.target.selectionStart;
                           const end = e.target.selectionEnd;
                           const value = e.target.value
+                            .replace(/[^a-zA-Z\s]/g, "")
                             .toLowerCase()
                             .replace(/\b\w/g, (char) => char.toUpperCase());
                           e.target.value = value;
