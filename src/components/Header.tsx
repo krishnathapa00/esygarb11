@@ -3,7 +3,6 @@ import { Link, useLocation } from "react-router-dom";
 import { ShoppingCart, MapPin, Clock, User, Home, Grid3X3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LocationDetectionPopup from "./LocationDetectionPopup";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuthContext } from "@/contexts/AuthProvider";
 import SearchBar from "./SearchBar";
 import { useCart } from "@/contexts/CartContext";
@@ -11,8 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const Header = () => {
   const location = useLocation();
-  const isMobile = useIsMobile();
-  const { user, signOut } = useAuthContext();
+  const { user } = useAuthContext();
   const { cart } = useCart();
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -25,10 +23,7 @@ const Header = () => {
       if (saved && saved !== "null" && saved !== "undefined") {
         const parsed = JSON.parse(saved);
         if (parsed && typeof parsed === "object" && parsed.address) {
-          const address = parsed.address as string;
-          return address.length > 25
-            ? address.split(",")[0].trim() + "..."
-            : address;
+          return parsed.address;
         }
       }
     } catch (error) {
@@ -42,53 +37,44 @@ const Header = () => {
     if (!user) {
       localStorage.removeItem("esygrab_user_location");
       setUserLocation("");
+      return;
     }
-  }, [user]);
 
-  useEffect(() => {
-    const syncAddressFromProfile = async () => {
-      if (!user) return;
-
-      const storedlocation = localStorage.getItem("esygrab_user_location");
-      if (storedlocation) return;
-
-      const { data: profile } = await supabase
+    const fetchProfileLocation = async () => {
+      const { data } = await supabase
         .from("profiles")
-        .select("address")
+        .select("delivery_location")
         .eq("id", user.id)
         .single();
 
-      if (profile?.address) {
-        localStorage.setItem(
-          "esygrab_user_location",
-          JSON.stringify({ address: profile.address })
-        );
+      if (
+        data?.delivery_location &&
+        !localStorage.getItem("esygrab_user_location")
+      ) {
+        setUserLocation(formatDisplayLocation(data.delivery_location));
       }
     };
 
-    syncAddressFromProfile();
+    fetchProfileLocation();
   }, [user]);
 
-  const handleLocationSet = (location: string) => {
-    let simplifiedLocation = location;
-    if (location.length > 25) {
-      const parts = location.split(",");
-      if (parts.length > 1) {
-        simplifiedLocation = parts[0].trim() + "...";
-      } else {
-        simplifiedLocation = location.substring(0, 22) + "...";
-      }
-    }
+  const formatDisplayLocation = (location) => {
+    if (!location) return "";
 
-    setUserLocation(simplifiedLocation);
-    try {
-      localStorage.setItem(
-        "esygrab_user_location",
-        JSON.stringify({ address: location })
-      );
-    } catch (error) {
-      console.error("Error saving location:", error);
-    }
+    return location.length > 25
+      ? location.split(",")[0].trim() + "..."
+      : location;
+  };
+
+  const handleLocationSet = (fullAddress) => {
+    const simplified = formatDisplayLocation(fullAddress);
+
+    setUserLocation(simplified);
+    localStorage.setItem(
+      "esygrab_user_location",
+      JSON.stringify({ address: fullAddress })
+    );
+
     setShowLocationPopup(false);
   };
 
