@@ -1,4 +1,3 @@
-import React from "react";
 import { Link } from "react-router-dom";
 import { useCategories } from "@/hooks/useCategories";
 import { fetchSubcategories } from "@/hooks/useSubcategories";
@@ -35,16 +34,6 @@ const CategoryGrid = ({
     return 0;
   });
 
-  // Solid colors for categories, high contrast for white text
-  const solidColors = [
-    "bg-green-600", // green
-    "bg-yellow-500", // yellow
-    "bg-pink-500", // pink
-    "bg-purple-600", // purple
-    "bg-blue-600", // blue
-    "bg-red-600", // red
-  ];
-
   return (
     <div className="py-6">
       <div className="flex items-center justify-between mb-4">
@@ -66,19 +55,16 @@ const CategoryGrid = ({
             onMouseEnter={() => prefetchSubcategories(category.id)}
             className="group cursor-pointer transform transition-all duration-300 hover:scale-105"
           >
-            <div
-              className={`rounded-2xl p-4 text-center shadow-lg hover:shadow-2xl transition-all duration-300 aspect-square flex flex-col justify-center items-center min-h-[90px] md:min-h-[110px] ${
-                solidColors[idx % solidColors.length]
-              }`}
-            >
-              <div className="w-10 h-10 md:w-14 md:h-14 mx-auto mb-2 rounded-full overflow-hidden bg-white/30 backdrop-blur-md flex justify-center items-center">
-                <img
-                  src={category.image}
-                  alt={category.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <h3 className="text-white font-semibold text-sm md:text-base leading-tight text-center drop-shadow-md">
+            <div className="rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 aspect-square relative group">
+              <img
+                src={category.image}
+                alt={category.name}
+                className="w-full h-full object-cover"
+              />
+
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+
+              <h3 className="absolute bottom-3 left-1/2 -translate-x-1/2 text-white font-semibold text-sm md:text-base drop-shadow-lg text-center">
                 {category.name}
               </h3>
             </div>
@@ -90,4 +76,3 @@ const CategoryGrid = ({
 };
 
 export default CategoryGrid;
-
