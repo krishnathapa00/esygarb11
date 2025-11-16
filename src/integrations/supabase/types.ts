@@ -585,6 +585,7 @@ export type Database = {
           created_at: string | null;
           darkstore_id: string | null;
           delivery_order_count: number | null;
+          delivery_location: string | null;
           full_name: string | null;
           id: string;
           is_online: boolean | null;
@@ -603,6 +604,7 @@ export type Database = {
           created_at?: string | null;
           darkstore_id?: string | null;
           delivery_order_count?: number | null;
+          delivery_location: string | null;
           full_name?: string | null;
           id: string;
           is_online?: boolean | null;
@@ -621,6 +623,7 @@ export type Database = {
           created_at?: string | null;
           darkstore_id?: string | null;
           delivery_order_count?: number | null;
+          delivery_location?: string | null;
           full_name?: string | null;
           id?: string;
           is_online?: boolean | null;
