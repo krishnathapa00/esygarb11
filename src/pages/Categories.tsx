@@ -28,7 +28,7 @@ const AllCategories = () => {
 
       if (catError) throw catError;
 
-      // 2️⃣ Fetch product counts grouped by category_id
+      // product counts grouped by category_id
       const { data: counts, error: countError } = await supabase
         .from("products")
         .select("category_id", { count: "exact", head: false })
@@ -111,7 +111,7 @@ const AllCategories = () => {
           {categories.map((category) => (
             <Link
               key={category.id}
-              to={`/subcategories/${category.slug}`} // <-- use slug here
+              to={`/subcategories/${category.slug}`} 
               className="group"
             >
               <div className="bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-lg transition-all duration-200 hover:-translate-y-1">
@@ -120,7 +120,7 @@ const AllCategories = () => {
                     <img
                       src={category.image_url}
                       alt={category.name}
-                      className="w-32 h-32 object-cover rounded-xl"
+                      className="w-32 h-32 md:w-52 md:h-40 object-stretch rounded-xl"
                     />
                   ) : (
                     <div
@@ -165,4 +165,3 @@ const AllCategories = () => {
 };
 
 export default AllCategories;
-
