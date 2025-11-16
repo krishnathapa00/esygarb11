@@ -297,6 +297,7 @@ const MapLocationEnhanced = () => {
       const { error } = await supabase.from("profiles").upsert({
         id: user.id,
         location: JSON.stringify(coords),
+        delivery_location: selectedLocation,
         updated_at: new Date().toISOString(),
       });
 
@@ -459,4 +460,3 @@ const MapLocationEnhanced = () => {
 };
 
 export default MapLocationEnhanced;
-
