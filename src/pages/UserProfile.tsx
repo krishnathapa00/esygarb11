@@ -29,8 +29,6 @@ const UserProfile: React.FC = () => {
   const [updating, setUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
 
-  const [isAddressValid, setIsAddressValid] = useState(false);
-
   const { register, handleSubmit, reset, watch, setValue } =
     useForm<ProfileFormValues>({
       defaultValues: { full_name: "", phone: "", address: "", avatar_url: "" },
@@ -311,14 +309,13 @@ const UserProfile: React.FC = () => {
                       <AddressInput
                         value={watch("address")}
                         setValue={(val) => setValue("address", val)}
-                        onValidChange={setIsAddressValid}
                       />
                     </div>
 
                     <div className="flex gap-4">
                       <Button
                         type="submit"
-                        disabled={updating || !isAddressValid}
+                        disabled={updating}
                         className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white"
                       >
                         {updating ? "Saving..." : "Save Changes"}
