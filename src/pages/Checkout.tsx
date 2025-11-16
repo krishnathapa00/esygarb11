@@ -111,23 +111,22 @@ const Checkout = () => {
         const stored = localStorage.getItem("esygrab_user_location");
         if (stored) {
           const storedLocation = JSON.parse(stored);
-          if (storedLocation.address)
-            setDeliveryAddress(storedLocation.address);
           if (
-            storedLocation.coordinates?.lat &&
-            storedLocation.coordinates?.lng
+            storedLocation.coordinates?.lat != null &&
+            storedLocation.coordinates?.lng != null
           ) {
             setDeliveryCoords({
               lat: Number(storedLocation.coordinates.lat),
               lng: Number(storedLocation.coordinates.lng),
             });
+            setDeliveryAddress(storedLocation.address || "");
             return;
           }
         }
 
         const { data, error } = await supabase
           .from("profiles")
-          .select("address, location")
+          .select("address, location, delivery_location")
           .eq("id", user.id)
           .single();
 
@@ -136,42 +135,79 @@ const Checkout = () => {
           return;
         }
 
-        if (!data?.location) {
-          navigate("/map-location");
-          return;
-        }
+        if (data?.delivery_location) {
+          let deliveryLoc: {
+            address: string;
+            coordinates: { lat: number; lng: number };
+          } | null = null;
+          try {
+            deliveryLoc =
+              typeof data.delivery_location === "string"
+                ? JSON.parse(data.delivery_location)
+                : data.delivery_location;
 
-        if (data?.address) setDeliveryAddress(data.address);
-
-        if (data?.location) {
-          const location =
-            typeof data.location === "string"
-              ? JSON.parse(data.location)
-              : data.location;
-
-          if (location?.lat && location?.lng) {
-            setDeliveryCoords({
-              lat: Number(location.lat),
-              lng: Number(location.lng),
-            });
-
-            // update localStorage for faster next login
-            localStorage.setItem(
-              "esygrab_user_location",
-              JSON.stringify({
-                address: data.address,
-                coordinates: { lat: location.lat, lng: location.lng },
-              })
-            );
+            if (
+              deliveryLoc?.coordinates?.lat != null &&
+              deliveryLoc?.coordinates?.lng != null
+            ) {
+              setDeliveryCoords({
+                lat: Number(deliveryLoc.coordinates.lat),
+                lng: Number(deliveryLoc.coordinates.lng),
+              });
+              setDeliveryAddress(deliveryLoc.address || "");
+              localStorage.setItem(
+                "esygrab_user_location",
+                JSON.stringify(deliveryLoc)
+              );
+              return;
+            }
+          } catch (e) {
+            console.error("Failed to parse delivery_location:", e);
           }
         }
+
+        if (data?.location) {
+          type LocationType = { lat: number; lng: number } | null;
+          let loc: LocationType = null;
+
+          if (typeof data.location === "string") {
+            try {
+              const parsed = JSON.parse(data.location) as {
+                lat?: number;
+                lng?: number;
+              };
+              if (parsed?.lat != null && parsed?.lng != null) {
+                loc = { lat: Number(parsed.lat), lng: Number(parsed.lng) };
+              }
+            } catch (e) {
+              console.error("Failed to parse location JSON:", e);
+              loc = null;
+            }
+          } else if (
+            typeof data.location === "object" &&
+            data.location !== null
+          ) {
+            const obj = data.location as { lat?: number; lng?: number };
+            if (obj.lat != null && obj.lng != null) {
+              loc = { lat: Number(obj.lat), lng: Number(obj.lng) };
+            }
+          }
+
+          if (loc) {
+            setDeliveryCoords(loc);
+            setDeliveryAddress(data.address || "");
+            return;
+          }
+        }
+
+        navigate("/map-location");
       } catch (err) {
         console.error("Unexpected error loading user location:", err);
       }
     };
 
     loadUserLocation();
-  }, [user]);
+  }, [user, navigate]);
 
   function pointInPolygon(lat, lng, polygon) {
     let inside = false;
@@ -366,6 +402,10 @@ const Checkout = () => {
         totalItems,
         totalAmount,
         deliveryAddress,
+        delivery_location: JSON.stringify({
+          address: deliveryAddress,
+          coordinates: deliveryCoords,
+        }),
         deliveryFee,
         discount,
         estimatedDelivery: "10 mins",
