@@ -78,7 +78,7 @@ const CategoryGrid = ({
                         className="w-full h-full object-cover"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
-                      <h3 className="absolute bottom-3 left-1/2 -translate-x-1/2 text-white font-semibold text-sm drop-shadow-lg text-center">
+                      <h3 className="absolute bottom-2 left-1/2 -translate-x-1/2 text-white font-semibold  text-xs sm:text-sm md:text-base drop-shadow-lg text-center">
                         {category.name}
                       </h3>
                     </div>
