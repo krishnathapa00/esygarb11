@@ -1,6 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap");
-@import './styles/globals.css';
+@import "./styles/globals.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -37,7 +37,11 @@
     --warning-foreground: 0 0% 100%;
     --info: 210 100% 50%;
     --info-foreground: 0 0% 100%;
-    --gradient-primary: linear-gradient(135deg, hsl(142 76% 36%), hsl(160 65% 45%));
+    --gradient-primary: linear-gradient(
+      135deg,
+      hsl(142 76% 36%),
+      hsl(160 65% 45%)
+    );
     --shadow-glow: 0 0 30px hsl(142 76% 36% / 0.3);
     --radius: 0.5rem;
   }
@@ -79,12 +83,12 @@
     font-family: "Inter", sans-serif;
     padding-top: 64px; /* Space for fixed header (h-16 = 64px) */
   }
-  
+
   /* Add extra padding for mobile pages with search bar */
   body.with-search-bar {
     padding-top: 120px; /* Space for header + search bar on mobile */
   }
-  
+
   /* Desktop with search bar */
   @media (min-width: 768px) {
     body.with-search-bar {
@@ -103,7 +107,6 @@
   }
 }
 
-
 /* newly added for W/A banner */
 
 @keyframes slide-in {
@@ -121,3 +124,11 @@
   animation: slide-in 0.4s ease-out;
 }
 
+/* Hide scrollbars for horizontal scroll */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
