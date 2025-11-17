@@ -1,8 +1,8 @@
-import React, { useState, useRef } from 'react';
-import { Upload, X, Image as ImageIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import React, { useState, useRef } from "react";
+import { Upload, X, Image as ImageIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface ImageUploadProps {
   onImageUpload: (url: string) => void;
@@ -15,9 +15,9 @@ interface ImageUploadProps {
 const ImageUpload: React.FC<ImageUploadProps> = ({
   onImageUpload,
   currentImage,
-  folder = 'products',
-  accept = 'image/*',
-  maxSize = 5
+  folder,
+  accept = "image/*",
+  maxSize = 5,
 }) => {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -29,37 +29,41 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       toast({
         title: "File too large",
         description: `Please select an image smaller than ${maxSize}MB`,
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
-    if (!file.type.startsWith('image/')) {
+    if (!file.type.startsWith("image/")) {
       toast({
         title: "Invalid file type",
         description: "Please select an image file",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
     setUploading(true);
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(2)}.${fileExt}`;
       const filePath = `${folder}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('product-images')
+        .from("product-images")
         .upload(filePath, file);
 
       if (uploadError) {
         // If bucket doesn't exist, create it
-        if (uploadError.message.includes('not found')) {
-          await supabase.storage.createBucket('product-images', { public: true });
+        if (uploadError.message.includes("not found")) {
+          await supabase.storage.createBucket("product-images", {
+            public: true,
+          });
           // Retry upload
           const { error: retryError } = await supabase.storage
-            .from('product-images')
+            .from("product-images")
             .upload(filePath, file);
           if (retryError) throw retryError;
         } else {
@@ -68,19 +72,19 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       }
 
       const { data } = supabase.storage
-        .from('product-images')
+        .from("product-images")
         .getPublicUrl(filePath);
 
       onImageUpload(data.publicUrl);
       toast({
         title: "Image uploaded successfully",
-        description: "Your image has been uploaded and is ready to use"
+        description: "Your image has been uploaded and is ready to use",
       });
     } catch (error: any) {
       toast({
         title: "Upload failed",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setUploading(false);
@@ -114,7 +118,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   };
 
   const removeImage = () => {
-    onImageUpload('');
+    onImageUpload("");
   };
 
   return (
@@ -148,8 +152,8 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         <div
           className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
             dragOver
-              ? 'border-primary bg-primary/10'
-              : 'border-gray-300 hover:border-gray-400'
+              ? "border-primary bg-primary/10"
+              : "border-gray-300 hover:border-gray-400"
           }`}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
