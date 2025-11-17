@@ -83,13 +83,22 @@ const ManageCategories = () => {
   >({
     queryKey: ["admin-categories"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("categories")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("categories").select(`
+      id,
+      name,
+      image_url,
+      created_at,
+      products:products(count)
+    `);
 
       if (error) throw error;
-      return data || [];
+
+      const mapped = data.map((cat: any) => ({
+        ...cat,
+        product_count: cat.products ? cat.products[0]?.count || 0 : 0,
+      }));
+
+      return mapped;
     },
   });
 
