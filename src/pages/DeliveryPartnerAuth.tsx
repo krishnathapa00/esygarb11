@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import EsyLogo from "@/assets/logo/Esy.jpg";
 import { useAuthContext } from "@/contexts/AuthProvider";
+import { supabase } from "@/integrations/supabase/client";
 
 const DeliveryPartnerAuth = () => {
   const [email, setEmail] = useState("");
@@ -50,41 +51,63 @@ const DeliveryPartnerAuth = () => {
     setLoading(true);
 
     try {
-      const { data, error } = await signUp(email, password, {
-        full_name: fullName,
-        role: "delivery_partner",
-        vehicle_type: vehicleType,
-        license_number: licenseNumber,
+      // Sign up user in Supabase Auth
+      const { data: signUpData, error: signUpError } = await signUp(
+        email,
+        password,
+        {
+          full_name: fullName, // stored in user_metadata
+          role: "delivery_partner",
+          vehicle_type: vehicleType,
+          license_number: licenseNumber,
+        }
+      );
+
+      if (signUpError || !signUpData.user) {
+        throw signUpError || new Error("Signup failed");
+      }
+
+      const userId = signUpData.user.id;
+
+      // Save delivery partner details in profiles table
+      const { error: profileError } = await supabase.from("profiles").insert([
+        {
+          id: userId,
+          full_name: fullName,
+          email,
+          role: "delivery_partner",
+          vehicle_type: vehicleType,
+          license_number: licenseNumber,
+          delivery_location: "",
+          is_online: false,
+          kyc_verified: false,
+        },
+      ]);
+
+      if (profileError) throw profileError;
+
+      toast({
+        title: "Account Created Successfully!",
+        description:
+          "Please check your email to verify your account, then login below.",
       });
 
-      if (error) {
-        toast({
-          title: "Signup Error",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Account Created Successfully!",
-          description:
-            "Please check your email to verify your account, then login below.",
-        });
-        setActiveTab("login");
-        setEmail("");
-        setPassword("");
-        setFullName("");
-        setVehicleType("");
-        setLicenseNumber("");
-      }
+      // Reset form and switch to login tab
+      setActiveTab("login");
+      setEmail("");
+      setPassword("");
+      setFullName("");
+      setVehicleType("");
+      setLicenseNumber("");
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: "Something went wrong. Please try again.",
+        title: "Signup Error",
+        description: error.message || "Something went wrong",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   const requestNotificationPermission = () => {
