@@ -1,15 +1,22 @@
-import React, { useState } from 'react';
-import { Search, Plus, Edit2, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
+import React, { useState } from "react";
+import {
+  Search,
+  Plus,
+  Edit2,
+  Trash2,
+  ChevronDown,
+  ChevronRight,
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -18,19 +25,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import AdminLayout from './components/AdminLayout';
-import ImageUpload from '@/components/ImageUpload';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import AdminLayout from "./components/AdminLayout";
+import ImageUpload from "@/components/ImageUpload";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
 interface Category {
   id: number;
   name: string;
   image_url?: string;
-  color_gradient?: string;
   product_count?: number;
   created_at: string;
 }
@@ -45,62 +51,70 @@ interface SubCategory {
 }
 
 const ManageCategories = () => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [subCategoryModalOpen, setSubCategoryModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [editingSubCategory, setEditingSubCategory] = useState<SubCategory | null>(null);
+  const [editingSubCategory, setEditingSubCategory] =
+    useState<SubCategory | null>(null);
   const [loading, setLoading] = useState(false);
-  const [expandedCategories, setExpandedCategories] = useState<Set<number>>(new Set());
-  
+  const [expandedCategories, setExpandedCategories] = useState<Set<number>>(
+    new Set()
+  );
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   // Form states
   const [categoryForm, setCategoryForm] = useState({
-    name: '',
-    image_url: '',
-    color_gradient: 'from-blue-400 to-blue-600'
+    name: "",
+    image_url: "",
   });
 
   const [subCategoryForm, setSubCategoryForm] = useState({
-    name: '',
-    category_id: '',
-    description: ''
+    name: "",
+    category_id: "",
+    description: "",
   });
 
   // Fetch categories
-  const { data: categories = [], refetch: refetchCategories } = useQuery<Category[]>({
-    queryKey: ['admin-categories'],
+  const { data: categories = [], refetch: refetchCategories } = useQuery<
+    Category[]
+  >({
+    queryKey: ["admin-categories"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .from("categories")
+        .select("*")
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data || [];
-    }
+    },
   });
 
   // Fetch subcategories
-  const { data: subCategories = [], refetch: refetchSubCategories } = useQuery<SubCategory[]>({
-    queryKey: ['admin-subcategories'],
+  const { data: subCategories = [], refetch: refetchSubCategories } = useQuery<
+    SubCategory[]
+  >({
+    queryKey: ["admin-subcategories"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('subcategories')
-        .select(`
+        .from("subcategories")
+        .select(
+          `
           id, name, category_id, description, created_at,
           categories:category_id ( name )
-        `)
-        .order('created_at', { ascending: false });
+        `
+        )
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data || [];
-    }
+    },
   });
 
-  const filteredCategories = categories.filter(category =>
+  const filteredCategories = categories.filter((category) =>
     category.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -117,8 +131,10 @@ const ManageCategories = () => {
   // Category handlers
   const handleAddCategory = () => {
     setEditingCategory(null);
-    setCategoryForm({ name: '', image_url: '', color_gradient: 'from-blue-400 to-blue-600' });
-    setCategoryModalOpen(true);
+    setCategoryForm({
+      name: "",
+      image_url: "",
+    });
     setCategoryModalOpen(true);
   };
 
@@ -126,8 +142,7 @@ const ManageCategories = () => {
     setEditingCategory(category);
     setCategoryForm({
       name: category.name,
-      image_url: category.image_url || '',
-      color_gradient: category.color_gradient || 'from-blue-400 to-blue-600'
+      image_url: category.image_url || "",
     });
     setCategoryModalOpen(true);
   };
@@ -136,42 +151,35 @@ const ManageCategories = () => {
     setLoading(true);
     try {
       if (!categoryForm.name.trim()) {
-        throw new Error('Category name is required');
+        throw new Error("Category name is required");
       }
 
       const payload = {
         name: categoryForm.name.trim(),
-        image_url: categoryForm.image_url || null,
-        color_gradient: categoryForm.color_gradient,
-        product_count: 0
+        image_url: categoryForm.image_url,
       };
 
       if (editingCategory) {
         const { error } = await supabase
-          .from('categories')
+          .from("categories")
           .update(payload)
-          .eq('id', editingCategory.id);
-        
+          .eq("id", editingCategory.id);
         if (error) throw error;
         toast({ title: "Category updated successfully!" });
       } else {
-        const { error } = await supabase
-          .from('categories')
-          .insert([payload]);
-        
+        const { error } = await supabase.from("categories").insert([payload]);
         if (error) throw error;
         toast({ title: "Category added successfully!" });
       }
 
       setCategoryModalOpen(false);
       await refetchCategories();
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
-      queryClient.invalidateQueries({ queryKey: ['admin-categories'] });
+      queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
     } catch (error: any) {
       toast({
         title: "Failed to save category",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -179,27 +187,31 @@ const ManageCategories = () => {
   };
 
   const handleDeleteCategory = async (categoryId: number) => {
-    if (!confirm('Are you sure you want to delete this category? This will also affect associated products.')) {
+    if (
+      !confirm(
+        "Are you sure you want to delete this category? This will also affect associated products."
+      )
+    ) {
       return;
     }
 
     try {
       const { error } = await supabase
-        .from('categories')
+        .from("categories")
         .delete()
-        .eq('id', categoryId);
+        .eq("id", categoryId);
 
       if (error) throw error;
 
       toast({ title: "Category deleted successfully!" });
       await refetchCategories();
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
-      queryClient.invalidateQueries({ queryKey: ['admin-categories'] });
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-categories"] });
     } catch (error: any) {
       toast({
         title: "Failed to delete category",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
@@ -207,7 +219,8 @@ const ManageCategories = () => {
   // SubCategory handlers
   const handleAddSubCategory = () => {
     setEditingSubCategory(null);
-    setSubCategoryForm({ name: '', category_id: '', description: '' });
+    setSubCategoryForm({ name: "", category_id: "", description: "" });
+    setLoading(false);
     setSubCategoryModalOpen(true);
   };
 
@@ -215,40 +228,40 @@ const ManageCategories = () => {
     setLoading(true);
     try {
       if (!subCategoryForm.name.trim() || !subCategoryForm.category_id) {
-        throw new Error('Subcategory name and category are required');
+        throw new Error("Subcategory name and category are required");
       }
 
       const payload = {
         name: subCategoryForm.name.trim(),
         category_id: parseInt(subCategoryForm.category_id),
-        description: subCategoryForm.description || null
+        description: subCategoryForm.description || null,
       };
 
       if (editingSubCategory) {
         const { error } = await supabase
-          .from('subcategories')
+          .from("subcategories")
           .update(payload)
-          .eq('id', editingSubCategory.id);
-        
+          .eq("id", editingSubCategory.id);
+
         if (error) throw error;
         toast({ title: "Subcategory updated successfully!" });
       } else {
         const { error } = await supabase
-          .from('subcategories')
+          .from("subcategories")
           .insert([payload]);
-        
+
         if (error) throw error;
         toast({ title: "Subcategory added successfully!" });
       }
 
       setSubCategoryModalOpen(false);
       await refetchSubCategories();
-      queryClient.invalidateQueries({ queryKey: ['subcategories'] });
+      queryClient.invalidateQueries({ queryKey: ["subcategories"] });
     } catch (error: any) {
       toast({
         title: "Failed to save subcategory",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -256,12 +269,20 @@ const ManageCategories = () => {
   };
 
   return (
-    <AdminLayout onRefresh={() => { refetchCategories(); refetchSubCategories(); }}>
+    <AdminLayout
+      onRefresh={() => {
+        refetchCategories();
+        refetchSubCategories();
+      }}
+    >
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
           <h1 className="text-2xl font-bold">Categories & Subcategories</h1>
           <div className="flex gap-2">
-            <Button onClick={handleAddCategory} className="bg-blue-600 hover:bg-blue-700">
+            <Button
+              onClick={handleAddCategory}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
               <Plus className="h-4 w-4 mr-2" />
               Add Category
             </Button>
@@ -289,10 +310,18 @@ const ManageCategories = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Products</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Category
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Products
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Created
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -313,21 +342,27 @@ const ManageCategories = () => {
                           </button>
                           <div className="flex items-center">
                             {category.image_url && (
-                              <img 
-                                src={category.image_url} 
+                              <img
+                                src={category.image_url}
                                 alt={category.name}
                                 className="h-8 w-8 rounded object-cover mr-3"
                               />
                             )}
                             <div>
-                              <div className="text-sm font-medium text-gray-900">{category.name}</div>
-                              <div className="text-xs text-gray-500">ID: {category.id}</div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {category.name}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                ID: {category.id}
+                              </div>
                             </div>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <Badge variant="secondary">{category.product_count || 0} products</Badge>
+                        <Badge variant="secondary">
+                          {category.product_count || 0} products
+                        </Badge>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
@@ -335,17 +370,17 @@ const ManageCategories = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => handleEditCategory(category)}
                         >
                           <Edit2 className="h-4 w-4 mr-1" />
                           Edit
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           className="text-red-600 hover:text-red-900 hover:bg-red-50"
                           onClick={() => handleDeleteCategory(category.id)}
                         >
@@ -359,13 +394,19 @@ const ManageCategories = () => {
                         <td colSpan={4} className="px-6 py-2 bg-gray-50">
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
-                              <h4 className="text-sm font-medium text-gray-800">Subcategories</h4>
-                              <Button 
+                              <h4 className="text-sm font-medium text-gray-800">
+                                Subcategories
+                              </h4>
+                              <Button
                                 variant="outline"
-                                size="sm" 
+                                size="sm"
                                 onClick={() => {
                                   setEditingSubCategory(null);
-                                  setSubCategoryForm({ name: '', category_id: category.id.toString(), description: '' });
+                                  setSubCategoryForm({
+                                    name: "",
+                                    category_id: category.id.toString(),
+                                    description: "",
+                                  });
                                   setSubCategoryModalOpen(true);
                                 }}
                               >
@@ -375,32 +416,22 @@ const ManageCategories = () => {
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                               {subCategories
-                                .filter(sub => sub.category_id === category.id)
-                                .map((subCategory, index) => (
-                                  <div 
-                                    key={subCategory.id} 
+                                .filter(
+                                  (sub) => sub.category_id === category.id
+                                )
+                                .map((subCategory) => (
+                                  <div
+                                    key={subCategory.id}
                                     className="flex items-center justify-between bg-white p-2 rounded border"
-                                    draggable
-                                    onDragStart={(e) => {
-                                      e.dataTransfer.setData('text/plain', subCategory.id.toString());
-                                      e.dataTransfer.setData('application/json', JSON.stringify(subCategory));
-                                    }}
-                                    onDragOver={(e) => e.preventDefault()}
-                                    onDrop={async (e) => {
-                                      e.preventDefault();
-                                      const draggedId = e.dataTransfer.getData('text/plain');
-                                      const droppedOnId = subCategory.id.toString();
-                                      
-                                      if (draggedId !== droppedOnId) {
-                                        // Reorder logic here - for now just show feedback
-                                        toast({ title: "Subcategory reordered", description: "Feature in development" });
-                                      }
-                                    }}
                                   >
                                     <div>
-                                      <div className="text-xs font-medium">{subCategory.name}</div>
+                                      <div className="text-xs font-medium">
+                                        {subCategory.name}
+                                      </div>
                                       {subCategory.description && (
-                                        <div className="text-xs text-gray-500 truncate">{subCategory.description}</div>
+                                        <div className="text-xs text-gray-500 truncate">
+                                          {subCategory.description}
+                                        </div>
                                       )}
                                     </div>
                                     <div className="flex gap-1">
@@ -412,9 +443,12 @@ const ManageCategories = () => {
                                           setEditingSubCategory(subCategory);
                                           setSubCategoryForm({
                                             name: subCategory.name,
-                                            category_id: subCategory.category_id.toString(),
-                                            description: subCategory.description || ''
+                                            category_id:
+                                              subCategory.category_id.toString(),
+                                            description:
+                                              subCategory.description || "",
                                           });
+                                          setLoading(false);
                                           setSubCategoryModalOpen(true);
                                         }}
                                       >
@@ -425,21 +459,27 @@ const ManageCategories = () => {
                                         size="sm"
                                         className="h-6 w-6 p-0 text-red-600 hover:text-red-800"
                                         onClick={async () => {
-                                          if (confirm('Delete this subcategory?')) {
+                                          if (
+                                            confirm("Delete this subcategory?")
+                                          ) {
                                             try {
                                               const { error } = await supabase
-                                                .from('subcategories')
+                                                .from("subcategories")
                                                 .delete()
-                                                .eq('id', subCategory.id);
-                                              
+                                                .eq("id", subCategory.id);
+
                                               if (error) throw error;
-                                              toast({ title: "Subcategory deleted successfully!" });
+                                              toast({
+                                                title:
+                                                  "Subcategory deleted successfully!",
+                                              });
                                               refetchSubCategories();
                                             } catch (error: any) {
                                               toast({
-                                                title: "Failed to delete subcategory",
+                                                title:
+                                                  "Failed to delete subcategory",
                                                 description: error.message,
-                                                variant: "destructive"
+                                                variant: "destructive",
                                               });
                                             }
                                           }
@@ -450,8 +490,12 @@ const ManageCategories = () => {
                                     </div>
                                   </div>
                                 ))}
-                              {subCategories.filter(sub => sub.category_id === category.id).length === 0 && (
-                                <div className="text-xs text-gray-500 col-span-full">No subcategories yet</div>
+                              {subCategories.filter(
+                                (sub) => sub.category_id === category.id
+                              ).length === 0 && (
+                                <div className="text-xs text-gray-500 col-span-full">
+                                  No subcategories yet
+                                </div>
                               )}
                             </div>
                           </div>
@@ -466,14 +510,24 @@ const ManageCategories = () => {
         </div>
 
         {/* Category Modal */}
-        <Dialog open={categoryModalOpen} onOpenChange={setCategoryModalOpen}>
+        <Dialog
+          open={categoryModalOpen}
+          onOpenChange={(open) => {
+            if (!open && !editingCategory) {
+              setCategoryForm({ name: "", image_url: "" });
+            }
+            setCategoryModalOpen(open);
+          }}
+        >
           <DialogContent>
             <DialogHeader>
               <DialogTitle>
-                {editingCategory ? 'Edit Category' : 'Add New Category'}
+                {editingCategory ? "Edit Category" : "Add New Category"}
               </DialogTitle>
               <DialogDescription>
-                {editingCategory ? 'Update category information' : 'Create a new category for products'}
+                {editingCategory
+                  ? "Update category information"
+                  : "Create a new category for products"}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
@@ -482,7 +536,12 @@ const ManageCategories = () => {
                 <Input
                   id="category-name"
                   value={categoryForm.name}
-                  onChange={(e) => setCategoryForm(prev => ({ ...prev, name: e.target.value }))}
+                  onChange={(e) =>
+                    setCategoryForm((prev) => ({
+                      ...prev,
+                      name: e.target.value,
+                    }))
+                  }
                   placeholder="Enter category name"
                   required
                 />
@@ -490,48 +549,49 @@ const ManageCategories = () => {
               <div>
                 <Label htmlFor="category-image">Category Image</Label>
                 <ImageUpload
-                  onImageUpload={(url) => setCategoryForm(prev => ({ ...prev, image_url: url }))}
+                  onImageUpload={(url) =>
+                    setCategoryForm((prev) => ({ ...prev, image_url: url }))
+                  }
                   currentImage={categoryForm.image_url}
                   folder="categories"
                 />
               </div>
-              <div>
-                <Label htmlFor="category-gradient">Color Gradient</Label>
-                <Select 
-                  value={categoryForm.color_gradient} 
-                  onValueChange={(value) => setCategoryForm(prev => ({ ...prev, color_gradient: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="from-blue-400 to-blue-600">Blue</SelectItem>
-                    <SelectItem value="from-green-400 to-green-600">Green</SelectItem>
-                    <SelectItem value="from-purple-400 to-purple-600">Purple</SelectItem>
-                    <SelectItem value="from-red-400 to-red-600">Red</SelectItem>
-                    <SelectItem value="from-yellow-400 to-yellow-600">Yellow</SelectItem>
-                    <SelectItem value="from-indigo-400 to-indigo-600">Indigo</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setCategoryModalOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setCategoryModalOpen(false)}
+              >
                 Cancel
               </Button>
               <Button onClick={handleCategorySubmit} disabled={loading}>
-                {loading ? 'Saving...' : (editingCategory ? 'Update' : 'Create')}
+                {loading ? "Saving..." : editingCategory ? "Update" : "Create"}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
 
         {/* SubCategory Modal */}
-        <Dialog open={subCategoryModalOpen} onOpenChange={setSubCategoryModalOpen}>
+        <Dialog
+          open={subCategoryModalOpen}
+          onOpenChange={(open) => {
+            if (!open) {
+              setSubCategoryForm({
+                name: "",
+                category_id: "",
+                description: "",
+              });
+              setEditingSubCategory(null);
+            }
+            setSubCategoryModalOpen(open);
+          }}
+        >
           <DialogContent>
             <DialogHeader>
               <DialogTitle>
-                {editingSubCategory ? 'Edit Subcategory' : 'Add New Subcategory'}
+                {editingSubCategory
+                  ? "Edit Subcategory"
+                  : "Add New Subcategory"}
               </DialogTitle>
               <DialogDescription>
                 Subcategories help organize products within categories
@@ -543,23 +603,36 @@ const ManageCategories = () => {
                 <Input
                   id="subcategory-name"
                   value={subCategoryForm.name}
-                  onChange={(e) => setSubCategoryForm(prev => ({ ...prev, name: e.target.value }))}
+                  onChange={(e) =>
+                    setSubCategoryForm((prev) => ({
+                      ...prev,
+                      name: e.target.value,
+                    }))
+                  }
                   placeholder="Enter subcategory name"
                   required
                 />
               </div>
               <div>
                 <Label htmlFor="parent-category">Parent Category *</Label>
-                <Select 
-                  value={subCategoryForm.category_id} 
-                  onValueChange={(value) => setSubCategoryForm(prev => ({ ...prev, category_id: value }))}
+                <Select
+                  value={subCategoryForm.category_id}
+                  onValueChange={(value) =>
+                    setSubCategoryForm((prev) => ({
+                      ...prev,
+                      category_id: value,
+                    }))
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
                   <SelectContent>
                     {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id.toString()}>
+                      <SelectItem
+                        key={category.id}
+                        value={category.id.toString()}
+                      >
                         {category.name}
                       </SelectItem>
                     ))}
@@ -571,18 +644,30 @@ const ManageCategories = () => {
                 <Textarea
                   id="subcategory-description"
                   value={subCategoryForm.description}
-                  onChange={(e) => setSubCategoryForm(prev => ({ ...prev, description: e.target.value }))}
+                  onChange={(e) =>
+                    setSubCategoryForm((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
                   placeholder="Optional description for this subcategory"
                   rows={3}
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setSubCategoryModalOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setSubCategoryModalOpen(false)}
+              >
                 Cancel
               </Button>
               <Button onClick={handleSubCategorySubmit} disabled={loading}>
-                {loading ? 'Creating...' : 'Create'}
+                {loading
+                  ? "Saving..."
+                  : editingSubCategory
+                  ? "Update"
+                  : "Create"}
               </Button>
             </DialogFooter>
           </DialogContent>
