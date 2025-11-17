@@ -111,7 +111,7 @@ const Index = () => {
           <>
             <BannerCarousel />
 
-            <section className="mb-8 hidden md:block">
+            <section className="mb-8">
               <CategoryGrid onCategorySelect={handleCategorySelect} />
             </section>
 
