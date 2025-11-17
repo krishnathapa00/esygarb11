@@ -103,7 +103,6 @@ export type Database = {
           id: number;
           image_url: string | null;
           name: string;
-          product_count: number | null;
           slug: string | null;
         };
         Insert: {
@@ -111,14 +110,12 @@ export type Database = {
           id?: number;
           image_url?: string | null;
           name: string;
-          product_count?: number | null;
         };
         Update: {
           created_at?: string | null;
           id?: number;
           image_url?: string | null;
           name?: string;
-          product_count?: number | null;
         };
         Relationships: [];
       };
