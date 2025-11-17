@@ -35,29 +35,34 @@ interface DashboardData {
 }
 
 const AdminDashboard = () => {
-  const [dateFilter, setDateFilter] = useState("today");
+  const [dateFilter, setDateFilter] = useState<
+    "today" | "week" | "month" | "year" | "custom"
+  >("today");
+  const [customDate, setCustomDate] = useState<Date | null>(null); // single-day custom
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
 
-  const fetchDashboardData = useCallback(async (): Promise<DashboardData> => {
-    try {
-      const now = new Date();
-      let startDate;
-      let endDate;
+  // Helper to calculate start & end date based on filter
+  const getStartEndDates = useCallback(() => {
+    const now = new Date();
+    let startDate: Date | null = null;
+    let endDate: Date | null = null;
 
+    if (dateFilter === "custom" && customDate) {
+      startDate = new Date(customDate);
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(customDate);
+      endDate.setHours(23, 59, 59, 999);
+    } else {
       switch (dateFilter) {
         case "today":
-          startDate = new Date(
-            now.getFullYear(),
-            now.getMonth(),
-            now.getDate()
-          );
+          startDate = new Date(now);
+          startDate.setHours(0, 0, 0, 0);
           endDate = new Date(now);
           break;
         case "week":
-          const day = now.getDay();
           startDate = new Date(now);
-          startDate.setDate(now.getDate() - day);
+          startDate.setDate(now.getDate() - now.getDay());
           endDate = new Date(now);
           break;
         case "month":
@@ -68,22 +73,25 @@ const AdminDashboard = () => {
           startDate = new Date(now.getFullYear(), 0, 1);
           endDate = new Date(now);
           break;
-        default:
-          startDate = null;
-          endDate = null;
       }
+    }
 
-      const ordersQuery = supabase
+    return { startDate, endDate };
+  }, [dateFilter, customDate]);
+
+  // Fetch dashboard data
+  const fetchDashboardData = useCallback(async (): Promise<DashboardData> => {
+    try {
+      const { startDate, endDate } = getStartEndDates();
+
+      let ordersQuery = supabase
         .from("orders")
         .select("*")
         .order("created_at", { ascending: false });
-
-      if (startDate) {
-        ordersQuery.gte("created_at", startDate.toISOString());
-      }
-      if (endDate) {
-        ordersQuery.lte("created_at", endDate.toISOString());
-      }
+      if (startDate)
+        ordersQuery = ordersQuery.gte("created_at", startDate.toISOString());
+      if (endDate)
+        ordersQuery = ordersQuery.lte("created_at", endDate.toISOString());
 
       const [ordersResult, usersResult, productsResult] = await Promise.all([
         ordersQuery,
@@ -95,50 +103,29 @@ const AdminDashboard = () => {
       const users = usersResult.data || [];
       const products = productsResult.data || [];
 
-      const totalOrders = orders.length;
-
-      const deliveredOrders = orders.filter(
-        (order) => order.status === "delivered"
-      );
-
-      const totalRevenue = deliveredOrders.reduce(
-        (sum, order) => sum + Number(order.total_amount || 0),
-        0
-      );
+      const deliveredOrders = orders.filter((o) => o.status === "delivered");
 
       const todayOrders = orders.filter((order) => {
         const orderDate = new Date(order.created_at);
-        return (
-          orderDate.getDate() === now.getDate() &&
-          orderDate.getMonth() === now.getMonth() &&
-          orderDate.getFullYear() === now.getFullYear()
-        );
+        return orderDate.toDateString() === new Date().toDateString();
       });
 
-      const todayOrdersCount = todayOrders.length;
-
-      const todayRevenue = todayOrders
-        .filter((order) => order.status === "delivered")
-        .reduce((sum, order) => sum + Number(order.total_amount || 0), 0);
-
-      const totalUsers = users.length;
-      const pendingOrders = orders.filter(
-        (order) => order.status === "pending"
-      ).length;
-      const refundsProcessed = orders.filter(
-        (order) => order.payment_status === "refunded"
-      ).length;
-
       return {
-        totalOrders,
-        totalRevenue,
-        totalUsers,
-        pendingOrders,
-        refundsProcessed,
+        totalOrders: orders.length,
+        totalRevenue: deliveredOrders.reduce(
+          (sum, o) => sum + Number(o.total_amount || 0),
+          0
+        ),
+        totalUsers: users.length,
+        pendingOrders: orders.filter((o) => o.status === "pending").length,
+        refundsProcessed: orders.filter((o) => o.payment_status === "refunded")
+          .length,
         recentOrders: orders.slice(0, 5),
         lowStockProducts: products.slice(0, 5),
-        todayOrdersCount,
-        todayRevenue,
+        todayOrdersCount: todayOrders.length,
+        todayRevenue: todayOrders
+          .filter((o) => o.status === "delivered")
+          .reduce((sum, o) => sum + Number(o.total_amount || 0), 0),
       };
     } catch (error) {
       console.error("Dashboard fetch error:", error);
@@ -154,17 +141,33 @@ const AdminDashboard = () => {
         todayRevenue: 0,
       };
     }
-  }, [dateFilter]);
+  }, [getStartEndDates]);
 
-  // Query with real-time updates
   const { data: dashboardData, refetch } = useQuery({
-    queryKey: ["admin-dashboard-simple"],
+    queryKey: ["admin-dashboard", dateFilter, customDate],
     queryFn: fetchDashboardData,
     staleTime: 0,
     refetchOnWindowFocus: true,
-    refetchOnMount: true,
-    refetchInterval: 5 * 1000,
   });
+
+  const handleRefresh = useCallback(async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await refetch();
+      toast({
+        title: "Data refreshed",
+        description: "Dashboard data updated.",
+      });
+    } catch (err) {
+      toast({
+        title: "Refresh failed",
+        description: "Unable to fetch data",
+        variant: "destructive",
+      });
+    }
+    setTimeout(() => setIsRefreshing(false), 500);
+  }, [refetch, toast, isRefreshing]);
 
   const handleRefund = async (orderId: string) => {
     try {
@@ -172,45 +175,21 @@ const AdminDashboard = () => {
         .from("orders")
         .update({ payment_status: "refunded" })
         .eq("id", orderId);
-
       if (error) throw error;
-
       toast({
         title: "Refund processed",
-        description: `Order ${orderId} has been refunded.`,
+        description: `Order ${orderId} refunded.`,
       });
       refetch();
-    } catch (error: any) {
+    } catch (err: any) {
       toast({
         title: "Refund failed",
-        description: error.message,
+        description: err.message,
         variant: "destructive",
       });
     }
   };
 
-  const handleRefresh = useCallback(async () => {
-    if (isRefreshing) return;
-
-    setIsRefreshing(true);
-    try {
-      await refetch();
-      toast({
-        title: "Data refreshed",
-        description: "Dashboard data has been updated.",
-      });
-    } catch (error) {
-      toast({
-        title: "Refresh failed",
-        description: "Failed to refresh data.",
-        variant: "destructive",
-      });
-    }
-    // Use timeout to prevent state update loops
-    setTimeout(() => setIsRefreshing(false), 500);
-  }, [refetch, toast, isRefreshing]);
-
-  // Safe data access with defaults
   const data = dashboardData || {
     totalOrders: 0,
     totalRevenue: 0,
@@ -226,13 +205,21 @@ const AdminDashboard = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
+        {/* Filter + Refresh */}
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold mb-2">Dashboard Overview</h1>
             <p className="text-gray-500">Welcome back, Admin</p>
           </div>
-          <div className="flex gap-2">
-            <Select value={dateFilter} onValueChange={setDateFilter}>
+          <div className="flex gap-2 items-center">
+            <Select
+              value={dateFilter}
+              onValueChange={(value) =>
+                setDateFilter(
+                  value as "today" | "week" | "month" | "year" | "custom"
+                )
+              }
+            >
               <SelectTrigger className="w-40">
                 <SelectValue />
               </SelectTrigger>
@@ -241,8 +228,23 @@ const AdminDashboard = () => {
                 <SelectItem value="week">This Week</SelectItem>
                 <SelectItem value="month">This Month</SelectItem>
                 <SelectItem value="year">This Year</SelectItem>
+                <SelectItem value="custom">Pick Date</SelectItem>
               </SelectContent>
             </Select>
+
+            {dateFilter === "custom" && (
+              <input
+                type="date"
+                value={customDate ? customDate.toISOString().split("T")[0] : ""}
+                onChange={(e) =>
+                  setCustomDate(
+                    e.target.value ? new Date(e.target.value) : null
+                  )
+                }
+                className="border px-2 py-1 rounded"
+              />
+            )}
+
             <Button
               onClick={handleRefresh}
               variant="outline"
@@ -257,7 +259,9 @@ const AdminDashboard = () => {
           </div>
         </div>
 
+        {/* Dashboard Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+          {/* Total Orders */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-500">
@@ -277,6 +281,7 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
 
+          {/* Revenue */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-500">
@@ -298,6 +303,7 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
 
+          {/* Users */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-500">
@@ -315,6 +321,7 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
 
+          {/* Pending Orders */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-500">
