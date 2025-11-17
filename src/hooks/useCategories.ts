@@ -5,8 +5,7 @@ export interface Category {
   id: number;
   name: string;
   slug: string;
-  image: string;
-  gradient: string;
+  image_url: string;
   productCount: number;
 }
 
@@ -25,13 +24,13 @@ export const useCategories = () => {
         id: category.id,
         name: category.name,
         slug: category.slug,
-        image:
-          category.image_url ||
-          "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=400&fit=crop",
-        gradient: category.color_gradient || "from-gray-400 to-gray-500",
+        image_url:
+          category.image_url && category.image_url.trim() !== ""
+            ? category.image_url
+            : "https://img.freepik.com/free-vector/photo-coming-soon-placeholder-design_1017-25528.jpg",
+
         productCount: category.product_count || 0,
       })) as Category[];
     },
   });
 };
-
