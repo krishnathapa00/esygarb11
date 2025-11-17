@@ -57,7 +57,7 @@ const CategoryGrid = ({
           >
             <div className="rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 aspect-square relative group">
               <img
-                src={category.image}
+                src={category.image_url}
                 alt={category.name}
                 className="w-full h-full object-cover"
               />
