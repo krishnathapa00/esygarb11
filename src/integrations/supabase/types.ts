@@ -99,7 +99,6 @@ export type Database = {
       };
       categories: {
         Row: {
-          color_gradient: string | null;
           created_at: string | null;
           id: number;
           image_url: string | null;
@@ -108,7 +107,6 @@ export type Database = {
           slug: string | null;
         };
         Insert: {
-          color_gradient?: string | null;
           created_at?: string | null;
           id?: number;
           image_url?: string | null;
@@ -116,7 +114,6 @@ export type Database = {
           product_count?: number | null;
         };
         Update: {
-          color_gradient?: string | null;
           created_at?: string | null;
           id?: number;
           image_url?: string | null;
