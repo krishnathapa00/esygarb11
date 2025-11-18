@@ -16,18 +16,15 @@ export const fetchUserProfile = async (): Promise<ProfileFormValues> => {
 
   const userId = userData.user.id;
 
+  // Fetch that user's existing profile
   const { data, error } = await supabase
     .from("profiles")
-    .select("full_name, phone, address, avatar_url")
+    .select("*")
     .eq("id", userId)
-    .single();
+    .maybeSingle();
 
-  if (error) {
-    throw new Error(error.message);
-  }
-  if (!data) {
-    throw new Error("Profile not found");
-  }
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Profile not found");
 
   return data as ProfileFormValues;
 };
@@ -43,19 +40,30 @@ export const updateUserProfile = async (
 
   const userId = userData.user.id;
 
+  // Fetch existing profile first — REQUIRED because of delivery_location
+  const { data: existing, error: existingError } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (existingError) throw new Error(existingError.message);
+  if (!existing) throw new Error("Existing profile not found");
+
   const { data, error } = await supabase
     .from("profiles")
     .upsert({
       id: userId,
       ...profile,
+
+      delivery_location: existing.delivery_location,
+
       updated_at: new Date().toISOString(),
     })
     .select()
     .single();
 
-  if (error) {
-    throw new Error(error.message);
-  }
+  if (error) throw new Error(error.message);
 
-  return data || profile;
+  return data as ProfileFormValues;
 };
