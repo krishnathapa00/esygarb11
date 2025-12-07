@@ -9,7 +9,7 @@ const banners = [
       <>
         Service Hours:
         <br />
-        6 PM - 10 PM
+        6 PM - 11 PM
       </>
     ),
     subtitle:
