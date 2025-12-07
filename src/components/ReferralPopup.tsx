@@ -1,15 +1,16 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { X, Gift, Copy, Share2, Check, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ReferralPopupProps {
   isOpen: boolean;
   onClose: () => void;
   isLoggedIn: boolean;
   onLoginRequired: () => void;
-  referralCode?: string;
+  userId?: string;
 }
 
 const ReferralPopup = ({
@@ -17,21 +18,58 @@ const ReferralPopup = ({
   onClose,
   isLoggedIn,
   onLoginRequired,
-  referralCode,
+  userId,
 }: ReferralPopupProps) => {
   const [copied, setCopied] = useState(false);
   const [showCode, setShowCode] = useState(false);
+  const [referralCode, setReferralCode] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const generatedCode = useMemo(() => {
-    if (referralCode) return referralCode;
-    return "ESY" + Math.random().toString(36).substring(2, 8).toUpperCase();
-  }, [referralCode]);
+  const getReferralCode = async () => {
+    if (!userId) return;
 
-  const referralLink = `https://esygrab.com/ref/${generatedCode}`;
+    const { data, error } = await supabase
+      .from("referral_codes")
+      .select("code")
+      .eq("user_id", userId)
+      .single();
+
+    if (error && error.code !== "PGRST116") {
+      console.error("Error fetching referral code:", error.message);
+      return;
+    }
+
+    if (data?.code) {
+      setReferralCode(data.code);
+    } else {
+      const newCode =
+        "ESY" + Math.random().toString(36).substring(2, 8).toUpperCase();
+      const { error: insertError } = await supabase
+        .from("referral_codes")
+        .insert({ user_id: userId, code: newCode });
+
+      if (insertError) {
+        console.error("Error inserting referral code:", insertError.message);
+        return;
+      }
+
+      setReferralCode(newCode);
+    }
+  };
+
+  useEffect(() => {
+    if (isLoggedIn && showCode) {
+      getReferralCode();
+    }
+  }, [isLoggedIn, showCode]);
+
+  const referralLink = referralCode
+    ? `https://esygrab.com/ref/${referralCode}`
+    : "";
 
   const handleCopyCode = () => {
-    navigator.clipboard.writeText(generatedCode);
+    if (!referralCode) return;
+    navigator.clipboard.writeText(referralCode);
     setCopied(true);
     toast({
       title: "Code copied!",
@@ -41,6 +79,7 @@ const ReferralPopup = ({
   };
 
   const handleCopyLink = () => {
+    if (!referralLink) return;
     navigator.clipboard.writeText(referralLink);
     toast({
       title: "Link copied!",
@@ -49,11 +88,13 @@ const ReferralPopup = ({
   };
 
   const handleShare = async () => {
+    if (!referralCode) return;
+
     if (navigator.share) {
       try {
         await navigator.share({
           title: "Get Free Delivery on EsyGrab!",
-          text: `Use my referral code ${generatedCode} to get free delivery!`,
+          text: `Use my referral code ${referralCode} to get free delivery!`,
           url: referralLink,
         });
       } catch (error) {
@@ -130,56 +171,60 @@ const ReferralPopup = ({
                 </ul>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">
-                  Your Referral Code
-                </label>
-                <div className="flex gap-2">
-                  <div className="flex-1 bg-muted rounded-lg px-4 py-3 font-mono text-lg font-bold text-foreground tracking-wider text-center border-2 border-dashed border-primary/30">
-                    {generatedCode}
+              {referralCode && (
+                <>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">
+                      Your Referral Code
+                    </label>
+                    <div className="flex gap-2">
+                      <div className="flex-1 bg-muted rounded-lg px-4 py-3 font-mono text-lg font-bold text-foreground tracking-wider text-center border-2 border-dashed border-primary/30">
+                        {referralCode}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={handleCopyCode}
+                      >
+                        {copied ? (
+                          <Check className="w-5 h-5 text-success" />
+                        ) : (
+                          <Copy className="w-5 h-5 text-primary" />
+                        )}
+                      </Button>
+                    </div>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={handleCopyCode}
-                  >
-                    {copied ? (
-                      <Check className="w-5 h-5 text-success" />
-                    ) : (
-                      <Copy className="w-5 h-5 text-primary" />
-                    )}
-                  </Button>
-                </div>
-              </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">
-                  Or share via link
-                </label>
-                <div className="flex gap-2">
-                  <div className="flex-1 bg-muted rounded-lg px-3 py-2.5 text-sm text-muted-foreground truncate">
-                    {referralLink}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">
+                      Or share via link
+                    </label>
+                    <div className="flex gap-2">
+                      <div className="flex-1 bg-muted rounded-lg px-3 py-2.5 text-sm text-muted-foreground truncate">
+                        {referralLink}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={handleCopyLink}
+                      >
+                        <Copy className="w-4 h-4 text-primary" />
+                      </Button>
+                    </div>
                   </div>
+
                   <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={handleCopyLink}
+                    onClick={handleShare}
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
                   >
-                    <Copy className="w-4 h-4 text-primary" />
+                    <Share2 className="w-4 h-4" /> Share with Friends
                   </Button>
-                </div>
-              </div>
 
-              <Button
-                onClick={handleShare}
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
-              >
-                <Share2 className="w-4 h-4" /> Share with Friends
-              </Button>
-
-              <p className="text-xs text-muted-foreground text-center">
-                Code valid for 1 week • One-time use per user
-              </p>
+                  <p className="text-xs text-muted-foreground text-center">
+                    Code valid for 1 week • One-time use per user
+                  </p>
+                </>
+              )}
             </>
           )}
         </div>
