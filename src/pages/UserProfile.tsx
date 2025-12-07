@@ -10,7 +10,14 @@ import InputField from "@/components/InputField";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-import { History, Package, HelpCircle, LogOut, ArrowRight } from "lucide-react";
+import {
+  History,
+  Package,
+  HelpCircle,
+  LogOut,
+  ArrowRight,
+  Wallet,
+} from "lucide-react";
 import {
   fetchUserProfile,
   updateUserProfile,
@@ -222,6 +229,13 @@ const UserProfile: React.FC = () => {
                 </h2>
                 <p className="text-green-600 text-sm sm:text-base font-medium break-words">
                   {user.email}
+                </p>
+                <p className="mt-2 text-lg font-semibold text-gray-800 flex items-center justify-center gap-2">
+                  <Wallet className="w-5 h-5 text-green-600" />
+                  Wallet Balance:{" "}
+                  <span className="text-green-600">
+                    Rs {profile?.wallet_balance?.toFixed(2) || "0.00"}
+                  </span>
                 </p>
               </CardContent>
             </Card>
