@@ -598,8 +598,9 @@ export type Database = {
           created_at?: string | null;
           darkstore_id?: string | null;
           delivery_order_count?: number | null;
-          delivery_location: string | null;
+          delivery_location?: string | null;
           full_name?: string | null;
+          email?: string;
           id: string;
           is_online?: boolean | null;
           kyc_verified?: boolean | null;
