@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { X, Gift, Copy, Share2, Check, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -17,16 +17,21 @@ const ReferralPopup = ({
   onClose,
   isLoggedIn,
   onLoginRequired,
-  referralCode = "ESYGRAB2024",
+  referralCode,
 }: ReferralPopupProps) => {
   const [copied, setCopied] = useState(false);
-  const { toast } = useToast();
   const [showCode, setShowCode] = useState(false);
+  const { toast } = useToast();
 
-  const referralLink = `https://esygrab.com/ref/${referralCode}`;
+  const generatedCode = useMemo(() => {
+    if (referralCode) return referralCode;
+    return "ESY" + Math.random().toString(36).substring(2, 8).toUpperCase();
+  }, [referralCode]);
+
+  const referralLink = `https://esygrab.com/ref/${generatedCode}`;
 
   const handleCopyCode = () => {
-    navigator.clipboard.writeText(referralCode);
+    navigator.clipboard.writeText(generatedCode);
     setCopied(true);
     toast({
       title: "Code copied!",
@@ -48,7 +53,7 @@ const ReferralPopup = ({
       try {
         await navigator.share({
           title: "Get Free Delivery on EsyGrab!",
-          text: `Use my referral code ${referralCode} to get free delivery on your first order!`,
+          text: `Use my referral code ${generatedCode} to get free delivery!`,
           url: referralLink,
         });
       } catch (error) {
@@ -59,21 +64,11 @@ const ReferralPopup = ({
     }
   };
 
-  const handleGetReferralCode = () => {
-    if (!isLoggedIn) {
-      onLoginRequired();
-      return;
-    }
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md border-0 bg-card p-0 overflow-hidden animate-scale-in">
-        {/* Header with gradient */}
+        {/* Header */}
         <div className="bg-gradient-to-br from-primary to-primary/80 p-6 text-primary-foreground relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-primary-foreground/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-primary-foreground/10 rounded-full translate-y-1/2 -translate-x-1/2" />
-
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-3">
               <div className="p-2 bg-primary-foreground/20 rounded-full">
@@ -92,19 +87,16 @@ const ReferralPopup = ({
         {/* Content */}
         <div className="p-6 space-y-5">
           {!isLoggedIn ? (
-            // User not logged in
             <div className="text-center space-y-4">
               <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mx-auto">
                 <Users className="w-8 h-8 text-white" />
               </div>
-              <div>
-                <h3 className="font-semibold text-foreground mb-1">
-                  Login to get your code
-                </h3>
-                <p className="text-muted-foreground text-sm">
-                  Sign in to generate your unique referral code
-                </p>
-              </div>
+              <h3 className="font-semibold text-foreground">
+                Login to get your code
+              </h3>
+              <p className="text-muted-foreground text-sm">
+                Sign in to generate your unique referral code
+              </p>
               <Button
                 onClick={onLoginRequired}
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
@@ -113,7 +105,6 @@ const ReferralPopup = ({
               </Button>
             </div>
           ) : !showCode ? (
-            // Logged in, code not generated yet
             <div className="text-center space-y-4">
               <p className="text-muted-foreground text-sm">
                 Click below to generate your referral code
@@ -126,9 +117,7 @@ const ReferralPopup = ({
               </Button>
             </div>
           ) : (
-            // Logged in, code generated
             <>
-              {/* Benefits */}
               <div className="bg-accent/50 rounded-lg p-4 space-y-2">
                 <h4 className="font-medium text-foreground flex items-center gap-2">
                   <Gift className="w-4 h-4 text-primary" />
@@ -141,20 +130,18 @@ const ReferralPopup = ({
                 </ul>
               </div>
 
-              {/* Referral Code */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">
                   Your Referral Code
                 </label>
                 <div className="flex gap-2">
                   <div className="flex-1 bg-muted rounded-lg px-4 py-3 font-mono text-lg font-bold text-foreground tracking-wider text-center border-2 border-dashed border-primary/30">
-                    {referralCode}
+                    {generatedCode}
                   </div>
                   <Button
                     variant="outline"
                     size="icon"
                     onClick={handleCopyCode}
-                    className="h-auto w-12 border-primary/30 hover:bg-accent"
                   >
                     {copied ? (
                       <Check className="w-5 h-5 text-success" />
@@ -165,7 +152,6 @@ const ReferralPopup = ({
                 </div>
               </div>
 
-              {/* Referral Link & Share Button */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">
                   Or share via link
@@ -178,18 +164,19 @@ const ReferralPopup = ({
                     variant="outline"
                     size="icon"
                     onClick={handleCopyLink}
-                    className="h-auto w-12 border-primary/30 hover:bg-accent"
                   >
                     <Copy className="w-4 h-4 text-primary" />
                   </Button>
                 </div>
               </div>
+
               <Button
                 onClick={handleShare}
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
               >
                 <Share2 className="w-4 h-4" /> Share with Friends
               </Button>
+
               <p className="text-xs text-muted-foreground text-center">
                 Code valid for 1 week • One-time use per user
               </p>
