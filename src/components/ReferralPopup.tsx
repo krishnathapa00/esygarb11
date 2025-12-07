@@ -93,8 +93,8 @@ const ReferralPopup = ({
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "Get Free Delivery on EsyGrab!",
-          text: `Use my referral code ${referralCode} to get free delivery!`,
+          title: "Get Rs.10 on EsyGrab Wallet!",
+          text: `Use my referral code ${referralCode} to get Rs.10!`,
           url: referralLink,
         });
       } catch (error) {
@@ -178,7 +178,7 @@ const ReferralPopup = ({
               </DialogTitle>
             </div>
             <p className="text-primary-foreground/90 text-sm">
-              Share with friends and both get free delivery!
+              Share with friends and earn Rs.10 for every referral!
             </p>
           </div>
         </div>
@@ -223,9 +223,9 @@ const ReferralPopup = ({
                   How it works
                 </h4>
                 <ul className="text-sm text-muted-foreground space-y-1.5">
-                  <li>1. Share your unique code with friends</li>
-                  <li>2. They apply it at checkout</li>
-                  <li>3. You both get free delivery!</li>
+                  <li>1. Share your unique referral code with friends</li>
+                  <li>2. They enter it while signing up.</li>
+                  <li>3. You earn Rs.10 for each successful referral!</li>
                 </ul>
               </div>
 
@@ -279,7 +279,7 @@ const ReferralPopup = ({
                   </Button>
 
                   <p className="text-xs text-muted-foreground text-center">
-                    Code valid for 1 week • One-time use per user
+                    Earn Rs.10 for each person who joins using your code!
                   </p>
                 </>
               )}
