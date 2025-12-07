@@ -120,10 +120,7 @@ const ReferralPopup = ({
       return;
     }
 
-    if (codeData.user_id === userId) {
-      toast({ title: "You cannot use your own referral code" });
-      return;
-    }
+    const referrerId = codeData.user_id;
 
     const { data: usedData } = await supabase
       .from("referral_uses")
@@ -135,6 +132,21 @@ const ReferralPopup = ({
     if (usedData) {
       toast({ title: "You have already used this referral code" });
       return;
+    }
+
+    if (userId === referrerId) {
+      const { data: selfUseData } = await supabase
+        .from("referral_uses")
+        .select("*")
+        .eq("referral_code", enteredCode)
+        .eq("used_by", userId);
+
+      const selfUseCount = selfUseData?.length || 0;
+
+      if (selfUseCount >= 3) {
+        toast({ title: "You have reached the maximum uses for your own code" });
+        return;
+      }
     }
 
     const { error: insertError } = await supabase.from("referral_uses").insert({
