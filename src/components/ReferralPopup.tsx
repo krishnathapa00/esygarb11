@@ -105,6 +105,52 @@ const ReferralPopup = ({
     }
   };
 
+  const applyReferralCode = async (enteredCode: string) => {
+    if (!userId) return;
+
+    const { data: codeData, error } = await supabase
+      .from("referral_codes")
+      .select("user_id")
+      .eq("code", enteredCode)
+      .single();
+
+    if (error) {
+      console.error(error);
+      toast({ title: "Invalid referral code" });
+      return;
+    }
+
+    if (codeData.user_id === userId) {
+      toast({ title: "You cannot use your own referral code" });
+      return;
+    }
+
+    const { data: usedData } = await supabase
+      .from("referral_uses")
+      .select("*")
+      .eq("referral_code", enteredCode)
+      .eq("used_by", userId)
+      .single();
+
+    if (usedData) {
+      toast({ title: "You have already used this referral code" });
+      return;
+    }
+
+    const { error: insertError } = await supabase.from("referral_uses").insert({
+      referral_code: enteredCode,
+      used_by: userId,
+    });
+
+    if (insertError) {
+      console.error(insertError);
+      toast({ title: "Failed to apply referral code" });
+      return;
+    }
+
+    toast({ title: "Referral code applied successfully!" });
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md border-0 bg-card p-0 overflow-hidden animate-scale-in">
