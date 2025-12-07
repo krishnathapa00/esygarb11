@@ -169,7 +169,7 @@ const Index = () => {
         onClose={() => setIsReferralOpen(false)}
         isLoggedIn={!!user}
         onLoginRequired={handleLoginRequired}
-        referralCode={user?.referralCode || "ESYGRAB2024"}
+        userId={user?.id}
       />
     </div>
   );
