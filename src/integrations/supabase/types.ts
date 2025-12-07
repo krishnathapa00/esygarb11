@@ -800,6 +800,31 @@ export type Database = {
           }
         ];
       };
+      referral_codes: {
+        Row: {
+          id: string;
+          user_id: string;
+          code: string;
+          created_at: string;
+          max_uses: number;
+          redeemed: number;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          code: string;
+          created_at?: string;
+          max_uses?: number;
+          redeemed?: number;
+        };
+        Update: {
+          user_id?: string;
+          code?: string;
+          created_at?: string;
+          max_uses?: number;
+          redeemed?: number;
+        };
+      };
       waitlist: {
         Row: {
           created_at: string;
