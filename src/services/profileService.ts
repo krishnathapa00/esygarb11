@@ -5,6 +5,7 @@ export interface ProfileFormValues {
   phone: string;
   address: string;
   avatar_url: string;
+  wallet_balance?: number;
 }
 
 export const fetchUserProfile = async (): Promise<ProfileFormValues> => {
