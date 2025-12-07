@@ -237,6 +237,9 @@ const UserProfile: React.FC = () => {
                     Rs {profile?.wallet_balance?.toFixed(2) || "0.00"}
                   </span>
                 </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Balance will be sent in your Esewa ID once it reaches Rs.50
+                </p>
               </CardContent>
             </Card>
           </div>
