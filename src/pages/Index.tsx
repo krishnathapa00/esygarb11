@@ -9,11 +9,13 @@ import ServiceUnavailableMessage from "../components/ServiceUnavailableMessage";
 import { Product, useProducts } from "../hooks/useProducts";
 import { useAuthContext } from "@/contexts/AuthProvider";
 import { useCartActions } from "@/hooks/useCart";
+import ReferralPopup from "@/components/ReferralPopup";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [serviceAvailable, setServiceAvailable] = useState(true);
+  const [isReferralOpen, setIsReferralOpen] = useState(false);
 
   const { data: products = [], isLoading } = useProducts();
   const { user } = useAuthContext();
@@ -21,6 +23,16 @@ const Index = () => {
 
   const { handleAddToCart, handleUpdateQuantity, getCartQuantity } =
     useCartActions();
+
+  useEffect(() => {
+    setTimeout(() => {
+      setIsReferralOpen(true);
+    }, 500);
+  }, []);
+
+  const handleLoginRequired = () => {
+    navigate("/auth");
+  };
 
   useEffect(() => {
     document.body.classList.add("with-search-bar");
@@ -152,6 +164,13 @@ const Index = () => {
       <div className="hidden md:block">
         <Footer />
       </div>
+      <ReferralPopup
+        isOpen={isReferralOpen}
+        onClose={() => setIsReferralOpen(false)}
+        isLoggedIn={!!user}
+        onLoginRequired={handleLoginRequired}
+        referralCode={user?.referralCode || "ESYGRAB2024"}
+      />
     </div>
   );
 };
