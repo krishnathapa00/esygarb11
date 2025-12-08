@@ -17,6 +17,7 @@ import {
   LogOut,
   ArrowRight,
   Wallet,
+  Gift,
 } from "lucide-react";
 import {
   fetchUserProfile,
@@ -150,6 +151,12 @@ const UserProfile: React.FC = () => {
   // ------------------- Quick Actions -------------------
   const quickActions = [
     {
+      icon: Gift,
+      label: "Refer & Earn",
+      href: "/referral",
+      description: "Earn Rs 10 per referral",
+    },
+    {
       icon: History,
       label: "Order History",
       href: "/order-history",
@@ -229,16 +236,6 @@ const UserProfile: React.FC = () => {
                 </h2>
                 <p className="text-green-600 text-sm sm:text-base font-medium break-words">
                   {user.email}
-                </p>
-                <p className="mt-2 text-lg font-semibold text-gray-800 flex items-center justify-center gap-2">
-                  <Wallet className="w-5 h-5 text-green-600" />
-                  Wallet Balance:{" "}
-                  <span className="text-green-600">
-                    Rs {profile?.wallet_balance?.toFixed(2) || "0.00"}
-                  </span>
-                </p>
-                <p className="text-sm text-gray-500 mt-1">
-                  Balance will be sent in your Esewa ID once it reaches Rs.50
                 </p>
               </CardContent>
             </Card>
