@@ -7,7 +7,6 @@ import {
   Check,
   ArrowLeft,
   Users,
-  Truck,
   Clock,
   Star,
 } from "lucide-react";
@@ -25,7 +24,6 @@ const ReferralPage = () => {
   const [referralsCount, setReferralsCount] = useState(0);
   const [pendingRewards, setPendingRewards] = useState(0);
   const [earnedRewards, setEarnedRewards] = useState(0);
-
   const [copied, setCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
 
@@ -83,14 +81,23 @@ const ReferralPage = () => {
       const { data } = await supabase
         .from("referral_uses")
         .select("*")
-        .eq("referrer", userId);
+        .in(
+          "referral_code_id",
+          (
+            await supabase
+              .from("referral_codes")
+              .select("id")
+              .eq("user_id", userId)
+          ).data.map((code) => code.id)
+        );
 
-      setReferralsCount(data?.length || 0);
+      const totalReferrals = data?.length || 0;
 
-      setEarnedRewards(data?.filter((x) => x.status === "earned").length || 0);
-      setPendingRewards(
-        data?.filter((x) => x.status === "pending").length || 0
-      );
+      const approvedReferrals = data?.filter((r) => r.approved).length || 0;
+
+      setReferralsCount(totalReferrals);
+      setEarnedRewards(approvedReferrals);
+      setPendingRewards(totalReferrals - approvedReferrals);
     };
 
     fetchStats();
@@ -136,20 +143,20 @@ const ReferralPage = () => {
 
   if (!referralCode) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
         Loading referral details...
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <header className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground">
-        <div className="container mx-auto px-4 py-6">
+      <header className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-md">
+        <div className="container mx-auto px-4 py-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <button
             onClick={() => navigate("/")}
-            className="flex items-center gap-2 mb-4"
+            className="flex items-center gap-2 text-sm font-medium hover:text-secondary transition"
           >
             <ArrowLeft className="w-5 h-5" />
             Back to Home
@@ -159,30 +166,36 @@ const ReferralPage = () => {
               <Gift className="w-8 h-8" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold">Refer & Earn</h1>
-              <p className="">Share the love, earn rewards!</p>
+              <h1 className="text-2xl md:text-3xl font-bold">Refer & Earn</h1>
+              <p className="text-sm md:text-base text-muted-foreground">
+                Share the love, earn rewards!
+              </p>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 pt-0 pb-8 space-y-10">
-        {/* Stats Section */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Main content */}
+      <main className="container mx-auto px-4 py-8 space-y-10">
+        {/* Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           <StatCard
-            icon={<Users />}
+            icon={<Users className="text-white" />}
             label="Friends Referred"
             value={referralsCount}
+            color="bg-primary"
           />
           <StatCard
-            icon={<Truck />}
+            icon={<Gift className="text-white" />}
             label="Rewards Earned"
-            value={earnedRewards}
+            value={`Rs ${earnedRewards * 10}`}
+            color="bg-green-500"
           />
           <StatCard
-            icon={<Clock />}
+            icon={<Clock className="text-white" />}
             label="Pending Rewards"
             value={pendingRewards}
+            color="bg-yellow-500"
           />
         </div>
 
@@ -203,10 +216,17 @@ const ReferralPage = () => {
 
 export default ReferralPage;
 
-const StatCard = ({ icon, label, value }) => (
-  <Card className="border-0 shadow-md bg-card">
-    <CardContent className="p-5 flex items-center gap-4">
-      <div className="p-3 bg-accent rounded-full">{icon}</div>
+// ----------------------
+// Components
+// ----------------------
+const StatCard = ({ icon, label, value, color }) => (
+  <Card className={`shadow-lg rounded-xl border-0 overflow-hidden`}>
+    <CardContent className="flex items-center gap-4 p-6">
+      <div
+        className={`p-4 rounded-lg ${color} flex items-center justify-center`}
+      >
+        {icon}
+      </div>
       <div>
         <p className="text-2xl font-bold">{value}</p>
         <p className="text-sm text-muted-foreground">{label}</p>
@@ -224,9 +244,9 @@ const ReferralCodeCard = ({
   handleCopyLink,
   handleShare,
 }) => (
-  <Card className="shadow-lg bg-card">
+  <Card className="shadow-2xl rounded-xl border-0 overflow-hidden">
     <CardContent className="p-6 space-y-6">
-      <h2 className="text-xl font-bold flex items-center gap-2">
+      <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2">
         <Star className="w-5 h-5 text-primary" />
         Your Referral Code
       </h2>
@@ -234,12 +254,16 @@ const ReferralCodeCard = ({
       {/* Code */}
       <div>
         <label className="text-sm text-muted-foreground">Referral Code</label>
-        <div className="flex gap-3 mt-2">
+        <div className="flex gap-3 mt-2 flex-col sm:flex-row">
           <div className="flex-1 bg-muted p-4 rounded-lg font-mono text-2xl text-center border-2 border-dashed border-primary/30">
             {referralCode}
           </div>
-          <Button variant="outline" onClick={handleCopyCode}>
-            {copied ? <Check /> : <Copy />}
+          <Button
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={handleCopyCode}
+          >
+            {copied ? <Check /> : <Copy />} Copy Code
           </Button>
         </div>
       </div>
@@ -247,19 +271,27 @@ const ReferralCodeCard = ({
       {/* Link */}
       <div>
         <label className="text-sm text-muted-foreground">Referral Link</label>
-        <div className="flex gap-3 mt-2">
+        <div className="flex gap-3 mt-2 flex-col sm:flex-row">
           <div className="flex-1 bg-muted p-3 rounded-lg text-sm truncate">
             {referralLink}
           </div>
-          <Button variant="outline" onClick={handleCopyLink}>
-            {linkCopied ? <Check /> : <Copy />}
+          <Button
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={handleCopyLink}
+          >
+            {linkCopied ? <Check /> : <Copy />} Copy Link
           </Button>
         </div>
       </div>
 
-      {/* Share Button */}
-      <Button className="w-full py-6 text-lg" onClick={handleShare}>
-        <Share2 className="w-5 h-5" /> Share with Friends
+      {/* Share */}
+      <Button
+        className="w-full py-4 text-lg bg-gradient-to-r from-primary to-accent text-white font-semibold hover:from-accent hover:to-primary transition-all shadow-lg"
+        onClick={handleShare}
+      >
+        <Share2 className="w-5 h-5 inline-block mr-2" />
+        Share with Friends
       </Button>
     </CardContent>
   </Card>
