@@ -81,7 +81,6 @@
   body {
     @apply bg-background text-foreground;
     font-family: "Inter", sans-serif;
-    padding-top: 64px; /* Space for fixed header (h-16 = 64px) */
   }
 
   /* Add extra padding for mobile pages with search bar */
