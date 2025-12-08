@@ -62,6 +62,7 @@ import HowItWorks from './pages/HowItWorks';
 import Careers from './pages/Careers';
 import ContactUs from './pages/ContactUs';
 import SupportPage from './pages/SupportPage';
+import ReferralPage from "./pages/ReferralPage";
 
 import { useRequireCompleteProfile } from "./hooks/useRequireCompleteProfile";
 
