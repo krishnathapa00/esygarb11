@@ -105,6 +105,7 @@ const AppContent = () => {
         <Route path="/careers" element={<Careers />} />
         <Route path="/contact-us" element={<ContactUs />} />
         <Route path="/support" element={<SupportPage />} />
+        <Route path="/referral" element={<ReferralPage />} />
 
         {/* Delivery Partner Routes */}
         <Route path="/delivery-partner" element={<DeliveryPartnerAuth />} />
