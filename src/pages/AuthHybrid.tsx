@@ -26,6 +26,14 @@ const AuthHybrid = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    document.body.classList.remove("with-search-bar");
+    document.body.style.paddingTop = "0px";
+    return () => {
+      document.body.style.paddingTop = "";
+    };
+  }, []);
+
+  useEffect(() => {
     if (user) navigate("/");
   }, [user, navigate]);
 
