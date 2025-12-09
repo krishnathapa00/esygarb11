@@ -63,6 +63,7 @@ import Careers from './pages/Careers';
 import ContactUs from './pages/ContactUs';
 import SupportPage from './pages/SupportPage';
 import ReferralPage from "./pages/ReferralPage";
+import ReferralLandingPage from "./pages/ReferralLandingPage";
 
 import { useRequireCompleteProfile } from "./hooks/useRequireCompleteProfile";
 
@@ -107,6 +108,7 @@ const AppContent = () => {
         <Route path="/contact-us" element={<ContactUs />} />
         <Route path="/support" element={<SupportPage />} />
         <Route path="/referral" element={<ReferralPage />} />
+        <Route path="/ref/:code" element={<ReferralLandingPage />} />;
 
         {/* Delivery Partner Routes */}
         <Route path="/delivery-partner" element={<DeliveryPartnerAuth />} />
