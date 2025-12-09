@@ -25,6 +25,7 @@ import {
   ProfileFormValues,
 } from "@/services/profileService";
 import AddressInput from "@/components/AddressInput";
+import { detectUserLocation } from "@/utils/location";
 
 const UserProfile: React.FC = () => {
   const navigate = useNavigate();
@@ -132,6 +133,16 @@ const UserProfile: React.FC = () => {
       setProfile(updatedProfile);
       reset(updatedProfile);
       setIsEditing(false);
+
+      await supabase.functions.invoke("approve-referral", {
+        body: {
+          user_id: user.id,
+          address: updatedProfile.address,
+          device_id: localStorage.getItem("esygrab_device_id"),
+          auto_detect: localStorage.getItem("location_auto_detect") === "true",
+        },
+      });
+
       toast({
         title: "Profile updated",
         description: "Profile saved successfully",
@@ -145,6 +156,48 @@ const UserProfile: React.FC = () => {
       });
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handleDetectLocation = async () => {
+    try {
+      const { lat, lng } = await detectUserLocation();
+
+      // Save coordinates in localStorage
+      localStorage.setItem(
+        "esygrab_user_location",
+        JSON.stringify({ lat, lng, detected: true })
+      );
+
+      // Reverse geocode using Google Maps API
+      const GOOGLE_MAPS_API_KEY = "AIzaSyADxM5y7WrXu3BRJ_hJQZhh6FLXWyO3E1g";
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_MAPS_API_KEY}`
+      );
+
+      if (!response.ok) throw new Error("Failed to fetch address");
+
+      const data = await response.json();
+
+      if (data.status !== "OK" || !data.results || data.results.length === 0) {
+        throw new Error("Address not found");
+      }
+
+      const address = data.results[0].formatted_address;
+
+      // Update AddressInput
+      setValue("address", address);
+
+      toast({
+        title: "Location detected",
+        description: address,
+      });
+    } catch (err: any) {
+      toast({
+        title: "Location detection failed",
+        description: err.message || "Could not detect location",
+        variant: "destructive",
+      });
     }
   };
 
@@ -319,11 +372,30 @@ const UserProfile: React.FC = () => {
                       }}
                     />
 
-                    <div>
+                    <div className="flex flex-col gap-2">
+                      <label
+                        htmlFor="address"
+                        className="text-sm font-medium text-gray-700"
+                      >
+                        Address
+                      </label>
+
                       <AddressInput
                         value={watch("address")}
                         setValue={(val) => setValue("address", val)}
                       />
+
+                      <div className="mt-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleDetectLocation}
+                          className="px-6 py-1"
+                        >
+                          Detect Location
+                        </Button>
+                      </div>
                     </div>
 
                     <div className="flex gap-4">
