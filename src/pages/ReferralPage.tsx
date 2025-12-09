@@ -21,20 +21,26 @@ const ReferralPage = () => {
 
   const [userId, setUserId] = useState<string | null>(null);
   const [referralCode, setReferralCode] = useState<string | null>(null);
+  const [referralCodeId, setReferralCodeId] = useState<number | null>(null);
+
   const [referralsCount, setReferralsCount] = useState(0);
   const [pendingRewards, setPendingRewards] = useState(0);
   const [earnedRewards, setEarnedRewards] = useState(0);
+
   const [copied, setCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
 
-  // Remove top padding from index.css body
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     document.body.style.paddingTop = "0px";
+
     return () => {
       document.body.style.paddingTop = "";
     };
   }, []);
 
+  // Load logged-in user
   useEffect(() => {
     const loadUser = async () => {
       const { data } = await supabase.auth.getUser();
@@ -47,61 +53,58 @@ const ReferralPage = () => {
     loadUser();
   }, []);
 
+  // Fetch referral code + stats
   useEffect(() => {
     if (!userId) return;
 
-    const fetchCode = async () => {
-      const { data } = await supabase
+    const loadReferralData = async () => {
+      setLoading(true);
+
+      /** 1️⃣ Fetch referral code + ID in a single query */
+      const { data: referral, error: codeErr } = await supabase
         .from("referral_codes")
-        .select("code")
+        .select("id, code")
         .eq("user_id", userId)
         .single();
 
-      if (data?.code) {
-        setReferralCode(data.code);
-      } else {
+      let codeId = referral?.id;
+      let code = referral?.code;
+
+      /** Create referral code if it doesn't exist */
+      if (!referral) {
         const newCode =
           "ESY" + Math.random().toString(36).substring(2, 8).toUpperCase();
 
-        await supabase.from("referral_codes").insert({
-          user_id: userId,
-          code: newCode,
-        });
+        const { data: newCodeData } = await supabase
+          .from("referral_codes")
+          .insert({ user_id: userId, code: newCode })
+          .select("id, code")
+          .single();
 
-        setReferralCode(newCode);
+        codeId = newCodeData.id;
+        code = newCodeData.code;
       }
-    };
 
-    fetchCode();
-  }, [userId]);
+      setReferralCode(code);
+      setReferralCodeId(codeId);
 
-  useEffect(() => {
-    if (!userId) return;
-
-    const fetchStats = async () => {
-      const { data } = await supabase
+      /** 2️⃣ Fetch all referral uses for this code (only ONE query) */
+      const { data: uses } = await supabase
         .from("referral_uses")
         .select("*")
-        .in(
-          "referral_code_id",
-          (
-            await supabase
-              .from("referral_codes")
-              .select("id")
-              .eq("user_id", userId)
-          ).data.map((code) => code.id)
-        );
+        .eq("referral_code_id", codeId);
 
-      const totalReferrals = data?.length || 0;
+      const total = uses?.length || 0;
+      const approved = uses?.filter((u) => u.approved).length || 0;
 
-      const approvedReferrals = data?.filter((r) => r.approved).length || 0;
+      setReferralsCount(total);
+      setEarnedRewards(approved);
+      setPendingRewards(total - approved);
 
-      setReferralsCount(totalReferrals);
-      setEarnedRewards(approvedReferrals);
-      setPendingRewards(totalReferrals - approvedReferrals);
+      setLoading(false);
     };
 
-    fetchStats();
+    loadReferralData();
   }, [userId]);
 
   const referralLink = referralCode
@@ -109,7 +112,6 @@ const ReferralPage = () => {
     : "";
 
   const handleCopyCode = () => {
-    if (!referralCode) return;
     navigator.clipboard.writeText(referralCode);
     setCopied(true);
     toast({ title: "Code copied!" });
@@ -117,7 +119,6 @@ const ReferralPage = () => {
   };
 
   const handleCopyLink = () => {
-    if (!referralLink) return;
     navigator.clipboard.writeText(referralLink);
     setLinkCopied(true);
     toast({ title: "Link copied!" });
@@ -125,8 +126,6 @@ const ReferralPage = () => {
   };
 
   const handleShare = async () => {
-    if (!referralCode) return;
-
     if (navigator.share) {
       try {
         await navigator.share({
@@ -142,13 +141,13 @@ const ReferralPage = () => {
     }
   };
 
-  if (!referralCode) {
+  /** Loading UI */
+  if (loading)
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
+      <div className="min-h-screen flex items-center justify-center">
         Loading referral details...
       </div>
     );
-  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -162,6 +161,7 @@ const ReferralPage = () => {
             <ArrowLeft className="w-5 h-5" />
             Back to Home
           </button>
+
           <div className="flex items-center gap-4">
             <div className="p-3 bg-primary-foreground/20 rounded-full">
               <Gift className="w-8 h-8" />
@@ -176,7 +176,7 @@ const ReferralPage = () => {
         </div>
       </header>
 
-      {/* Main content */}
+      {/* Main Content */}
       <main className="container mx-auto px-4 py-8 space-y-10">
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
@@ -211,7 +211,7 @@ const ReferralPage = () => {
           handleShare={handleShare}
         />
 
-        {/* Terms & Conditions */}
+        {/* Terms */}
         <Card className="shadow-lg rounded-xl border-0 mt-10">
           <CardContent className="p-6 space-y-4">
             <h2 className="text-xl font-bold flex items-center gap-2">
@@ -227,28 +227,24 @@ const ReferralPage = () => {
                   referral to be valid.
                 </p>
               </li>
-
               <li className="flex items-start gap-3">
                 <span className="mt-1 w-2 h-2 rounded-full bg-primary"></span>
                 <p>
-                  User must <strong>complete their profile</strong> and
-                  <strong> select location using auto-detection</strong>.
+                  User must <strong>complete their profile</strong> and select{" "}
+                  <strong>auto-detected location</strong>.
                 </p>
               </li>
-
               <li className="flex items-start gap-3">
                 <span className="mt-1 w-2 h-2 rounded-full bg-primary"></span>
                 <p>
-                  Location <strong>typed manually will not be accepted</strong>.
-                  Only auto-detected location is valid for referral approval.
+                  Manually typed locations will <strong>NOT</strong> be
+                  accepted.
                 </p>
               </li>
-
               <li className="flex items-start gap-3">
                 <span className="mt-1 w-2 h-2 rounded-full bg-primary"></span>
                 <p>
-                  Sign-ups using the <strong>same device</strong> will
-                  <strong> NOT</strong> count as a successful referral.
+                  Sign-ups using the <strong>same device</strong> do NOT count.
                 </p>
               </li>
             </ul>
@@ -261,11 +257,10 @@ const ReferralPage = () => {
 
 export default ReferralPage;
 
-// ----------------------
-// Components
-// ----------------------
+/* ---------------------- Components ---------------------- */
+
 const StatCard = ({ icon, label, value, color }) => (
-  <Card className={`shadow-lg rounded-xl border-0 overflow-hidden`}>
+  <Card className="shadow-lg rounded-xl border-0 overflow-hidden">
     <CardContent className="flex items-center gap-4 p-6">
       <div
         className={`p-4 rounded-lg ${color} flex items-center justify-center`}
@@ -296,7 +291,6 @@ const ReferralCodeCard = ({
         Your Referral Code
       </h2>
 
-      {/* Code */}
       <div>
         <label className="text-sm text-muted-foreground">Referral Code</label>
         <div className="flex gap-3 mt-2 flex-col sm:flex-row">
@@ -313,7 +307,6 @@ const ReferralCodeCard = ({
         </div>
       </div>
 
-      {/* Link */}
       <div>
         <label className="text-sm text-muted-foreground">Referral Link</label>
         <div className="flex gap-3 mt-2 flex-col sm:flex-row">
@@ -330,7 +323,6 @@ const ReferralCodeCard = ({
         </div>
       </div>
 
-      
       <Button
         className="w-full py-4 text-lg bg-gradient-to-r from-primary to-accent text-white font-semibold hover:from-accent hover:to-primary transition-all shadow-lg"
         onClick={handleShare}
