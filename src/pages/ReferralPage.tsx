@@ -27,6 +27,7 @@ const ReferralPage = () => {
   const [copied, setCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
 
+  // Remove top padding from index.css body
   useEffect(() => {
     document.body.style.paddingTop = "0px";
     return () => {
@@ -209,6 +210,50 @@ const ReferralPage = () => {
           handleCopyLink={handleCopyLink}
           handleShare={handleShare}
         />
+
+        {/* Terms & Conditions */}
+        <Card className="shadow-lg rounded-xl border-0 mt-10">
+          <CardContent className="p-6 space-y-4">
+            <h2 className="text-xl font-bold flex items-center gap-2">
+              <Star className="w-5 h-5 text-primary" />
+              Referral Conditions
+            </h2>
+
+            <ul className="space-y-4 text-sm text-muted-foreground">
+              <li className="flex items-start gap-3">
+                <span className="mt-1 w-2 h-2 rounded-full bg-primary"></span>
+                <p>
+                  <strong>User must be within New Baneshwor</strong> for the
+                  referral to be valid.
+                </p>
+              </li>
+
+              <li className="flex items-start gap-3">
+                <span className="mt-1 w-2 h-2 rounded-full bg-primary"></span>
+                <p>
+                  User must <strong>complete their profile</strong> and
+                  <strong> select location using auto-detection</strong>.
+                </p>
+              </li>
+
+              <li className="flex items-start gap-3">
+                <span className="mt-1 w-2 h-2 rounded-full bg-primary"></span>
+                <p>
+                  Location <strong>typed manually will not be accepted</strong>.
+                  Only auto-detected location is valid for referral approval.
+                </p>
+              </li>
+
+              <li className="flex items-start gap-3">
+                <span className="mt-1 w-2 h-2 rounded-full bg-primary"></span>
+                <p>
+                  Sign-ups using the <strong>same device</strong> will
+                  <strong> NOT</strong> count as a successful referral.
+                </p>
+              </li>
+            </ul>
+          </CardContent>
+        </Card>
       </main>
     </div>
   );
