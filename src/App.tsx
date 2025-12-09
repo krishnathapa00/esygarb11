@@ -4,8 +4,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/contexts/AuthProvider";
 import { CartProvider } from "@/contexts/CartContext";
 import { ToastProvider, useSetGlobalToast } from "@/components/Toast";
-import { useActivityTracker } from '@/hooks/useActivityTracker';
-import { useSessionPersistence } from '@/hooks/useSessionPersistence';
+import { useActivityTracker } from "@/hooks/useActivityTracker";
+import { useSessionPersistence } from "@/hooks/useSessionPersistence";
 import { RoleProtectedRoute } from "@/components/RoleProtectedRoute";
 import Index from "./pages/Index";
 import AllCategories from "./pages/Categories";
@@ -14,7 +14,6 @@ import ProductDetails from "./pages/ProductDetails";
 import CartPage from "./pages/CartPage";
 import Checkout from "./pages/Checkout";
 import OrderConfirmation from "./pages/OrderConfirmation";
-import OrderTracking from "./pages/OrderTracking";
 import OrderTrackingLookup from "./pages/OrderTrackingLookup";
 import OrderHistory from "./pages/OrderHistory";
 import UserProfile from "./pages/UserProfile";
@@ -36,40 +35,39 @@ import NotFound from "./pages/NotFound";
 import Unauthorized from "./pages/Unauthorized";
 import MapLocationEnhanced from "./pages/MapLocationEnhanced";
 import SearchResults from "./pages/SearchResults";
-import Waitlist from './pages/Waitlist';
-import DeliveryProfile from './pages/DeliveryProfile';
-import DeliveryOrders from './pages/DeliveryOrders';
-import DeliveryOrderDetail from './pages/DeliveryOrderDetail';
-import DeliveryEarnings from './pages/DeliveryEarnings';
-import DeliveryHistory from './pages/DeliveryHistory';
-import DeliveryWithdraw from './pages/DeliveryWithdraw';
-import DeliveryMapNavigationNew from './pages/DeliveryMapNavigationNew';
-import ManageDarkstores from './pages/admin/ManageDarkstores';
-import DeliverySettings from './pages/admin/DeliverySettings';
-import ManageCategories from './pages/admin/ManageCategories';
-import AddProductNew from './pages/admin/AddProductNew';
-import OrderDetails from './pages/admin/OrderDetails';
-import ManagePromoCodes from './pages/admin/ManagePromoCodes';
-import HelpCenter from './pages/HelpCenter';
-import ReturnsRefunds from './pages/ReturnsRefunds';
-import PrivacyPolicy from './pages/PrivacyPolicy';
-import TermsOfService from './pages/TermsOfService';
-import SubCategoriesNew from "./pages/SubCategoriesNew";
+import Waitlist from "./pages/Waitlist";
+import DeliveryProfile from "./pages/DeliveryProfile";
+import DeliveryOrders from "./pages/DeliveryOrders";
+import DeliveryOrderDetail from "./pages/DeliveryOrderDetail";
+import DeliveryEarnings from "./pages/DeliveryEarnings";
+import DeliveryHistory from "./pages/DeliveryHistory";
+import DeliveryWithdraw from "./pages/DeliveryWithdraw";
+import DeliveryMapNavigationNew from "./pages/DeliveryMapNavigationNew";
+import ManageDarkstores from "./pages/admin/ManageDarkstores";
+import DeliverySettings from "./pages/admin/DeliverySettings";
+import ManageCategories from "./pages/admin/ManageCategories";
+import AddProductNew from "./pages/admin/AddProductNew";
+import OrderDetails from "./pages/admin/OrderDetails";
+import ManagePromoCodes from "./pages/admin/ManagePromoCodes";
+import HelpCenter from "./pages/HelpCenter";
+import ReturnsRefunds from "./pages/ReturnsRefunds";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 import SubCategoriesPage from "./pages/SubCategoriesPage";
 import OrderTrackingWithMap from "./pages/OrderTrackingWithMap";
-import AboutUs from './pages/AboutUs';
-import HowItWorks from './pages/HowItWorks';
-import Careers from './pages/Careers';
-import ContactUs from './pages/ContactUs';
-import SupportPage from './pages/SupportPage';
+import AboutUs from "./pages/AboutUs";
+import HowItWorks from "./pages/HowItWorks";
+import Careers from "./pages/Careers";
+import ContactUs from "./pages/ContactUs";
+import SupportPage from "./pages/SupportPage";
 import ReferralPage from "./pages/ReferralPage";
 import ReferralLandingPage from "./pages/ReferralLandingPage";
 
 import { useRequireCompleteProfile } from "./hooks/useRequireCompleteProfile";
+import DeviceIdUpdater from "./utils/device";
 
 const queryClient = new QueryClient();
 
-// Component to handle activity tracking and session persistence
 const AppContent = () => {
   useSetGlobalToast();
   useActivityTracker();
@@ -83,7 +81,10 @@ const AppContent = () => {
         <Route path="/auth" element={<AuthHybrid />} />
         <Route path="/" element={<Index />} />
         <Route path="/categories" element={<AllCategories />} />
-        <Route path="/category/:categoryName/products" element={<CategoryProducts />} />
+        <Route
+          path="/category/:categoryName/products"
+          element={<CategoryProducts />}
+        />
         <Route path="/categories/:slug" element={<CategoryProducts />} />
         <Route path="/product/:id" element={<ProductDetails />} />
         <Route path="/search" element={<SearchResults />} />
@@ -91,8 +92,14 @@ const AppContent = () => {
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/order-confirmation" element={<OrderConfirmation />} />
         <Route path="/subcategories/:slug" element={<SubCategoriesPage />} />
-        <Route path="/order-tracking/:orderId" element={<OrderTrackingWithMap />} />
-        <Route path="/order-tracking-lookup" element={<OrderTrackingLookup />} />
+        <Route
+          path="/order-tracking/:orderId"
+          element={<OrderTrackingWithMap />}
+        />
+        <Route
+          path="/order-tracking-lookup"
+          element={<OrderTrackingLookup />}
+        />
         <Route path="/order-history" element={<OrderHistory />} />
         <Route path="/profile" element={<UserProfile />} />
         <Route path="/map-location" element={<MapLocationEnhanced />} />
@@ -109,7 +116,6 @@ const AppContent = () => {
         <Route path="/support" element={<SupportPage />} />
         <Route path="/referral" element={<ReferralPage />} />
         <Route path="/ref/:code" element={<ReferralLandingPage />} />;
-
         {/* Delivery Partner Routes */}
         <Route path="/delivery-partner" element={<DeliveryPartnerAuth />} />
         <Route
@@ -176,7 +182,6 @@ const AppContent = () => {
             </RoleProtectedRoute>
           }
         />
-
         {/* Admin Routes */}
         <Route path="/admin-login" element={<AdminLogin />} />
         <Route
@@ -307,7 +312,6 @@ const AppContent = () => {
             </RoleProtectedRoute>
           }
         />
-
         <Route path="/unauthorized" element={<Unauthorized />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
@@ -318,16 +322,17 @@ const AppContent = () => {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <CartProvider>
-            <Router>
-              <ToastProvider>
-                <AppContent />
-                <Toaster />
-              </ToastProvider>
-            </Router>
-          </CartProvider>
-        </AuthProvider>
+      <AuthProvider>
+        <DeviceIdUpdater />
+        <CartProvider>
+          <Router>
+            <ToastProvider>
+              <AppContent />
+              <Toaster />
+            </ToastProvider>
+          </Router>
+        </CartProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
