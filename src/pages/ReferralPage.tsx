@@ -330,7 +330,7 @@ const ReferralCodeCard = ({
         </div>
       </div>
 
-      {/* Share */}
+      
       <Button
         className="w-full py-4 text-lg bg-gradient-to-r from-primary to-accent text-white font-semibold hover:from-accent hover:to-primary transition-all shadow-lg"
         onClick={handleShare}
