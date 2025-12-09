@@ -13,3 +13,4 @@ export const detectUserLocation = (): Promise<{ lat: number; lng: number }> => {
     );
   });
 };
+
