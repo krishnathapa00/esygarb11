@@ -64,7 +64,7 @@ import ReferralPage from "./pages/ReferralPage";
 import ReferralLandingPage from "./pages/ReferralLandingPage";
 
 import { useRequireCompleteProfile } from "./hooks/useRequireCompleteProfile";
-import DeviceIdUpdater from "./utils/device";
+import DeviceIdUpdater from "./utils/detectUserDevice";
 
 const queryClient = new QueryClient();
 
