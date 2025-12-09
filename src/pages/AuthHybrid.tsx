@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ const AuthHybrid = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  //using this useeffect due to index.css body padding top but later we can maintain this
   useEffect(() => {
     document.body.classList.remove("with-search-bar");
     document.body.style.paddingTop = "0px";
@@ -87,9 +88,9 @@ const AuthHybrid = () => {
       return;
     }
 
-    try {
-      setLoading(true);
+    setLoading(true);
 
+    try {
       const { data, error } = await verifyOtp(email, otp);
 
       if (error) {
@@ -101,78 +102,84 @@ const AuthHybrid = () => {
         return;
       }
 
-      if (!data?.session) {
-        toast({
-          title: "Verification Error",
-          description:
-            "OTP verified but no session received. Please try signing in again.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const { user, session } = data;
-
-      if (user && session) {
-        toast({
-          title: "Email Verified Successfully",
-          description: "Welcome to Esygrab!",
-          variant: "default",
-        });
-
-        setIsOtpModalOpen(false);
-
-        let profile: ProfileFormValues | null = null;
-
-        try {
-          profile = await fetchUserProfile();
-        } catch (err) {
-          // Profile not found, create one
-          const { error: insertError } = await supabase
-            .from("profiles")
-            .insert({
-              id: user.id,
-              email: user.email,
-              full_name: "",
-              phone: "",
-              address: "",
-              avatar_url: "",
-            });
-
-          if (insertError) {
-            toast({
-              title: "Profile Creation Failed",
-              description: insertError.message,
-              variant: "destructive",
-            });
-            return;
-          }
-
-          // Re-fetch
-          profile = await fetchUserProfile();
-        }
-
-        if (
-          !profile.full_name?.trim() ||
-          !profile.phone?.trim() ||
-          !profile.address?.trim()
-        ) {
-          toast({
-            title: "Complete Your Profile",
-            description: "Please complete your profile before proceeding.",
-            variant: "destructive",
-          });
-          navigate("/profile");
-        } else {
-          navigate("/");
-        }
-      } else {
+      if (!data?.session || !data.user) {
         toast({
           title: "Session Error",
           description: "Could not retrieve session after OTP verification.",
           variant: "destructive",
         });
+        return;
       }
+
+      const { user } = data;
+
+      toast({
+        title: "Email Verified Successfully",
+        description: "Welcome to Esygrab!",
+        variant: "default",
+      });
+
+      setIsOtpModalOpen(false);
+
+      // Check if profile exists
+      let { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      // If profile doesn't exist, create it
+      if (!profile) {
+        const fullName = email
+          .split("@")[0]
+          .replace(/[\.\-_]/g, " ")
+          .replace(/\b\w/g, (c) => c.toUpperCase());
+
+        const { error: insertError } = await supabase.from("profiles").insert({
+          id: user.id,
+          email: user.email,
+          full_name: fullName,
+          phone: "",
+          address: "",
+          avatar_url: "",
+        });
+
+        if (insertError) {
+          toast({
+            title: "Profile Creation Failed",
+            description: insertError.message,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Fetch the newly created profile
+        const { data: newProfile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+
+        profile = newProfile;
+      }
+
+      // If profile incomplete, redirect to profile page
+      if (
+        !profile.full_name?.trim() ||
+        !profile.phone?.trim() ||
+        !profile.address?.trim()
+      ) {
+        toast({
+          title: "Complete Your Profile",
+          description: "Please complete your profile before proceeding.",
+          variant: "destructive",
+        });
+        navigate("/profile");
+        return;
+      }
+
+      // Everything is fine → navigate home
+      navigate("/");
     } catch (err) {
       toast({
         title: "Unexpected Error",
