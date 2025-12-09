@@ -24,7 +24,7 @@ import {
   ProfileFormValues,
 } from "@/services/profileService";
 import AddressInput from "@/components/AddressInput";
-import { detectUserLocation } from "@/utils/location";
+import { detectUserLocation } from "@/utils/detectUserLocation";
 
 const UserProfile: React.FC = () => {
   const navigate = useNavigate();
