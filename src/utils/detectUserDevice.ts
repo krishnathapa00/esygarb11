@@ -57,3 +57,4 @@ const DeviceIdUpdater: React.FC = () => {
 };
 
 export default DeviceIdUpdater;
+
