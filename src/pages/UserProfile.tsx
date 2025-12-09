@@ -16,7 +16,6 @@ import {
   HelpCircle,
   LogOut,
   ArrowRight,
-  Wallet,
   Gift,
 } from "lucide-react";
 import {
