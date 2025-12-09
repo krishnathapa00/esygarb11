@@ -162,13 +162,7 @@ const UserProfile: React.FC = () => {
     try {
       const { lat, lng } = await detectUserLocation();
 
-      // Save coordinates in localStorage
-      localStorage.setItem(
-        "esygrab_user_location",
-        JSON.stringify({ lat, lng, detected: true })
-      );
-
-      // Reverse geocode using Google Maps API
+      // Reverse geocode to get address
       const GOOGLE_MAPS_API_KEY = "AIzaSyADxM5y7WrXu3BRJ_hJQZhh6FLXWyO3E1g";
       const response = await fetch(
         `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_MAPS_API_KEY}`
@@ -178,13 +172,13 @@ const UserProfile: React.FC = () => {
 
       const data = await response.json();
 
-      if (data.status !== "OK" || !data.results || data.results.length === 0) {
+      if (data.status !== "OK" || !data.results?.length) {
         throw new Error("Address not found");
       }
 
       const address = data.results[0].formatted_address;
 
-      // Update AddressInput
+      // Update form input
       setValue("address", address);
 
       toast({
@@ -194,7 +188,7 @@ const UserProfile: React.FC = () => {
     } catch (err: any) {
       toast({
         title: "Location detection failed",
-        description: err.message || "Could not detect location",
+        description: err?.message || "Could not detect location",
         variant: "destructive",
       });
     }
