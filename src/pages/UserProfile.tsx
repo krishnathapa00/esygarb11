@@ -186,6 +186,7 @@ const UserProfile: React.FC = () => {
         description: address,
       });
     } catch (err: any) {
+      console.error("Location Error:", err);
       toast({
         title: "Location detection failed",
         description: err?.message || "Could not detect location",
@@ -373,10 +374,7 @@ const UserProfile: React.FC = () => {
                         Address
                       </label>
 
-                      <AddressInput
-                        value={watch("address")}
-                        setValue={(val) => setValue("address", val)}
-                      />
+                      <AddressInput value={watch("address")} />
 
                       <div className="mt-1">
                         <Button
