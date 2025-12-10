@@ -2,7 +2,6 @@ import React from "react";
 
 interface AddressInputProps {
   value: string;
-  setValue: (value: string) => void;
 }
 
 const AddressInput: React.FC<AddressInputProps> = ({ value }) => {
