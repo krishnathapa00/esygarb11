@@ -36,6 +36,7 @@ const UserProfile: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
+  const [detecting, setDetecting] = useState(false);
 
   const { register, handleSubmit, reset, watch, setValue } =
     useForm<ProfileFormValues>({
@@ -133,12 +134,18 @@ const UserProfile: React.FC = () => {
       reset(updatedProfile);
       setIsEditing(false);
 
+      const session = await supabase.auth.getSession();
+      const token = session.data.session?.access_token;
+
       await supabase.functions.invoke("approve-referral", {
         body: {
           user_id: user.id,
           address: updatedProfile.address,
           device_id: localStorage.getItem("esygrab_device_id"),
           auto_detect: localStorage.getItem("location_auto_detect") === "true",
+        },
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -159,11 +166,11 @@ const UserProfile: React.FC = () => {
   };
 
   const handleDetectLocation = async () => {
+    setDetecting(true);
     try {
       const { lat, lng } = await detectUserLocation();
 
-      // Reverse geocode to get address
-      const GOOGLE_MAPS_API_KEY = "AIzaSyADxM5y7WrXu3BRJ_hJQZhh6FLXWyO3E1g";
+      const GOOGLE_MAPS_API_KEY = "YOUR_KEY";
       const response = await fetch(
         `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_MAPS_API_KEY}`
       );
@@ -178,7 +185,6 @@ const UserProfile: React.FC = () => {
 
       const address = data.results[0].formatted_address;
 
-      // Update form input
       setValue("address", address);
 
       toast({
@@ -186,12 +192,36 @@ const UserProfile: React.FC = () => {
         description: address,
       });
     } catch (err: any) {
-      console.error("Location Error:", err);
-      toast({
-        title: "Location detection failed",
-        description: err?.message || "Could not detect location",
-        variant: "destructive",
-      });
+      console.warn("Browser geolocation failed:", err.message);
+
+      // Fallback to IP-based location
+      try {
+        const ipRes = await fetch("https://ipapi.co/json/");
+        const ipData = await ipRes.json();
+
+        if (ipData && ipData.latitude && ipData.longitude) {
+          const address = `${ipData.city}, ${ipData.region}, ${ipData.country_name}`;
+          setValue("address", address);
+
+          toast({
+            title: "Approximate location used",
+            description:
+              "Browser blocked location, using IP location instead (less accurate).",
+          });
+        } else {
+          throw new Error("IP fallback failed");
+        }
+      } catch (fallbackErr) {
+        toast({
+          title: "Location detection failed",
+          description:
+            err.message +
+            ". Please enable location permissions in your browser settings.",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setDetecting(false);
     }
   };
 
@@ -382,9 +412,17 @@ const UserProfile: React.FC = () => {
                           variant="outline"
                           size="sm"
                           onClick={handleDetectLocation}
-                          className="px-6 py-1"
+                          disabled={detecting}
+                          className="px-6 py-1 flex items-center gap-2"
                         >
-                          Detect Location
+                          {detecting ? (
+                            <>
+                              <span className="loader-spinner w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></span>
+                              Detecting...
+                            </>
+                          ) : (
+                            "Detect Location"
+                          )}
                         </Button>
                       </div>
                     </div>
