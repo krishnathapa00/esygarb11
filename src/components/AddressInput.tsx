@@ -29,6 +29,10 @@ const loadGoogleMapsScript = (): Promise<void> => {
     script.async = true;
     script.defer = true;
 
+    script.onload = () => resolve();
+
+    script.onerror = () => console.error("Google Maps failed to load");
+
     document.body.appendChild(script);
   });
 
