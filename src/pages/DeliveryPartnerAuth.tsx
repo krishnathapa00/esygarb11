@@ -52,16 +52,19 @@ const DeliveryPartnerAuth = () => {
 
     try {
       // Sign up user in Supabase Auth
-      const { data: signUpData, error: signUpError } = await signUp(
-        email,
-        password,
-        {
-          full_name: fullName, // stored in user_metadata
-          role: "delivery_partner",
-          vehicle_type: vehicleType,
-          license_number: licenseNumber,
-        }
-      );
+      const { data: signUpData, error: signUpError } =
+        await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: fullName,
+              role: "delivery_partner",
+              vehicle_type: vehicleType,
+              license_number: licenseNumber,
+            },
+          },
+        });
 
       if (signUpError || !signUpData.user) {
         throw signUpError || new Error("Signup failed");
