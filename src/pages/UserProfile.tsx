@@ -41,6 +41,7 @@ const UserProfile: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
+  const [addressSelected, setAddressSelected] = useState(false);
 
   const { register, handleSubmit, reset, watch, setValue } =
     useForm<ProfileFormValues>({
@@ -288,17 +289,21 @@ const UserProfile: React.FC = () => {
                       >
                         Address
                       </label>
+
                       <AddressInput
                         value={watch("address")}
-                        setValue={(val: string) =>
+                        setValue={(val) =>
                           setValue("address", val, { shouldValidate: true })
+                        }
+                        onSelectValidAddress={(isValid) =>
+                          setAddressSelected(isValid)
                         }
                       />
                     </div>
                     <div className="flex gap-4">
                       <Button
                         type="submit"
-                        disabled={updating}
+                        disabled={updating || !addressSelected}
                         className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white"
                       >
                         {updating ? "Saving..." : "Save Changes"}
