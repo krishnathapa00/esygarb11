@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 
 interface AddressInputProps {
   value: string;
@@ -8,19 +8,31 @@ interface AddressInputProps {
 
 const GOOGLE_MAPS_API_KEY = "AIzaSyADxM5y7WrXu3BRJ_hJQZhh6FLXWyO3E1g";
 
-const loadGoogleMapsScript = (callback: () => void) => {
-  if (document.getElementById("google-maps-script")) {
-    callback();
-    return;
-  }
+// Singleton script loader
+let googleMapsScriptLoading: Promise<void> | null = null;
 
-  const script = document.createElement("script");
-  script.id = "google-maps-script";
-  script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
-  script.async = true;
-  script.defer = true;
-  script.onload = callback;
-  document.body.appendChild(script);
+const loadGoogleMapsScript = (): Promise<void> => {
+  if (window.google?.maps) return Promise.resolve();
+
+  if (googleMapsScriptLoading) return googleMapsScriptLoading;
+
+  googleMapsScriptLoading = new Promise((resolve) => {
+    const existing = document.getElementById("google-maps-script");
+    if (existing) {
+      resolve();
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.id = "google-maps-script";
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
+    script.async = true;
+    script.defer = true;
+
+    document.body.appendChild(script);
+  });
+
+  return googleMapsScriptLoading;
 };
 
 const AddressInput: React.FC<AddressInputProps> = ({
@@ -30,35 +42,37 @@ const AddressInput: React.FC<AddressInputProps> = ({
 }) => {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
-  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    loadGoogleMapsScript(() => setLoaded(true));
-  }, []);
+    loadGoogleMapsScript().then(() => {
+      if (!inputRef.current || autocompleteRef.current) return;
 
-  useEffect(() => {
-    if (!loaded || !window.google || !inputRef.current) return;
+      autocompleteRef.current = new google.maps.places.Autocomplete(
+        inputRef.current,
+        {
+          fields: ["formatted_address", "geometry"],
+          componentRestrictions: { country: "np" },
+        }
+      );
 
-    autocompleteRef.current = new window.google.maps.places.Autocomplete(
-      inputRef.current,
-      {
-        types: ["geocode"],
-        componentRestrictions: { country: "np" },
-      }
-    );
+      autocompleteRef.current.addListener("place_changed", () => {
+        const place = autocompleteRef.current?.getPlace();
+        if (!place || !place.geometry) {
+          onSelectValidAddress(false);
+          return;
+        }
 
-    autocompleteRef.current.addListener("place_changed", () => {
-      const place = autocompleteRef.current?.getPlace();
-      if (place?.formatted_address) {
-        setValue(place.formatted_address);
+        setValue(place.formatted_address ?? "");
         onSelectValidAddress(true);
-      }
+      });
     });
 
     return () => {
-      if (autocompleteRef.current) autocompleteRef.current.unbindAll();
+      if (autocompleteRef.current) {
+        google.maps.event.clearInstanceListeners(autocompleteRef.current);
+      }
     };
-  }, [loaded, setValue, onSelectValidAddress]);
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setValue(e.target.value);
