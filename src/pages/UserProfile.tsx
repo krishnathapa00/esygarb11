@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuthContext } from "@/contexts/AuthProvider";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 import Header from "@/components/Header";
@@ -18,46 +17,52 @@ import {
   ArrowRight,
   Gift,
 } from "lucide-react";
-import {
-  fetchUserProfile,
-  updateUserProfile,
-  ProfileFormValues,
-} from "@/services/profileService";
 import AddressInput from "@/components/AddressInput";
-import { detectUserLocation } from "@/utils/detectUserLocation";
+
+interface ProfileFormValues {
+  full_name: string;
+  phone: string;
+  address: string;
+  avatar_url: string;
+}
 
 const UserProfile: React.FC = () => {
   const navigate = useNavigate();
   const { user, signOut, loading, isAuthenticated } = useAuthContext();
   const { toast } = useToast();
 
-  const [profile, setProfile] = useState<ProfileFormValues | null>(null);
+  const [profile, setProfile] = useState<ProfileFormValues>({
+    full_name: "",
+    phone: "",
+    address: "",
+    avatar_url: "",
+  });
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
-  const [detecting, setDetecting] = useState(false);
 
   const { register, handleSubmit, reset, watch, setValue } =
     useForm<ProfileFormValues>({
-      defaultValues: { full_name: "", phone: "", address: "", avatar_url: "" },
+      defaultValues: profile,
       mode: "onBlur",
     });
 
   const avatarUrl = watch("avatar_url");
 
-  // Fetch profile
+  // Load profile from localStorage or defaults
   useEffect(() => {
     if (!user) return;
-    setLoadingProfile(true);
-    fetchUserProfile()
-      .then((data) => {
-        setProfile(data);
-        reset(data);
-        if (!data?.full_name || !data?.phone) setIsEditing(true);
-      })
-      .catch(() => setIsEditing(true))
-      .finally(() => setLoadingProfile(false));
+
+    const savedProfile = localStorage.getItem("user_profile");
+    if (savedProfile) {
+      const parsed = JSON.parse(savedProfile);
+      setProfile(parsed);
+      reset(parsed);
+    } else {
+      setIsEditing(true); // Prompt user to fill profile
+    }
+    setLoadingProfile(false);
   }, [user, reset]);
 
   // Redirect if not authenticated
@@ -74,27 +79,11 @@ const UserProfile: React.FC = () => {
         variant: "destructive",
       });
     }
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${Date.now()}_${Math.random()
-      .toString(36)
-      .substring(2)}.${fileExt}`;
-    const filePath = `${user.id}/${fileName}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from("user-avatars")
-      .upload(filePath, file, { upsert: true });
-    if (uploadError) throw uploadError;
+    const objectUrl = URL.createObjectURL(file);
+    setValue("avatar_url", objectUrl);
+    setProfile((prev) => ({ ...prev, avatar_url: objectUrl }));
 
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from("user-avatars").getPublicUrl(filePath);
-    const newAvatarUrl = `${publicUrl}?t=${Date.now()}`;
-    setValue("avatar_url", newAvatarUrl);
-
-    await supabase
-      .from("profiles")
-      .update({ avatar_url: newAvatarUrl })
-      .eq("id", user?.id);
     toast({
       title: "Avatar updated",
       description: "Profile picture updated successfully",
@@ -104,12 +93,14 @@ const UserProfile: React.FC = () => {
   const handleLogout = async () => {
     try {
       await signOut();
-      setProfile(null);
+      setProfile({
+        full_name: "",
+        phone: "",
+        address: "",
+        avatar_url: "",
+      });
       reset();
-
-      localStorage.removeItem("esygrab_user_location");
-      localStorage.removeItem("esygrab_session");
-
+      localStorage.removeItem("user_profile");
       navigate("/");
     } catch {
       toast({
@@ -124,30 +115,10 @@ const UserProfile: React.FC = () => {
     setUpdating(true);
     setUpdateError(null);
     try {
-      const updatedProfile = await updateUserProfile({
-        full_name: data.full_name || "",
-        phone: data.phone || "",
-        address: data.address || "",
-        avatar_url: data.avatar_url || "",
-      });
-      setProfile(updatedProfile);
-      reset(updatedProfile);
+      setProfile(data);
+      reset(data);
+      localStorage.setItem("user_profile", JSON.stringify(data));
       setIsEditing(false);
-
-      const session = await supabase.auth.getSession();
-      const token = session.data.session?.access_token;
-
-      await supabase.functions.invoke("approve-referral", {
-        body: {
-          user_id: user.id,
-          address: updatedProfile.address,
-          device_id: localStorage.getItem("esygrab_device_id"),
-          auto_detect: localStorage.getItem("location_auto_detect") === "true",
-        },
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
 
       toast({
         title: "Profile updated",
@@ -165,67 +136,6 @@ const UserProfile: React.FC = () => {
     }
   };
 
-  const handleDetectLocation = async () => {
-    setDetecting(true);
-    try {
-      const { lat, lng } = await detectUserLocation();
-
-      const GOOGLE_MAPS_API_KEY = "YOUR_KEY";
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_MAPS_API_KEY}`
-      );
-
-      if (!response.ok) throw new Error("Failed to fetch address");
-
-      const data = await response.json();
-
-      if (data.status !== "OK" || !data.results?.length) {
-        throw new Error("Address not found");
-      }
-
-      const address = data.results[0].formatted_address;
-
-      setValue("address", address);
-
-      toast({
-        title: "Location detected",
-        description: address,
-      });
-    } catch (err: any) {
-      console.warn("Browser geolocation failed:", err.message);
-
-      // Fallback to IP-based location
-      try {
-        const ipRes = await fetch("https://ipapi.co/json/");
-        const ipData = await ipRes.json();
-
-        if (ipData && ipData.latitude && ipData.longitude) {
-          const address = `${ipData.city}, ${ipData.region}, ${ipData.country_name}`;
-          setValue("address", address);
-
-          toast({
-            title: "Approximate location used",
-            description:
-              "Browser blocked location, using IP location instead (less accurate).",
-          });
-        } else {
-          throw new Error("IP fallback failed");
-        }
-      } catch (fallbackErr) {
-        toast({
-          title: "Location detection failed",
-          description:
-            err.message +
-            ". Please enable location permissions in your browser settings.",
-          variant: "destructive",
-        });
-      }
-    } finally {
-      setDetecting(false);
-    }
-  };
-
-  // ------------------- Quick Actions -------------------
   const quickActions = [
     {
       icon: Gift,
@@ -267,7 +177,6 @@ const UserProfile: React.FC = () => {
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2">
           My Profile
         </h1>
-
         <p className="text-gray-600 mb-8">
           Manage your account settings and preferences
         </p>
@@ -293,7 +202,7 @@ const UserProfile: React.FC = () => {
                   >
                     <img
                       src={
-                        avatarUrl || profile?.avatar_url || "/images/avatar.jpg"
+                        avatarUrl || profile.avatar_url || "/images/avatar.jpg"
                       }
                       alt="Avatar"
                       className="w-full h-full rounded-full border-4 border-green-100 object-cover group-hover:opacity-75 transition-all shadow-lg"
@@ -309,7 +218,7 @@ const UserProfile: React.FC = () => {
                   </label>
                 </div>
                 <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
-                  {profile?.full_name || "Your Name"}
+                  {profile.full_name || "Your Name"}
                 </h2>
                 <p className="text-green-600 text-sm sm:text-base font-medium break-words">
                   {user.email}
@@ -330,14 +239,14 @@ const UserProfile: React.FC = () => {
                 <CardContent className="p-6 space-y-4">
                   <p>
                     <strong>Full Name:</strong>{" "}
-                    {profile?.full_name || "Not provided"}
+                    {profile.full_name || "Not provided"}
                   </p>
                   <p>
-                    <strong>Phone:</strong> {profile?.phone || "Not provided"}
+                    <strong>Phone:</strong> {profile.phone || "Not provided"}
                   </p>
                   <p>
                     <strong>Address:</strong>{" "}
-                    {profile?.address || "Not provided"}
+                    {profile.address || "Not provided"}
                   </p>
                   <Button
                     onClick={() => setIsEditing(true)}
@@ -365,37 +274,13 @@ const UserProfile: React.FC = () => {
                       name="full_name"
                       register={register}
                       required
-                      inputProps={{
-                        onInput: (e: React.ChangeEvent<HTMLInputElement>) => {
-                          const start = e.target.selectionStart;
-                          const end = e.target.selectionEnd;
-                          const value = e.target.value
-                            .replace(/[^a-zA-Z\s]/g, "")
-                            .toLowerCase()
-                            .replace(/\b\w/g, (char) => char.toUpperCase());
-                          e.target.value = value;
-                          e.target.setSelectionRange(start, end);
-                        },
-                      }}
                     />
                     <InputField
                       label="Phone Number"
                       name="phone"
                       register={register}
                       required
-                      pattern={{
-                        value: /^\d{10}$/,
-                        message: "Phone number must be exactly 10 digits",
-                      }}
-                      inputProps={{
-                        inputMode: "numeric",
-                        maxLength: 10,
-                        onInput: (e: React.ChangeEvent<HTMLInputElement>) => {
-                          e.target.value = e.target.value.replace(/\D/g, "");
-                        },
-                      }}
                     />
-
                     <div className="flex flex-col gap-2">
                       <label
                         htmlFor="address"
@@ -403,30 +288,13 @@ const UserProfile: React.FC = () => {
                       >
                         Address
                       </label>
-
-                      <AddressInput value={watch("address")} />
-
-                      <div className="mt-1">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={handleDetectLocation}
-                          disabled={detecting}
-                          className="px-6 py-1 flex items-center gap-2"
-                        >
-                          {detecting ? (
-                            <>
-                              <span className="loader-spinner w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></span>
-                              Detecting...
-                            </>
-                          ) : (
-                            "Detect Location"
-                          )}
-                        </Button>
-                      </div>
+                      <AddressInput
+                        value={watch("address")}
+                        setValue={(val: string) =>
+                          setValue("address", val, { shouldValidate: true })
+                        }
+                      />
                     </div>
-
                     <div className="flex gap-4">
                       <Button
                         type="submit"
@@ -439,7 +307,7 @@ const UserProfile: React.FC = () => {
                         type="button"
                         variant="outline"
                         onClick={() => {
-                          reset(profile || {});
+                          reset(profile);
                           setIsEditing(false);
                         }}
                         className="flex-1 border-gray-300"
