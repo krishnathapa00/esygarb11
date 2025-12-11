@@ -40,6 +40,14 @@ const MapLocationEnhanced = () => {
 
   const deliveryPolygon = useRef<any>(null);
 
+  useEffect(() => {
+    document.body.classList.remove("with-search-bar");
+    document.body.style.paddingTop = "0px";
+    return () => {
+      document.body.style.paddingTop = "";
+    };
+  }, []);
+
   // ------------------- Marker Utility -------------------
   const updateMarker = (lat: number, lng: number) => {
     setMarkerPosition({ lat, lng });
