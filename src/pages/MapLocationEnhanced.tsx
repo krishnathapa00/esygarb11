@@ -162,47 +162,47 @@ const MapLocationEnhanced = () => {
     return isInside;
   };
 
-  // ------------------- Auto Detect -------------------
-  const handleAutoDetect = () => {
-    if (!navigator.geolocation) {
-      toast({
-        title: "GPS Not Available",
-        description: "Your browser does not support geolocation.",
-        variant: "destructive",
-      });
-      return;
-    }
+  // // ------------------- Auto Detect -------------------
+  // const handleAutoDetect = () => {
+  //   if (!navigator.geolocation) {
+  //     toast({
+  //       title: "GPS Not Available",
+  //       description: "Your browser does not support geolocation.",
+  //       variant: "destructive",
+  //     });
+  //     return;
+  //   }
 
-    if (!map.current) {
-      toast({
-        title: "Map Loading",
-        description: "Please wait for the map to load before detecting.",
-        variant: "destructive",
-      });
-      return;
-    }
+  //   if (!map.current) {
+  //     toast({
+  //       title: "Map Loading",
+  //       description: "Please wait for the map to load before detecting.",
+  //       variant: "destructive",
+  //     });
+  //     return;
+  //   }
 
-    setIsDetecting(true);
+  //   setIsDetecting(true);
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude: lat, longitude: lng } = position.coords;
-        placeMarkerAt(lat, lng);
-        setIsDetecting(false);
-      },
-      (err) => {
-        console.error("Geolocation error:", err);
-        toast({
-          title: "GPS Error",
-          description:
-            "Unable to detect location. Please allow location access.",
-          variant: "destructive",
-        });
-        setIsDetecting(false);
-      },
-      { enableHighAccuracy: true }
-    );
-  };
+  //   navigator.geolocation.getCurrentPosition(
+  //     (position) => {
+  //       const { latitude: lat, longitude: lng } = position.coords;
+  //       placeMarkerAt(lat, lng);
+  //       setIsDetecting(false);
+  //     },
+  //     (err) => {
+  //       console.error("Geolocation error:", err);
+  //       toast({
+  //         title: "GPS Error",
+  //         description:
+  //           "Unable to detect location. Please allow location access.",
+  //         variant: "destructive",
+  //       });
+  //       setIsDetecting(false);
+  //     },
+  //     { enableHighAccuracy: true }
+  //   );
+  // };
 
   // ------------------- Search Suggestions -------------------
   useEffect(() => {
@@ -338,7 +338,7 @@ const MapLocationEnhanced = () => {
                 Select Location
               </h1>
             </div>
-            <Button
+            {/* <Button
               onClick={handleAutoDetect}
               disabled={isDetecting}
               className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
@@ -352,7 +352,7 @@ const MapLocationEnhanced = () => {
                   <Crosshair className="h-4 w-4 mr-2" /> Auto Detect
                 </>
               )}
-            </Button>
+            </Button> */}
           </div>
         </div>
       </div>
