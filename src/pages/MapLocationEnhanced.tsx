@@ -9,6 +9,7 @@ import { showToast } from "@/components/Toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthContext } from "@/contexts/AuthProvider";
 import { DELIVERY_AREA_COORDS } from "@/data/deliveryConsts";
+import { detectLocation } from "@/utils/detectLocation";
 
 const GOOGLE_MAPS_API_KEY = "AIzaSyADxM5y7WrXu3BRJ_hJQZhh6FLXWyO3E1g";
 
@@ -171,7 +172,7 @@ const MapLocationEnhanced = () => {
   };
 
   // // ------------------- Auto Detect -------------------
-  const handleAutoDetect = () => {
+  const handleAutoDetect = async () => {
     if (!navigator.geolocation) {
       toast({
         title: "GPS Not Available",
@@ -192,24 +193,19 @@ const MapLocationEnhanced = () => {
 
     setIsDetecting(true);
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude: lat, longitude: lng } = position.coords;
-        placeMarkerAt(lat, lng);
-        setIsDetecting(false);
-      },
-      (err) => {
-        console.error("Geolocation error:", err);
-        toast({
-          title: "GPS Error",
-          description:
-            "Unable to detect location. Please allow location access.",
-          variant: "destructive",
-        });
-        setIsDetecting(false);
-      },
-      { enableHighAccuracy: true }
-    );
+    try {
+      const { lat, lng } = await detectLocation(GOOGLE_MAPS_API_KEY);
+
+      placeMarkerAt(lat, lng);
+    } catch (error: any) {
+      toast({
+        title: "Location Error",
+        description: error.message || "Unable to detect location.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDetecting(false);
+    }
   };
 
   // ------------------- Search Suggestions -------------------
