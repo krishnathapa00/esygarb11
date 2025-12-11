@@ -24,6 +24,14 @@ const DeliveryPartnerAuth = () => {
   const { user, signInWithPassword, signUp } = useAuthContext();
 
   useEffect(() => {
+    document.body.classList.remove("with-search-bar");
+    document.body.style.paddingTop = "0px";
+    return () => {
+      document.body.style.paddingTop = "";
+    };
+  }, []);
+
+  useEffect(() => {
     if (user) {
       navigate("/delivery-partner/dashboard");
     }
