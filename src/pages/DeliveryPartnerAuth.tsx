@@ -71,13 +71,14 @@ const DeliveryPartnerAuth = () => {
       }
 
       const userId = signUpData.user.id;
+      const userEmail = signUpData.user.email;
 
       // Save delivery partner details in profiles table
       const { error: profileError } = await supabase.from("profiles").insert([
         {
           id: userId,
           full_name: fullName,
-          email,
+          email: userEmail,
           role: "delivery_partner",
           vehicle_type: vehicleType,
           license_number: licenseNumber,
