@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 interface AddressInputProps {
   value: string;
   setValue: (value: string) => void;
+  onSelectValidAddress: (isValid: boolean) => void;
 }
 
 const GOOGLE_MAPS_API_KEY = "AIzaSyADxM5y7WrXu3BRJ_hJQZhh6FLXWyO3E1g";
@@ -22,7 +23,11 @@ const loadGoogleMapsScript = (callback: () => void) => {
   document.body.appendChild(script);
 };
 
-const AddressInput: React.FC<AddressInputProps> = ({ value, setValue }) => {
+const AddressInput: React.FC<AddressInputProps> = ({
+  value,
+  setValue,
+  onSelectValidAddress,
+}) => {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -38,7 +43,7 @@ const AddressInput: React.FC<AddressInputProps> = ({ value, setValue }) => {
       inputRef.current,
       {
         types: ["geocode"],
-        componentRestrictions: { country: "np" }, // restrict to Nepal
+        componentRestrictions: { country: "np" },
       }
     );
 
@@ -46,22 +51,26 @@ const AddressInput: React.FC<AddressInputProps> = ({ value, setValue }) => {
       const place = autocompleteRef.current?.getPlace();
       if (place?.formatted_address) {
         setValue(place.formatted_address);
+        onSelectValidAddress(true);
       }
     });
 
     return () => {
-      if (autocompleteRef.current) {
-        autocompleteRef.current.unbindAll();
-      }
+      if (autocompleteRef.current) autocompleteRef.current.unbindAll();
     };
-  }, [loaded, setValue]);
+  }, [loaded, setValue, onSelectValidAddress]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setValue(e.target.value);
+    onSelectValidAddress(false);
+  };
 
   return (
     <input
       ref={inputRef}
       type="text"
       value={value}
-      onChange={(e) => setValue(e.target.value)}
+      onChange={handleChange}
       placeholder="Enter your address"
       className="w-full border rounded px-3 py-2 bg-white"
     />
