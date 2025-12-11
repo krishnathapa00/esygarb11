@@ -168,8 +168,6 @@ const Index = () => {
         isOpen={isReferralOpen}
         onClose={() => setIsReferralOpen(false)}
         isLoggedIn={!!user}
-        onLoginRequired={handleLoginRequired}
-        userId={user?.id}
       />
     </div>
   );
