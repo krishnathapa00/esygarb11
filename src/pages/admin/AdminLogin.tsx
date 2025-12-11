@@ -17,6 +17,14 @@ const AdminLogin = () => {
   const { user, signInWithPassword, resetPassword } = useAuthContext();
 
   useEffect(() => {
+    document.body.classList.remove("with-search-bar");
+    document.body.style.paddingTop = "0px";
+    return () => {
+      document.body.style.paddingTop = "";
+    };
+  }, []);
+
+  useEffect(() => {
     if (!loading && user) {
       if (user.role === "admin" || user.role === "super_admin") {
         navigate("/admin/dashboard");
