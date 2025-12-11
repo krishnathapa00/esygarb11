@@ -38,24 +38,7 @@ const ProductSection = ({
         </button>
       </div>
 
-      <div className="relative sm:hidden">
-        <div className="flex gap-2 overflow-x-auto no-scrollbar px-0.5">
-          {products.slice(0, 12).map((product) => (
-            <div key={product.id} className="w-[140px] flex-shrink-0">
-              <ProductCard
-                product={product}
-                onAddToCart={onAddToCart}
-                cartQuantity={cartQuantityGetter(product.id)}
-                onUpdateQuantity={onUpdateQuantity}
-              />
-            </div>
-          ))}
-        </div>
-        <div className="pointer-events-none absolute top-0 right-0 h-full w-8 bg-gradient-to-l from-white to-transparent"></div>
-      </div>
-
-      {/* Desktop*/}
-      <div className="hidden sm:grid grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
         {products.map((product) => (
           <ProductCard
             key={product.id}
