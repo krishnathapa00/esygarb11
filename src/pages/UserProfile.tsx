@@ -56,15 +56,50 @@ const UserProfile: React.FC = () => {
   useEffect(() => {
     if (!user) return;
 
-    const savedProfile = localStorage.getItem("user_profile");
-    if (savedProfile) {
-      const parsed = JSON.parse(savedProfile);
-      setProfile(parsed);
-      reset(parsed);
-    } else {
-      setIsEditing(true); // Prompt user to fill profile
-    }
-    setLoadingProfile(false);
+    const loadProfile = async () => {
+      const savedProfile = localStorage.getItem("user_profile");
+
+      if (savedProfile) {
+        // Load from localStorage
+        const parsed = JSON.parse(savedProfile);
+        setProfile(parsed);
+        reset(parsed);
+        setLoadingProfile(false);
+        return;
+      }
+
+      // No local profile → fetch from Supabase
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (error) {
+        console.error("Failed to load profile", error);
+        setIsEditing(true); // Ask user to fill profile
+        setLoadingProfile(false);
+        return;
+      }
+
+      const loadedProfile = {
+        full_name: data.full_name || "",
+        phone: data.phone || "",
+        address: data.address || "",
+        avatar_url: data.avatar_url || "",
+      };
+
+      // Save to state + form
+      setProfile(loadedProfile);
+      reset(loadedProfile);
+
+      // Save to localStorage for future
+      localStorage.setItem("user_profile", JSON.stringify(loadedProfile));
+
+      setLoadingProfile(false);
+    };
+
+    loadProfile();
   }, [user, reset]);
 
   // Redirect if not authenticated
