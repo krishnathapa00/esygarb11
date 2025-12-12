@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuthContext } from "@/contexts/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
-
 import Header from "@/components/Header";
 import InputField from "@/components/InputField";
+import AddressInput from "@/components/AddressInput";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-
 import {
   History,
   Package,
@@ -17,8 +17,6 @@ import {
   ArrowRight,
   Gift,
 } from "lucide-react";
-import AddressInput from "@/components/AddressInput";
-import { supabase } from "@/integrations/supabase/client";
 
 interface ProfileFormValues {
   full_name: string;
@@ -52,167 +50,192 @@ const UserProfile: React.FC = () => {
 
   const avatarUrl = watch("avatar_url");
 
-  // Load profile from localStorage or defaults
+  // ------------------- Load Profile -------------------
   useEffect(() => {
     if (!user) return;
+    let isMounted = true;
 
     const loadProfile = async () => {
-      const savedProfile = localStorage.getItem("user_profile");
+      setLoadingProfile(true);
+      try {
+        const savedProfile = localStorage.getItem("user_profile");
+        if (savedProfile) {
+          const parsed = JSON.parse(savedProfile);
+          if (isMounted) {
+            setProfile(parsed);
+            reset(parsed);
+            setLoadingProfile(false);
+          }
+          return;
+        }
 
-      if (savedProfile) {
-        // Load from localStorage
-        const parsed = JSON.parse(savedProfile);
-        setProfile(parsed);
-        reset(parsed);
-        setLoadingProfile(false);
-        return;
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+
+        if (error) throw error;
+
+        const loadedProfile: ProfileFormValues = {
+          full_name: data.full_name ?? "",
+          phone: data.phone ?? "",
+          address: data.address ?? "",
+          avatar_url: data.avatar_url ?? "",
+        };
+
+        if (isMounted) {
+          setProfile(loadedProfile);
+          reset(loadedProfile);
+          localStorage.setItem("user_profile", JSON.stringify(loadedProfile));
+          setLoadingProfile(false);
+        }
+      } catch (err: unknown) {
+        console.error("Failed to load profile", err);
+        if (isMounted) {
+          setIsEditing(true);
+          setLoadingProfile(false);
+        }
       }
-
-      // No local profile → fetch from Supabase
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-      if (error) {
-        console.error("Failed to load profile", error);
-        setIsEditing(true); // Ask user to fill profile
-        setLoadingProfile(false);
-        return;
-      }
-
-      const loadedProfile = {
-        full_name: data.full_name || "",
-        phone: data.phone || "",
-        address: data.address || "",
-        avatar_url: data.avatar_url || "",
-      };
-
-      // Save to state + form
-      setProfile(loadedProfile);
-      reset(loadedProfile);
-
-      // Save to localStorage for future
-      localStorage.setItem("user_profile", JSON.stringify(loadedProfile));
-
-      setLoadingProfile(false);
     };
 
     loadProfile();
+    return () => {
+      isMounted = false;
+    };
   }, [user, reset]);
 
-  // Redirect if not authenticated
+  // ------------------- Redirect if unauthenticated -------------------
   useEffect(() => {
     if (!loading && !isAuthenticated) navigate("/auth");
   }, [loading, isAuthenticated, navigate]);
 
-  // ------------------- Handlers -------------------
-  const handleImageUpload = async (file: File) => {
-    if (!file.type.startsWith("image/") || file.size > 5 * 1024 * 1024) {
-      return toast({
-        title: "Invalid file",
-        description: "Select an image less than 5MB",
-        variant: "destructive",
-      });
-    }
+  // ------------------- Avatar Upload -------------------
+  const handleImageUpload = useCallback(
+    async (file: File) => {
+      if (!file.type.startsWith("image/") || file.size > 5 * 1024 * 1024) {
+        return toast({
+          title: "Invalid file",
+          description: "Select an image less than 5MB",
+          variant: "destructive",
+        });
+      }
 
-    const objectUrl = URL.createObjectURL(file);
-    setValue("avatar_url", objectUrl);
-    setProfile((prev) => ({ ...prev, avatar_url: objectUrl }));
+      try {
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${user?.id}_${Date.now()}.${fileExt}`;
 
-    toast({
-      title: "Avatar updated",
-      description: "Profile picture updated successfully",
-    });
-  };
+        // Upload the file
+        const { error: uploadError } = await supabase.storage
+          .from("avatars")
+          .upload(fileName, file, { cacheControl: "3600", upsert: true });
 
-  const handleLogout = async () => {
+        if (uploadError) throw uploadError;
+
+        // Get public URL
+        const { data: publicUrlData } = supabase.storage
+          .from("avatars")
+          .getPublicUrl(fileName);
+
+        if (!publicUrlData?.publicUrl)
+          throw new Error("Failed to get public URL");
+
+        // Update form & state
+        setValue("avatar_url", publicUrlData.publicUrl);
+        setProfile((prev) => ({
+          ...prev,
+          avatar_url: publicUrlData.publicUrl,
+        }));
+
+        toast({
+          title: "Avatar updated",
+          description: "Profile picture uploaded successfully",
+        });
+      } catch (err: unknown) {
+        console.error(err);
+        const message = err instanceof Error ? err.message : "Upload failed";
+        toast({ title: "Error", description: message, variant: "destructive" });
+      }
+    },
+    [setValue, toast, user?.id]
+  );
+
+  // ------------------- Logout -------------------
+  const handleLogout = useCallback(async () => {
     try {
       await signOut();
-      setProfile({
-        full_name: "",
-        phone: "",
-        address: "",
-        avatar_url: "",
-      });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Logout failed";
+      toast({ title: "Error", description: message, variant: "destructive" });
+    } finally {
+      setProfile({ full_name: "", phone: "", address: "", avatar_url: "" });
       reset();
       localStorage.removeItem("user_profile");
       navigate("/");
-    } catch {
-      toast({
-        title: "Logout failed",
-        description: "Could not log out",
-        variant: "destructive",
-      });
     }
-  };
+  }, [signOut, reset, navigate, toast]);
 
-  const onSubmit = async (data: ProfileFormValues) => {
-    setUpdating(true);
-    setUpdateError(null);
+  // ------------------- Profile Update -------------------
+  const onSubmit = useCallback(
+    async (data: ProfileFormValues) => {
+      setUpdating(true);
+      setUpdateError(null);
+      try {
+        const { error } = await supabase
+          .from("profiles")
+          .update(data)
+          .eq("id", user?.id);
+        if (error) throw error;
 
-    try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          full_name: data.full_name,
-          phone: data.phone,
-          address: data.address,
-          avatar_url: data.avatar_url,
-        })
-        .eq("id", user.id);
+        setProfile(data);
+        setIsEditing(false);
+        localStorage.setItem("user_profile", JSON.stringify(data));
 
-      if (error) throw error;
-
-      // Save locally too
-      localStorage.setItem("user_profile", JSON.stringify(data));
-
-      setProfile(data);
-      setIsEditing(false);
-
-      toast({
-        title: "Profile updated",
-        description: "Profile saved successfully",
-      });
-    } catch (err: any) {
-      setUpdateError(err.message);
-      toast({
-        title: "Update failed",
-        description: err.message,
-        variant: "destructive",
-      });
-    } finally {
-      setUpdating(false);
-    }
-  };
-
-  const quickActions = [
-    {
-      icon: Gift,
-      label: "Refer & Earn",
-      href: "/referral",
-      description: "Earn Rs 10 per referral",
+        toast({
+          title: "Profile updated",
+          description: "Your changes were saved successfully",
+        });
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Update failed";
+        setUpdateError(message);
+        toast({ title: "Error", description: message, variant: "destructive" });
+      } finally {
+        setUpdating(false);
+      }
     },
-    {
-      icon: History,
-      label: "Order History",
-      href: "/order-history",
-      description: "View past orders",
-    },
-    {
-      icon: Package,
-      label: "Track Orders",
-      href: "/order-tracking-lookup",
-      description: "Track current orders",
-    },
-    {
-      icon: HelpCircle,
-      label: "Support",
-      href: "/help-center",
-      description: "Get support",
-    },
-  ];
+    [user?.id, toast]
+  );
+
+  // ------------------- Quick Actions -------------------
+  const quickActions = useMemo(
+    () => [
+      {
+        icon: Gift,
+        label: "Refer & Earn",
+        href: "/referral",
+        description: "Earn Rs 10 per referral",
+      },
+      {
+        icon: History,
+        label: "Order History",
+        href: "/order-history",
+        description: "View past orders",
+      },
+      {
+        icon: Package,
+        label: "Track Orders",
+        href: "/order-tracking-lookup",
+        description: "Track current orders",
+      },
+      {
+        icon: HelpCircle,
+        label: "Support",
+        href: "/help-center",
+        description: "Get support",
+      },
+    ],
+    []
+  );
 
   if (loadingProfile)
     return (
@@ -339,7 +362,6 @@ const UserProfile: React.FC = () => {
                       >
                         Address
                       </label>
-
                       <AddressInput
                         value={watch("address")}
                         setValue={(val) =>
