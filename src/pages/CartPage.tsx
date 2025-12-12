@@ -114,11 +114,7 @@ const CartPage = () => {
   const baseDeliveryFee = deliveryConfig?.delivery_fee ?? 10;
 
   const deliveryFee =
-    orderCount !== null && orderCount < 3
-      ? 0
-      : totalPrice > 200
-      ? 0
-      : baseDeliveryFee;
+    orderCount === 0 || totalPrice > 200 ? 0 : baseDeliveryFee;
 
   const discountAmount = promoDiscount;
   const totalAmount = totalPrice + deliveryFee - discountAmount;
@@ -554,14 +550,13 @@ const CartPage = () => {
                   <span>Rs {deliveryFee}</span>
                 </div>
                 {deliveryFee === 0 ? (
-                  orderCount !== null && orderCount < 3 ? (
+                  orderCount === 0 ? (
                     <p className="text-xs text-green-600">
-                      Free delivery for your first {3 - orderCount} order
-                      {3 - orderCount > 1 ? "s" : ""}!
+                      Enjoy free delivery on your first order!
                     </p>
                   ) : (
                     <p className="text-xs text-green-600">
-                      Free delivery because order total exceeds Rs200!
+                      Free delivery on orders above Rs200!
                     </p>
                   )
                 ) : (
