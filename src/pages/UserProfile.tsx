@@ -18,6 +18,7 @@ import {
   Gift,
 } from "lucide-react";
 import AddressInput from "@/components/AddressInput";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ProfileFormValues {
   full_name: string;
@@ -115,10 +116,24 @@ const UserProfile: React.FC = () => {
   const onSubmit = async (data: ProfileFormValues) => {
     setUpdating(true);
     setUpdateError(null);
+
     try {
-      setProfile(data);
-      reset(data);
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          full_name: data.full_name,
+          phone: data.phone,
+          address: data.address,
+          avatar_url: data.avatar_url,
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      // Save locally too
       localStorage.setItem("user_profile", JSON.stringify(data));
+
+      setProfile(data);
       setIsEditing(false);
 
       toast({
@@ -126,10 +141,10 @@ const UserProfile: React.FC = () => {
         description: "Profile saved successfully",
       });
     } catch (err: any) {
-      setUpdateError(err?.message || "Failed to update profile");
+      setUpdateError(err.message);
       toast({
         title: "Update failed",
-        description: err?.message || "Failed to update profile",
+        description: err.message,
         variant: "destructive",
       });
     } finally {
