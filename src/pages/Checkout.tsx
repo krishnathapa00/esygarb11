@@ -1,70 +1,96 @@
-import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect, useMemo } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import Header from "../components/Header";
 import {
   ArrowLeft,
   CreditCard,
-  Banknote,
   WalletIcon,
   MapPin,
+  Banknote,
 } from "lucide-react";
+
+import Header from "../components/Header";
+import LocationDisplay from "@/components/LocationDisplay";
+import ProfileCompletionModal from "@/components/ProfileCompletionModal";
 import { Button } from "@/components/ui/button";
+
+import EssewaLogo from "../assets/payments/esewa.jpg";
+import KhaltiLogo from "../assets/payments/khalti.jpg";
+
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
-import { supabase } from "@/integrations/supabase/client";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import ProfileCompletionModal from "@/components/ProfileCompletionModal";
-import EsewaLogo from "../assets/payments/esewa.jpg";
-import LocationDisplay from "@/components/LocationDisplay";
-import KhaltiLogo from "../assets/payments/khalti.jpg";
-import { useLocation } from "react-router-dom";
+
+import { supabase } from "@/integrations/supabase/client";
 import { DELIVERY_AREA_COORDS } from "@/data/deliveryConsts";
 
-const Checkout = () => {
-  const { cart, resetCart, mergeGuestCart } = useCart();
-  const { user, loading } = useAuth();
-  const { profile, updateProfile } = useUserProfile();
+// Utility Functions
 
+// Reliable point-in-polygon
+function pointInPolygon(lat, lng, polygon) {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].lng,
+      yi = polygon[i].lat;
+    const xj = polygon[j].lng,
+      yj = polygon[j].lat;
+
+    const intersect =
+      yi > lat !== yj > lat &&
+      lng < ((xj - xi) * (lat - yi)) / (yj - yi + Number.EPSILON) + xi;
+
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+function parseJsonSafe(value) {
+  try {
+    return typeof value === "string" ? JSON.parse(value) : value;
+  } catch {
+    return null;
+  }
+}
+
+// Main Page Component
+
+const Checkout = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const { user, loading } = useAuth();
+  const { cart, resetCart, mergeGuestCart } = useCart();
+  const { profile, updateProfile } = useUserProfile();
+
   const [deliveryCoords, setDeliveryCoords] = useState(null);
+  const [deliveryAddress, setDeliveryAddress] = useState("");
   const [isWithinRange, setIsWithinRange] = useState(true);
 
+  const [selectedPayment, setSelectedPayment] = useState("cod");
+  const [orderCount, setOrderCount] = useState(null);
+
+  const [showProfileModal, setShowProfileModal] = useState(true);
+
+  // ---- Promo state restored from session ----
   const [promoDiscount, setPromoDiscount] = useState(() => {
-    if (location.state?.promoDiscount) return location.state.promoDiscount;
+    const fromState = location.state?.promoDiscount;
+    if (fromState) return fromState;
+
     const stored = sessionStorage.getItem("promo_discount");
     return stored ? Number(stored) : 0;
   });
 
   const [appliedPromo, setAppliedPromo] = useState(() => {
-    if (location.state?.appliedPromo) return location.state.appliedPromo;
+    const fromState = location.state?.appliedPromo;
+    if (fromState) return fromState;
+
     const stored = sessionStorage.getItem("applied_promo");
     return stored ? JSON.parse(stored) : null;
   });
 
-  const [orderCount, setOrderCount] = useState<number | null>(null);
+  // Delivery Config Query
 
-  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = cart.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
-
-  useEffect(() => {
-    if (appliedPromo) {
-      sessionStorage.setItem("applied_promo", JSON.stringify(appliedPromo));
-    } else {
-      sessionStorage.removeItem("applied_promo");
-    }
-  }, [appliedPromo]);
-
-  useEffect(() => {
-    sessionStorage.setItem("promo_discount", String(promoDiscount));
-  }, [promoDiscount]);
-
-  const { data: deliveryConfig, isLoading: configLoading } = useQuery({
+  const { data: deliveryConfig } = useQuery({
     queryKey: ["delivery-config"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -75,193 +101,124 @@ const Checkout = () => {
         .maybeSingle();
 
       if (error) {
-        console.error("Error fetching delivery config:", error);
-        return { delivery_fee: 15, delivery_partner_charge: 30 };
+        console.error("delivery_config error:", error);
+        return { delivery_fee: 15 };
       }
-      return data || { delivery_fee: 15, delivery_partner_charge: 30 };
+
+      return data ?? { delivery_fee: 15 };
     },
   });
 
-  const baseDeliveryFee = deliveryConfig?.delivery_fee ?? 15;
+  const baseDeliveryFee = deliveryConfig?.delivery_fee ?? 10;
+
+  // Derived Values (Memoized)
+
+  const totalItems = useMemo(
+    () => cart.reduce((sum, item) => sum + item.quantity, 0),
+    [cart]
+  );
+
+  const totalPrice = useMemo(
+    () => cart.reduce((sum, item) => sum + item.price * item.quantity, 0),
+    [cart]
+  );
 
   const deliveryFee =
-    orderCount !== null && orderCount < 3
-      ? 0
-      : totalPrice > 200
-      ? 0
-      : baseDeliveryFee;
+    orderCount === 0 || totalPrice > 200 ? 0 : baseDeliveryFee;
+  const totalAmount = totalPrice + deliveryFee - promoDiscount;
 
-  const discount = promoDiscount ?? 0;
-  const totalAmount = totalPrice + deliveryFee - discount;
-
-  const [selectedPayment, setSelectedPayment] = useState("cod");
-  const [showProfileModal, setShowProfileModal] = useState(true);
-  const [showAddressModal, setShowAddressModal] = useState(false);
-  const [deliveryAddress, setDeliveryAddress] = useState("");
-
-  // Check if user needs to complete profile - only for new users with missing data
   const needsProfileCompletion =
     user && (!profile.full_name || !profile.phone) && !deliveryAddress;
+
+  // Persist promo in session
+
+  useEffect(() => {
+    if (appliedPromo)
+      sessionStorage.setItem("applied_promo", JSON.stringify(appliedPromo));
+  }, [appliedPromo]);
+
+  useEffect(() => {
+    sessionStorage.setItem("promo_discount", promoDiscount);
+  }, [promoDiscount]);
+
+  // Load user location
 
   useEffect(() => {
     if (!user) return;
 
-    const loadUserLocation = async () => {
-      try {
-        const stored = localStorage.getItem("esygrab_user_location");
-        if (stored) {
-          const storedLocation = JSON.parse(stored);
-          if (
-            storedLocation.coordinates?.lat != null &&
-            storedLocation.coordinates?.lng != null
-          ) {
-            setDeliveryCoords({
-              lat: Number(storedLocation.coordinates.lat),
-              lng: Number(storedLocation.coordinates.lng),
-            });
-            setDeliveryAddress(storedLocation.address || "");
-            return;
-          }
-        }
-
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("address, location, delivery_location")
-          .eq("id", user.id)
-          .single();
-
-        if (error) {
-          console.error("Failed to load profile location:", error);
-          return;
-        }
-
-        if (data?.delivery_location) {
-          let deliveryLoc: {
-            address: string;
-            coordinates: { lat: number; lng: number };
-          } | null = null;
-          try {
-            deliveryLoc =
-              typeof data.delivery_location === "string"
-                ? JSON.parse(data.delivery_location)
-                : data.delivery_location;
-
-            if (
-              deliveryLoc?.coordinates?.lat != null &&
-              deliveryLoc?.coordinates?.lng != null
-            ) {
-              setDeliveryCoords({
-                lat: Number(deliveryLoc.coordinates.lat),
-                lng: Number(deliveryLoc.coordinates.lng),
-              });
-              setDeliveryAddress(deliveryLoc.address || "");
-              localStorage.setItem(
-                "esygrab_user_location",
-                JSON.stringify(deliveryLoc)
-              );
-              return;
-            }
-          } catch (e) {
-            console.error("Failed to parse delivery_location:", e);
-          }
-        }
-
-        if (data?.location) {
-          type LocationType = { lat: number; lng: number } | null;
-          let loc: LocationType = null;
-
-          if (typeof data.location === "string") {
-            try {
-              const parsed = JSON.parse(data.location) as {
-                lat?: number;
-                lng?: number;
-              };
-              if (parsed?.lat != null && parsed?.lng != null) {
-                loc = { lat: Number(parsed.lat), lng: Number(parsed.lng) };
-              }
-            } catch (e) {
-              console.error("Failed to parse location JSON:", e);
-              loc = null;
-            }
-          } else if (
-            typeof data.location === "object" &&
-            data.location !== null
-          ) {
-            const obj = data.location as { lat?: number; lng?: number };
-            if (obj.lat != null && obj.lng != null) {
-              loc = { lat: Number(obj.lat), lng: Number(obj.lng) };
-            }
-          }
-
-          if (loc) {
-            setDeliveryCoords(loc);
-            setDeliveryAddress(data.address || "");
-            return;
-          }
-        }
-
-        navigate("/map-location");
-      } catch (err) {
-        console.error("Unexpected error loading user location:", err);
+    const loadLocation = async () => {
+      // LocalStorage priority
+      const stored = parseJsonSafe(
+        localStorage.getItem("esygrab_user_location")
+      );
+      if (stored?.coordinates) {
+        setDeliveryCoords(stored.coordinates);
+        setDeliveryAddress(stored.address || "");
+        return;
       }
+
+      // Supabase DB fallback
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("address, location, delivery_location")
+        .eq("id", user.id)
+        .single();
+
+      if (error) return;
+
+      const deliveryLoc = parseJsonSafe(data?.delivery_location);
+      if (deliveryLoc?.coordinates) {
+        setDeliveryCoords(deliveryLoc.coordinates);
+        setDeliveryAddress(deliveryLoc.address || "");
+
+        localStorage.setItem(
+          "esygrab_user_location",
+          JSON.stringify(deliveryLoc)
+        );
+        return;
+      }
+
+      const loc = parseJsonSafe(data?.location);
+      if (loc?.lat && loc?.lng) {
+        setDeliveryCoords(loc);
+        setDeliveryAddress(data.address || "");
+        return;
+      }
+
+      // No location → redirect
+      navigate("/map-location");
     };
 
-    loadUserLocation();
+    loadLocation();
   }, [user, navigate]);
 
-  function pointInPolygon(lat, lng, polygon) {
-    let inside = false;
-    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-      const xi = polygon[i].lng,
-        yi = polygon[i].lat;
-      const xj = polygon[j].lng,
-        yj = polygon[j].lat;
-
-      const intersect =
-        yi > lat !== yj > lat &&
-        lng < ((xj - xi) * (lat - yi)) / (yj - yi + Number.EPSILON) + xi;
-      if (intersect) inside = !inside;
-    }
-    return inside;
-  }
+  // Validate delivery range
 
   useEffect(() => {
-    if (!deliveryCoords) {
-      setIsWithinRange(false);
-      return;
-    }
+    if (!deliveryCoords) return setIsWithinRange(false);
 
-    const insidePolygon = pointInPolygon(
+    const inside = pointInPolygon(
       deliveryCoords.lat,
       deliveryCoords.lng,
       DELIVERY_AREA_COORDS
     );
 
-    if (insidePolygon) {
-      setIsWithinRange(true);
-      return;
-    }
+    setIsWithinRange(inside);
   }, [deliveryCoords]);
 
+  // Fetch previous order count
+
   useEffect(() => {
-    const fetchOrderCount = async () => {
-      if (!user) return;
+    if (!user) return;
 
-      const response = await supabase
-        .from("orders")
-        .select("id", { count: "exact" })
-        .eq("user_id", user.id);
-
-      if (response.error) {
-        console.error("Failed to fetch order count:", response.error);
-        return;
-      }
-
-      setOrderCount(response.count || 0);
-    };
-
-    fetchOrderCount();
+    supabase
+      .from("orders")
+      .select("id", { count: "exact" })
+      .eq("user_id", user.id)
+      .then(({ count }) => setOrderCount(count ?? 0));
   }, [user]);
+
+  // Auth + guest cart restore
 
   useEffect(() => {
     if (!loading && !user) {
@@ -272,81 +229,28 @@ const Checkout = () => {
     }
 
     if (user && cart.length === 0) {
-      const guestCart = localStorage.getItem("guest_cart");
-      if (guestCart) {
-        mergeGuestCart(JSON.parse(guestCart));
+      const guest = localStorage.getItem("guest_cart");
+      if (guest) {
+        mergeGuestCart(JSON.parse(guest));
         localStorage.removeItem("guest_cart");
       }
     }
+  }, [loading, user, cart]);
 
-    // Only check for address **after it's loaded**
-    if (user && deliveryAddress !== null) {
-      if (needsProfileCompletion) {
-        setShowProfileModal(true);
-      } else if (!needsProfileCompletion && !deliveryAddress) {
-        navigate("/map-location");
-      }
-    }
-  }, [
-    loading,
-    user,
-    cart,
-    mergeGuestCart,
-    needsProfileCompletion,
-    deliveryAddress,
-    navigate,
-  ]);
-
-  const handleProfileComplete = () => {
-    setShowProfileModal(false);
-    const stored = localStorage.getItem("esygrab_user_location");
-    if (stored) {
-      const storedLocation = JSON.parse(stored);
-      setDeliveryAddress(storedLocation.address || "");
-      setShowAddressModal(true);
-      setDeliveryCoords({
-        lat: storedLocation.coordinates?.lat,
-        lng: storedLocation.coordinates?.lng,
-      });
-    }
-  };
-
-  const handleAddressConfirm = () => {
-    setShowAddressModal(false);
-  };
-
-  const handleAddressChange = () => {
-    navigate("/map-location");
-  };
+  // Place Order
 
   const handlePlaceOrder = async () => {
-    if (!user) {
-      alert("Please log in to place an order.");
-      return;
-    }
-
-    if (needsProfileCompletion) {
-      setShowProfileModal(true);
-      return;
-    }
-
-    if (!deliveryAddress || !deliveryCoords) {
-      alert("Please set your delivery address.");
-      return;
-    }
-
-    if (!isWithinRange) {
-      alert(
-        "We're sorry! Your location is currently outside our delivery area."
-      );
-      return;
-    }
+    if (!user) return alert("Please log in.");
+    if (needsProfileCompletion) return setShowProfileModal(true);
+    if (!deliveryCoords || !deliveryAddress)
+      return alert("Please set your delivery address.");
+    if (!isWithinRange)
+      return alert("Your location is outside our delivery area.");
 
     try {
       const orderNumber = `ORD${Date.now()}`;
 
-      // Save order to Supabase database
-      const { data: order, error: orderError } = await supabase
+      const { data: order, error } = await supabase
         .from("orders")
         .insert({
           order_number: orderNumber,
@@ -354,77 +258,61 @@ const Checkout = () => {
           total_amount: totalAmount,
           delivery_address: deliveryAddress,
           estimated_delivery: "10 mins",
-          status: "pending",
           promo_code_id: appliedPromo?.id ?? null,
-          promo_discount: discount,
+          promo_discount: promoDiscount,
+          status: "pending",
         })
         .select()
         .single();
 
-      if (orderError) {
-        throw orderError;
-      }
+      if (error) throw error;
 
+      // Insert promo usage
       if (order && appliedPromo) {
-        await supabase.from("promo_code_usage").insert([
-          {
-            user_id: user.id,
-            promo_code_id: appliedPromo.id,
-            order_id: order.id,
-            discount_amount: promoDiscount,
-            used_at: new Date().toISOString(),
-          },
-        ]);
+        await supabase.from("promo_code_usage").insert({
+          user_id: user.id,
+          promo_code_id: appliedPromo.id,
+          order_id: order.id,
+          discount_amount: promoDiscount,
+        });
       }
 
-      // Save order items
-      const orderItems = cart.map((item) => ({
+      // Insert items
+      const items = cart.map((item) => ({
         order_id: order.id,
         product_id: item.id,
         quantity: item.quantity,
         price: item.price,
       }));
 
-      const { error: itemsError } = await supabase
-        .from("order_items")
-        .insert(orderItems);
+      await supabase.from("order_items").insert(items);
 
-      if (itemsError) {
-        throw itemsError;
-      }
+      resetCart();
 
       const orderDetails = {
-        userId: user.id,
-        userEmail: user.email,
-        customerName: profile?.full_name || "Valued Customer",
         orderId: orderNumber,
         items: cart,
         totalItems,
         totalAmount,
         deliveryAddress,
-        delivery_location: JSON.stringify({
-          address: deliveryAddress,
-          coordinates: deliveryCoords,
-        }),
         deliveryFee,
-        discount,
-        estimatedDelivery: "10 mins",
+        discount: promoDiscount,
         paymentMethod:
           paymentOptions.find((p) => p.id === selectedPayment)?.label || "",
-        status: "confirmed",
-        createdAt: new Date().toISOString(),
       };
 
-      resetCart();
       sessionStorage.setItem("last_order", JSON.stringify(orderDetails));
-      navigate("/order-confirmation", { state: orderDetails });
       sessionStorage.removeItem("applied_promo");
       sessionStorage.removeItem("promo_discount");
-    } catch (error) {
-      console.error("Error placing order:", error);
-      alert("Failed to place order. Please try again.");
+
+      navigate("/order-confirmation", { state: orderDetails });
+    } catch (err) {
+      console.error(err);
+      alert("Failed to place order.");
     }
   };
+
+  // Payment Options
 
   const paymentOptions = [
     {
@@ -433,7 +321,7 @@ const Checkout = () => {
       icon: <WalletIcon className="h-6 w-6" />,
     },
     { id: "khalti", label: "Khalti", icon: KhaltiLogo },
-    { id: "esewa", label: "eSewa", icon: EsewaLogo },
+    { id: "esewa", label: "eSewa", icon: EssewaLogo },
     {
       id: "bank",
       label: "Bank Transfer",
@@ -441,20 +329,21 @@ const Checkout = () => {
     },
   ];
 
-  if (loading) {
+  // UI Rendering
+
+  if (loading)
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto" />
         <p className="mt-4 text-gray-600">Checking authentication...</p>
       </div>
     );
-  }
 
   if (!user) return null;
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="md:block hidden">
+      <div className="hidden md:block">
         <Header />
       </div>
 
@@ -472,144 +361,125 @@ const Checkout = () => {
         </div>
 
         <div className="space-y-4 lg:grid lg:grid-cols-3 lg:gap-6 lg:space-y-0">
-          {/* Main Content */}
+          {/* Left */}
           <div className="lg:col-span-2 space-y-4">
-            {/* Delivery Address Section */}
+            {/* Delivery Address */}
             <div className="bg-white rounded-lg p-4 shadow-sm">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
                 Delivery Address
               </h3>
-              <div className="bg-green-50 p-3 rounded-lg border border-green-200 mb-4">
-                <div className="flex items-start gap-2">
-                  <MapPin className="h-5 w-5 text-green-600 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-green-800 font-medium">
-                      Delivering to:
-                    </p>
-                    <LocationDisplay
-                      address={deliveryAddress}
-                      fallback="Please set delivery address"
-                      className="text-sm text-green-700"
-                      truncate={false}
-                    />
-                  </div>
+
+              <div className="bg-green-50 p-3 rounded-lg border border-green-200 mb-4 flex gap-2">
+                <MapPin className="h-5 w-5 text-green-600 mt-0.5" />
+                <div>
+                  <p className="text-sm text-green-800 font-medium">
+                    Delivering to:
+                  </p>
+                  <LocationDisplay
+                    address={deliveryAddress}
+                    fallback="Please set delivery address"
+                    className="text-sm text-green-700"
+                  />
                 </div>
               </div>
-              <Button onClick={handleAddressChange} variant="outline" size="sm">
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/map-location")}
+              >
                 Change Delivery Address
               </Button>
 
               {!isWithinRange && (
                 <p className="text-red-600 text-sm mt-2">
-                  We're sorry! Your location is currently outside our delivery
-                  area. We're working on expanding soon.
+                  Your location is outside our delivery area.
                 </p>
               )}
             </div>
-            {/* Payment Method */}
+
+            {/* Payment */}
             <div className="bg-white rounded-lg p-4 shadow-sm">
               <div className="flex items-center space-x-2 mb-4">
-                <CreditCard className="h-4 w-4 lg:h-5 lg:w-5 text-green-600" />
+                <CreditCard className="h-4 w-4 text-green-600" />
                 <h3 className="text-base lg:text-lg font-semibold">
                   Payment Method
                 </h3>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {paymentOptions.map((option) => (
+                {paymentOptions.map((p) => (
                   <div
-                    key={option.id}
+                    key={p.id}
+                    onClick={() => setSelectedPayment(p.id)}
                     className={`border-2 rounded-lg p-3 cursor-pointer transition-all ${
-                      selectedPayment === option.id
+                      selectedPayment === p.id
                         ? "border-green-500 bg-green-50"
                         : "border-gray-200 hover:border-gray-300"
                     }`}
-                    onClick={() => setSelectedPayment(option.id)}
                   >
                     <div className="flex items-center space-x-3">
                       <input
                         type="radio"
-                        id={option.id}
                         name="payment"
-                        value={option.id}
-                        checked={selectedPayment === option.id}
-                        onChange={(e) => setSelectedPayment(e.target.value)}
-                        className="text-green-600 w-4 h-4"
+                        checked={selectedPayment === p.id}
+                        className="w-4 h-4 text-green-600"
+                        onChange={() => setSelectedPayment(p.id)}
                       />
-                      <div className="flex items-center space-x-2">
-                        {typeof option.icon === "string" ? (
-                          <img
-                            src={option.icon}
-                            alt={option.label}
-                            className="h-6 w-6"
-                          />
+                      <div className="flex items-center gap-2">
+                        {typeof p.icon === "string" ? (
+                          <img src={p.icon} alt={p.label} className="h-6 w-6" />
                         ) : (
-                          <span className="text-lg">{option.icon}</span>
+                          p.icon
                         )}
-                        <span className="text-sm font-medium">
-                          {option.label}
-                        </span>
+                        <span className="text-sm font-medium">{p.label}</span>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
-              <div className="mt-3 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 p-3 rounded-md text-sm font-medium">
-                <strong>Note:</strong> We currently only accept{" "}
-                <strong>Cash on Delivery (COD)</strong> as a payment method.
-                Other payment options will be available soon.
+
+              <div className="mt-3 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 p-3 rounded-md text-sm">
+                <strong>Note:</strong> Currently only{" "}
+                <strong>Cash on Delivery (COD)</strong> is available.
               </div>
             </div>
           </div>
 
-          {/* Order Summary - Mobile optimized */}
-          <div className="bg-white rounded-lg p-4 shadow-sm lg:h-fit">
-            <h3 className="text-base lg:text-lg font-semibold text-gray-900 mb-4">
-              Order Summary
-            </h3>
+          {/* Order Summary */}
+          <div className="bg-white rounded-lg p-4 shadow-sm">
+            <h3 className="text-lg font-semibold mb-4">Order Summary</h3>
 
-            <div className="space-y-2 mb-4 text-sm">
+            <div className="space-y-2 text-sm mb-4">
               <div className="flex justify-between">
-                <span>
-                  Subtotal ({totalItems} {totalItems === 1 ? "item" : "items"})
-                </span>
+                <span>Subtotal ({totalItems} items)</span>
                 <span>Rs {totalPrice}</span>
               </div>
+
               <div className="flex justify-between">
                 <span>Delivery Fee</span>
                 <span>Rs {deliveryFee}</span>
               </div>
 
-              {appliedPromo?.code === "SAVE20" && (
-                <p className="text-green-700 text-xs mt-1">
-                  20% OFF on your order above Rs400 applied!
-                </p>
-              )}
-
-              {discount > 0 && (
+              {promoDiscount > 0 && (
                 <div className="flex justify-between text-green-600">
                   <span>Promo Discount</span>
-                  <span>-Rs {discount}</span>
+                  <span>-Rs {promoDiscount}</span>
                 </div>
               )}
 
-              {orderCount !== null && (orderCount < 3 || totalPrice > 200) ? (
-                <p className="text-xs text-green-600 mt-1">
-                  Free delivery{" "}
-                  {orderCount < 3
-                    ? `for your first ${3 - orderCount} order${
-                        3 - orderCount > 1 ? "s" : ""
-                      }`
-                    : "because order total exceeds Rs200"}
-                  !
-                </p>
-              ) : (
-                <p className="text-xs text-gray-500 mt-1">
-                  Rs {baseDeliveryFee} delivery fee applies.
-                </p>
-              )}
+              {/* Free Delivery Messages */}
+              {orderCount !== null &&
+                (orderCount === 0 || totalPrice > 200) && (
+                  <p className="text-xs text-green-600 mt-1">
+                    {orderCount === 0
+                      ? "Enjoy free delivery on your first order!"
+                      : "Free delivery — order exceeds Rs200!"}
+                  </p>
+                )}
+
               <div className="border-t pt-2 mt-3">
-                <div className="flex justify-between font-semibold text-base lg:text-lg">
+                <div className="flex justify-between font-semibold text-lg">
                   <span>Total</span>
                   <span>Rs {totalAmount}</span>
                 </div>
@@ -619,18 +489,16 @@ const Checkout = () => {
             <Button
               onClick={handlePlaceOrder}
               disabled={totalItems === 0 || !isWithinRange}
-              className={`w-full py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all ${
+              className={`w-full py-4 text-lg font-semibold rounded-xl shadow-lg ${
                 totalItems === 0 || !isWithinRange
                   ? "bg-gray-300 cursor-not-allowed text-gray-600"
-                  : "bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white hover:scale-105"
+                  : "bg-gradient-to-r from-green-500 to-emerald-600 hover:scale-105 text-white"
               }`}
             >
-              {!isWithinRange
-                ? "Order can't be placed"
-                : totalItems === 0
+              {totalItems === 0
                 ? "Cart is empty"
-                : needsProfileCompletion
-                ? "Complete Profile First"
+                : !isWithinRange
+                ? "Cannot deliver to your location"
                 : selectedPayment === "cod"
                 ? "Place Order"
                 : `Pay with ${
@@ -641,15 +509,12 @@ const Checkout = () => {
         </div>
       </div>
 
-      {/* Modals */}
+      {/* Modal */}
       <ProfileCompletionModal
-        isOpen={showProfileModal}
-        defaultAddress={deliveryAddress}
+        isOpen={showProfileModal && needsProfileCompletion}
         onClose={async (updated) => {
           setShowProfileModal(false);
-          if (updated) {
-            await updateProfile();
-          }
+          if (updated) updateProfile();
         }}
       />
     </div>
