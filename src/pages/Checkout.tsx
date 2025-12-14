@@ -299,6 +299,7 @@ const Checkout = () => {
         discount: promoDiscount,
         paymentMethod:
           paymentOptions.find((p) => p.id === selectedPayment)?.label || "",
+        estimatedDelivery: "10 mins",
       };
 
       sessionStorage.setItem("last_order", JSON.stringify(orderDetails));
