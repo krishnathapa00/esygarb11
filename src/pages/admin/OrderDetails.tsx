@@ -29,7 +29,7 @@ const OrderDetails = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isLocallyCancelled, setIsLocallyCancelled] = useState(false);
 
-  // Fetch order data with delivery config
+  // Fetch order and delivery config
   const { data: order, isLoading } = useQuery({
     queryKey: ["order-details", orderId],
     queryFn: async () => {
@@ -71,7 +71,6 @@ const OrderDetails = () => {
     gcTime: 60000,
   });
 
-  // Order timer for admin tracking
   const orderTimer = useOrderTimer({
     orderId: orderId || "",
     orderStatus: order?.status || "pending",
@@ -81,7 +80,7 @@ const OrderDetails = () => {
     isCancelled: order?.status === "cancelled" || isLocallyCancelled,
   });
 
-  // Update order status mutation
+  // Mutations (update, cancel, dispatch)
   const updateOrderMutation = useMutation({
     mutationFn: async ({
       orderId,
@@ -90,24 +89,19 @@ const OrderDetails = () => {
       orderId: string;
       status: string;
     }) => {
-      const updateData: any = { status };
-
       if (status === "ready_for_pickup") {
-        // When marking ready, also log to status history
         await supabase.from("order_status_history").insert({
           order_id: orderId,
           status: "ready_for_pickup",
           notes: "Order prepared and ready for pickup",
         });
       }
-
       const { data, error } = await supabase
         .from("orders")
-        .update(updateData)
+        .update({ status })
         .eq("id", orderId)
         .select()
         .single();
-
       if (error) throw error;
       return data;
     },
@@ -129,22 +123,18 @@ const OrderDetails = () => {
 
   const cancelOrderMutation = useMutation({
     mutationFn: async (orderId: string) => {
-      // Update the order status to "cancelled"
       const { data, error } = await supabase
         .from("orders")
         .update({ status: "cancelled" })
         .eq("id", orderId)
         .select()
         .single();
-
       if (error) throw error;
-
       await supabase.from("order_status_history").insert({
         order_id: orderId,
         status: "cancelled",
         notes: "Order cancelled by admin upon user request",
       });
-
       return data;
     },
     onSuccess: () => {
@@ -163,72 +153,53 @@ const OrderDetails = () => {
     },
   });
 
-  // Dispatch order to available delivery partners
   const dispatchOrderMutation = useMutation({
     mutationFn: async (orderId: string) => {
-      // Find an available online delivery partner
-      const { data: availablePartners, error: partnerError } = await supabase
+      const { data: partners, error: partnerError } = await supabase
         .from("profiles")
         .select("id, full_name")
         .eq("role", "delivery_partner")
         .eq("is_online", true)
         .eq("kyc_verified", true);
-
       if (partnerError) throw partnerError;
-
-      if (!availablePartners || availablePartners.length === 0) {
-        // No partners available, just mark as ready for pickup
-        const { error } = await supabase
+      if (!partners || partners.length === 0) {
+        await supabase
           .from("orders")
           .update({ status: "ready_for_pickup" })
           .eq("id", orderId);
-
-        if (error) throw error;
-
         await supabase.from("order_status_history").insert({
           order_id: orderId,
           status: "ready_for_pickup",
           notes: "Order dispatched - awaiting delivery partner acceptance",
         });
-
         return { autoAssigned: false };
       }
-
-      // Auto-assign to first available partner
-      const selectedPartner = availablePartners[0];
+      const selected = partners[0];
       const { data, error } = await supabase
         .from("orders")
         .update({
-          delivery_partner_id: selectedPartner.id,
+          delivery_partner_id: selected.id,
           status: "dispatched",
           accepted_at: new Date().toISOString(),
         })
         .eq("id", orderId)
         .select()
         .single();
-
       if (error) throw error;
-
       await supabase.from("order_status_history").insert({
         order_id: orderId,
         status: "dispatched",
-        notes: `Order auto-assigned to ${selectedPartner.full_name}`,
+        notes: `Order auto-assigned to ${selected.full_name}`,
       });
-
-      return { autoAssigned: true, partnerName: selectedPartner.full_name };
+      return { autoAssigned: true, partnerName: selected.full_name };
     },
     onSuccess: (result) => {
-      if (result.autoAssigned) {
-        toast({
-          title: "Order Dispatched",
-          description: `Order automatically assigned to ${result.partnerName}`,
-        });
-      } else {
-        toast({
-          title: "Order Ready",
-          description: "Order is now available for delivery partners to accept",
-        });
-      }
+      toast({
+        title: result.autoAssigned ? "Order Dispatched" : "Order Ready",
+        description: result.autoAssigned
+          ? `Order automatically assigned to ${result.partnerName}`
+          : "Order is now available for delivery partners to accept",
+      });
       queryClient.invalidateQueries({ queryKey: ["order-details", orderId] });
     },
     onError: (error: any) => {
@@ -265,12 +236,7 @@ const OrderDetails = () => {
     setIsUpdating(true);
     updateOrderMutation.mutate(
       { orderId: orderId!, status: "ready_for_pickup" },
-      {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ["admin-orders-stable"] });
-        },
-        onSettled: () => setIsUpdating(false),
-      }
+      { onSettled: () => setIsUpdating(false) }
     );
   };
 
@@ -278,13 +244,8 @@ const OrderDetails = () => {
     if (window.confirm("Are you sure you want to cancel this order?")) {
       setIsUpdating(true);
       cancelOrderMutation.mutate(orderId!, {
-        onSuccess: () => {
-          setIsLocallyCancelled(true);
-          queryClient.invalidateQueries({ queryKey: ["admin-orders-stable"] });
-        },
-        onSettled: () => {
-          setIsUpdating(false);
-        },
+        onSuccess: () => setIsLocallyCancelled(true),
+        onSettled: () => setIsUpdating(false),
       });
     }
   };
@@ -293,13 +254,12 @@ const OrderDetails = () => {
     try {
       setIsUpdating(true);
       await dispatchOrderMutation.mutateAsync(orderId!);
-      queryClient.invalidateQueries({ queryKey: ["admin-orders-stable"] });
     } finally {
       setIsUpdating(false);
     }
   };
 
-  if (isLoading) {
+  if (isLoading)
     return (
       <AdminLayout>
         <div className="flex items-center justify-center h-64">
@@ -307,9 +267,8 @@ const OrderDetails = () => {
         </div>
       </AdminLayout>
     );
-  }
 
-  if (!order) {
+  if (!order)
     return (
       <AdminLayout>
         <div className="text-center">
@@ -323,15 +282,15 @@ const OrderDetails = () => {
         </div>
       </AdminLayout>
     );
-  }
 
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center">
+        {/* Header & Action Buttons */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+          <div className="flex items-center gap-3">
             <Link to="/admin/orders">
-              <Button variant="ghost" size="sm" className="mr-3">
+              <Button variant="ghost" size="sm">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
@@ -345,166 +304,147 @@ const OrderDetails = () => {
               </p>
             </div>
           </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {order.status !== "cancelled" && (
               <Button
                 onClick={handleCancelOrder}
                 disabled={isUpdating}
-                className="bg-red-600 hover:bg-red-700"
+                className="bg-red-600 hover:bg-red-700 flex items-center gap-1"
               >
-                <AlertCircle className="h-4 w-4 mr-2" />
-                Cancel Order
+                <AlertCircle className="h-4 w-4" /> Cancel Order
               </Button>
             )}
-
             {(order.status === "pending" || order.status === "confirmed") && (
               <Button
                 onClick={handleMarkReady}
                 disabled={isUpdating}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-blue-600 hover:bg-blue-700 flex items-center gap-1"
               >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Mark Ready
+                <CheckCircle className="h-4 w-4" /> Mark Ready
               </Button>
             )}
             {order.status === "ready_for_pickup" && (
               <Button
                 onClick={handleDispatchOrder}
                 disabled={isUpdating}
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-green-600 hover:bg-green-700 flex items-center gap-1"
               >
-                <Truck className="h-4 w-4 mr-2" />
-                Dispatch Order
+                <Truck className="h-4 w-4" /> Dispatch Order
               </Button>
             )}
           </div>
         </div>
 
+        {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Order Summary */}
-          <div className="lg:col-span-2 space-y-6">
+          {/* Left Column */}
+          <div className="lg:col-span-2 space-y-6 overflow-x-auto">
+            {/* Order Summary */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Package className="h-5 w-5" />
-                  Order Summary
+                  <Package className="h-5 w-5" /> Order Summary
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+              <CardContent className="space-y-4">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Order Number</span>
+                  <span className="font-medium">{order.order_number}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Status</span>
+                  <Badge className={getStatusColor(order.status || "pending")}>
+                    {order.status?.replace("_", " ")}
+                  </Badge>
+                </div>
+                {order.order_items && (
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Order Number</span>
-                    <span className="font-medium">{order.order_number}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Status</span>
-                    <Badge
-                      className={getStatusColor(order.status || "pending")}
-                    >
-                      {order.status?.replace("_", " ") || "pending"}
-                    </Badge>
-                  </div>
-
-                  {/* Items Subtotal */}
-                  {order.order_items && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Items Subtotal</span>
-                      <span className="font-medium">
-                        Rs{" "}
-                        {order.order_items
-                          .reduce(
-                            (sum: number, item: any) =>
-                              sum + item.price * item.quantity,
-                            0
-                          )
-                          .toFixed(2)}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Delivery Fee */}
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Delivery Fee</span>
+                    <span className="text-gray-600">Items Subtotal</span>
                     <span className="font-medium">
-                      Rs {order.delivery_fee?.toFixed(2) || "50.00"}
+                      Rs{" "}
+                      {order.order_items
+                        .reduce(
+                          (sum: number, item: any) =>
+                            sum + item.price * item.quantity,
+                          0
+                        )
+                        .toFixed(2)}
                     </span>
                   </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Delivery Fee</span>
+                  <span className="font-medium">
+                    Rs {order.delivery_fee?.toFixed(2) || "50.00"}
+                  </span>
+                </div>
+                <div className="flex justify-between border-t pt-2">
+                  <span className="text-gray-600 font-semibold">
+                    Total Amount
+                  </span>
+                  <span className="font-bold text-lg">
+                    Rs {order.total_amount}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Payment Status</span>
+                  <Badge
+                    variant={
+                      order.payment_status === "completed"
+                        ? "default"
+                        : "secondary"
+                    }
+                  >
+                    {order.payment_status || "pending"}
+                  </Badge>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Estimated Delivery</span>
+                  <span>{order.estimated_delivery || "N/A"}</span>
+                </div>
 
-                  {/* Total Amount */}
-                  <div className="flex justify-between border-t pt-2">
-                    <span className="text-gray-600 font-semibold">
-                      Total Amount
-                    </span>
-                    <span className="font-bold text-lg">
-                      Rs {order.total_amount}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Payment Status</span>
-                    <Badge
-                      variant={
-                        order.payment_status === "completed"
-                          ? "default"
-                          : "secondary"
-                      }
-                    >
-                      {order.payment_status || "pending"}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Estimated Delivery</span>
-                    <span>{order.estimated_delivery || "N/A"}</span>
-                  </div>
-
-                  {/* Timer Display */}
-                  {order.status !== "cancelled" && (
-                    <div className="border-t pt-3 space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600 flex items-center gap-1">
-                          <Timer className="h-4 w-4" />
-                          Remaining Time
+                {/* Timer */}
+                {order.status !== "cancelled" && (
+                  <div className="border-t pt-3 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 flex items-center gap-1">
+                        <Timer className="h-4 w-4" /> Remaining Time
+                      </span>
+                      <div className="text-right">
+                        <span
+                          className={`font-bold text-lg ${
+                            orderTimer.isOverdue
+                              ? "text-red-600"
+                              : "text-primary"
+                          }`}
+                        >
+                          {orderTimer.formatRemaining()}
                         </span>
-                        <div className="text-right">
-                          <span
-                            className={`font-bold text-lg ${
-                              orderTimer.isOverdue
-                                ? "text-red-600"
-                                : "text-primary"
-                            }`}
-                          >
-                            {orderTimer.formatRemaining()}
-                          </span>
-                          {orderTimer.isOverdue && (
-                            <div className="flex items-center gap-1 text-red-600">
-                              <AlertCircle className="h-3 w-3" />
-                              <span className="text-xs">Overdue</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Time Elapsed</span>
-                        <span>{orderTimer.formatElapsed()}</span>
-                      </div>
-
-                      {order.status === "delivered" &&
-                        order.delivery_time_minutes && (
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-600">
-                              Total Delivery Time
-                            </span>
-                            <span className="font-medium">
-                              {Math.floor(order.delivery_time_minutes)} minutes
-                            </span>
+                        {orderTimer.isOverdue && (
+                          <div className="flex items-center gap-1 text-red-600">
+                            <AlertCircle className="h-3 w-3" />
+                            <span className="text-xs">Overdue</span>
                           </div>
                         )}
+                      </div>
                     </div>
-                  )}
-                </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Time Elapsed</span>
+                      <span>{orderTimer.formatElapsed()}</span>
+                    </div>
+                    {order.status === "delivered" &&
+                      order.delivery_time_minutes && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">
+                            Total Delivery Time
+                          </span>
+                          <span className="font-medium">
+                            {Math.floor(order.delivery_time_minutes)} minutes
+                          </span>
+                        </div>
+                      )}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -513,42 +453,37 @@ const OrderDetails = () => {
               <CardHeader>
                 <CardTitle>Order Items</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {order.order_items?.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center space-x-4 border-b pb-4"
-                    >
-                      <img
-                        src={item.products?.image_url || "/placeholder.svg"}
-                        alt={item.products?.name}
-                        className="w-16 h-16 object-cover rounded-lg"
-                      />
-                      <div className="flex-1">
-                        <h4 className="font-medium">{item.products?.name}</h4>
-                        <p className="text-gray-600">
-                          Quantity: {item.quantity}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-medium">Rs {item.price}</p>
-                      </div>
+              <CardContent className="space-y-4">
+                {order.order_items?.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b pb-4 gap-2"
+                  >
+                    <img
+                      src={item.products?.image_url || "/placeholder.svg"}
+                      alt={item.products?.name}
+                      className="w-16 h-16 object-cover rounded-lg"
+                    />
+                    <div className="flex-1">
+                      <h4 className="font-medium">{item.products?.name}</h4>
+                      <p className="text-gray-600">Quantity: {item.quantity}</p>
                     </div>
-                  ))}
-                </div>
+                    <div className="text-right">
+                      <p className="font-medium">Rs {item.price}</p>
+                    </div>
+                  </div>
+                ))}
               </CardContent>
             </Card>
           </div>
 
-          {/* Customer & Delivery Info */}
+          {/* Right Column */}
           <div className="space-y-6">
             {/* Customer Info */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  Customer Details
+                  <User className="h-5 w-5" /> Customer Details
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -573,8 +508,7 @@ const OrderDetails = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
-                  Delivery Address
+                  <MapPin className="h-5 w-5" /> Delivery Address
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -592,8 +526,7 @@ const OrderDetails = () => {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <User className="h-5 w-5" />
-                    Delivery Partner
+                    <User className="h-5 w-5" /> Delivery Partner
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -617,23 +550,20 @@ const OrderDetails = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  Order Timeline
+                  <Clock className="h-5 w-5" /> Order Timeline
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Order Placed</span>
-                    <span>{new Date(order.created_at).toLocaleString()}</span>
-                  </div>
-                  {order.updated_at !== order.created_at && (
-                    <div className="flex justify-between text-sm">
-                      <span>Last Updated</span>
-                      <span>{new Date(order.updated_at).toLocaleString()}</span>
-                    </div>
-                  )}
+              <CardContent className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Order Placed</span>
+                  <span>{new Date(order.created_at).toLocaleString()}</span>
                 </div>
+                {order.updated_at !== order.created_at && (
+                  <div className="flex justify-between text-sm">
+                    <span>Last Updated</span>
+                    <span>{new Date(order.updated_at).toLocaleString()}</span>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
