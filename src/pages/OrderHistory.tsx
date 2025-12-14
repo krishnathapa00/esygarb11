@@ -1,7 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
-import { ArrowLeft, Clock, CheckCircle, XCircle, Eye, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Eye,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,25 +38,25 @@ interface Order {
 }
 
 const OrderHistory = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   useEffect(() => {
-    if (!user) {
+    if (!loading && !user) {
       navigate("/auth");
-      return;
+    } else if (user) {
+      fetchUserOrders();
     }
-
-    fetchUserOrders();
-  }, [user, navigate]);
+  }, [user, loading, navigate]);
 
   const fetchUserOrders = async () => {
     try {
       const { data, error } = await supabase
-        .from('orders')
-        .select(`
+        .from("orders")
+        .select(
+          `
           *,
           order_items (
             id,
@@ -60,36 +67,41 @@ const OrderHistory = () => {
               image_url
             )
           )
-        `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        `
+        )
+        .eq("user_id", user.id)
+        .eq("is_deleted", false)
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
 
       // Transform data to match existing interface
-      const transformedOrders = data.map(order => ({
+      const transformedOrders = data.map((order) => ({
         orderId: order.order_number,
-        items: order.order_items.map(item => ({
+        items: order.order_items.map((item) => ({
           id: String(item.id),
-          name: item.products?.name || 'Unknown Product',
+          name: item.products?.name || "Unknown Product",
           price: parseFloat(String(item.price)),
           quantity: item.quantity,
-          image: item.products?.image_url || '/placeholder.svg'
+          image: item.products?.image_url || "/placeholder.svg",
         })),
-        totalItems: order.order_items.reduce((sum, item) => sum + item.quantity, 0),
+        totalItems: order.order_items.reduce(
+          (sum, item) => sum + item.quantity,
+          0
+        ),
         totalAmount: parseFloat(String(order.total_amount)),
         deliveryAddress: order.delivery_address,
         estimatedDelivery: order.estimated_delivery,
-        paymentMethod: 'Cash on Delivery',
+        paymentMethod: "Cash on Delivery",
         status: order.status,
         userId: order.user_id,
         createdAt: order.created_at,
-        deliveredAt: order.delivered_at
+        deliveredAt: order.delivered_at,
       }));
 
       setOrders(transformedOrders);
     } catch (error) {
-      console.error('Error fetching orders:', error);
+      console.error("Error fetching orders:", error);
     }
   };
 
@@ -127,33 +139,36 @@ const OrderHistory = () => {
   const handleDeleteOrder = async (orderId: string) => {
     if (confirm("Are you sure you want to delete this order?")) {
       try {
-        // Delete from database
+        // Soft Delete from User POV
         const { error } = await supabase
-          .from('orders')
-          .delete()
-          .eq('order_number', orderId);
+          .from("orders")
+          .update({ is_deleted: true })
+          .eq("order_number", orderId)
+          .eq("user_id", user.id);
 
         if (error) throw error;
 
         // Update local state
-        const updatedOrders = orders.filter(order => order.orderId !== orderId);
+        const updatedOrders = orders.filter(
+          (order) => order.orderId !== orderId
+        );
         setOrders(updatedOrders);
         setSelectedOrder(null);
       } catch (error) {
-        console.error('Error deleting order:', error);
-        alert('Failed to delete order. Please try again.');
+        console.error("Error deleting order:", error);
+        alert("Failed to delete order. Please try again.");
       }
     }
   };
 
   const calculateDeliveryTime = (order: any) => {
-    if (!order.deliveredAt) return 'Not delivered yet';
-    
+    if (!order.deliveredAt) return "Not delivered yet";
+
     const createdAt = new Date(order.createdAt);
     const deliveredAt = new Date(order.deliveredAt);
     const diffMs = deliveredAt.getTime() - createdAt.getTime();
     const diffMins = Math.floor(diffMs / (1000 * 60));
-    
+
     if (diffMins < 60) {
       return `${diffMins} mins`;
     } else {
@@ -169,7 +184,7 @@ const OrderHistory = () => {
       month: "short",
       day: "numeric",
       hour: "2-digit",
-      minute: "2-digit"
+      minute: "2-digit",
     });
   };
 
@@ -177,7 +192,7 @@ const OrderHistory = () => {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        
+
         <div className="px-4 py-4 max-w-md mx-auto lg:max-w-4xl lg:px-8">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center">
@@ -210,7 +225,9 @@ const OrderHistory = () => {
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>
-                    <CardTitle className="text-lg">#{selectedOrder.orderId}</CardTitle>
+                    <CardTitle className="text-lg">
+                      #{selectedOrder.orderId}
+                    </CardTitle>
                     <p className="text-sm text-gray-500">
                       {formatDate(selectedOrder.createdAt)}
                     </p>
@@ -225,7 +242,9 @@ const OrderHistory = () => {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span>Delivery Address:</span>
-                    <span className="text-right">{selectedOrder.deliveryAddress}</span>
+                    <span className="text-right">
+                      {selectedOrder.deliveryAddress}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span>Payment Method:</span>
@@ -247,19 +266,30 @@ const OrderHistory = () => {
               <CardContent>
                 <div className="space-y-3">
                   {selectedOrder.items.map((item) => (
-                    <div key={item.id} className="flex items-center space-x-3 py-2 border-b last:border-b-0">
+                    <div
+                      key={item.id}
+                      className="flex items-center space-x-3 py-2 border-b last:border-b-0"
+                    >
                       <img
                         src={item.image}
                         alt={item.name}
                         className="w-12 h-12 rounded-lg object-cover"
                       />
                       <div className="flex-1">
-                        <h4 className="font-medium text-gray-900">{item.name}</h4>
-                        <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
+                        <h4 className="font-medium text-gray-900">
+                          {item.name}
+                        </h4>
+                        <p className="text-sm text-gray-500">
+                          Qty: {item.quantity}
+                        </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold">Rs {item.price * item.quantity}</p>
-                        <p className="text-sm text-gray-500">Rs {item.price} each</p>
+                        <p className="font-semibold">
+                          Rs {item.price * item.quantity}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Rs {item.price} each
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -281,7 +311,7 @@ const OrderHistory = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       <div className="px-4 py-4 max-w-md mx-auto lg:max-w-4xl lg:px-8">
         <div className="flex items-center mb-6">
           <Link to="/profile">
@@ -297,8 +327,12 @@ const OrderHistory = () => {
         {orders.length === 0 ? (
           <div className="text-center py-12">
             <Clock className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-            <h2 className="text-xl font-semibold text-gray-700 mb-2">No orders yet</h2>
-            <p className="text-gray-500 mb-6">Your order history will appear here once you place an order.</p>
+            <h2 className="text-xl font-semibold text-gray-700 mb-2">
+              No orders yet
+            </h2>
+            <p className="text-gray-500 mb-6">
+              Your order history will appear here once you place an order.
+            </p>
             <Link to="/">
               <Button className="bg-green-600 hover:bg-green-700">
                 Start Shopping
@@ -308,15 +342,20 @@ const OrderHistory = () => {
         ) : (
           <div className="space-y-4">
             {orders.map((order) => (
-              <Card key={order.orderId} className="cursor-pointer hover:shadow-md transition-shadow">
+              <Card
+                key={order.orderId}
+                className="cursor-pointer hover:shadow-md transition-shadow"
+              >
                 <CardContent className="p-4">
                   <div className="flex justify-between items-start mb-3">
                     <div>
-                      <h3 className="font-semibold text-gray-900">#{order.orderId}</h3>
+                      <h3 className="font-semibold text-gray-900">
+                        #{order.orderId}
+                      </h3>
                       <p className="text-sm text-gray-500">
                         {formatDate(order.createdAt)}
                       </p>
-                      {order.status === 'delivered' && (
+                      {order.status === "delivered" && (
                         <p className="text-xs text-green-600 font-medium">
                           Delivered in {calculateDeliveryTime(order)}
                         </p>
@@ -327,13 +366,16 @@ const OrderHistory = () => {
                       <span className="ml-1">{order.status}</span>
                     </Badge>
                   </div>
-                  
+
                   <div className="flex justify-between items-center mb-3">
                     <div>
                       <p className="text-sm text-gray-600">
-                        {order.totalItems} {order.totalItems === 1 ? "item" : "items"}
+                        {order.totalItems}{" "}
+                        {order.totalItems === 1 ? "item" : "items"}
                       </p>
-                      <p className="font-semibold text-lg">Rs {order.totalAmount}</p>
+                      <p className="font-semibold text-lg">
+                        Rs {order.totalAmount}
+                      </p>
                     </div>
                     <div className="flex gap-2">
                       <Link to={`/order-tracking/${order.orderId}`}>
@@ -355,7 +397,7 @@ const OrderHistory = () => {
                       </Button>
                     </div>
                   </div>
-                  
+
                   <div className="text-sm text-gray-500">
                     <p>Delivery: {order.deliveryAddress}</p>
                     <p>Payment: {order.paymentMethod}</p>
