@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   BarChart3,
@@ -9,6 +9,8 @@ import {
   CreditCard,
   Tag,
   LogOut,
+  Menu,
+  X,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useOrderAlert } from "@/hooks/useOrderAlert";
@@ -17,14 +19,14 @@ import { useQuery } from "@tanstack/react-query";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
-  onRefresh?: () => void;
 }
 
 const AdminLayout = ({ children }: AdminLayoutProps) => {
   const { signOut } = useAuth();
   const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const { data: orders = [], refetch: refetchOrders } = useQuery({
+  const { refetch: refetchOrders } = useQuery({
     queryKey: ["admin-orders-stable"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -49,174 +51,103 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     navigate("/admin-login");
   };
 
+  const NavItem = ({
+    to,
+    icon: Icon,
+    label,
+  }: {
+    to: string;
+    icon: any;
+    label: string;
+  }) => (
+    <NavLink
+      to={to}
+      onClick={() => setSidebarOpen(false)}
+      className={({ isActive }) =>
+        `flex items-center px-4 py-3 rounded-lg transition-colors ${
+          isActive
+            ? "bg-primary text-primary-foreground"
+            : "text-foreground hover:bg-muted"
+        }`
+      }
+    >
+      <Icon className="h-5 w-5 mr-3" />
+      {label}
+    </NavLink>
+  );
+
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Fixed Sidebar */}
-      <div className="fixed left-0 top-0 h-full w-64 bg-card border-r border-border shadow-lg z-40 overflow-y-auto">
-        <div className="p-6 border-b border-border">
-          <h1 className="text-xl font-bold text-foreground">Admin Panel</h1>
+      {/* Mobile Header */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-card border-b border-border flex items-center justify-between px-4 py-3 md:hidden">
+        <button onClick={() => setSidebarOpen(true)}>
+          <Menu className="h-6 w-6" />
+        </button>
+        <h1 className="font-bold text-lg">Admin Panel</h1>
+      </div>
+
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={`
+          fixed top-0 left-0 h-full w-64 bg-card border-r border-border z-50
+          transform transition-transform duration-300
+          ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
+          md:translate-x-0
+        `}
+      >
+        <div className="p-6 border-b border-border flex items-center justify-between">
+          <h1 className="text-xl font-bold">Admin Panel</h1>
+          <button className="md:hidden" onClick={() => setSidebarOpen(false)}>
+            <X className="h-6 w-6" />
+          </button>
         </div>
 
-        <nav className="mt-6 pb-20">
-          <div className="px-4 space-y-2">
-            <NavLink
-              to="/admin/dashboard"
-              className={({ isActive }) =>
-                `flex items-center px-4 py-3 rounded-lg transition-colors ${
-                  isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-foreground hover:bg-muted"
-                }`
-              }
-            >
-              <BarChart3 className="h-5 w-5 mr-3" />
-              Dashboard
-            </NavLink>
+        <nav className="mt-6 px-4 space-y-2">
+          <NavItem to="/admin/dashboard" icon={BarChart3} label="Dashboard" />
+          <NavItem to="/admin/orders" icon={ShoppingCart} label="Orders" />
+          <NavItem to="/admin/products" icon={Package} label="Products" />
+          <NavItem to="/admin/categories" icon={Tag} label="Categories" />
+          <NavItem to="/admin/users" icon={Users} label="Users" />
+          <NavItem to="/admin/kyc" icon={Users} label="KYC Verification" />
+          <NavItem
+            to="/admin/delivery-partners"
+            icon={Truck}
+            label="Delivery Partners"
+          />
+          <NavItem to="/admin/promo-codes" icon={Tag} label="Promo Codes" />
+          <NavItem
+            to="/admin/delivery-settings"
+            icon={Truck}
+            label="Delivery Settings"
+          />
+          <NavItem
+            to="/admin/transactions"
+            icon={CreditCard}
+            label="Transactions"
+          />
 
-            <NavLink
-              to="/admin/orders"
-              className={({ isActive }) =>
-                `flex items-center px-4 py-3 rounded-lg transition-colors ${
-                  isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-foreground hover:bg-muted"
-                }`
-              }
-            >
-              <ShoppingCart className="h-5 w-5 mr-3" />
-              Orders
-            </NavLink>
-
-            <NavLink
-              to="/admin/products"
-              className={({ isActive }) =>
-                `flex items-center px-4 py-3 rounded-lg transition-colors ${
-                  isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-foreground hover:bg-muted"
-                }`
-              }
-            >
-              <Package className="h-5 w-5 mr-3" />
-              Products
-            </NavLink>
-
-            <NavLink
-              to="/admin/categories"
-              className={({ isActive }) =>
-                `flex items-center px-4 py-3 rounded-lg transition-colors ${
-                  isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-foreground hover:bg-muted"
-                }`
-              }
-            >
-              <Tag className="h-5 w-5 mr-3" />
-              Categories
-            </NavLink>
-
-            <NavLink
-              to="/admin/users"
-              className={({ isActive }) =>
-                `flex items-center px-4 py-3 rounded-lg transition-colors ${
-                  isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-foreground hover:bg-muted"
-                }`
-              }
-            >
-              <Users className="h-5 w-5 mr-3" />
-              Users
-            </NavLink>
-
-            <NavLink
-              to="/admin/kyc"
-              className={({ isActive }) =>
-                `flex items-center px-4 py-3 rounded-lg transition-colors ${
-                  isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-foreground hover:bg-muted"
-                }`
-              }
-            >
-              <Users className="h-5 w-5 mr-3" />
-              KYC Verification
-            </NavLink>
-
-            <NavLink
-              to="/admin/delivery-partners"
-              className={({ isActive }) =>
-                `flex items-center px-4 py-3 rounded-lg transition-colors ${
-                  isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-foreground hover:bg-muted"
-                }`
-              }
-            >
-              <Truck className="h-5 w-5 mr-3" />
-              Delivery Partners
-            </NavLink>
-
-            <NavLink
-              to="/admin/promo-codes"
-              className={({ isActive }) =>
-                `flex items-center px-4 py-3 rounded-lg transition-colors ${
-                  isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-foreground hover:bg-muted"
-                }`
-              }
-            >
-              <Tag className="h-5 w-5 mr-3" />
-              Promo Codes
-            </NavLink>
-
-            <NavLink
-              to="/admin/delivery-settings"
-              className={({ isActive }) =>
-                `flex items-center px-4 py-3 rounded-lg transition-colors ${
-                  isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-foreground hover:bg-muted"
-                }`
-              }
-            >
-              <Truck className="h-5 w-5 mr-3" />
-              Delivery Settings
-            </NavLink>
-
-            <NavLink
-              to="/admin/transactions"
-              className={({ isActive }) =>
-                `flex items-center px-4 py-3 rounded-lg transition-colors ${
-                  isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-foreground hover:bg-muted"
-                }`
-              }
-            >
-              <CreditCard className="h-5 w-5 mr-3" />
-              Transactions
-            </NavLink>
-
-            <button
-              onClick={handleSignOut}
-              className="flex items-center px-4 py-3 rounded-lg transition-colors text-foreground hover:bg-destructive hover:text-destructive-foreground w-full mt-4"
-            >
-              <LogOut className="h-5 w-5 mr-3" />
-              Logout
-            </button>
-          </div>
+          <button
+            onClick={handleSignOut}
+            className="flex items-center px-4 py-3 rounded-lg transition-colors text-foreground hover:bg-destructive hover:text-destructive-foreground w-full mt-6"
+          >
+            <LogOut className="h-5 w-5 mr-3" />
+            Logout
+          </button>
         </nav>
-      </div>
+      </aside>
 
-      {/* Main Content with margin to account for fixed sidebar */}
-      <div className="flex-1 ml-64 p-8 overflow-y-auto bg-background">
-        {children}
-      </div>
+      {/* Main Content */}
+      <main className="flex-1 p-6 md:ml-64 pt-20 md:pt-8">{children}</main>
     </div>
   );
 };
 
 export default AdminLayout;
-
