@@ -1,44 +1,46 @@
-export const detectLocation = async (
-  apiKey: string
-): Promise<{ lat: number; lng: number }> => {
-  let browserCoords: { lat?: number; lng?: number } = {};
-
-  try {
-    await new Promise<void>((resolve) => {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          browserCoords = {
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-          };
-          resolve();
-        },
-        () => resolve(), // ignore browser errors
-        { enableHighAccuracy: true, timeout: 5000 }
-      );
-    });
-  } catch {}
-
-  // Google Geolocation API
-  const response = await fetch(
-    `https://www.googleapis.com/geolocation/v1/geolocate?key=${apiKey}`,
-    {
-      method: "POST",
-      body: JSON.stringify({
-        considerIp: true,
-        fallback_location: browserCoords,
-      }),
+export const detectLocation = (): Promise<{ lat: number; lng: number }> => {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error("Geolocation not supported"));
+      return;
     }
-  );
 
-  if (!response.ok) {
-    throw new Error("Google Geolocation API request failed");
-  }
+    let settled = false;
 
-  const data = await response.json();
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        if (settled) return;
+        settled = true;
 
-  return {
-    lat: data.location.lat,
-    lng: data.location.lng,
-  };
+        resolve({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+      },
+      (error) => {
+        console.warn("GPS error (ignored initially):", error);
+
+        if (error.code === error.PERMISSION_DENIED) {
+          return;
+        }
+
+        if (!settled) {
+          settled = true;
+          reject(new Error("Unable to detect location"));
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 20000,
+        maximumAge: 0,
+      }
+    );
+
+    setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        reject(new Error("Location detection timed out"));
+      }
+    }, 22000);
+  });
 };
