@@ -32,10 +32,9 @@ const ManageOrders = () => {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [selectedDeliveryPartner, setSelectedDeliveryPartner] = useState("");
   const [orders, setOrders] = useState<any[]>([]);
-
   const { toast } = useToast();
 
-  // Fixed query functions to prevent re-renders
+  /* ===================== FETCH ORDERS ===================== */
   const { data: fetchedOrders = [], refetch: refetchOrders } = useQuery({
     queryKey: ["admin-orders-stable"],
     queryFn: async () => {
@@ -43,10 +42,10 @@ const ManageOrders = () => {
         .from("orders")
         .select(
           `
-        *,
-        profiles!orders_user_id_fkey ( full_name ),
-        order_items ( quantity )
-      `
+          *,
+          profiles!orders_user_id_fkey ( full_name ),
+          order_items ( quantity )
+        `
         )
         .order("created_at", { ascending: false });
 
@@ -60,6 +59,7 @@ const ManageOrders = () => {
     setOrders(fetchedOrders);
   }, [fetchedOrders]);
 
+  /* ===================== REALTIME ===================== */
   useEffect(() => {
     const channel = supabase
       .channel("orders-realtime")
@@ -76,14 +76,9 @@ const ManageOrders = () => {
         { event: "UPDATE", schema: "public", table: "orders" },
         (payload) => {
           setOrders((prev) =>
-            prev.map((order) =>
-              order.id === payload.new.id ? payload.new : order
-            )
+            prev.map((o) => (o.id === payload.new.id ? payload.new : o))
           );
-          showToast(
-            `Order #${payload.new.order_number} status updated: ${payload.new.status}`,
-            "info"
-          );
+          showToast(`Order #${payload.new.order_number} updated`, "info");
         }
       )
       .subscribe();
@@ -93,58 +88,20 @@ const ManageOrders = () => {
     };
   }, []);
 
+  /* ===================== DELIVERY PARTNERS ===================== */
   const { data: deliveryPartners = [] } = useQuery({
     queryKey: ["delivery-partners-stable"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("profiles")
-        .select("id, full_name, phone_number")
+        .select("id, full_name")
         .eq("role", "delivery_partner");
-
       return data || [];
     },
     staleTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    retry: false,
   });
 
-  const { data: isSuperAdmin = false } = useQuery({
-    queryKey: ["super-admin-stable"],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc("is_super_admin");
-      return data || false;
-    },
-    staleTime: 15 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    retry: false,
-  });
-
-  // Memoized functions to prevent re-renders
-  const getStatusColor = useMemo(
-    () => (status: string) => {
-      switch (status) {
-        case "pending":
-          return "bg-yellow-100 text-yellow-800";
-        case "confirmed":
-          return "bg-blue-100 text-blue-800";
-        case "ready_for_pickup":
-          return "bg-cyan-100 text-cyan-800";
-        case "dispatched":
-          return "bg-indigo-100 text-indigo-800";
-        case "out_for_delivery":
-          return "bg-purple-100 text-purple-800";
-        case "delivered":
-          return "bg-green-100 text-green-800";
-        case "cancelled":
-          return "bg-red-100 text-red-800";
-        default:
-          return "bg-gray-100 text-gray-800";
-      }
-    },
-    []
-  );
-
-  // Memoized filtered orders to prevent recalculation on every render
+  /* ===================== FILTERING ===================== */
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
       const matchesSearch =
@@ -152,86 +109,82 @@ const ManageOrders = () => {
         order.profiles?.full_name
           ?.toLowerCase()
           .includes(searchTerm.toLowerCase());
+
       const matchesStatus =
         statusFilter === "all" || order.status === statusFilter;
+
       return matchesSearch && matchesStatus;
     });
   }, [orders, searchTerm, statusFilter]);
 
-  // Event handlers
-  const handleStatusChange = async (orderId: string, newStatus: string) => {
-    try {
-      const { error } = await supabase
-        .from("orders")
-        .update({ status: newStatus as any })
-        .eq("id", orderId);
-
-      if (!error) {
-        toast({
-          title: "Order updated",
-          description: "Status updated successfully.",
-        });
-        refetchOrders();
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update order.",
-        variant: "destructive",
-      });
-    }
+  /* ===================== HELPERS ===================== */
+  const getStatusColor = (status: string) => {
+    const map: Record<string, string> = {
+      pending: "bg-yellow-100 text-yellow-800",
+      confirmed: "bg-blue-100 text-blue-800",
+      ready_for_pickup: "bg-cyan-100 text-cyan-800",
+      dispatched: "bg-indigo-100 text-indigo-800",
+      out_for_delivery: "bg-purple-100 text-purple-800",
+      delivered: "bg-green-100 text-green-800",
+      cancelled: "bg-red-100 text-red-800",
+    };
+    return map[status] || "bg-gray-100 text-gray-800";
   };
 
+  /* ===================== ASSIGN PARTNER ===================== */
   const handleAssignDeliveryPartner = async () => {
     if (!selectedOrder || !selectedDeliveryPartner) return;
 
-    try {
-      const { error } = await supabase
-        .from("orders")
-        .update({
-          delivery_partner_id: selectedDeliveryPartner,
-          status: "dispatched",
-        })
-        .eq("id", selectedOrder.id);
+    const { error } = await supabase
+      .from("orders")
+      .update({
+        delivery_partner_id: selectedDeliveryPartner,
+        status: "dispatched",
+      })
+      .eq("id", selectedOrder.id);
 
-      if (!error) {
-        toast({ title: "Success", description: "Delivery partner assigned." });
-        setAssignModalOpen(false);
-        setSelectedOrder(null);
-        setSelectedDeliveryPartner("");
-        refetchOrders();
-      }
-    } catch (error) {
+    if (!error) {
+      toast({
+        title: "Success",
+        description: "Delivery partner assigned",
+      });
+      setAssignModalOpen(false);
+      setSelectedOrder(null);
+      setSelectedDeliveryPartner("");
+      refetchOrders();
+    } else {
       toast({
         title: "Error",
-        description: "Failed to assign partner.",
+        description: "Failed to assign partner",
         variant: "destructive",
       });
     }
   };
 
   return (
-    <AdminLayout onRefresh={() => refetchOrders()}>
+    <AdminLayout>
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Orders Management</h1>
+        {/* ===================== HEADER ===================== */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-xl sm:text-2xl font-bold">Orders Management</h1>
 
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search orders..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <div className="flex space-x-2">
+          <div className="flex flex-wrap gap-2 items-center w-full sm:w-auto">
+            <div className="relative flex-1 min-w-[220px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search orders..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Filter by Status" />
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Filter status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="all">All</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="confirmed">Confirmed</SelectItem>
                 <SelectItem value="ready_for_pickup">
@@ -248,117 +201,142 @@ const ManageOrders = () => {
           </div>
         </div>
 
-        <div className="bg-white shadow rounded-lg">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Order ID
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Customer
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Date
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Amount
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredOrders.map((order) => (
-                  <tr key={order.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {order.order_number}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {order.order_items?.length || 0} items
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {order.profiles?.full_name || "N/A"}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {new Date(order.created_at).toLocaleDateString()}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        Rs {order.total_amount}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge
-                        className={getStatusColor(order.status || "pending")}
-                      >
-                        {order.status?.replace("_", " ") || "pending"}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex gap-1 justify-end">
-                        <Link
-                          to={`/admin/orders/${order.id}`}
-                          state={{ order }}
-                          rel="noopener noreferrer"
-                        >
-                          <Button variant="ghost" size="sm">
-                            <Eye className="h-4 w-4 mr-1" />
-                            View
-                          </Button>
-                        </Link>
+        {/* ===================== MOBILE CARDS ===================== */}
+        <div className="space-y-4 md:hidden">
+          {filteredOrders.map((order) => (
+            <div
+              key={order.id}
+              className="border rounded-lg p-4 bg-white space-y-3"
+            >
+              <div className="flex justify-between">
+                <div>
+                  <p className="font-medium">{order.order_number}</p>
+                  <p className="text-xs text-gray-500">
+                    {order.order_items?.length || 0} items
+                  </p>
+                </div>
+                <Badge className={getStatusColor(order.status)}>
+                  {order.status.replace("_", " ")}
+                </Badge>
+              </div>
 
-                        {(order.status === "confirmed" ||
-                          order.status === "pending") && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-green-600 hover:bg-green-50"
-                            onClick={() => {
-                              setSelectedOrder(order);
-                              setAssignModalOpen(true);
-                            }}
-                          >
-                            <Users className="h-4 w-4 mr-1" />
-                            Assign
-                          </Button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              <div className="text-sm space-y-1">
+                <p>Customer: {order.profiles?.full_name || "N/A"}</p>
+                <p>Date: {new Date(order.created_at).toLocaleDateString()}</p>
+                <p className="font-semibold">Rs {order.total_amount}</p>
+              </div>
+
+              <div className="flex gap-2">
+                <Link to={`/admin/orders/${order.id}`} className="flex-1">
+                  <Button size="sm" variant="outline" className="w-full">
+                    <Eye className="h-4 w-4 mr-1" />
+                    View
+                  </Button>
+                </Link>
+
+                {(order.status === "pending" ||
+                  order.status === "confirmed") && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1 text-green-600"
+                    onClick={() => {
+                      setSelectedOrder(order);
+                      setAssignModalOpen(true);
+                    }}
+                  >
+                    <Users className="h-4 w-4 mr-1" />
+                    Assign
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
 
-        {/* Assign Modal */}
+        {/* ===================== DESKTOP TABLE ===================== */}
+        <div className="hidden md:block bg-white rounded-lg shadow overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                {[
+                  "Order",
+                  "Customer",
+                  "Date",
+                  "Amount",
+                  "Status",
+                  "Actions",
+                ].map((h) => (
+                  <th
+                    key={h}
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {filteredOrders.map((order) => (
+                <tr key={order.id}>
+                  <td className="px-6 py-4">{order.order_number}</td>
+                  <td className="px-6 py-4">
+                    {order.profiles?.full_name || "N/A"}
+                  </td>
+                  <td className="px-6 py-4">
+                    {new Date(order.created_at).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4">Rs {order.total_amount}</td>
+                  <td className="px-6 py-4">
+                    <Badge className={getStatusColor(order.status)}>
+                      {order.status.replace("_", " ")}
+                    </Badge>
+                  </td>
+                  <td className="px-6 py-4 text-right space-x-2">
+                    <Link to={`/admin/orders/${order.id}`}>
+                      <Button size="sm" variant="ghost">
+                        <Eye className="h-4 w-4 mr-1" />
+                        View
+                      </Button>
+                    </Link>
+                    {(order.status === "pending" ||
+                      order.status === "confirmed") && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-green-600"
+                        onClick={() => {
+                          setSelectedOrder(order);
+                          setAssignModalOpen(true);
+                        }}
+                      >
+                        <Users className="h-4 w-4 mr-1" />
+                        Assign
+                      </Button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* ===================== ASSIGN MODAL ===================== */}
         <Dialog open={assignModalOpen} onOpenChange={setAssignModalOpen}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Assign Delivery Partner</DialogTitle>
               <DialogDescription>
-                Select a delivery partner for order{" "}
-                {selectedOrder?.order_number}
+                Assign partner for order {selectedOrder?.order_number}
               </DialogDescription>
             </DialogHeader>
+
             <Select
               value={selectedDeliveryPartner}
               onValueChange={setSelectedDeliveryPartner}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select delivery partner" />
+                <SelectValue placeholder="Select partner" />
               </SelectTrigger>
               <SelectContent>
                 {deliveryPartners.map((partner) => (
@@ -368,6 +346,7 @@ const ManageOrders = () => {
                 ))}
               </SelectContent>
             </Select>
+
             <DialogFooter>
               <Button
                 variant="outline"
