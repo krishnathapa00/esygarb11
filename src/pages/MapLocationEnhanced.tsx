@@ -9,7 +9,7 @@ import { showToast } from "@/components/Toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthContext } from "@/contexts/AuthProvider";
 import { DELIVERY_AREA_COORDS } from "@/data/deliveryConsts";
-import { detectLocation } from "@/utils/detectLocation";
+import { detectLocation } from "@/utils/detectUserLocation";
 
 const GOOGLE_MAPS_API_KEY = "AIzaSyADxM5y7WrXu3BRJ_hJQZhh6FLXWyO3E1g";
 
@@ -194,13 +194,20 @@ const MapLocationEnhanced = () => {
     setIsDetecting(true);
 
     try {
-      const { lat, lng } = await detectLocation(GOOGLE_MAPS_API_KEY);
+      const { lat, lng } = await detectLocation();
 
-      placeMarkerAt(lat, lng);
+      const isInside = checkDeliveryRange(lat, lng);
+
+      updateMarker(lat, lng);
+      reverseGeocode(lat, lng);
+
+      if (!isInside) {
+        showToast("Sorry! You're outside our delivery area.", "error");
+      }
     } catch (error: any) {
       toast({
         title: "Location Error",
-        description: error.message || "Unable to detect location.",
+        description: error.message,
         variant: "destructive",
       });
     } finally {
