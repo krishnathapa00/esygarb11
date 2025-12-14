@@ -22,7 +22,6 @@ const ManageUsers = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
   const [selectedUser, setSelectedUser] = useState(null);
 
   const {
@@ -36,25 +35,17 @@ const ManageUsers = () => {
         .from("profiles")
         .select("*")
         .order("created_at", { ascending: false });
-
       if (error) throw error;
       return data;
     },
   });
 
   const updateUserMutation = useMutation({
-    mutationFn: async ({
-      userId,
-      role,
-    }: {
-      userId: string;
-      role: "customer" | "admin" | "delivery_partner" | "super_admin";
-    }) => {
+    mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
       const { error } = await supabase
         .from("profiles")
         .update({ role })
         .eq("id", userId);
-
       if (error) throw error;
     },
     onSuccess: () => {
@@ -64,7 +55,7 @@ const ManageUsers = () => {
         description: "User role updated successfully.",
       });
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         title: "Error",
         description: "Failed to update user role.",
@@ -102,28 +93,29 @@ const ManageUsers = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Manage Users</h1>
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h1 className="text-2xl sm:text-3xl font-bold">Manage Users</h1>
           <Button onClick={() => refetch()} disabled={isLoading}>
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
+            <RefreshCw className="w-4 h-4 mr-2" /> Refresh
           </Button>
         </div>
 
-        <div className="flex items-center space-x-2">
-          <div className="relative flex-1">
+        {/* Search */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+          <div className="relative flex-1 w-full sm:w-auto">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
               placeholder="Search users by name, phone, or role..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-10 w-full"
             />
           </div>
         </div>
 
-        {/* Statistics Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        {/* Statistics */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -137,7 +129,6 @@ const ManageUsers = () => {
               </div>
             </CardContent>
           </Card>
-
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -155,7 +146,6 @@ const ManageUsers = () => {
               </div>
             </CardContent>
           </Card>
-
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -171,7 +161,6 @@ const ManageUsers = () => {
               </div>
             </CardContent>
           </Card>
-
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -195,137 +184,89 @@ const ManageUsers = () => {
           </Card>
         </div>
 
-        {/* Users Table */}
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    User
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Role
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Phone
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Joined
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {isLoading ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center">
-                      <div className="text-center space-y-3">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                        <p className="text-muted-foreground">
-                          Loading users...
-                        </p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : filteredUsers.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center">
-                      <p className="text-muted-foreground">
-                        No users found matching your search.
-                      </p>
-                    </td>
-                  </tr>
-                ) : (
-                  filteredUsers.map((user) => (
-                    <tr key={user.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10">
-                            <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                              <span className="text-sm font-medium text-gray-700">
-                                {user.full_name
-                                  ? user.full_name.charAt(0).toUpperCase()
-                                  : "?"}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              {user.full_name || "Unknown User"}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              ID: {user.id.slice(0, 8)}...
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {getRoleBadge(user.role)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <div className="flex items-center gap-1">
-                          <Phone className="w-4 h-4 text-gray-400" />
-                          {user.phone || user.phone_number || "Not Provided"}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex flex-col gap-1">
-                          {user.kyc_verified && (
-                            <Badge
-                              variant="outline"
-                              className="text-green-600 border-green-200 bg-green-50 w-fit"
-                            >
-                              <UserCheck className="w-3 h-3 mr-1" />
-                              KYC Verified
-                            </Badge>
-                          )}
-                          {user.is_online &&
-                            user.role === "delivery_partner" && (
-                              <Badge
-                                variant="outline"
-                                className="text-blue-600 border-blue-200 bg-blue-50 w-fit"
-                              >
-                                <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
-                                Online
-                              </Badge>
-                            )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(user.created_at).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        {user.role !== "super_admin" && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setSelectedUser(user)}
-                            className="hover:opacity-100"
-                          >
-                            <Eye className="w-4 h-4" />
-                            View
-                          </Button>
-                        )}
-                      </td>
-                      {selectedUser && (
-                        <UserDetailsModal
-                          user={selectedUser}
-                          onClose={() => setSelectedUser(null)}
-                        />
+        {/* Users Table → Mobile-friendly Cards */}
+        <div className="space-y-4">
+          {isLoading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+              <p className="text-muted-foreground mt-2">Loading users...</p>
+            </div>
+          ) : filteredUsers.length === 0 ? (
+            <p className="text-center text-muted-foreground py-12">
+              No users found matching your search.
+            </p>
+          ) : (
+            filteredUsers.map((user) => (
+              <Card
+                key={user.id}
+                className="p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+              >
+                <div className="flex items-center gap-4 w-full sm:w-auto">
+                  <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-medium text-gray-700">
+                      {user.full_name
+                        ? user.full_name.charAt(0).toUpperCase()
+                        : "?"}
+                    </span>
+                  </div>
+                  <div>
+                    <div className="font-medium">
+                      {user.full_name || "Unknown User"}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      ID: {user.id.slice(0, 8)}...
+                    </div>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {user.kyc_verified && (
+                        <Badge
+                          variant="outline"
+                          className="text-green-600 border-green-200 bg-green-50"
+                        >
+                          <UserCheck className="w-3 h-3 mr-1" /> KYC Verified
+                        </Badge>
                       )}
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                      {user.is_online && user.role === "delivery_partner" && (
+                        <Badge
+                          variant="outline"
+                          className="text-blue-600 border-blue-200 bg-blue-50"
+                        >
+                          <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>{" "}
+                          Online
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-start sm:items-center">
+                  <div>{getRoleBadge(user.role)}</div>
+                  <div className="flex items-center gap-1 text-sm text-gray-700">
+                    <Phone className="w-4 h-4 text-gray-400" />
+                    {user.phone || user.phone_number || "Not Provided"}
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {new Date(user.created_at).toLocaleDateString()}
+                  </div>
+                  {user.role !== "super_admin" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setSelectedUser(user)}
+                    >
+                      <Eye className="w-4 h-4 mr-1" /> View
+                    </Button>
+                  )}
+                </div>
+              </Card>
+            ))
+          )}
         </div>
+
+        {selectedUser && (
+          <UserDetailsModal
+            user={selectedUser}
+            onClose={() => setSelectedUser(null)}
+          />
+        )}
       </div>
     </AdminLayout>
   );
