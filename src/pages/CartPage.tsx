@@ -388,7 +388,7 @@ const CartPage = () => {
             {cart.map((item) => (
               <div
                 key={item.id}
-                className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition"
+                className="bg-white rounded-2xl p-2 shadow-sm hover:shadow-md transition"
               >
                 <div className="flex items-center gap-4">
                   <img
