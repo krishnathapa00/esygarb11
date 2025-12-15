@@ -305,7 +305,12 @@ const OrderDetails = () => {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            {order.status !== "cancelled" && (
+            {[
+              "pending",
+              "confirmed",
+              "ready_for_pickup",
+              "dispatched",
+            ].includes(order.status) && (
               <Button
                 onClick={handleCancelOrder}
                 disabled={isUpdating}
@@ -314,6 +319,7 @@ const OrderDetails = () => {
                 <AlertCircle className="h-4 w-4" /> Cancel Order
               </Button>
             )}
+
             {(order.status === "pending" || order.status === "confirmed") && (
               <Button
                 onClick={handleMarkReady}
@@ -570,6 +576,11 @@ const OrderDetails = () => {
         </div>
       </div>
     </AdminLayout>
+  );
+};
+
+export default OrderDetails;
+
   );
 };
 
