@@ -12,10 +12,10 @@ import {
   Menu,
   X,
 } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
 import { useOrderAlert } from "@/hooks/useOrderAlert";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -77,14 +77,14 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   );
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-background flex overflow-x-hidden">
       {/* Mobile Header */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-card border-b border-border flex items-center justify-between px-4 py-3 md:hidden">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-card border-b border-border flex items-center justify-between px-4 py-3 md:hidden">
         <button onClick={() => setSidebarOpen(true)}>
           <Menu className="h-6 w-6" />
         </button>
         <h1 className="font-bold text-lg">Admin Panel</h1>
-      </div>
+      </header>
 
       {/* Mobile Overlay */}
       {sidebarOpen && (
@@ -97,7 +97,9 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 left-0 h-full w-64 bg-card border-r border-border z-50
+          fixed top-0 left-0 z-50 h-full
+          w-64 max-w-[80vw]
+          bg-card border-r border-border
           transform transition-transform duration-300
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
           md:translate-x-0
@@ -145,7 +147,18 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-6 md:ml-64 pt-20 md:pt-8">{children}</main>
+      <main
+        className="
+          flex-1 w-full
+          px-3 py-4
+          pt-20
+          md:px-6 md:py-6
+          md:pt-8
+          md:ml-64
+        "
+      >
+        {children}
+      </main>
     </div>
   );
 };
