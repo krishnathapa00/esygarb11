@@ -5,30 +5,17 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import AdminLayout from "./components/AdminLayout";
-import SingleImageUpload from "@/components/SingleImageUpload";
+import SingleImageUpload from "@/components/admin/SingleImageUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import PaginationControls from "@/components/PaginationControls";
-import MultipleImageUpload from "@/components/MultipleImageUpload";
-
-type ProductRow = {
-  id: number;
-  name: string;
-  price: number;
-  original_price: number;
-  category_id: number | null;
-  subcategory_id: number | null;
-  discount: number | null;
-  offer: string | null;
-  image_url: string | null;
-  image_urls?: string[] | null;
-  stock_quantity: number | null;
-  weight: string | null;
-  delivery_time: string | null;
-  description: string | null;
-  categories?: { name: string };
-};
+import PaginationControls from "@/components/admin/PaginationControls";
+import MultipleImageUpload from "@/components/admin/MultipleImageUpload";
+import DesktopProductsList, {
+  ProductRow,
+} from "./components/DesktopProductsList";
+import MobileProductsList from "./components/MobileProductsList";
+import ProductForm from "./components/ProductsForm";
 
 const ManageProducts = () => {
   const navigate = useNavigate();
@@ -116,7 +103,17 @@ const ManageProducts = () => {
         return [];
       }
 
-      return data || [];
+      // Normalize the categories field to always be an array for consistent typing
+      const normalizedData = (data || []).map((product) => ({
+        ...product,
+        categories: Array.isArray(product.categories)
+          ? product.categories
+          : product.categories
+          ? [product.categories]
+          : null,
+      })) as ProductRow[];
+
+      return normalizedData;
     },
   });
 
@@ -331,473 +328,95 @@ const ManageProducts = () => {
   };
 
   return (
-    <AdminLayout onRefresh={() => refetch()}>
+    <AdminLayout>
       <div className="space-y-6">
+        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
           <h1 className="text-2xl font-bold">Products Management</h1>
           <Button
             onClick={handleAddProduct}
-            className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+            className="w-full sm:w-auto bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 flex justify-center sm:justify-start"
           >
             <Plus className="h-4 w-4 mr-2" /> Add New Product
           </Button>
         </div>
 
+        {/* Search + Filter */}
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-          <div className="relative flex-1">
+          <div className="relative flex-1 w-full">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               placeholder="Search products..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-10 w-full"
             />
           </div>
-          <div className="flex space-x-2">
-            <Button variant="outline" size="sm">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full sm:w-auto flex justify-center"
+            >
               <Filter className="h-4 w-4 mr-2" />
               Filter
             </Button>
           </div>
         </div>
 
-        {/* Product table */}
-        <div className="bg-white shadow rounded-lg">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Product
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Category
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Price
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Stock
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Discount
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Offer
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {isLoading ? (
-                  <tr>
-                    <td colSpan={7} className="text-center py-6">
-                      Loading...
-                    </td>
-                  </tr>
-                ) : products.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="text-center py-6">
-                      No products found.
-                    </td>
-                  </tr>
-                ) : (
-                  products.map((product) => (
-                    <tr key={product.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10">
-                            <img
-                              className="h-10 w-10 rounded-sm object-cover"
-                              src={product.image_url}
-                              alt=""
-                            />
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              {product.name}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              ID: {product.id}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <Badge variant="secondary">
-                          {product.categories?.name || "-"}
-                        </Badge>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          Rs {product.price}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                            product.stock_quantity > 100
-                              ? "bg-green-100 text-green-800"
-                              : product.stock_quantity > 30
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-red-100 text-red-800"
-                          }`}
-                        >
-                          {product.stock_quantity || 0} units
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        {product.discount ? (
-                          <span className="text-red-600 font-bold">
-                            {product.discount}%
-                          </span>
-                        ) : (
-                          "-"
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        {typeof product.offer === "string" &&
-                        product.offer.trim().length > 0 ? (
-                          <span className="text-orange-600">
-                            {product.offer}
-                          </span>
-                        ) : (
-                          "-"
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEditProduct(product)}
-                        >
-                          <Edit2 className="h-4 w-4 mr-1" />
-                          Edit
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-600 hover:text-red-900 hover:bg-red-50"
-                          onClick={() => handleDeleteProduct(product.id)}
-                        >
-                          <Trash2 className="h-4 w-4 mr-1" />
-                          Delete
-                        </Button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <PaginationControls
-          currentPage={currentPage}
-          totalPages={Math.ceil(totalCount / itemsPerPage)}
-          onPageChange={(page) => setCurrentPage(page)}
+        {/* Product List */}
+        <DesktopProductsList
+          products={products}
+          isLoading={isLoading}
+          onEdit={handleEditProduct}
+          onDelete={handleDeleteProduct}
+        />
+        <MobileProductsList
+          products={products}
+          isLoading={isLoading}
+          onEdit={handleEditProduct}
+          onDelete={handleDeleteProduct}
         />
 
-        {/* Add Product Modal */}
+        {/* Pagination */}
+        <div className="flex justify-center md:justify-end">
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={Math.ceil(totalCount / itemsPerPage)}
+            onPageChange={(page) => setCurrentPage(page)}
+          />
+        </div>
+
+        {/* Modal */}
         {showAddProduct && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto relative">
+            <div className="bg-white rounded-lg shadow-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto relative p-4 md:p-6">
               <button
                 className="absolute top-4 right-4 text-gray-400 hover:text-gray-800 text-2xl font-bold z-10"
                 onClick={handleCloseModal}
               >
                 &#10005;
               </button>
+              <h2 className="text-2xl font-bold mb-6 text-center">
+                {editingProduct ? "Edit Product" : "Add New Product"}
+              </h2>
 
-              <div className="p-6">
-                <h2 className="text-2xl font-bold mb-6 text-center">
-                  {editingProduct ? "Edit Product" : "Add New Product"}
-                </h2>
-
-                <form onSubmit={handleSubmit}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Left Column */}
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">
-                        Basic Information
-                      </h3>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Product Name *
-                        </label>
-                        <Input
-                          name="name"
-                          placeholder="Enter product name"
-                          value={productData.name}
-                          onChange={handleChange}
-                          required
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        {/* Category Dropdown */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Category *
-                          </label>
-                          <select
-                            name="category_id"
-                            value={productData.category_id}
-                            onChange={(e) =>
-                              setProductData((prev) => ({
-                                ...prev,
-                                category_id: e.target.value,
-                                subcategory_id: "", // Reset subcategory when category changes
-                              }))
-                            }
-                            required
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                          >
-                            <option value="">Select Category</option>
-                            {categories.map((cat) => (
-                              <option key={cat.id} value={cat.id}>
-                                {cat.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        {/* Subcategory Dropdown */}
-                        {productData.category_id && (
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Subcategory
-                            </label>
-                            <select
-                              name="subcategory_id"
-                              value={productData.subcategory_id}
-                              onChange={(e) =>
-                                setProductData((prev) => ({
-                                  ...prev,
-                                  subcategory_id: e.target.value,
-                                }))
-                              }
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                            >
-                              <option value="">Select Subcategory</option>
-                              {subcategories
-                                .filter(
-                                  (sub) =>
-                                    sub.category_id ===
-                                    Number(productData.category_id)
-                                )
-                                .map((sub) => (
-                                  <option key={sub.id} value={sub.id}>
-                                    {sub.name}
-                                  </option>
-                                ))}
-                            </select>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Original Price (Rs) *
-                          </label>
-                          <Input
-                            name="original_price"
-                            type="number"
-                            placeholder="0"
-                            value={productData.original_price}
-                            onChange={handleChange}
-                            required
-                            min={0}
-                            step="0.01"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Selling Price (Rs) *
-                          </label>
-                          <Input
-                            name="price"
-                            type="number"
-                            placeholder="0"
-                            value={productData.price}
-                            onChange={handleChange}
-                            required
-                            min={0}
-                            step="0.01"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Discount (%)
-                          </label>
-                          <Input
-                            name="discount"
-                            type="number"
-                            placeholder="0"
-                            value={productData.discount}
-                            onChange={handleChange}
-                            min={0}
-                            max={99}
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Special Offer
-                        </label>
-                        <Input
-                          name="offer"
-                          placeholder="e.g., Buy 2 Get 1 Free"
-                          value={productData.offer}
-                          onChange={handleChange}
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Category ID *
-                          </label>
-                          <Input
-                            name="category_id"
-                            type="number"
-                            placeholder="1"
-                            value={productData.category_id}
-                            onChange={handleChange}
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Stock Quantity
-                          </label>
-                          <Input
-                            name="stock_quantity"
-                            type="number"
-                            placeholder="0"
-                            value={productData.stock_quantity}
-                            onChange={handleChange}
-                            min={0}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Right Column */}
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">
-                        Product Details
-                      </h3>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Weight/Size
-                          </label>
-                          <Input
-                            name="weight"
-                            placeholder="e.g., 500g, 1kg"
-                            value={productData.weight}
-                            onChange={handleChange}
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Delivery Time
-                          </label>
-                          <Input
-                            name="delivery_time"
-                            placeholder="e.g., 10 mins"
-                            value={productData.delivery_time}
-                            onChange={handleChange}
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Product Image
-                        </label>
-                        <SingleImageUpload
-                          onImageUpload={(url) =>
-                            setProductData((prev) => ({
-                              ...prev,
-                              image_url: url,
-                            }))
-                          }
-                          currentImage={productData.image_url}
-                          folder="products"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Additional Images (up to 3)
-                        </label>
-                        <MultipleImageUpload
-                          onImagesUpload={(urls) =>
-                            setProductData((prev) => ({
-                              ...prev,
-                              image_urls: urls,
-                            }))
-                          }
-                          currentImages={productData.image_urls}
-                          maxImages={3}
-                          folder="products/additional"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Description
-                        </label>
-                        <textarea
-                          name="description"
-                          placeholder="Enter detailed product description..."
-                          value={productData.description}
-                          onChange={handleChange}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 min-h-[100px] focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Form Actions */}
-                  <div className="flex justify-end space-x-3 mt-8 pt-6 border-t">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleCloseModal}
-                      disabled={creating}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="submit"
-                      disabled={creating}
-                      className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
-                    >
-                      {creating ? (
-                        <div className="flex items-center space-x-2">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                          <span>
-                            {editingProduct ? "Updating..." : "Adding..."}
-                          </span>
-                        </div>
-                      ) : editingProduct ? (
-                        "Update Product"
-                      ) : (
-                        "Add Product"
-                      )}
-                    </Button>
-                  </div>
-                </form>
-              </div>
+              <ProductForm
+                value={productData}
+                categories={categories}
+                subcategories={subcategories}
+                loading={creating}
+                isEdit={!!editingProduct}
+                onChange={handleChange}
+                onImageChange={(url) =>
+                  setProductData((p) => ({ ...p, image_url: url }))
+                }
+                onImagesChange={(urls) =>
+                  setProductData((p) => ({ ...p, image_urls: urls }))
+                }
+                onSubmit={handleSubmit}
+                onCancel={handleCloseModal}
+              />
             </div>
           </div>
         )}
