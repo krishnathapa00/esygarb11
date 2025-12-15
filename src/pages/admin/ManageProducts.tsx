@@ -3,14 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { Search, Plus, Edit2, Trash2, Filter } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import AdminLayout from "./components/AdminLayout";
-import SingleImageUpload from "@/components/admin/SingleImageUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import PaginationControls from "@/components/admin/PaginationControls";
-import MultipleImageUpload from "@/components/admin/MultipleImageUpload";
+import PaginationControls from "@/components/PaginationControls";
 import DesktopProductsList, {
   ProductRow,
 } from "./components/DesktopProductsList";
