@@ -413,7 +413,7 @@ const OrderDetails = () => {
                       <div className="text-right">
                         <span
                           className={`font-bold text-lg ${
-                            orderTimer.isOverdue
+                            orderTimer.remainingSeconds <= 0
                               ? "text-red-600"
                               : "text-primary"
                           }`}
