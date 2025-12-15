@@ -423,3 +423,4 @@ const ManageProducts = () => {
 };
 
 export default ManageProducts;
+
