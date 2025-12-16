@@ -1,20 +1,27 @@
-import React from 'react';
-import { Shield, Eye, Lock, Share2, UserCheck, FileText } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
+import React from "react";
+import { Shield, Eye, Lock, Share2, UserCheck, FileText } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Footer, Header } from "@/components/shared";
 
 const PrivacyPolicy = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-foreground mb-4">Privacy Policy</h1>
+            <h1 className="text-3xl font-bold text-foreground mb-4">
+              Privacy Policy
+            </h1>
             <p className="text-muted-foreground">
               Last updated: {new Date().toLocaleDateString()}
             </p>
@@ -24,8 +31,9 @@ const PrivacyPolicy = () => {
           <Alert className="mb-8">
             <Shield className="h-4 w-4" />
             <AlertDescription>
-              <strong>Your Privacy Matters:</strong> EsyGrab is committed to protecting your personal information. 
-              This policy explains how we collect, use, and safeguard your data.
+              <strong>Your Privacy Matters:</strong> EsyGrab is committed to
+              protecting your personal information. This policy explains how we
+              collect, use, and safeguard your data.
             </AlertDescription>
           </Alert>
 
@@ -42,9 +50,14 @@ const PrivacyPolicy = () => {
                 <div>
                   <h3 className="font-semibold mb-3">Personal Information</h3>
                   <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                    <li>Name and contact information (phone number, email address)</li>
+                    <li>
+                      Name and contact information (phone number, email address)
+                    </li>
                     <li>Delivery addresses and location data</li>
-                    <li>Payment information (securely processed by third-party providers)</li>
+                    <li>
+                      Payment information (securely processed by third-party
+                      providers)
+                    </li>
                     <li>Order history and preferences</li>
                     <li>Account credentials and profile information</li>
                   </ul>
@@ -53,7 +66,10 @@ const PrivacyPolicy = () => {
                 <div>
                   <h3 className="font-semibold mb-3">Usage Information</h3>
                   <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                    <li>Device information (IP address, browser type, operating system)</li>
+                    <li>
+                      Device information (IP address, browser type, operating
+                      system)
+                    </li>
                     <li>Website usage patterns and navigation data</li>
                     <li>Search queries and product interactions</li>
                     <li>Communication logs with customer support</li>
@@ -63,7 +79,9 @@ const PrivacyPolicy = () => {
                 <div>
                   <h3 className="font-semibold mb-3">Location Information</h3>
                   <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                    <li>GPS coordinates for delivery purposes (with your consent)</li>
+                    <li>
+                      GPS coordinates for delivery purposes (with your consent)
+                    </li>
                     <li>Delivery addresses you provide</li>
                     <li>Service area verification data</li>
                   </ul>
@@ -121,28 +139,32 @@ const PrivacyPolicy = () => {
                   <div className="border rounded-lg p-4">
                     <h4 className="font-medium mb-2">Encryption</h4>
                     <p className="text-sm text-muted-foreground">
-                      All sensitive data is encrypted in transit and at rest using industry-standard protocols.
+                      All sensitive data is encrypted in transit and at rest
+                      using industry-standard protocols.
                     </p>
                   </div>
 
                   <div className="border rounded-lg p-4">
                     <h4 className="font-medium mb-2">Access Control</h4>
                     <p className="text-sm text-muted-foreground">
-                      Strict access controls ensure only authorized personnel can access your information.
+                      Strict access controls ensure only authorized personnel
+                      can access your information.
                     </p>
                   </div>
 
                   <div className="border rounded-lg p-4">
                     <h4 className="font-medium mb-2">Secure Infrastructure</h4>
                     <p className="text-sm text-muted-foreground">
-                      Our systems are hosted on secure, monitored infrastructure with regular security updates.
+                      Our systems are hosted on secure, monitored infrastructure
+                      with regular security updates.
                     </p>
                   </div>
 
                   <div className="border rounded-lg p-4">
                     <h4 className="font-medium mb-2">Regular Audits</h4>
                     <p className="text-sm text-muted-foreground">
-                      We conduct regular security audits and vulnerability assessments.
+                      We conduct regular security audits and vulnerability
+                      assessments.
                     </p>
                   </div>
                 </div>
@@ -161,12 +183,26 @@ const PrivacyPolicy = () => {
             <CardContent>
               <div className="space-y-4">
                 <div>
-                  <h3 className="font-semibold mb-3">We Share Information With:</h3>
+                  <h3 className="font-semibold mb-3">
+                    We Share Information With:
+                  </h3>
                   <ul className="list-disc list-inside space-y-2 text-muted-foreground">
-                    <li><strong>Delivery Partners:</strong> Name, phone number, and delivery address for order fulfillment</li>
-                    <li><strong>Payment Processors:</strong> Securely processed payment information (we don't store card details)</li>
-                    <li><strong>Service Providers:</strong> Third-party services that help us operate our business</li>
-                    <li><strong>Legal Requirements:</strong> When required by law or to protect our rights</li>
+                    <li>
+                      <strong>Delivery Partners:</strong> Name, phone number,
+                      and delivery address for order fulfillment
+                    </li>
+                    <li>
+                      <strong>Payment Processors:</strong> Securely processed
+                      payment information (we don't store card details)
+                    </li>
+                    <li>
+                      <strong>Service Providers:</strong> Third-party services
+                      that help us operate our business
+                    </li>
+                    <li>
+                      <strong>Legal Requirements:</strong> When required by law
+                      or to protect our rights
+                    </li>
                   </ul>
                 </div>
 
@@ -174,7 +210,9 @@ const PrivacyPolicy = () => {
                   <h3 className="font-semibold mb-3">We Never:</h3>
                   <ul className="list-disc list-inside space-y-1 text-muted-foreground">
                     <li>Sell your personal information to third parties</li>
-                    <li>Share your data for marketing purposes without consent</li>
+                    <li>
+                      Share your data for marketing purposes without consent
+                    </li>
                     <li>Provide unnecessary access to your information</li>
                   </ul>
                 </div>
@@ -224,13 +262,26 @@ const PrivacyPolicy = () => {
             <CardContent>
               <div className="space-y-4">
                 <p className="text-muted-foreground">
-                  We use cookies and similar technologies to improve your experience:
+                  We use cookies and similar technologies to improve your
+                  experience:
                 </p>
                 <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                  <li><strong>Essential Cookies:</strong> Required for basic website functionality</li>
-                  <li><strong>Performance Cookies:</strong> Help us understand how you use our site</li>
-                  <li><strong>Functional Cookies:</strong> Remember your preferences and settings</li>
-                  <li><strong>Analytics:</strong> Help us improve our service (can be disabled)</li>
+                  <li>
+                    <strong>Essential Cookies:</strong> Required for basic
+                    website functionality
+                  </li>
+                  <li>
+                    <strong>Performance Cookies:</strong> Help us understand how
+                    you use our site
+                  </li>
+                  <li>
+                    <strong>Functional Cookies:</strong> Remember your
+                    preferences and settings
+                  </li>
+                  <li>
+                    <strong>Analytics:</strong> Help us improve our service (can
+                    be disabled)
+                  </li>
                 </ul>
                 <p className="text-sm text-muted-foreground">
                   You can control cookie preferences in your browser settings.
@@ -243,7 +294,9 @@ const PrivacyPolicy = () => {
           <Card>
             <CardHeader>
               <CardTitle>Questions About Privacy?</CardTitle>
-              <CardDescription>Contact our privacy team for any concerns</CardDescription>
+              <CardDescription>
+                Contact our privacy team for any concerns
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -253,7 +306,9 @@ const PrivacyPolicy = () => {
                 </div>
                 <div>
                   <p className="font-medium">Office Address</p>
-                  <p className="text-muted-foreground">New Baneshwor, Kathmandu, Nepal</p>
+                  <p className="text-muted-foreground">
+                    New Baneshwor, Kathmandu, Nepal
+                  </p>
                 </div>
                 <div>
                   <p className="font-medium">Phone</p>
@@ -263,8 +318,9 @@ const PrivacyPolicy = () => {
 
               <div className="mt-6 p-4 bg-muted/50 rounded-lg">
                 <p className="text-sm text-muted-foreground">
-                  This privacy policy may be updated periodically. We'll notify you of significant changes 
-                  via email or prominent website notice.
+                  This privacy policy may be updated periodically. We'll notify
+                  you of significant changes via email or prominent website
+                  notice.
                 </p>
               </div>
             </CardContent>
