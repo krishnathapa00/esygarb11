@@ -102,7 +102,7 @@ const DesktopProductsList = ({
                     </Badge>
                   </td>
 
-                  <td className="px-6 py-4">₹{product.price}</td>
+                  <td className="px-6 py-4">Rs{product.price}</td>
 
                   <td className="px-6 py-4">{product.stock_quantity ?? 0}</td>
 
