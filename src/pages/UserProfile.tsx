@@ -40,7 +40,6 @@ const UserProfile: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
-  const [addressSelected, setAddressSelected] = useState(false);
 
   const { register, handleSubmit, reset, watch, setValue } =
     useForm<ProfileFormValues>({
@@ -49,6 +48,7 @@ const UserProfile: React.FC = () => {
     });
 
   const avatarUrl = watch("avatar_url");
+  const currentAddress = watch("address");
 
   // ------------------- Load Profile -------------------
   useEffect(() => {
@@ -61,6 +61,7 @@ const UserProfile: React.FC = () => {
         const savedProfile = localStorage.getItem("user_profile");
         if (savedProfile) {
           const parsed = JSON.parse(savedProfile);
+
           if (isMounted) {
             setProfile(parsed);
             reset(parsed);
@@ -367,15 +368,12 @@ const UserProfile: React.FC = () => {
                         setValue={(val) =>
                           setValue("address", val, { shouldValidate: true })
                         }
-                        onSelectValidAddress={(isValid) =>
-                          setAddressSelected(isValid)
-                        }
                       />
                     </div>
                     <div className="flex gap-4">
                       <Button
                         type="submit"
-                        disabled={updating || !addressSelected}
+                        disabled={updating || !watch("address")?.trim()}
                         className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white"
                       >
                         {updating ? "Saving..." : "Save Changes"}
