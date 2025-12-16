@@ -64,15 +64,25 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       to={to}
       onClick={() => setSidebarOpen(false)}
       className={({ isActive }) =>
-        `flex items-center px-4 py-3 rounded-lg transition-colors ${
-          isActive
-            ? "bg-primary text-primary-foreground"
-            : "text-foreground hover:bg-muted"
-        }`
+        `
+      group flex items-center px-4 py-3 rounded-lg
+      transition-all duration-200 ease-in-out
+      ${
+        isActive
+          ? "bg-primary text-primary-foreground shadow-sm"
+          : "text-foreground hover:bg-muted hover:translate-x-1 hover:scale-[1.02]"
+      }
+    `
       }
     >
-      <Icon className="h-5 w-5 mr-3" />
-      {label}
+      <Icon
+        className="
+        h-5 w-5 mr-3
+        transition-colors duration-200
+        group-hover:text-primary
+      "
+      />
+      <span className="transition-colors duration-200">{label}</span>
     </NavLink>
   );
 
@@ -97,13 +107,14 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 left-0 z-50 h-full
-          w-64 max-w-[80vw]
-          bg-card border-r border-border
-          transform transition-transform duration-300
-          ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
-          md:translate-x-0
-        `}
+    fixed top-0 left-0 z-50 h-full
+    w-64 max-w-[80vw]
+    bg-card border-r border-border
+    transform transition-transform duration-300
+    ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
+    md:translate-x-0
+    flex flex-col
+  `}
       >
         <div className="p-6 border-b border-border flex items-center justify-between">
           <h1 className="text-xl font-bold">Admin Panel</h1>
@@ -112,7 +123,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           </button>
         </div>
 
-        <nav className="mt-6 px-4 space-y-2">
+        <nav className="flex-1 overflow-y-auto px-4 mt-6 space-y-2">
           <NavItem to="/admin/dashboard" icon={BarChart3} label="Dashboard" />
           <NavItem to="/admin/orders" icon={ShoppingCart} label="Orders" />
           <NavItem to="/admin/products" icon={Package} label="Products" />
