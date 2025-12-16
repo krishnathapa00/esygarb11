@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { X, Truck, Clock } from "lucide-react";
-import { Product } from "../ProductCard";
+import { Product } from "../shared/ProductCard";
 
 interface CartItem extends Product {
   quantity: number;
