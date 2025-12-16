@@ -37,7 +37,7 @@ const MobileProductsList = ({
             />
             <div className="flex-1">
               <h3 className="font-semibold text-sm">{p.name}</h3>
-              <p className="text-xs text-gray-500">₹{p.price}</p>
+              <p className="text-xs text-gray-500">Rs{p.price}</p>
               <p className="text-xs">Stock: {p.stock_quantity ?? 0}</p>
             </div>
           </div>
