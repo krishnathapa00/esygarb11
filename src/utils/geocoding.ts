@@ -1,11 +1,14 @@
-const GOOGLE_MAPS_API_KEY = 'AIzaSyADxM5y7WrXu3BRJ_hJQZhh6FLXWyO3E1g';
+const GOOGLE_MAPS_API_KEY = "AIzaSyADxM5y7WrXu3BRJ_hJQZhh6FLXWyO3E1g";
 
-export const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
+export const reverseGeocode = async (
+  lat: number,
+  lng: number
+): Promise<string> => {
   try {
     const response = await fetch(
       `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_MAPS_API_KEY}`
     );
-    
+
     if (response.ok) {
       const data = await response.json();
       if (data.results && data.results.length > 0) {
@@ -14,12 +17,14 @@ export const reverseGeocode = async (lat: number, lng: number): Promise<string> 
     }
     return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
   } catch (error) {
-    console.error('Reverse geocoding error:', error);
+    console.error("Reverse geocoding error:", error);
     return `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
   }
 };
 
-export const parseCoordinatesFromAddress = (address: string): { lat: number; lng: number } | null => {
+export const parseCoordinatesFromAddress = (
+  address: string
+): { lat: number; lng: number } | null => {
   try {
     // Check if address contains coordinates in format "lat,lng" or "lat, lng"
     const coordMatch = address.match(/(-?\d+\.?\d*),\s*(-?\d+\.?\d*)/);
@@ -32,7 +37,7 @@ export const parseCoordinatesFromAddress = (address: string): { lat: number; lng
     }
     return null;
   } catch (error) {
-    console.error('Error parsing coordinates:', error);
+    console.error("Error parsing coordinates:", error);
     return null;
   }
 };
