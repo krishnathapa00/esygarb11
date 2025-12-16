@@ -21,6 +21,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useOrderTimer } from "@/hooks/useOrderTimer";
 
+
 const OrderDetails = () => {
   const { orderId } = useParams();
   const { toast } = useToast();
@@ -40,7 +41,7 @@ const OrderDetails = () => {
             `
             *,
             customer:profiles!orders_user_id_fkey ( full_name, phone, phone_number, address ),
-            order_items ( *, products:product_id ( name, price, image_url ) ),
+            order_items ( *, products:product_id ( name, price, image_url, weight ) ),
             delivery_partner:profiles!orders_delivery_partner_id_fkey ( full_name, phone_number )
           `
           )
@@ -473,6 +474,13 @@ const OrderDetails = () => {
                     <div className="flex-1">
                       <h4 className="font-medium">{item.products?.name}</h4>
                       <p className="text-gray-600">Quantity: {item.quantity}</p>
+                      {item.products?.weight !== null &&
+                        item.products?.weight !== undefined &&
+                        item.products?.weight !== "" && (
+                          <p className="text-xs text-gray-500">
+                            Weight: {item.products.weight}
+                          </p>
+                        )}
                     </div>
                     <div className="text-right">
                       <p className="font-medium">Rs {item.price}</p>
