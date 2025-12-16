@@ -1,6 +1,6 @@
 import { pdf } from "@react-pdf/renderer";
-import { InvoicePDF } from "@/components/InvoicePDF";
 import { supabase } from "@/integrations/supabase/client";
+import { InvoicePDF } from "@/components/user";
 
 export const handleInvoiceGeneration = async (orderData: any) => {
   try {
