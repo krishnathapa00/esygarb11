@@ -38,11 +38,10 @@ const AdminDashboard = () => {
   const [dateFilter, setDateFilter] = useState<
     "today" | "week" | "month" | "year" | "custom"
   >("today");
-  const [customDate, setCustomDate] = useState<Date | null>(null); // single-day custom
+  const [customDate, setCustomDate] = useState<Date | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
 
-  // Helper to calculate start & end date based on filter
   const getStartEndDates = useCallback(() => {
     const now = new Date();
     let startDate: Date | null = null;
@@ -56,22 +55,21 @@ const AdminDashboard = () => {
     } else {
       switch (dateFilter) {
         case "today":
-          startDate = new Date(now);
-          startDate.setHours(0, 0, 0, 0);
-          endDate = new Date(now);
+          startDate = new Date(now.setHours(0, 0, 0, 0));
+          endDate = new Date();
           break;
         case "week":
-          startDate = new Date(now);
-          startDate.setDate(now.getDate() - now.getDay());
-          endDate = new Date(now);
+          startDate = new Date();
+          startDate.setDate(startDate.getDate() - startDate.getDay());
+          endDate = new Date();
           break;
         case "month":
           startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-          endDate = new Date(now);
+          endDate = new Date();
           break;
         case "year":
           startDate = new Date(now.getFullYear(), 0, 1);
-          endDate = new Date(now);
+          endDate = new Date();
           break;
       }
     }
@@ -79,148 +77,93 @@ const AdminDashboard = () => {
     return { startDate, endDate };
   }, [dateFilter, customDate]);
 
-  // Fetch dashboard data
   const fetchDashboardData = useCallback(async (): Promise<DashboardData> => {
-    try {
-      const { startDate, endDate } = getStartEndDates();
+    const { startDate, endDate } = getStartEndDates();
 
-      let ordersQuery = supabase
-        .from("orders")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (startDate)
-        ordersQuery = ordersQuery.gte("created_at", startDate.toISOString());
-      if (endDate)
-        ordersQuery = ordersQuery.lte("created_at", endDate.toISOString());
+    let ordersQuery = supabase
+      .from("orders")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-      const [ordersResult, usersResult, productsResult] = await Promise.all([
-        ordersQuery,
-        supabase.from("profiles").select("*").eq("role", "customer"),
-        supabase.from("products").select("*").lt("stock_quantity", 10),
-      ]);
+    if (startDate)
+      ordersQuery = ordersQuery.gte("created_at", startDate.toISOString());
+    if (endDate)
+      ordersQuery = ordersQuery.lte("created_at", endDate.toISOString());
 
-      const orders = ordersResult.data || [];
-      const users = usersResult.data || [];
-      const products = productsResult.data || [];
+    const [ordersResult, usersResult, productsResult] = await Promise.all([
+      ordersQuery,
+      supabase.from("profiles").select("*").eq("role", "customer"),
+      supabase.from("products").select("*").lt("stock_quantity", 10),
+    ]);
 
-      const deliveredOrders = orders.filter((o) => o.status === "delivered");
+    const orders = ordersResult.data || [];
+    const users = usersResult.data || [];
+    const products = productsResult.data || [];
 
-      const todayOrders = orders.filter((order) => {
-        const orderDate = new Date(order.created_at);
-        return orderDate.toDateString() === new Date().toDateString();
-      });
+    const deliveredOrders = orders.filter((o) => o.status === "delivered");
+    const todayOrders = orders.filter(
+      (o) => new Date(o.created_at).toDateString() === new Date().toDateString()
+    );
 
-      return {
-        totalOrders: orders.length,
-        totalRevenue: deliveredOrders.reduce(
-          (sum, o) => sum + Number(o.total_amount || 0),
-          0
-        ),
-        totalUsers: users.length,
-        pendingOrders: orders.filter((o) => o.status === "pending").length,
-        refundsProcessed: orders.filter((o) => o.payment_status === "refunded")
-          .length,
-        recentOrders: orders.slice(0, 5),
-        lowStockProducts: products.slice(0, 5),
-        todayOrdersCount: todayOrders.length,
-        todayRevenue: todayOrders
-          .filter((o) => o.status === "delivered")
-          .reduce((sum, o) => sum + Number(o.total_amount || 0), 0),
-      };
-    } catch (error) {
-      console.error("Dashboard fetch error:", error);
-      return {
-        totalOrders: 0,
-        totalRevenue: 0,
-        totalUsers: 0,
-        pendingOrders: 0,
-        refundsProcessed: 0,
-        recentOrders: [],
-        lowStockProducts: [],
-        todayOrdersCount: 0,
-        todayRevenue: 0,
-      };
-    }
+    return {
+      totalOrders: orders.length,
+      totalRevenue: deliveredOrders.reduce(
+        (s, o) => s + Number(o.total_amount || 0),
+        0
+      ),
+      totalUsers: users.length,
+      pendingOrders: orders.filter((o) => o.status === "pending").length,
+      refundsProcessed: orders.filter((o) => o.payment_status === "refunded")
+        .length,
+      recentOrders: orders.slice(0, 5),
+      lowStockProducts: products.slice(0, 5),
+      todayOrdersCount: todayOrders.length,
+      todayRevenue: todayOrders
+        .filter((o) => o.status === "delivered")
+        .reduce((s, o) => s + Number(o.total_amount || 0), 0),
+    };
   }, [getStartEndDates]);
 
-  const { data: dashboardData, refetch } = useQuery({
+  const { data, refetch } = useQuery({
     queryKey: ["admin-dashboard", dateFilter, customDate],
     queryFn: fetchDashboardData,
-    staleTime: 0,
-    refetchOnWindowFocus: true,
   });
 
-  const handleRefresh = useCallback(async () => {
+  const handleRefresh = async () => {
     if (isRefreshing) return;
     setIsRefreshing(true);
-    try {
-      await refetch();
-      toast({
-        title: "Data refreshed",
-        description: "Dashboard data updated.",
-      });
-    } catch (err) {
-      toast({
-        title: "Refresh failed",
-        description: "Unable to fetch data",
-        variant: "destructive",
-      });
-    }
+    await refetch();
+    toast({ title: "Dashboard updated" });
     setTimeout(() => setIsRefreshing(false), 500);
-  }, [refetch, toast, isRefreshing]);
-
-  const handleRefund = async (orderId: string) => {
-    try {
-      const { error } = await supabase
-        .from("orders")
-        .update({ payment_status: "refunded" })
-        .eq("id", orderId);
-      if (error) throw error;
-      toast({
-        title: "Refund processed",
-        description: `Order ${orderId} refunded.`,
-      });
-      refetch();
-    } catch (err: any) {
-      toast({
-        title: "Refund failed",
-        description: err.message,
-        variant: "destructive",
-      });
-    }
   };
 
-  const data = dashboardData || {
-    totalOrders: 0,
-    totalRevenue: 0,
-    totalUsers: 0,
-    pendingOrders: 0,
-    refundsProcessed: 0,
-    recentOrders: [],
-    lowStockProducts: [],
-    todayOrdersCount: 0,
-    todayRevenue: 0,
+  const handleRefund = async (orderId: string) => {
+    await supabase
+      .from("orders")
+      .update({ payment_status: "refunded" })
+      .eq("id", orderId);
+    toast({ title: "Refund processed" });
+    refetch();
   };
 
   return (
     <AdminLayout>
       <div className="space-y-6">
-        {/* Filter + Refresh */}
-        <div className="flex justify-between items-center">
+        {/* Header */}
+        <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center">
           <div>
-            <h1 className="text-2xl font-bold mb-2">Dashboard Overview</h1>
-            <p className="text-gray-500">Welcome back, Admin</p>
+            <h1 className="text-xl sm:text-2xl font-bold">
+              Dashboard Overview
+            </h1>
+            <p className="text-sm text-gray-500">Welcome back, Admin</p>
           </div>
-          <div className="flex gap-2 items-center">
+
+          <div className="flex flex-wrap gap-2 items-center">
             <Select
               value={dateFilter}
-              onValueChange={(value) =>
-                setDateFilter(
-                  value as "today" | "week" | "month" | "year" | "custom"
-                )
-              }
+              onValueChange={(v) => setDateFilter(v as any)}
             >
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-full sm:w-40">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -235,225 +178,132 @@ const AdminDashboard = () => {
             {dateFilter === "custom" && (
               <input
                 type="date"
-                value={customDate ? customDate.toISOString().split("T")[0] : ""}
+                className="border px-2 py-1 rounded w-full sm:w-auto"
                 onChange={(e) =>
                   setCustomDate(
                     e.target.value ? new Date(e.target.value) : null
                   )
                 }
-                className="border px-2 py-1 rounded"
               />
             )}
 
             <Button
-              onClick={handleRefresh}
-              variant="outline"
               size="sm"
-              disabled={isRefreshing}
+              variant="outline"
+              onClick={handleRefresh}
+              className="w-full sm:w-auto"
             >
               <RefreshCw
                 className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`}
               />
-              {isRefreshing ? "Refreshing..." : "Refresh"}
+              Refresh
             </Button>
           </div>
         </div>
 
-        {/* Dashboard Cards */}
+        {/* Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-          {/* Total Orders */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">
-                Total Orders
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex justify-between items-center">
-                <div>
-                  <div className="text-2xl font-bold">{data.totalOrders}</div>
-                  <p className="text-xs text-green-600">
-                    +{data.todayOrdersCount} today
-                  </p>
-                </div>
-                <ShoppingBag className="h-8 w-8 text-green-600 opacity-80" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Revenue */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">
-                Revenue
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex justify-between items-center">
-                <div>
-                  <div className="text-2xl font-bold">
-                    Rs {data.totalRevenue.toLocaleString()}
-                  </div>
-                  <p className="text-xs text-green-600">
-                    +Rs {data.todayRevenue.toLocaleString()} today
-                  </p>
-                </div>
-                <TrendingUp className="h-8 w-8 text-green-600 opacity-80" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Users */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">
-                Users
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex justify-between items-center">
-                <div>
-                  <div className="text-2xl font-bold">{data.totalUsers}</div>
-                  <p className="text-xs text-green-600">+0 today</p>
-                </div>
-                <Users className="h-8 w-8 text-green-600 opacity-80" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Pending Orders */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">
-                Pending Orders
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex justify-between items-center">
-                <div>
-                  <div className="text-2xl font-bold">{data.pendingOrders}</div>
-                  <p className="text-xs text-amber-600">Needs attention</p>
-                </div>
-                <Clock className="h-8 w-8 text-amber-600 opacity-80" />
-              </div>
-            </CardContent>
-          </Card>
+          {[
+            {
+              title: "Total Orders",
+              value: data?.totalOrders,
+              icon: ShoppingBag,
+            },
+            {
+              title: "Revenue",
+              value: `Rs ${data?.totalRevenue.toLocaleString()}`,
+              icon: TrendingUp,
+            },
+            { title: "Users", value: data?.totalUsers, icon: Users },
+            {
+              title: "Pending Orders",
+              value: data?.pendingOrders,
+              icon: Clock,
+            },
+          ].map(({ title, value, icon: Icon }) => (
+            <Card key={title}>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm text-gray-500">{title}</CardTitle>
+              </CardHeader>
+              <CardContent className="flex justify-between items-center">
+                <div className="text-2xl font-bold">{value}</div>
+                <Icon className="h-8 w-8 opacity-70" />
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
+        {/* Lists */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Recent Orders */}
-          <Card className="col-span-1">
+          <Card>
             <CardHeader>
               <CardTitle>Recent Orders</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {data.recentOrders.length > 0 ? (
-                  data.recentOrders.map((order: any) => (
-                    <div
-                      key={order.id}
-                      className="flex justify-between items-center border-b pb-2"
-                    >
-                      <div>
-                        <p className="font-medium">{order.order_number}</p>
-                        <p className="text-xs text-gray-500">
-                          {new Date(order.created_at).toLocaleDateString()} • Rs{" "}
-                          {Number(order.total_amount || 0).toLocaleString()}
-                        </p>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs ${
-                            order.status === "pending"
-                              ? "bg-amber-100 text-amber-700"
-                              : order.status === "delivered"
-                              ? "bg-green-100 text-green-700"
-                              : "bg-blue-100 text-blue-700"
-                          }`}
-                        >
-                          {order.status || "pending"}
-                        </span>
-                        {order.status === "delivered" &&
-                          order.payment_status !== "refunded" && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleRefund(order.id)}
-                              className="text-xs"
-                            >
-                              <RotateCcw className="h-3 w-3 mr-1" />
-                              Refund
-                            </Button>
-                          )}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-gray-500 text-center py-4">
-                    No recent orders found
-                  </p>
-                )}
-              </div>
+            <CardContent className="space-y-3">
+              {data?.recentOrders.map((order) => (
+                <div
+                  key={order.id}
+                  className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 border-b pb-2"
+                >
+                  <div>
+                    <p className="font-medium">{order.order_number}</p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(order.created_at).toLocaleDateString()} • Rs{" "}
+                      {Number(order.total_amount).toLocaleString()}
+                    </p>
+                  </div>
 
-              <div className="mt-4">
-                <Link to="/admin/orders">
-                  <button className="text-sm text-green-600 hover:text-green-700 font-medium">
-                    View all orders
-                  </button>
-                </Link>
-              </div>
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <span className="text-xs px-2 py-1 rounded bg-muted">
+                      {order.status}
+                    </span>
+                    {order.status === "delivered" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleRefund(order.id)}
+                      >
+                        <RotateCcw className="h-3 w-3 mr-1" />
+                        Refund
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
             </CardContent>
           </Card>
 
-          {/* Inventory Alerts */}
-          <Card className="col-span-1">
+          {/* Inventory */}
+          <Card>
             <CardHeader>
               <CardTitle>Inventory Alerts</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {data.lowStockProducts.length > 0 ? (
-                  data.lowStockProducts.map((product: any) => (
-                    <div
-                      key={product.id}
-                      className="flex justify-between items-center border-b pb-2"
-                    >
-                      <div className="flex items-center">
-                        <div className="w-10 h-10 bg-gray-100 rounded-md mr-3 overflow-hidden">
-                          {product.image_url && (
-                            <img
-                              src={product.image_url}
-                              alt={product.name}
-                              className="w-full h-full object-cover"
-                            />
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-medium">{product.name}</p>
-                          <p className="text-xs text-gray-500">
-                            ID: {product.id}
-                          </p>
-                        </div>
-                      </div>
-                      <span className="text-red-600 font-medium">
-                        {product.stock_quantity || 0} left
-                      </span>
+            <CardContent className="space-y-3">
+              {data?.lowStockProducts.map((product) => (
+                <div
+                  key={product.id}
+                  className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 border-b pb-2"
+                >
+                  <div className="flex items-center">
+                    <div className="w-10 h-10 min-w-[40px] bg-gray-100 rounded mr-3 overflow-hidden">
+                      {product.image_url && (
+                        <img
+                          src={product.image_url}
+                          className="object-cover w-full h-full"
+                        />
+                      )}
                     </div>
-                  ))
-                ) : (
-                  <p className="text-gray-500 text-center py-4">
-                    No low stock items
-                  </p>
-                )}
-              </div>
-
-              <div className="mt-4">
-                <Link to="/admin/products">
-                  <button className="text-sm text-green-600 hover:text-green-700 font-medium">
-                    Manage inventory
-                  </button>
-                </Link>
-              </div>
+                    <div>
+                      <p className="font-medium">{product.name}</p>
+                      <p className="text-xs text-gray-500">ID: {product.id}</p>
+                    </div>
+                  </div>
+                  <span className="text-red-600 font-medium">
+                    {product.stock_quantity} left
+                  </span>
+                </div>
+              ))}
             </CardContent>
           </Card>
         </div>
