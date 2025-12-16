@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useReducer, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useReducer,
+  useEffect,
+  useRef,
+} from "react";
 
 export interface CartItem {
   id: number;
@@ -90,8 +96,26 @@ const CartProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   });
 
+  // Debounce localStorage writes to improve performance
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cart));
+    // Clear previous timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // Debounce the save operation by 500ms
+    saveTimeoutRef.current = setTimeout(() => {
+      localStorage.setItem("cart", JSON.stringify(cart));
+    }, 500);
+
+    // Cleanup on unmount
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
   }, [cart]);
 
   const addToCart = (item: CartItem) =>
