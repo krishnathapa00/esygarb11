@@ -1,6 +1,5 @@
-import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import Header from "../components/Header";
+import { Header } from "@/components/shared";
 import { ArrowLeft, Clock, Package, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
@@ -20,7 +19,7 @@ const AllCategories = () => {
   const { data: categories = [], isLoading } = useQuery<Category[]>({
     queryKey: ["categories"],
     queryFn: async () => {
-      // 1️⃣ Fetch all categories
+      // Fetch all categories
       const { data: cats, error: catError } = await supabase
         .from("categories")
         .select("*")
@@ -83,7 +82,7 @@ const AllCategories = () => {
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Categories</h1>
-            <p className="text-gray-500 text-sm mt-1">Shop by category</p>
+            <p className="text-gray-500 text-sm mt-1">Shop by Category</p>
           </div>
         </div>
 
@@ -111,7 +110,7 @@ const AllCategories = () => {
           {categories.map((category) => (
             <Link
               key={category.id}
-              to={`/subcategories/${category.slug}`} 
+              to={`/subcategories/${category.slug}`}
               className="group"
             >
               <div className="bg-white rounded-2xl border border-gray-200 p-4 hover:shadow-lg transition-all duration-200 hover:-translate-y-1">
