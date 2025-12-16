@@ -4,11 +4,10 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthContext } from "@/contexts/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
-import OTPVerificationModal from "@/components/OTPVerificationModal";
 import { Input } from "@/components/ui/input";
-import { ProfileFormValues, fetchUserProfile } from "@/services/profileService";
 import { supabase } from "@/integrations/supabase/client";
 import EsyLogo from "@/assets/logo/Esy.jpg";
+import { OTPVerificationModal } from "@/components/user";
 
 const AuthHybrid = () => {
   const [email, setEmail] = useState("");
@@ -129,19 +128,14 @@ const AuthHybrid = () => {
         .single();
 
       // If profile doesn't exist, create it
-      if (!profile) {
-        const fullName = email
-          .split("@")[0]
-          .replace(/[\.\-_]/g, " ")
-          .replace(/\b\w/g, (c) => c.toUpperCase());
-
+      if (!profile && data?.session) {
         const { error: insertError } = await supabase.from("profiles").insert({
           id: user.id,
           email: user.email,
-          full_name: fullName,
-          phone: "",
-          address: "",
-          avatar_url: "",
+          full_name: null,
+          phone: null,
+          address: null,
+          avatar_url: null,
         });
 
         if (insertError) {
@@ -158,24 +152,9 @@ const AuthHybrid = () => {
           .from("profiles")
           .select("*")
           .eq("id", user.id)
-          .single();
+          .maybeSingle();
 
         profile = newProfile;
-      }
-
-      // If profile incomplete, redirect to profile page
-      if (
-        !profile.full_name?.trim() ||
-        !profile.phone?.trim() ||
-        !profile.address?.trim()
-      ) {
-        toast({
-          title: "Complete Your Profile",
-          description: "Please complete your profile before proceeding.",
-          variant: "destructive",
-        });
-        navigate("/profile");
-        return;
       }
 
       // Everything is fine → navigate home
