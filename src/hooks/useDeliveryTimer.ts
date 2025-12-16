@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from "react";
 
 interface UseDeliveryTimerProps {
   orderId: string;
@@ -7,11 +7,11 @@ interface UseDeliveryTimerProps {
   onTimerStop?: () => void;
 }
 
-export const useDeliveryTimer = ({ 
-  orderId, 
-  orderStatus, 
-  onTimerStart, 
-  onTimerStop 
+export const useDeliveryTimer = ({
+  orderId,
+  orderStatus,
+  onTimerStart,
+  onTimerStop,
 }: UseDeliveryTimerProps) => {
   const [timer, setTimer] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
@@ -25,14 +25,14 @@ export const useDeliveryTimer = ({
     const savedTimer = localStorage.getItem(timerKey);
     const savedTimerRunning = localStorage.getItem(timerRunningKey);
     const savedStartTime = localStorage.getItem(timerStartTimeKey);
-    
+
     if (savedTimer) {
       setTimer(parseInt(savedTimer));
     }
-    
-    if (savedTimerRunning === 'true') {
+
+    if (savedTimerRunning === "true") {
       setIsTimerRunning(true);
-      
+
       // If timer was running, calculate elapsed time since start
       if (savedStartTime) {
         const startTime = new Date(savedStartTime).getTime();
@@ -42,18 +42,18 @@ export const useDeliveryTimer = ({
         localStorage.setItem(timerKey, elapsedSeconds.toString());
       }
     }
-    
-    // Auto-start timer when order is out for delivery
-    if (orderStatus === 'out_for_delivery' && savedTimerRunning !== 'true') {
+
+    // Auto-start timer when order is out for delivery (only once on mount)
+    if (orderStatus === "out_for_delivery" && savedTimerRunning !== "true") {
       startTimer();
     }
-  }, [orderId, orderStatus]);
+  }, [orderId]); // Only depend on orderId to prevent infinite loops
 
   // Timer interval effect
   useEffect(() => {
     if (isTimerRunning) {
       intervalRef.current = setInterval(() => {
-        setTimer(prev => {
+        setTimer((prev) => {
           const newTime = prev + 1;
           localStorage.setItem(timerKey, newTime.toString());
           return newTime;
@@ -65,7 +65,7 @@ export const useDeliveryTimer = ({
         intervalRef.current = null;
       }
     }
-    
+
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -76,7 +76,7 @@ export const useDeliveryTimer = ({
   const startTimer = () => {
     setIsTimerRunning(true);
     const startTime = new Date().toISOString();
-    localStorage.setItem(timerRunningKey, 'true');
+    localStorage.setItem(timerRunningKey, "true");
     localStorage.setItem(timerStartTimeKey, startTime);
     onTimerStart?.();
   };
@@ -95,18 +95,20 @@ export const useDeliveryTimer = ({
 
   const pauseTimer = () => {
     setIsTimerRunning(false);
-    localStorage.setItem(timerRunningKey, 'false');
+    localStorage.setItem(timerRunningKey, "false");
   };
 
   const resumeTimer = () => {
     setIsTimerRunning(true);
-    localStorage.setItem(timerRunningKey, 'true');
+    localStorage.setItem(timerRunningKey, "true");
   };
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    return `${mins.toString().padStart(2, "0")}:${secs
+      .toString()
+      .padStart(2, "0")}`;
   };
 
   return {
@@ -116,6 +118,6 @@ export const useDeliveryTimer = ({
     startTimer,
     stopTimer,
     pauseTimer,
-    resumeTimer
+    resumeTimer,
   };
 };
