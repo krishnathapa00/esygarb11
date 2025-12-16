@@ -1,23 +1,37 @@
-import React from 'react';
-import { RefreshCw, Clock, CheckCircle, XCircle, Phone, Mail } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
+import React from "react";
+import {
+  RefreshCw,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Phone,
+  Mail,
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Footer, Header } from "@/components/shared";
 
 const ReturnsRefunds = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-foreground mb-4">Returns & Refunds</h1>
+            <h1 className="text-3xl font-bold text-foreground mb-4">
+              Returns & Refunds
+            </h1>
             <p className="text-muted-foreground">
-              Your satisfaction is our priority. Learn about our return and refund policies.
+              Your satisfaction is our priority. Learn about our return and
+              refund policies.
             </p>
           </div>
 
@@ -25,8 +39,9 @@ const ReturnsRefunds = () => {
           <Alert className="mb-8">
             <CheckCircle className="h-4 w-4" />
             <AlertDescription>
-              <strong>Quick Return Policy:</strong> Report issues within 30 minutes of delivery for immediate resolution. 
-              Full refunds available for damaged, expired, or incorrect items.
+              <strong>Quick Return Policy:</strong> Report issues within 30
+              minutes of delivery for immediate resolution. Full refunds
+              available for damaged, expired, or incorrect items.
             </AlertDescription>
           </Alert>
 
@@ -52,7 +67,9 @@ const ReturnsRefunds = () => {
                 </div>
 
                 <div>
-                  <h3 className="font-semibold mb-2">What cannot be returned?</h3>
+                  <h3 className="font-semibold mb-2">
+                    What cannot be returned?
+                  </h3>
                   <ul className="list-disc list-inside space-y-1 text-muted-foreground">
                     <li>Personal care items that have been opened</li>
                     <li>Products returned after 30 minutes of delivery</li>
@@ -64,11 +81,15 @@ const ReturnsRefunds = () => {
                 <div>
                   <h3 className="font-semibold mb-2">Return Process</h3>
                   <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
-                    <li>Contact our support team within 30 minutes of delivery</li>
+                    <li>
+                      Contact our support team within 30 minutes of delivery
+                    </li>
                     <li>Provide your order number and photos of the issue</li>
                     <li>Our team will verify and approve the return</li>
                     <li>Schedule pickup or get immediate refund approval</li>
-                    <li>Receive refund or replacement as per your preference</li>
+                    <li>
+                      Receive refund or replacement as per your preference
+                    </li>
                   </ol>
                 </div>
               </div>
@@ -92,21 +113,27 @@ const ReturnsRefunds = () => {
                       <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
                       <div>
                         <p className="font-medium">Cash on Delivery</p>
-                        <p className="text-sm text-muted-foreground">Immediate cash refund</p>
+                        <p className="text-sm text-muted-foreground">
+                          Immediate cash refund
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center">
                       <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
                       <div>
                         <p className="font-medium">Digital Payments</p>
-                        <p className="text-sm text-muted-foreground">2-5 business days</p>
+                        <p className="text-sm text-muted-foreground">
+                          2-5 business days
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center">
                       <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
                       <div>
                         <p className="font-medium">Bank Transfers</p>
-                        <p className="text-sm text-muted-foreground">3-7 business days</p>
+                        <p className="text-sm text-muted-foreground">
+                          3-7 business days
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -115,9 +142,13 @@ const ReturnsRefunds = () => {
                 <div>
                   <h3 className="font-semibold mb-3">Refund Methods</h3>
                   <div className="space-y-2 text-muted-foreground">
-                    <p>• Refunds will be processed to the original payment method</p>
+                    <p>
+                      • Refunds will be processed to the original payment method
+                    </p>
                     <p>• For cash payments, immediate cash refund available</p>
-                    <p>• Digital wallet refunds (eSewa, Khalti) within 24 hours</p>
+                    <p>
+                      • Digital wallet refunds (eSewa, Khalti) within 24 hours
+                    </p>
                     <p>• Bank card refunds may take 3-7 business days</p>
                     <p>• Store credit available for faster processing</p>
                   </div>
@@ -130,7 +161,9 @@ const ReturnsRefunds = () => {
           <Card className="mb-8">
             <CardHeader>
               <CardTitle>Common Return Scenarios</CardTitle>
-              <CardDescription>How we handle typical return situations</CardDescription>
+              <CardDescription>
+                How we handle typical return situations
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -141,7 +174,8 @@ const ReturnsRefunds = () => {
                       <h4 className="font-medium">Damaged Products</h4>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Immediate replacement or full refund. No questions asked for clearly damaged items.
+                      Immediate replacement or full refund. No questions asked
+                      for clearly damaged items.
                     </p>
                   </div>
 
@@ -151,7 +185,8 @@ const ReturnsRefunds = () => {
                       <h4 className="font-medium">Wrong Items</h4>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Free pickup of wrong items and immediate delivery of correct items at no extra cost.
+                      Free pickup of wrong items and immediate delivery of
+                      correct items at no extra cost.
                     </p>
                   </div>
                 </div>
@@ -163,7 +198,8 @@ const ReturnsRefunds = () => {
                       <h4 className="font-medium">Missing Items</h4>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Immediate delivery of missing items or partial refund for missing products.
+                      Immediate delivery of missing items or partial refund for
+                      missing products.
                     </p>
                   </div>
 
@@ -173,7 +209,8 @@ const ReturnsRefunds = () => {
                       <h4 className="font-medium">Quality Issues</h4>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Full refund or replacement for items that don't meet our quality standards.
+                      Full refund or replacement for items that don't meet our
+                      quality standards.
                     </p>
                   </div>
                 </div>
@@ -185,7 +222,9 @@ const ReturnsRefunds = () => {
           <Card>
             <CardHeader>
               <CardTitle>Need Help with Returns?</CardTitle>
-              <CardDescription>Our customer support team is here to help</CardDescription>
+              <CardDescription>
+                Our customer support team is here to help
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -193,8 +232,12 @@ const ReturnsRefunds = () => {
                   <Phone className="h-5 w-5 text-primary" />
                   <div>
                     <p className="font-medium">Call Us</p>
-                    <p className="text-muted-foreground">+9779865053325 / +9779868293232</p>
-                    <p className="text-sm text-muted-foreground">7 AM - 10 PM, 7 days a week</p>
+                    <p className="text-muted-foreground">
+                      +9779865053325 / +9779868293232
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      7 AM - 10 PM, 7 days a week
+                    </p>
                   </div>
                 </div>
 
@@ -203,14 +246,17 @@ const ReturnsRefunds = () => {
                   <div>
                     <p className="font-medium">Email Support</p>
                     <p className="text-muted-foreground">support@esygrab.com</p>
-                    <p className="text-sm text-muted-foreground">Response within 2 hours</p>
+                    <p className="text-sm text-muted-foreground">
+                      Response within 2 hours
+                    </p>
                   </div>
                 </div>
               </div>
 
               <div className="mt-6 p-4 bg-muted/50 rounded-lg">
                 <p className="text-sm text-center text-muted-foreground">
-                  <strong>Quick Tip:</strong> Have your order number ready when contacting support for faster resolution.
+                  <strong>Quick Tip:</strong> Have your order number ready when
+                  contacting support for faster resolution.
                 </p>
               </div>
             </CardContent>
