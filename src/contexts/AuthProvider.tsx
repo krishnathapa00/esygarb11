@@ -6,13 +6,14 @@ import React, {
   useCallback,
 } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import type { User, Session } from "@supabase/supabase-js";
+import type { User } from "@supabase/supabase-js";
 
 interface AuthUser {
   id: string;
   email: string;
   role: string;
   isVerified: boolean;
+  referralCode?: string;
 }
 
 interface AuthContextType {
