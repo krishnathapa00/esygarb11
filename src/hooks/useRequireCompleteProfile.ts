@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuthContext } from "@/contexts/AuthProvider";
 import { fetchUserProfile } from "@/services/profileService";
-import { showToast } from "@/components/Toast";
+import { showToast } from "@/components/shared";
 
 export const useRequireCompleteProfile = () => {
   const { user, loading } = useAuthContext();
