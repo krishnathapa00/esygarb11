@@ -1,15 +1,18 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import Header from "../components/Header";
-import CategoryGrid from "../components/CategoryGrid";
-import ProductSection from "../components/ProductSection";
-import BannerCarousel from "../components/BannerCarousel";
-import Footer from "../components/Footer";
-import ServiceUnavailableMessage from "../components/ServiceUnavailableMessage";
+
 import { Product, useProducts } from "../hooks/useProducts";
 import { useAuthContext } from "@/contexts/AuthProvider";
 import { useCartActions } from "@/hooks/useCart";
-import ReferralPopup from "@/components/ReferralPopup";
+import {
+  BannerCarousel,
+  CategoryGrid,
+  Footer,
+  Header,
+  ProductSection,
+  ServiceUnavailableMessage,
+} from "@/components/shared";
+import { ReferralPopup } from "@/components/user";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
