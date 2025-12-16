@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { showToast } from "@/components/Toast";
+import { showToast } from "@/components/shared";
 
 const playAlertSound = () => {
   const audio = new Audio("/sounds/notification.wav");
@@ -18,7 +18,7 @@ export const useOrderAlert = (onNewOrder?: () => void) => {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "orders" },
         (payload) => {
-          playAlertSound(); 
+          playAlertSound();
           showToast(`New order placed: #${payload.new.order_number}`, "info");
           if (onNewOrder) onNewOrder();
         }
@@ -26,7 +26,7 @@ export const useOrderAlert = (onNewOrder?: () => void) => {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel); 
+      supabase.removeChannel(channel);
     };
   }, [onNewOrder]);
 };
