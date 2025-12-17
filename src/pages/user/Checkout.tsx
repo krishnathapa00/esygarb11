@@ -147,45 +147,42 @@ const Checkout = () => {
     if (!user) return;
 
     const loadLocation = async () => {
-      // LocalStorage priority
+      // Latest map selection (localStorage override)
       const stored = parseJsonSafe(
         localStorage.getItem("esygrab_user_location")
       );
-      if (stored?.coordinates) {
+
+      if (stored?.address && stored?.coordinates) {
+        setDeliveryAddress(stored.address);
         setDeliveryCoords(stored.coordinates);
-        setDeliveryAddress(stored.address || "");
         return;
       }
 
-      // Supabase DB fallback
+      // Load from profile (old user)
       const { data, error } = await supabase
         .from("profiles")
-        .select("address, location, delivery_location")
+        .select("delivery_location, location")
         .eq("id", user.id)
         .single();
 
-      if (error) return;
-
-      const deliveryLoc = parseJsonSafe(data?.delivery_location);
-      if (deliveryLoc?.coordinates) {
-        setDeliveryCoords(deliveryLoc.coordinates);
-        setDeliveryAddress(deliveryLoc.address || "");
-
-        localStorage.setItem(
-          "esygrab_user_location",
-          JSON.stringify(deliveryLoc)
-        );
+      if (error) {
+        console.error("Profile fetch error:", error);
         return;
       }
 
-      const loc = parseJsonSafe(data?.location);
-      if (loc?.lat && loc?.lng) {
-        setDeliveryCoords(loc);
-        setDeliveryAddress(data.address || "");
+      // Delivery Address (TEXT)
+      if (data?.delivery_location) {
+        setDeliveryAddress(data.delivery_location);
+      }
+
+      // Coordinates (JSONB)
+      const coords = parseJsonSafe(data?.location);
+      if (coords?.lat && coords?.lng) {
+        setDeliveryCoords(coords);
         return;
       }
 
-      // No location → redirect
+      // First-time user → force map
       navigate("/map-location");
     };
 
@@ -195,7 +192,10 @@ const Checkout = () => {
   // Validate delivery range
 
   useEffect(() => {
-    if (!deliveryCoords) return setIsWithinRange(false);
+    if (!deliveryCoords) {
+      setIsWithinRange(false);
+      return;
+    }
 
     const inside = pointInPolygon(
       deliveryCoords.lat,
