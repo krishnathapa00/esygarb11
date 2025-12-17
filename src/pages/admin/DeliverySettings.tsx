@@ -1,33 +1,32 @@
-
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
-import { Save } from 'lucide-react';
-import AdminLayout from './components/AdminLayout';
+import React, { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { Save } from "lucide-react";
+import AdminLayout from "./components/AdminLayout";
 
 const DeliverySettings = () => {
-  const [deliveryFee, setDeliveryFee] = useState('');
-  const [partnerCharge, setPartnerCharge] = useState('');
+  const [deliveryFee, setDeliveryFee] = useState("");
+  const [partnerCharge, setPartnerCharge] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: config, isLoading } = useQuery({
-    queryKey: ['delivery-config'],
+    queryKey: ["delivery-config"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('delivery_config')
-        .select('*')
-        .order('updated_at', { ascending: false })
+        .from("delivery_config")
+        .select("*")
+        .order("updated_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      
+
       if (error) throw error;
       return data;
-    }
+    },
   });
 
   React.useEffect(() => {
@@ -38,39 +37,45 @@ const DeliverySettings = () => {
   }, [config]);
 
   const updateConfigMutation = useMutation({
-    mutationFn: async ({ deliveryFee, partnerCharge }: { deliveryFee: string; partnerCharge: string }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      
+    mutationFn: async ({
+      deliveryFee,
+      partnerCharge,
+    }: {
+      deliveryFee: string;
+      partnerCharge: string;
+    }) => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!config?.id) {
         // Create new config if none exists
-        const { error } = await supabase
-          .from('delivery_config')
-          .insert({
-            delivery_fee: parseFloat(deliveryFee),
-            delivery_partner_charge: parseFloat(partnerCharge),
-            updated_by: user?.id
-          });
+        const { error } = await supabase.from("delivery_config").insert({
+          delivery_fee: parseFloat(deliveryFee),
+          delivery_partner_charge: parseFloat(partnerCharge),
+          updated_by: user?.id,
+        });
         if (error) throw error;
       } else {
         // Update existing config
         const { error } = await supabase
-          .from('delivery_config')
+          .from("delivery_config")
           .update({
             delivery_fee: parseFloat(deliveryFee),
             delivery_partner_charge: parseFloat(partnerCharge),
             updated_at: new Date().toISOString(),
-            updated_by: user?.id
+            updated_by: user?.id,
           })
-          .eq('id', config.id);
+          .eq("id", config.id);
         if (error) throw error;
       }
     },
     onSuccess: () => {
-    const queryClient = useQueryClient();
-    queryClient.invalidateQueries({ queryKey: ['delivery-config'] });
-    // Also invalidate cart and checkout related queries to update delivery fees
-    queryClient.invalidateQueries({ queryKey: ['cart'] });
-    queryClient.invalidateQueries({ queryKey: ['checkout'] });
+      const queryClient = useQueryClient();
+      queryClient.invalidateQueries({ queryKey: ["delivery-config"] });
+      // Also invalidate cart and checkout related queries to update delivery fees
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
+      queryClient.invalidateQueries({ queryKey: ["checkout"] });
       toast({
         title: "Success",
         description: "Delivery settings updated successfully.",
@@ -82,7 +87,7 @@ const DeliverySettings = () => {
         description: "Failed to update delivery settings.",
         variant: "destructive",
       });
-    }
+    },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -145,8 +150,8 @@ const DeliverySettings = () => {
                 </p>
               </div>
 
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={updateConfigMutation.isPending}
                 className="w-full"
               >
@@ -162,3 +167,4 @@ const DeliverySettings = () => {
 };
 
 export default DeliverySettings;
+
