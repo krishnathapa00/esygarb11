@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-
 import { Product, useProducts } from "../hooks/useProducts";
 import { useAuthContext } from "@/contexts/AuthProvider";
 import { useCartActions } from "@/hooks/useCart";
