@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import EsyLogo from "@/assets/logo/Esy.jpg";
 import { OTPVerificationModal } from "@/components/user";
+import applyReferralCode from "@/services/addReferralCode";
 
 const AuthHybrid = () => {
   const [email, setEmail] = useState("");
@@ -155,6 +156,50 @@ const AuthHybrid = () => {
           .maybeSingle();
 
         profile = newProfile;
+      }
+
+      const referralCode = new URLSearchParams(window.location.search).get(
+        "ref"
+      );
+
+      if (referralCode) {
+        try {
+          // Check if referral code exists
+          const { data: code, error } = await supabase
+            .from("referral_codes")
+            .select("id, user_id")
+            .eq("code", referralCode)
+            .single();
+
+          if (error || !code) {
+            // Code doesn't exist
+            console.log("Invalid referral code");
+          } else {
+            if (!error && code) {
+              // Check if the current user already used a referral
+              const { data: used } = await supabase
+                .from("users_referrals")
+                .select("*")
+                .eq("user_id", user.id)
+                .single();
+
+              if (!used) {
+                await applyReferralCode(referralCode);
+                toast({
+                  title: "Referral Applied",
+                  description: "You and your friend have received your reward!",
+                  variant: "default",
+                });
+
+                await applyReferralCode(referralCode);
+              } else {
+                console.log("User already used a referral code");
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Error checking referral code:", err);
+        }
       }
 
       // Everything is fine → navigate home
@@ -317,4 +362,3 @@ const AuthHybrid = () => {
 };
 
 export default AuthHybrid;
-
