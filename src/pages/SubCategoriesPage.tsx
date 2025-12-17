@@ -2,11 +2,11 @@ import React, { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import Header from "@/components/Header";
+import { Header } from "@/components/shared";
 import { ArrowLeft, Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import ProductCard from "@/components/ProductCard";
+import ProductCard from "@/components/shared/ProductCard";
 import { useCartActions } from "@/hooks/useCart";
 
 interface Category {
