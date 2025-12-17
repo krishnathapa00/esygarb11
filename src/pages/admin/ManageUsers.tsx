@@ -16,7 +16,7 @@ import {
   Eye,
 } from "lucide-react";
 import AdminLayout from "./components/AdminLayout";
-import UserDetailsModal from "@/components/UserDetailsModal";
+import { UserDetailsModal } from "@/components/user";
 
 const ManageUsers = () => {
   const [searchTerm, setSearchTerm] = useState("");
