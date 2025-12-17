@@ -25,6 +25,7 @@ interface AuthContextType {
   verifyOtp: (email: string, token: string) => Promise<any>;
   signUp: (email: string, password: string, userData?: any) => Promise<any>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   resetPassword: (email: string) => Promise<any>;
 }
 
@@ -43,94 +44,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  /** ----- SESSION & ROLE MANAGEMENT ----- */
-  const setAuthUser = useCallback(async (user: User | null) => {
-    if (!user) return setUser(null);
-
-    const { data: profile, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (error) {
-      console.error(error);
+  /** ----- Set authenticated user ----- */
+  const setAuthUser = useCallback(async (supabaseUser: User | null) => {
+    if (!supabaseUser) {
+      setUser(null);
       return;
     }
 
+    // Check if profile exists
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("id, role")
+      .eq("id", supabaseUser.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Error fetching profile:", error);
+      setUser(null);
+      return;
+    }
+
+    // Force logout if profile deleted
     if (!profile) {
-      const { error: insertError } = await supabase.from("profiles").insert({
-        id: user.id,
-        email: user.email,
-        role: "customer",
-        updated_at: new Date().toISOString(),
-      });
-
-      if (insertError) {
-        console.error(insertError);
-        return;
-      }
-
-      setUser({
-        id: user.id,
-        email: user.email,
-        role: "customer",
-        isVerified: true,
-      });
-
+      await supabase.auth.signOut();
+      setUser(null);
       return;
     }
 
     setUser({
-      id: user.id,
-      email: user.email,
+      id: supabaseUser.id,
+      email: supabaseUser.email!,
       role: profile.role,
       isVerified: true,
     });
-
-    localStorage.setItem(
-      "esygrab_session",
-      JSON.stringify({
-        user: { id: user.id, role: profile.role, email: user.email },
-        expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
-      })
-    );
   }, []);
 
-  /** ----- AUTH STATE CHANGE LISTENER ----- */
+  /** ----- Listen to auth state changes ----- */
   useEffect(() => {
-    const localSession = localStorage.getItem("esygrab_session");
-
-    if (localSession) {
-      const parsed = JSON.parse(localSession);
-      if (parsed.user && parsed.expiresAt > Date.now()) {
-        setUser(parsed.user);
-        setLoading(false);
-
-        // Fetch fresh data async but keep loading state for smoother UX
-        supabase.auth.getSession().then(({ data: sessionData }) => {
-          if (sessionData?.session?.user) {
-            setAuthUser(sessionData.session.user);
-          }
-        });
-
-        return;
-      }
-    } else {
-      localStorage.removeItem("esygrab_session");
-    }
-
-    // Subscribe to auth state changes
-    const { data } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-        setAuthUser(session?.user || null);
-      }
-      if (event === "SIGNED_OUT") {
-        setUser(null);
-        setLoading(false);
-      }
-    });
-
     const init = async () => {
       const { data: sessionData } = await supabase.auth.getSession();
       if (sessionData?.session?.user) {
@@ -141,18 +91,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     init();
 
-    return () => data?.subscription.unsubscribe();
+    const { data: subscription } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+          setAuthUser(session?.user || null);
+        }
+        if (event === "SIGNED_OUT") {
+          setUser(null);
+        }
+      }
+    );
+
+    return () => subscription?.subscription.unsubscribe();
   }, [setAuthUser]);
 
-  /** ----- AUTH METHODS ----- */
+  /** ----- Auth methods ----- */
   const signInWithPassword = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-    if (error) return { error };
     if (data.user) await setAuthUser(data.user);
-    return { data };
+    return { data, error };
   };
 
   const signInWithOtp = async (email: string) => {
@@ -185,7 +145,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem("esygrab_session");
+  };
+
+  /** ----- Safe account deletion ----- */
+  const deleteAccount = async () => {
+    if (!user) return;
+    setLoading(true);
+
+    try {
+      // Delete profile first
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("id", user.id);
+      if (profileError) throw profileError;
+
+      // Delete user from auth
+      const { error: authError } = await supabase.auth.admin.deleteUser(
+        user.id
+      );
+      if (authError) throw authError;
+
+      // Clear local state
+      setUser(null);
+    } catch (err) {
+      console.error("Account deletion failed:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const resetPassword = async (email: string) => {
@@ -205,6 +192,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         verifyOtp,
         signUp,
         signOut,
+        deleteAccount,
         resetPassword,
       }}
     >
