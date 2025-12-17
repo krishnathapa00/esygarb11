@@ -16,11 +16,11 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import AdminLayout from "./components/AdminLayout";
-import MultipleImageUpload from "@/components/MultipleImageUpload";
+import MultipleImageUpload from "@/components/admin/MultipleImageUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
-import SingleImageUpload from "@/components/SingleImageUpload";
+import SingleImageUpload from "@/components/admin/SingleImageUpload";
 
 interface Category {
   id: number;
