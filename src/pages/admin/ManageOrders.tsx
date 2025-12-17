@@ -23,7 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
-import { showToast } from "@/components/Toast";
+import { showToast } from "@/components/shared";
 
 const ManageOrders = () => {
   const [searchTerm, setSearchTerm] = useState("");
