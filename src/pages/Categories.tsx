@@ -164,3 +164,4 @@ const AllCategories = () => {
 };
 
 export default AllCategories;
+
