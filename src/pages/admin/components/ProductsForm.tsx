@@ -2,8 +2,8 @@ import React from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import SingleImageUpload from "@/components/SingleImageUpload";
-import MultipleImageUpload from "@/components/MultipleImageUpload";
+import SingleImageUpload from "@/components/admin/SingleImageUpload";
+import MultipleImageUpload from "@/components/admin/MultipleImageUpload";
 
 interface ProductFormProps {
   value: any;
