@@ -11,13 +11,11 @@ import { toast } from "@/hooks/use-toast";
 import {
   ArrowLeft,
   MapPin,
-  Phone,
   User,
   Timer,
   Package,
   Navigation,
   CheckCircle,
-  Truck,
   AlertCircle,
   Map,
 } from "lucide-react";
@@ -25,14 +23,12 @@ import {
   formatLocationName,
   parseCoordinatesFromAddress,
 } from "@/utils/geocoding";
-
-const GOOGLE_MAPS_API_KEY = "AIzaSyADxM5y7WrXu3BRJ_hJQZhh6FLXWyO3E1g";
+import { loadGoogleMapsScript } from "@/utils/googleMapsLoader";
 
 // Declare global google types
 declare global {
   interface Window {
     google: any;
-    initGoogleMaps: () => void;
   }
 }
 
@@ -136,25 +132,7 @@ const DeliveryMapNavigationNew = () => {
 
   // Load Google Maps and initialize
   useEffect(() => {
-    if (!mapContainer.current) return;
-
-    const loadGoogleMaps = () => {
-      if (window.google) {
-        initMap();
-        return;
-      }
-
-      const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&callback=initGoogleMaps`;
-      script.async = true;
-      script.defer = true;
-
-      window.initGoogleMaps = () => {
-        initMap();
-      };
-
-      document.head.appendChild(script);
-    };
+    if (!mapContainer.current || !order) return;
 
     const initMap = () => {
       if (!mapContainer.current || !window.google || !order) return;
@@ -188,7 +166,8 @@ const DeliveryMapNavigationNew = () => {
       }
     };
 
-    loadGoogleMaps();
+    // Use centralized loader to prevent duplicate scripts
+    loadGoogleMapsScript(initMap);
 
     return () => {
       stopLocationTracking();
@@ -288,11 +267,26 @@ const DeliveryMapNavigationNew = () => {
 
     setIsTrackingLocation(true);
 
+    const updateLocationInDB = async (lat: number, lng: number) => {
+      try {
+        await supabase.from("live_locations" as any).upsert({
+          rider_id: user.id,
+          lat,
+          lng,
+          order_id: orderId,
+          updated_at: new Date().toISOString(),
+        });
+      } catch (error) {
+        console.error("Failed to update live location", error);
+      }
+    };
+
     // Get initial position
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
         updatePartnerLocation(latitude, longitude);
+        updateLocationInDB(latitude, longitude); // Update DB here too
       },
       (error) => console.error("Geolocation error:", error),
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
@@ -303,6 +297,7 @@ const DeliveryMapNavigationNew = () => {
       (position) => {
         const { latitude, longitude } = position.coords;
         updatePartnerLocation(latitude, longitude);
+        updateLocationInDB(latitude, longitude);
       },
       (error) => console.error("Watch position error:", error),
       { enableHighAccuracy: true, timeout: 5000, maximumAge: 30000 }
@@ -327,10 +322,10 @@ const DeliveryMapNavigationNew = () => {
         partnerMarker.current = new window.google.maps.Marker({
           position: { lat, lng },
           map: map.current,
-          title: "Your Location",
+          title: "Delivery Partner",
           icon: {
             path: window.google.maps.SymbolPath.CIRCLE,
-            scale: 10,
+            scale: 8,
             fillColor: "#10b981",
             fillOpacity: 1,
             strokeWeight: 2,
@@ -339,7 +334,6 @@ const DeliveryMapNavigationNew = () => {
         });
       }
 
-      // Center map if first location and no customer location yet
       if (!customerLocation) {
         map.current.setCenter({ lat, lng });
       }
