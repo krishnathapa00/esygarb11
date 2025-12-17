@@ -22,6 +22,7 @@ const ReferralPage = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [referralCodeId, setReferralCodeId] = useState<number | null>(null);
+  const [walletBalance, setWalletBalance] = useState(0);
 
   const [referralsCount, setReferralsCount] = useState(0);
   const [pendingRewards, setPendingRewards] = useState(0);
@@ -60,7 +61,15 @@ const ReferralPage = () => {
     const loadReferralData = async () => {
       setLoading(true);
 
-      /** 1️⃣ Fetch referral code + ID in a single query */
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("wallet_balance")
+        .eq("id", userId)
+        .single();
+
+      setWalletBalance(profile?.wallet_balance || 0);
+
+      /** Fetch referral code + ID in a single query */
       const { data: referral, error: codeErr } = await supabase
         .from("referral_codes")
         .select("id, code")
@@ -88,7 +97,7 @@ const ReferralPage = () => {
       setReferralCode(code);
       setReferralCodeId(codeId);
 
-      /** 2️⃣ Fetch all referral uses for this code (only ONE query) */
+      /** Fetch all referral uses for this code (only ONE query) */
       const { data: uses } = await supabase
         .from("referral_uses")
         .select("*")
@@ -189,7 +198,7 @@ const ReferralPage = () => {
           <StatCard
             icon={<Gift className="text-white" />}
             label="Rewards Earned"
-            value={`Rs ${earnedRewards * 10}`}
+            value={`Rs ${walletBalance}`}
             color="bg-green-500"
           />
           <StatCard
