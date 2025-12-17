@@ -7,7 +7,7 @@ import AdminLayout from "./components/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import PaginationControls from "@/components/PaginationControls";
+import PaginationControls from "@/components/admin/PaginationControls";
 import DesktopProductsList, {
   ProductRow,
 } from "./components/DesktopProductsList";
@@ -423,4 +423,3 @@ const ManageProducts = () => {
 };
 
 export default ManageProducts;
-
