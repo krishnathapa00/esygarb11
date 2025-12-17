@@ -17,14 +17,6 @@ const AdminLogin = () => {
   const { user, signInWithPassword, resetPassword } = useAuthContext();
 
   useEffect(() => {
-    document.body.classList.remove("with-search-bar");
-    document.body.style.paddingTop = "0px";
-    return () => {
-      document.body.style.paddingTop = "";
-    };
-  }, []);
-
-  useEffect(() => {
     if (!loading && user) {
       if (user.role === "admin" || user.role === "super_admin") {
         navigate("/admin/dashboard");
@@ -40,8 +32,9 @@ const AdminLogin = () => {
 
     const { data, error } = await signInWithPassword(email, password);
 
+    setLoading(false);
+
     if (error) {
-      setLoading(false);
       toast({
         title: "Login Failed",
         description: error.message || "Please check your credentials.",
@@ -51,8 +44,6 @@ const AdminLogin = () => {
     }
 
     if (data?.user) {
-      setLoading(false);
-
       toast({
         title: "Login successful!",
         description: "Welcome to the admin panel.",
@@ -61,29 +52,6 @@ const AdminLogin = () => {
       // Let the auth context handle role-based navigation
       // The AuthGuard will redirect to appropriate dashboard
       navigate("/admin/dashboard");
-    } else {
-      setLoading(false);
-      toast({
-        title: "Login Error",
-        description: "Authentication failed. Please try again.",
-        variant: "destructive",
-      });
-    }
-
-    if (data?.user) {
-      if (data.user.role === "admin") {
-        toast({
-          title: "Login successful!",
-          description: "Welcome to the admin panel.",
-        });
-        navigate("/admin/dashboard");
-      } else {
-        toast({
-          title: "Access Denied",
-          description: "You are not authorized to access the admin panel.",
-          variant: "destructive",
-        });
-      }
     } else {
       toast({
         title: "Login Error",
