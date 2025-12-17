@@ -28,10 +28,10 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import AdminLayout from "./components/AdminLayout";
-import ImageUpload from "@/components/ImageUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { ImageUpload } from "@/components/admin";
 
 interface Category {
   id: number;
@@ -47,7 +47,7 @@ interface SubCategory {
   category_id: number;
   description?: string;
   created_at: string;
-  categories?: { name: string };
+  categories: { name: string } | null;
 }
 
 const ManageCategories = () => {
@@ -119,7 +119,21 @@ const ManageCategories = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data || [];
+
+      // Transform the data to match our interface
+      const transformed: SubCategory[] = (data || []).map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        category_id: item.category_id,
+        description: item.description,
+        created_at: item.created_at,
+        categories:
+          Array.isArray(item.categories) && item.categories.length > 0
+            ? item.categories[0]
+            : null,
+      }));
+
+      return transformed;
     },
   });
 
@@ -278,12 +292,7 @@ const ManageCategories = () => {
   };
 
   return (
-    <AdminLayout
-      onRefresh={() => {
-        refetchCategories();
-        refetchSubCategories();
-      }}
-    >
+    <AdminLayout>
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
           <h1 className="text-2xl font-bold">Categories & Subcategories</h1>
