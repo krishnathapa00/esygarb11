@@ -286,3 +286,4 @@ const SubCategoriesPage = () => {
 };
 
 export default SubCategoriesPage;
+
