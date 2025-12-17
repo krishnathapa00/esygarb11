@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import Header from "../components/Header";
+import { Header } from "@/components/shared";
 import {
   ArrowLeft,
   ShoppingCart,
@@ -81,6 +81,7 @@ const CartPage = () => {
     return true;
   };
 
+  // Consolidated promo validation - single useEffect to prevent race conditions
   useEffect(() => {
     if (!appliedPromo) return;
 
@@ -94,7 +95,7 @@ const CartPage = () => {
       });
       handleRemovePromo();
     }
-  }, [cart, appliedPromo]);
+  }, [cart, totalPrice, appliedPromo]); // Consolidated dependencies
 
   const { data: deliveryConfig } = useQuery({
     queryKey: ["delivery-config"],
@@ -149,48 +150,7 @@ const CartPage = () => {
     }
   }, [totalPrice, appliedPromo]);
 
-  useEffect(() => {
-    if (
-      appliedPromo &&
-      Array.isArray(appliedPromo.category_ids) &&
-      appliedPromo.category_ids.length > 0
-    ) {
-      const hasMatchingItem = cart.some((item) =>
-        appliedPromo.category_ids.includes(item.category_id)
-      );
-
-      if (!hasMatchingItem) {
-        toast({
-          title: "Promo code removed - applicable items not in cart",
-          variant: "destructive",
-        });
-        handleRemovePromo();
-      }
-    }
-  }, [cart, appliedPromo]);
-
-  useEffect(() => {
-    if (!appliedPromo) return;
-
-    const stillEligible =
-      (!appliedPromo.min_order_amount ||
-        totalPrice >= appliedPromo.min_order_amount) &&
-      (!appliedPromo.category_ids ||
-        appliedPromo.category_ids.length === 0 ||
-        cart.some((item) =>
-          appliedPromo.category_ids.includes(item.category_id)
-        ));
-
-    if (!stillEligible) {
-      toast({
-        title: "Promo code removed",
-        description: "Your cart no longer meets the promo conditions.",
-        variant: "destructive",
-      });
-      handleRemovePromo();
-    }
-  }, [totalPrice, cart, appliedPromo]);
-
+  // Persist promo in session storage
   useEffect(() => {
     if (appliedPromo) {
       sessionStorage.setItem("applied_promo", JSON.stringify(appliedPromo));
@@ -382,7 +342,7 @@ const CartPage = () => {
           </h1>
         </div>
 
-        <div className="lg:grid lg:grid-cols-3 lg:gap-8">
+        <div className="container mx-auto px-4 lg:grid lg:grid-cols-3 lg:gap-8">
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-4">
             {cart.map((item) => (
