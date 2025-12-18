@@ -12,12 +12,15 @@ import {
   ServiceUnavailableMessage,
 } from "@/components/shared";
 import { ReferralPopup } from "@/components/user";
+import OutageModal from "./user/Outage";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [serviceAvailable, setServiceAvailable] = useState(true);
   const [isReferralOpen, setIsReferralOpen] = useState(false);
+
+  const [showOutageModal, setShowOutageModal] = useState(true);
 
   const { data: products = [], isLoading } = useProducts();
   const { user } = useAuthContext();
@@ -104,6 +107,10 @@ const Index = () => {
     <div className="min-h-screen bg-gray-50 pb-20 md:pb-0 relative overflow-x-hidden">
       <Header />
 
+      {showOutageModal && (
+        <OutageModal onClose={() => setShowOutageModal(false)} />
+      )}
+
       {dropdownVisible && filteredProducts.length > 0 && (
         <div className="absolute z-50 top-34 left-1/2 transform -translate-x-1/2 w-full max-w-2xl bg-white shadow-lg border rounded-md overflow-hidden">
           {filteredProducts.slice(0, 5).map((product) => (
@@ -166,11 +173,18 @@ const Index = () => {
       <div className="hidden md:block">
         <Footer />
       </div>
-      <ReferralPopup
+      {/* <ReferralPopup
         isOpen={isReferralOpen}
         onClose={() => setIsReferralOpen(false)}
         isLoggedIn={!!user}
-      />
+      /> */}
+      {!showOutageModal && (
+        <ReferralPopup
+          isOpen={isReferralOpen}
+          onClose={() => setIsReferralOpen(false)}
+          isLoggedIn={!!user}
+        />
+      )}
     </div>
   );
 };
