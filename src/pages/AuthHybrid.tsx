@@ -35,8 +35,10 @@ const AuthHybrid = () => {
   }, []);
 
   useEffect(() => {
-    if (user) navigate("/");
-  }, [user, navigate]);
+    if (!authLoading && user) {
+      navigate("/");
+    }
+  }, [user, authLoading]);
 
   const handleSendOTP = async () => {
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -190,8 +192,6 @@ const AuthHybrid = () => {
                   description: "You and your friend have received your reward!",
                   variant: "default",
                 });
-
-                await applyReferralCode(referralCode);
               } else {
                 console.log("User already used a referral code");
               }
