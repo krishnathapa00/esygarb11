@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
-export default function ReferralLandingPage() {
+const ReferralLandingPage = () => {
   const { code } = useParams();
   const navigate = useNavigate();
 
@@ -12,5 +12,7 @@ export default function ReferralLandingPage() {
     navigate("/auth");
   }, [code]);
 
-  return <div>Redirecting...</div>;
-}
+  return null;
+};
+
+export default ReferralLandingPage;
