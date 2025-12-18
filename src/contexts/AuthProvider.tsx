@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
+import applyReferralCode from "@/services/addReferralCode";
 
 interface AuthUser {
   id: string;
@@ -78,6 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const { data: sessionData } = await supabase.auth.getSession();
       if (sessionData?.session?.user) {
         await setAuthUser(sessionData.session.user);
+        await handleReferral(sessionData.session.user);
       }
       setLoading(false);
     };
@@ -85,9 +87,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     init();
 
     const { data: subscription } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-          setAuthUser(session?.user || null);
+      async (event, session) => {
+        if (
+          (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") &&
+          session?.user
+        ) {
+          await setAuthUser(session.user);
+          await handleReferral(session.user);
         }
         if (event === "SIGNED_OUT") {
           setUser(null);
@@ -97,6 +103,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     return () => subscription?.subscription.unsubscribe();
   }, [setAuthUser]);
+
+  /** ----- Referral handling ----- */
+  const handleReferral = async (supabaseUser: User) => {
+    // Check if profile exists
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id, has_used_referral")
+      .eq("id", supabaseUser.id)
+      .maybeSingle();
+
+    let isNewUser = false;
+
+    // Create profile if missing
+    if (!profile) {
+      isNewUser = true;
+      await supabase.from("profiles").insert({
+        id: supabaseUser.id,
+        email: supabaseUser.email,
+        has_used_referral: false,
+      });
+    }
+
+    // Only apply referral for new users and if code exists
+    const referralCode = localStorage.getItem("referral_code");
+
+    if (isNewUser && referralCode) {
+      try {
+        await applyReferralCode(referralCode);
+
+        // mark referral used
+        await supabase
+          .from("profiles")
+          .update({ has_used_referral: true })
+          .eq("id", supabaseUser.id);
+
+        localStorage.removeItem("referral_code");
+      } catch (err) {
+        console.error("Referral application failed", err);
+      }
+    }
+  };
 
   /** ----- Auth methods ----- */
   const signInWithPassword = async (email: string, password: string) => {
