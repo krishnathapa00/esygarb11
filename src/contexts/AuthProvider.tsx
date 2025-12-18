@@ -64,13 +64,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       return;
     }
 
-    // Force logout if profile deleted
-    if (!profile) {
-      await supabase.auth.signOut();
-      setUser(null);
-      return;
-    }
-
     setUser({
       id: supabaseUser.id,
       email: supabaseUser.email!,
@@ -129,7 +122,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       token,
       type: "email",
     });
-    if (data?.user) await setAuthUser(data.user);
     return { data, error };
   };
 
