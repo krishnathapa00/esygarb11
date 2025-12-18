@@ -5,10 +5,8 @@ import { Button } from "@/components/ui/button";
 import { useAuthContext } from "@/contexts/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
 import EsyLogo from "@/assets/logo/Esy.jpg";
 import { OTPVerificationModal } from "@/components/user";
-import applyReferralCode from "@/services/addReferralCode";
 
 const AuthHybrid = () => {
   const [email, setEmail] = useState("");
@@ -93,122 +91,27 @@ const AuthHybrid = () => {
     setLoading(true);
 
     try {
-      const { data, error } = await verifyOtp(email, otp);
+      const { error } = await verifyOtp(email, otp);
 
       if (error) {
         toast({
           title: "Verification Failed",
-          description: error.message || "Invalid OTP. Please try again.",
+          description: error.message,
           variant: "destructive",
         });
         return;
       }
-
-      if (!data?.session || !data.user) {
-        toast({
-          title: "Session Error",
-          description: "Could not retrieve session after OTP verification.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const { user } = data;
 
       toast({
-        title: "Email Verified Successfully",
-        description: "Welcome to Esygrab!",
-        variant: "default",
+        title: "Email Verified",
+        description: "Welcome to EsyGrab!",
       });
 
       setIsOtpModalOpen(false);
-
-      // Check if profile exists
-      let { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-      // If profile doesn't exist, create it
-      if (!profile && data?.session) {
-        const { error: insertError } = await supabase.from("profiles").insert({
-          id: user.id,
-          email: user.email,
-          full_name: null,
-          phone: null,
-          address: null,
-          avatar_url: null,
-        });
-
-        if (insertError) {
-          toast({
-            title: "Profile Creation Failed",
-            description: insertError.message,
-            variant: "destructive",
-          });
-          return;
-        }
-
-        // Fetch the newly created profile
-        const { data: newProfile } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user.id)
-          .maybeSingle();
-
-        profile = newProfile;
-      }
-
-      const referralCode = new URLSearchParams(window.location.search).get(
-        "ref"
-      );
-
-      if (referralCode) {
-        try {
-          // Check if referral code exists
-          const { data: code, error } = await supabase
-            .from("referral_codes")
-            .select("id, user_id")
-            .eq("code", referralCode)
-            .single();
-
-          if (error || !code) {
-            // Code doesn't exist
-            console.log("Invalid referral code");
-          } else {
-            if (!error && code) {
-              // Check if the current user already used a referral
-              const { data: used } = await supabase
-                .from("users_referrals")
-                .select("*")
-                .eq("user_id", user.id)
-                .single();
-
-              if (!used) {
-                await applyReferralCode(referralCode);
-                toast({
-                  title: "Referral Applied",
-                  description: "You and your friend have received your reward!",
-                  variant: "default",
-                });
-              } else {
-                console.log("User already used a referral code");
-              }
-            }
-          }
-        } catch (err) {
-          console.error("Error checking referral code:", err);
-        }
-      }
-
-      // Everything is fine → navigate home
-      navigate("/");
-    } catch (err) {
+    } catch {
       toast({
         title: "Unexpected Error",
-        description:
-          "Something went wrong while verifying OTP. Please try again later.",
+        description: "Please try again.",
         variant: "destructive",
       });
     } finally {
