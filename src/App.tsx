@@ -80,7 +80,30 @@ import {
 import { useRequireCompleteProfile } from "./hooks/useRequireCompleteProfile";
 import DeviceIdUpdater from "./utils/detectUserDevice";
 
-const queryClient = new QueryClient();
+// Optimized QueryClient configuration
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Cache queries for 5 minutes by default to reduce database calls
+      staleTime: 5 * 60 * 1000,
+      // Keep unused data in cache for 10 minutes to reduce egress
+      gcTime: 10 * 60 * 1000,
+      // Disable automatic refetches - rely on manual invalidation and realtime subscriptions
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      refetchOnReconnect: false,
+      // Retry failed queries only once to avoid hammering the database
+      retry: 1,
+      // Enable request deduplication
+      networkMode: "online",
+    },
+    mutations: {
+      // Retry mutations only once
+      retry: 1,
+      networkMode: "online",
+    },
+  },
+});
 
 const AppContent = () => {
   useSetGlobalToast();
