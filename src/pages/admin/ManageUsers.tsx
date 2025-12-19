@@ -38,6 +38,9 @@ const ManageUsers = () => {
       if (error) throw error;
       return data;
     },
+    // Cache user list for 3 minutes
+    staleTime: 3 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
   const updateUserMutation = useMutation({
