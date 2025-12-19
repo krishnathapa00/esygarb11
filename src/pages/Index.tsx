@@ -107,9 +107,9 @@ const Index = () => {
     <div className="min-h-screen bg-gray-50 pb-20 md:pb-0 relative overflow-x-hidden">
       <Header />
 
-      /* {showOutageModal && (
+      {/* {showOutageModal && (
         <OutageModal onClose={() => setShowOutageModal(false)} />
-      )} */
+      )} */}
 
       {dropdownVisible && filteredProducts.length > 0 && (
         <div className="absolute z-50 top-34 left-1/2 transform -translate-x-1/2 w-full max-w-2xl bg-white shadow-lg border rounded-md overflow-hidden">
@@ -177,14 +177,14 @@ const Index = () => {
         isOpen={isReferralOpen}
         onClose={() => setIsReferralOpen(false)}
         isLoggedIn={!!user}
-      /> 
-      /* {!showOutageModal && (
+      />
+      {/* {!showOutageModal && (
         <ReferralPopup
           isOpen={isReferralOpen}
           onClose={() => setIsReferralOpen(false)}
           isLoggedIn={!!user}
         />
-      )} */
+      )} */}
     </div>
   );
 };
