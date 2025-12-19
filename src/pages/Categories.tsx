@@ -15,7 +15,7 @@ interface Category {
 }
 
 const AllCategories = () => {
-  // Fetch categories from database
+  // Fetch categories from database with optimized caching
   const { data: categories = [], isLoading } = useQuery<Category[]>({
     queryKey: ["categories"],
     queryFn: async () => {
@@ -49,6 +49,9 @@ const AllCategories = () => {
 
       return categoriesWithCounts;
     },
+    // Categories and counts rarely change - cache for 10 minutes
+    staleTime: 10 * 60 * 1000,
+    gcTime: 20 * 60 * 1000,
   });
 
   const totalProducts = categories.reduce(
@@ -164,4 +167,3 @@ const AllCategories = () => {
 };
 
 export default AllCategories;
-
