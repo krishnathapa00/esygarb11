@@ -141,7 +141,8 @@ const OrderTrackingWithMap = () => {
       return data;
     },
     enabled: !!orderId,
-    refetchInterval: 5000, // Refresh every 5 seconds
+    staleTime: 10 * 1000, // 10 seconds cache
+    refetchInterval: 15000, // Reduced from 5s to 15s - rely more on realtime
   });
 
   // Order timer for 10-minute delivery tracking
