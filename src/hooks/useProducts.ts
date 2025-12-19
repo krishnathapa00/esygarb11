@@ -72,9 +72,9 @@ export const useProducts = () => {
         isActive: product.is_active,
       })) as Product[];
     },
-    // Products change frequently but cache for 2 minutes
-    staleTime: 2 * 60 * 1000,
-    gcTime: 5 * 60 * 1000,
+    // Cache category products for 3 minutes
+    staleTime: 3 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 };
 
