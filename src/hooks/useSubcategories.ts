@@ -46,5 +46,8 @@ export const useSubcategories = (categoryId?: number) => {
       return data as Subcategory[];
     },
     enabled: categoryId !== undefined,
+    // Subcategories rarely change - cache for 15 minutes
+    staleTime: 15 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 };
