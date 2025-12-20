@@ -24,6 +24,7 @@ interface AuthContextType {
   signInWithOtp: (phone: string) => Promise<any>;
   verifyOtp: (phone: string, token: string) => Promise<any>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<any>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -82,6 +83,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return result;
   };
 
+  // Reset password via email
+  const resetPassword = async (email: string) => {
+    const redirectTo = `${window.location.origin}/auth/reset-password`;
+
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo,
+    });
+    if (error) throw error;
+    return data;
+  };
+
   // Send OTP to email
   const signInWithOtp = async (email: string) => {
     const { data, error } = await supabase.auth.signInWithOtp({ email });
@@ -118,6 +130,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         loading,
         isAuthenticated: !!user,
         signInWithPassword,
+        resetPassword,
         signInWithOtp,
         verifyOtp,
         signOut,
