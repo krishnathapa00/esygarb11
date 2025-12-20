@@ -82,20 +82,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return result;
   };
 
-  // Send OTP to phone
-  const signInWithOtp = async (phone: string) => {
-    return supabase.auth.signInWithOtp({ phone });
+  // Send OTP to email
+  const signInWithOtp = async (email: string) => {
+    const { data, error } = await supabase.auth.signInWithOtp({ email });
+    if (error) throw error;
+    return data;
   };
 
-  // Verify OTP
-  const verifyOtp = async (phone: string, token: string) => {
+  // Verify OTP for email
+  const verifyOtp = async (email: string, token: string) => {
     const { data, error } = await supabase.auth.verifyOtp({
-      phone,
+      email,
       token,
-      type: "sms",
+      type: "email", // specify email type
     });
     if (error) throw error;
-    // hydrateUser runs automatically
     return data;
   };
 
