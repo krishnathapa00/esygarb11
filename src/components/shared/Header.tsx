@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { useAuthContext } from "@/contexts/AuthProvider";
 import SearchBar from "./SearchBar";
 import { useCart } from "@/contexts/CartContext";
-import { supabase } from "@/integrations/supabase/client";
 import { LocationDetectionPopup } from "../delivery";
 
 const Header = () => {
@@ -39,23 +38,6 @@ const Header = () => {
       setUserLocation("");
       return;
     }
-
-    const fetchProfileLocation = async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("delivery_location")
-        .eq("id", user.id)
-        .single();
-
-      if (
-        data?.delivery_location &&
-        !localStorage.getItem("esygrab_user_location")
-      ) {
-        setUserLocation(formatDisplayLocation(data.delivery_location));
-      }
-    };
-
-    fetchProfileLocation();
   }, [user]);
 
   const formatDisplayLocation = (location) => {
