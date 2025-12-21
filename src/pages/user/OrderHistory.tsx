@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/shared";
+import { useCancelOrder } from "@/services/orderCancel";
 
 interface OrderItem {
   id: string;
@@ -347,8 +348,9 @@ const OrderHistory = () => {
                 className="cursor-pointer hover:shadow-md transition-shadow"
               >
                 <CardContent className="p-4">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3">
+                    {/* Left side: Order info */}
+                    <div className="flex flex-col">
                       <h3 className="font-semibold text-gray-900">
                         #{order.orderId}
                       </h3>
@@ -361,10 +363,19 @@ const OrderHistory = () => {
                         </p>
                       )}
                     </div>
-                    <Badge className={getStatusColor(order.status)}>
-                      {getStatusIcon(order.status)}
-                      <span className="ml-1">{order.status}</span>
-                    </Badge>
+
+                    {/* Right side: Cancel Button + Status Badge */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mt-2 sm:mt-0">
+                      <CancelOrderButton
+                        order={order}
+                        userId={user.id}
+                        onCancelled={fetchUserOrders}
+                      />
+                      <Badge className={getStatusColor(order.status)}>
+                        {getStatusIcon(order.status)}
+                        <span className="ml-1">{order.status}</span>
+                      </Badge>
+                    </div>
                   </div>
 
                   <div className="flex justify-between items-center mb-3">
@@ -377,7 +388,7 @@ const OrderHistory = () => {
                         Rs {order.totalAmount}
                       </p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       <Link to={`/order-tracking/${order.orderId}`}>
                         <Button
                           variant="outline"
@@ -387,6 +398,7 @@ const OrderHistory = () => {
                           Track Order
                         </Button>
                       </Link>
+
                       <Button
                         variant="outline"
                         size="sm"
@@ -413,3 +425,44 @@ const OrderHistory = () => {
 };
 
 export default OrderHistory;
+
+const CancelOrderButton = ({
+  order,
+  userId,
+  onCancelled,
+}: {
+  order: Order;
+  userId: string;
+  onCancelled: () => void;
+}) => {
+  const { canCancel, remainingSeconds, cancelOrder, loading } = useCancelOrder(
+    order.orderId,
+    userId,
+    order.createdAt,
+    order.status,
+    onCancelled
+  );
+
+  if (!canCancel) return null;
+
+  const minutes = Math.floor(remainingSeconds / 60);
+  const seconds = remainingSeconds % 60;
+
+  return (
+    <div className="flex flex-col items-end sm:items-start gap-1">
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={loading}
+        onClick={cancelOrder}
+        className="text-red-600 border-red-300 hover:bg-red-50 w-full sm:w-auto"
+      >
+        {loading ? "Cancelling..." : "Cancel Order"}
+      </Button>
+
+      <span className="text-xs text-gray-500">
+        Cancel in {minutes}:{seconds.toString().padStart(2, "0")}
+      </span>
+    </div>
+  );
+};
