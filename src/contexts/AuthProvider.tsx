@@ -1,10 +1,9 @@
-import {
+import React, {
   createContext,
   useContext,
   useEffect,
   useState,
   useCallback,
-  ReactNode,
 } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
@@ -14,6 +13,7 @@ interface AuthUser {
   email: string;
   role: string;
   isVerified: boolean;
+  referralCode?: string;
 }
 
 interface AuthContextType {
@@ -21,107 +21,165 @@ interface AuthContextType {
   loading: boolean;
   isAuthenticated: boolean;
   signInWithPassword: (email: string, password: string) => Promise<any>;
-  signInWithOtp: (phone: string) => Promise<any>;
-  verifyOtp: (phone: string, token: string) => Promise<any>;
+  signInWithOtp: (email: string) => Promise<any>;
+  verifyOtp: (email: string, token: string) => Promise<any>;
+  signUp: (email: string, password: string, userData?: any) => Promise<any>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   resetPassword: (email: string) => Promise<any>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuthContext = () => {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuthContext must be used within AuthProvider");
-  return ctx;
+  const context = useContext(AuthContext);
+  if (!context)
+    throw new Error("useAuthContext must be used within AuthProvider");
+  return context;
 };
 
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-export const AuthProvider = ({ children }: AuthProviderProps) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Hydrate user from Supabase session
-  const hydrateUser = useCallback(async (supabaseUser: User | null) => {
+  /** ----- Set authenticated user ----- */
+  const setAuthUser = useCallback(async (supabaseUser: User | null) => {
     if (!supabaseUser) {
+      setUser(null);
+      return;
+    }
+
+    // Check if profile exists
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("id, role")
+      .eq("id", supabaseUser.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Error fetching profile:", error);
+      setUser(null);
+      return;
+    }
+
+    // Force logout if profile deleted
+    if (!profile) {
+      await supabase.auth.signOut();
       setUser(null);
       return;
     }
 
     setUser({
       id: supabaseUser.id,
-      email: supabaseUser.email ?? "",
-      role: "customer",
+      email: supabaseUser.email!,
+      role: profile.role,
       isVerified: true,
     });
   }, []);
 
+  /** ----- Listen to auth state changes ----- */
   useEffect(() => {
-    // Initialize session on first load
     const init = async () => {
-      const { data } = await supabase.auth.getSession();
-      await hydrateUser(data.session?.user ?? null);
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData?.session?.user) {
+        await setAuthUser(sessionData.session.user);
+      }
       setLoading(false);
     };
+
     init();
 
-    // Listen for auth state changes
-    const { data: sub } = supabase.auth.onAuthStateChange(
-      async (_, session) => {
-        await hydrateUser(session?.user ?? null);
+    const { data: subscription } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+          setAuthUser(session?.user || null);
+        }
+        if (event === "SIGNED_OUT") {
+          setUser(null);
+        }
       }
     );
 
-    return () => sub.subscription.unsubscribe();
-  }, [hydrateUser]);
+    return () => subscription?.subscription.unsubscribe();
+  }, [setAuthUser]);
 
-  // Email/password login
+  /** ----- Auth methods ----- */
   const signInWithPassword = async (email: string, password: string) => {
-    const result = await supabase.auth.signInWithPassword({ email, password });
-    return result;
-  };
-
-  // Reset password via email
-  const resetPassword = async (email: string) => {
-    const redirectTo = `${window.location.origin}/auth/reset-password`;
-
-    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo,
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
     });
-    if (error) throw error;
-    return data;
+    if (data.user) await setAuthUser(data.user);
+    return { data, error };
   };
 
-  // Send OTP to email
   const signInWithOtp = async (email: string) => {
-    const { data, error } = await supabase.auth.signInWithOtp({ email });
-    if (error) throw error;
-    return data;
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: true },
+    });
+    return { error };
   };
 
-  // Verify OTP for email
   const verifyOtp = async (email: string, token: string) => {
     const { data, error } = await supabase.auth.verifyOtp({
       email,
       token,
-      type: "email", // specify email type
+      type: "email",
     });
-    if (error) throw error;
-    return data;
+    if (data?.user) await setAuthUser(data.user);
+    return { data, error };
   };
 
-  // Logout
+  const signUp = async (email: string, password: string, userData?: any) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: userData },
+    });
+    return { data, error };
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
   };
 
-  // Block rendering until auth state is hydrated
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  /** ----- Safe account deletion ----- */
+  const deleteAccount = async () => {
+    if (!user) return;
+    setLoading(true);
+
+    try {
+      // Delete profile first
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("id", user.id);
+      if (profileError) throw profileError;
+
+      // Delete user from auth
+      const { error: authError } = await supabase.auth.admin.deleteUser(
+        user.id
+      );
+      if (authError) throw authError;
+
+      // Clear local state
+      setUser(null);
+    } catch (err) {
+      console.error("Account deletion failed:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetPassword = async (email: string) => {
+    return supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/reset`,
+    });
+  };
 
   return (
     <AuthContext.Provider
@@ -130,10 +188,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         loading,
         isAuthenticated: !!user,
         signInWithPassword,
-        resetPassword,
         signInWithOtp,
         verifyOtp,
+        signUp,
         signOut,
+        deleteAccount,
+        resetPassword,
       }}
     >
       {children}
