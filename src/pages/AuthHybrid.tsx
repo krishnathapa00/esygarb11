@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import EsyLogo from "@/assets/logo/Esy.jpg";
 import { OTPVerificationModal } from "@/components/user";
+import { supabase } from "@/integrations/supabase/client";
 
 const AuthHybrid = () => {
   const [email, setEmail] = useState("");
@@ -33,10 +34,9 @@ const AuthHybrid = () => {
   }, []);
 
   useEffect(() => {
-    if (!authLoading && user) {
-      navigate("/");
-    }
-  }, [user, authLoading]);
+    if (authLoading) return;
+    if (user) navigate("/", { replace: true });
+  }, [authLoading, user, navigate]);
 
   const handleSendOTP = async () => {
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -91,12 +91,12 @@ const AuthHybrid = () => {
     setLoading(true);
 
     try {
-      const { error } = await verifyOtp(email, otp);
+      const { error: verifyError } = await verifyOtp(email, otp);
 
-      if (error) {
+      if (verifyError) {
         toast({
           title: "Verification Failed",
-          description: error.message,
+          description: verifyError.message,
           variant: "destructive",
         });
         return;
@@ -108,6 +108,35 @@ const AuthHybrid = () => {
       });
 
       setIsOtpModalOpen(false);
+
+      /** ---- REFERRAL CODE LOGIC FOR NEW USERS ---- */
+      const referralCode = localStorage.getItem("referral_code");
+
+      if (referralCode && user) {
+        const { data: ref, error: codeError } = await supabase
+          .from("referral_codes")
+          .select("id")
+          .eq("code", referralCode)
+          .single();
+
+        if (ref?.id) {
+          // Check if this user is new (no existing referral_uses)
+          const { data: existingUse } = await supabase
+            .from("referral_uses")
+            .select("*")
+            .eq("user_id", user.id)
+            .single();
+
+          if (!existingUse) {
+            await supabase.from("referral_uses").insert({
+              referral_code_id: ref.id,
+              user_id: user.id,
+              approved: false, // pending until profile complete
+            });
+            localStorage.removeItem("referral_code");
+          }
+        }
+      }
     } catch {
       toast({
         title: "Unexpected Error",
@@ -152,12 +181,6 @@ const AuthHybrid = () => {
   const handleCloseModal = () => {
     setIsOtpModalOpen(false);
   };
-
-  useEffect(() => {
-    setLoading(false);
-    setEmail("");
-    setIsOtpModalOpen(false);
-  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-50">
