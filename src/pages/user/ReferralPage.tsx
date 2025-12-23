@@ -32,6 +32,77 @@ const ReferralPage = () => {
   const [linkCopied, setLinkCopied] = useState(false);
 
   const [loading, setLoading] = useState(true);
+  const [appliedReferralCode, setAppliedReferralCode] = useState<string | null>(
+    null
+  );
+  const [inputCode, setInputCode] = useState("");
+
+  const handleApplyReferral = async () => {
+    if (!inputCode.trim()) {
+      toast({
+        title: "Enter a code",
+        description: "Please enter a referral code.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if code exists
+    const { data: ref, error } = await supabase
+      .from("referral_codes")
+      .select("id, user_id")
+      .eq("code", inputCode.trim())
+      .single();
+
+    if (error || !ref) {
+      // Show invalid code message
+      toast({
+        title: "Invalid Referral Code",
+        description: "No such referral code found.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (ref.user_id === userId) {
+      toast({
+        title: "Invalid Referral Code",
+        description: "You cannot use your own referral code.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if user already applied a code
+    const { data: existing } = await supabase
+      .from("referral_uses")
+      .select("*")
+      .eq("user_id", userId)
+      .single();
+
+    if (existing) {
+      toast({
+        title: "Already Applied",
+        description: "You have already used a referral code.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Apply referral
+    await supabase.from("referral_uses").insert({
+      referral_code_id: ref.id,
+      user_id: userId,
+      approved: false,
+    });
+
+    toast({
+      title: "Referral Code Applied",
+      description: `You applied code: ${inputCode.trim()}`,
+    });
+
+    setAppliedReferralCode(inputCode.trim());
+  };
 
   useEffect(() => {
     document.body.style.paddingTop = "0px";
@@ -208,6 +279,34 @@ const ReferralPage = () => {
             color="bg-yellow-500"
           />
         </div>
+
+        <Card className="shadow-lg rounded-xl border-0 overflow-hidden mb-6">
+          <CardContent className="p-6 space-y-4">
+            <h2 className="text-lg font-bold">Have a Referral Code?</h2>
+            {appliedReferralCode ? (
+              <p className="text-green-600 font-medium">
+                ✅ You applied code:{" "}
+                <span className="font-mono">{appliedReferralCode}</span>
+              </p>
+            ) : (
+              <div className="flex gap-3 flex-col sm:flex-row">
+                <input
+                  type="text"
+                  placeholder="Enter referral code"
+                  value={inputCode}
+                  onChange={(e) => setInputCode(e.target.value)}
+                  className="flex-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+                <Button
+                  className="w-full sm:w-auto bg-gradient-to-r from-primary to-accent text-white font-semibold"
+                  onClick={handleApplyReferral}
+                >
+                  Apply
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Referral Code Card */}
         <ReferralCodeCard
