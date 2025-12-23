@@ -366,9 +366,10 @@ const UserProfile = () => {
                     <div className="flex flex-col gap-2">
                       <label
                         htmlFor="address"
-                        className="text-sm font-medium text-gray-700"
+                        className="flex items-center gap-1 text-sm font-medium text-gray-700"
                       >
-                        Address
+                        <span>Address</span>
+                        <span className="text-red-500">*</span>{" "}
                       </label>
                       <AddressInput
                         value={watch("address")}
@@ -377,6 +378,7 @@ const UserProfile = () => {
                         }
                       />
                     </div>
+
                     <div className="flex gap-4">
                       <Button
                         type="submit"
@@ -389,7 +391,6 @@ const UserProfile = () => {
                         type="button"
                         variant="outline"
                         onClick={() => {
-                          // 🚫 Prevent exiting edit mode if profile is incomplete
                           if (!isProfileComplete) {
                             toast({
                               title: "Profile incomplete",
