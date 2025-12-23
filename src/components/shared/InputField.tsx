@@ -24,7 +24,9 @@ const InputField: React.FC<InputFieldProps> = ({
   <div>
     <label htmlFor={name} className="block text-sm font-medium mb-1">
       {label}
+      {required && <span className="text-red-500 ml-1">*</span>}
     </label>
+
     <input
       id={name}
       type="text"
