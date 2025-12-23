@@ -24,7 +24,7 @@ interface ProfileFormValues {
   avatar_url: string;
 }
 
-const UserProfile: React.FC = () => {
+const UserProfile = () => {
   const navigate = useNavigate();
   const { user, signOut, loading, isAuthenticated } = useAuthContext();
   const { toast } = useToast();
@@ -39,6 +39,12 @@ const UserProfile: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
+
+  const isProfileComplete = useMemo(() => {
+    return (
+      profile.full_name.trim() && profile.phone.trim() && profile.address.trim()
+    );
+  }, [profile]);
 
   const { register, handleSubmit, reset, watch, setValue } =
     useForm<ProfileFormValues>({
@@ -56,46 +62,48 @@ const UserProfile: React.FC = () => {
 
     const loadProfile = async () => {
       setLoadingProfile(true);
+
       try {
-        const savedProfile = localStorage.getItem("user_profile");
-        if (savedProfile) {
-          const parsed = JSON.parse(savedProfile);
-
-          if (isMounted) {
-            setProfile(parsed);
-            reset(parsed);
-            setLoadingProfile(false);
-          }
-          return;
-        }
-
         const { data, error } = await supabase
           .from("profiles")
-          .select("*")
+          .select("full_name, phone, address, avatar_url")
           .eq("id", user.id)
           .single();
 
         if (error) throw error;
 
         const loadedProfile: ProfileFormValues = {
-          full_name: data.full_name ?? "",
-          phone: data.phone ?? "",
-          address: data.address ?? "",
-          avatar_url: data.avatar_url ?? "",
+          full_name: data?.full_name ?? "",
+          phone: data?.phone ?? "",
+          address: data?.address ?? "",
+          avatar_url: data?.avatar_url ?? "",
         };
 
-        if (isMounted) {
-          setProfile(loadedProfile);
-          reset(loadedProfile);
-          localStorage.setItem("user_profile", JSON.stringify(loadedProfile));
-          setLoadingProfile(false);
-        }
-      } catch (err: unknown) {
+        if (!isMounted) return;
+
+        setProfile(loadedProfile);
+        reset(loadedProfile);
+
+        const isIncomplete =
+          !loadedProfile.full_name.trim() ||
+          !loadedProfile.phone.trim() ||
+          !loadedProfile.address.trim();
+
+        setIsEditing(isIncomplete);
+        localStorage.setItem("user_profile", JSON.stringify(loadedProfile));
+      } catch (err) {
         console.error("Failed to load profile", err);
-        if (isMounted) {
+
+        // fallback to cache ONLY on error
+        const cached = localStorage.getItem("user_profile");
+        if (cached && isMounted) {
+          const parsed = JSON.parse(cached);
+          setProfile(parsed);
+          reset(parsed);
           setIsEditing(true);
-          setLoadingProfile(false);
         }
+      } finally {
+        if (isMounted) setLoadingProfile(false);
       }
     };
 
