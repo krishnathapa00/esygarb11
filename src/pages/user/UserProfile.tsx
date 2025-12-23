@@ -168,6 +168,20 @@ const UserProfile = () => {
     [setValue, toast, user?.id]
   );
 
+  const approveReferrals = useCallback(async () => {
+    if (!user?.id) return;
+
+    try {
+      await supabase
+        .from("referral_uses")
+        .update({ approved: true })
+        .eq("user_id", user.id)
+        .eq("approved", false);
+    } catch (err) {
+      console.error("Failed to approve referral", err);
+    }
+  }, [user?.id]);
+
   // ------------------- Logout -------------------
   const handleLogout = useCallback(async () => {
     try {
@@ -198,6 +212,10 @@ const UserProfile = () => {
         setProfile(data);
         setIsEditing(false);
         localStorage.setItem("user_profile", JSON.stringify(data));
+
+        if (data.full_name.trim() && data.phone.trim() && data.address.trim()) {
+          await approveReferrals();
+        }
 
         toast({
           title: "Profile updated",
