@@ -389,6 +389,17 @@ const UserProfile = () => {
                         type="button"
                         variant="outline"
                         onClick={() => {
+                          // 🚫 Prevent exiting edit mode if profile is incomplete
+                          if (!isProfileComplete) {
+                            toast({
+                              title: "Profile incomplete",
+                              description:
+                                "Please complete your profile before leaving this page.",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+
                           reset(profile);
                           setIsEditing(false);
                         }}
