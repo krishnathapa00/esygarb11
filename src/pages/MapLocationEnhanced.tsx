@@ -161,10 +161,10 @@ const MapLocationEnhanced = () => {
     setIsWithinRange(isInside);
 
     if (!isInside) {
-      // showToast(
-      //   "Sorry, we currently do not deliver to this location.",
-      //   "error"
-      // );
+      toast({
+        title: "Sorry, we currently do not deliver to this location.",
+        variant: "destructive",
+      });
     }
 
     return isInside;
@@ -201,7 +201,10 @@ const MapLocationEnhanced = () => {
       reverseGeocode(lat, lng);
 
       if (!isInside) {
-        // showToast("Sorry! You're outside our delivery area.", "error");
+        toast({
+          title: "Sorry! You're outside our delivery area.",
+          variant: "destructive",
+        });
       }
     } catch (error: any) {
       toast({
@@ -470,4 +473,3 @@ const MapLocationEnhanced = () => {
 };
 
 export default MapLocationEnhanced;
-
