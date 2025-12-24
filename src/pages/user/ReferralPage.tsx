@@ -24,8 +24,6 @@ const ReferralPage = () => {
   const [referralCodeId, setReferralCodeId] = useState<number | null>(null);
   const [walletBalance, setWalletBalance] = useState(0);
 
-  const [referralsCount, setReferralsCount] = useState(0);
-  const [pendingRewards, setPendingRewards] = useState(0);
   const [earnedRewards, setEarnedRewards] = useState(0);
 
   const [copied, setCopied] = useState(false);
@@ -40,68 +38,52 @@ const ReferralPage = () => {
   const handleApplyReferral = async () => {
     if (!inputCode.trim()) {
       toast({
-        title: "Enter a code",
-        description: "Please enter a referral code.",
+        title: "Enter a referral code",
         variant: "destructive",
       });
       return;
     }
 
-    // Check if code exists
-    const { data: ref, error } = await supabase
-      .from("referral_codes")
-      .select("id, user_id")
-      .eq("code", inputCode.trim())
-      .single();
+    const deviceId =
+      localStorage.getItem("device_id") ??
+      (() => {
+        const id = crypto.randomUUID();
+        localStorage.setItem("device_id", id);
+        return id;
+      })();
 
-    if (error || !ref) {
-      // Show invalid code message
-      toast({
-        title: "Invalid Referral Code",
-        description: "No such referral code found.",
-        variant: "destructive",
-      });
+    const session = (await supabase.auth.getSession()).data.session;
+    if (!session?.access_token) {
+      toast({ title: "Please login first", variant: "destructive" });
       return;
     }
 
-    if (ref.user_id === userId) {
-      toast({
-        title: "Invalid Referral Code",
-        description: "You cannot use your own referral code.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Check if user already applied a code
-    const { data: existing } = await supabase
-      .from("referral_uses")
-      .select("*")
-      .eq("user_id", userId)
-      .single();
-
-    if (existing) {
-      toast({
-        title: "Already Applied",
-        description: "You have already used a referral code.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Apply referral
-    await supabase.from("referral_uses").insert({
-      referral_code_id: ref.id,
-      user_id: userId,
-      approved: false,
+    const { data, error } = await supabase.functions.invoke("apply-referral", {
+      body: {
+        referralCode: inputCode.trim(),
+        deviceId,
+      },
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
     });
 
+    if (error || !data?.success) {
+      toast({
+        title: "Invalid referral code",
+        description:
+          data?.message ||
+          "This code is invalid, already used, or not eligible.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setAppliedReferralCode(inputCode.trim().toUpperCase());
     toast({
-      title: "Referral Code Applied",
-      description: `You applied code: ${inputCode.trim()}`,
+      title: "Congratulations!",
+      description: "Referral code applied successfully.",
     });
-
-    setAppliedReferralCode(inputCode.trim());
   };
 
   useEffect(() => {
@@ -174,12 +156,8 @@ const ReferralPage = () => {
         .select("*")
         .eq("referral_code_id", codeId);
 
-      const total = uses?.length || 0;
       const approved = uses?.filter((u) => u.approved).length || 0;
-
-      setReferralsCount(total);
       setEarnedRewards(approved);
-      setPendingRewards(total - approved);
 
       setLoading(false);
     };
@@ -259,54 +237,47 @@ const ReferralPage = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8 space-y-10">
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          <StatCard
-            icon={<Users className="text-white" />}
-            label="Friends Referred"
-            value={referralsCount}
-            color="bg-primary"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Stat Card */}
           <StatCard
             icon={<Gift className="text-white" />}
-            label="Rewards Earned"
+            label="Total Rewards Earned"
             value={`Rs ${walletBalance}`}
             color="bg-green-500"
           />
-          <StatCard
-            icon={<Clock className="text-white" />}
-            label="Pending Rewards"
-            value={pendingRewards}
-            color="bg-yellow-500"
-          />
-        </div>
 
-        <Card className="shadow-lg rounded-xl border-0 overflow-hidden mb-6">
-          <CardContent className="p-6 space-y-4">
-            <h2 className="text-lg font-bold">Have a Referral Code?</h2>
-            {appliedReferralCode ? (
-              <p className="text-green-600 font-medium">
-                ✅ You applied code:{" "}
-                <span className="font-mono">{appliedReferralCode}</span>
-              </p>
-            ) : (
-              <div className="flex gap-3 flex-col sm:flex-row">
-                <input
-                  type="text"
-                  placeholder="Enter referral code"
-                  value={inputCode}
-                  onChange={(e) => setInputCode(e.target.value)}
-                  className="flex-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
-                <Button
-                  className="w-full sm:w-auto bg-gradient-to-r from-primary to-accent text-white font-semibold"
-                  onClick={handleApplyReferral}
-                >
-                  Apply
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          {/* Apply Referral Card */}
+          <Card className="shadow-lg rounded-xl border-0 overflow-hidden">
+            <CardContent className="p-6 space-y-4 h-full flex flex-col justify-between">
+              <h2 className="text-lg font-bold">Have a Referral Code?</h2>
+
+              {appliedReferralCode ? (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-green-700 text-sm">
+                  🎉 <strong>Congratulations!</strong>
+                  <br />
+                  You applied code{" "}
+                  <span className="font-mono">{appliedReferralCode}</span>
+                </div>
+              ) : (
+                <div className="flex gap-3 flex-col sm:flex-row">
+                  <input
+                    type="text"
+                    placeholder="Enter referral code"
+                    value={inputCode}
+                    onChange={(e) => setInputCode(e.target.value.toUpperCase())}
+                    className="flex-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  <Button
+                    className="w-full sm:w-auto bg-gradient-to-r from-primary to-accent text-white font-semibold"
+                    onClick={handleApplyReferral}
+                  >
+                    Apply
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Referral Code Card */}
         <ReferralCodeCard
