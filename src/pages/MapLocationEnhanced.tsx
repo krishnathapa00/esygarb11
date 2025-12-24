@@ -9,7 +9,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuthContext } from "@/contexts/AuthProvider";
 import { DELIVERY_AREA_COORDS } from "@/data/deliveryConsts";
 import { detectLocation } from "@/utils/detectUserLocation";
-import { showToast } from "@/components/shared";
 
 const GOOGLE_MAPS_API_KEY = "AIzaSyADxM5y7WrXu3BRJ_hJQZhh6FLXWyO3E1g";
 
@@ -162,10 +161,10 @@ const MapLocationEnhanced = () => {
     setIsWithinRange(isInside);
 
     if (!isInside) {
-      showToast(
-        "Sorry, we currently do not deliver to this location.",
-        "error"
-      );
+      // showToast(
+      //   "Sorry, we currently do not deliver to this location.",
+      //   "error"
+      // );
     }
 
     return isInside;
@@ -202,7 +201,7 @@ const MapLocationEnhanced = () => {
       reverseGeocode(lat, lng);
 
       if (!isInside) {
-        showToast("Sorry! You're outside our delivery area.", "error");
+        // showToast("Sorry! You're outside our delivery area.", "error");
       }
     } catch (error: any) {
       toast({
@@ -471,4 +470,3 @@ const MapLocationEnhanced = () => {
 };
 
 export default MapLocationEnhanced;
-
