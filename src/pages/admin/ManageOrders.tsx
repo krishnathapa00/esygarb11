@@ -23,7 +23,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
-import { showToast } from "@/components/shared";
 
 const ManageOrders = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -68,7 +67,10 @@ const ManageOrders = () => {
         { event: "INSERT", schema: "public", table: "orders" },
         (payload) => {
           setOrders((prev) => [payload.new, ...prev]);
-          showToast(`New order placed: #${payload.new.order_number}`, "info");
+          toast({
+            title: `New order placed: #${payload.new.order_number}`,
+            variant: "default",
+          });
         }
       )
       .on(
@@ -78,7 +80,10 @@ const ManageOrders = () => {
           setOrders((prev) =>
             prev.map((o) => (o.id === payload.new.id ? payload.new : o))
           );
-          showToast(`Order #${payload.new.order_number} updated`, "info");
+          toast({
+            title: `Order #${payload.new.order_number} updated`,
+            variant: "default",
+          });
         }
       )
       .subscribe();
