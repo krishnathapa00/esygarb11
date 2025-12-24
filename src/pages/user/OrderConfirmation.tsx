@@ -6,7 +6,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 import { handleInvoiceGeneration } from "@/services/generateInvoicePDF";
-import { Header, showToast, WhatsappBanner } from "@/components/shared";
+import { Header, WhatsappBanner } from "@/components/shared";
+import { toast } from "@/hooks/use-toast";
 
 declare global {
   interface Window {
@@ -107,12 +108,17 @@ const OrderConfirmation = () => {
 
         if (error) throw error;
 
-        showToast("Your order has been cancelled successfully.", "success");
+        toast({
+          title: "Your order has been cancelled successfully.",
+          variant: "default",
+        });
 
         setIsCancelled(true);
       } catch (error) {
-        console.error("Error cancelling order:", error);
-        showToast("Failed to cancel order. Please try again.", "error");
+        toast({
+          title: "Failed to cancel order. Please try again.",
+          variant: "destructive",
+        });
       }
     }
   };
