@@ -19,7 +19,6 @@ import {
   Phone,
   AlertTriangle,
 } from "lucide-react";
-import { showToast, useSetGlobalToast } from "@/components/shared";
 
 const DeliveryDashboard = () => {
   const { user } = useAuth();
@@ -42,9 +41,6 @@ const DeliveryDashboard = () => {
       });
     }
   };
-
-  // Initialize global toast
-  useSetGlobalToast();
 
   // Refresh data when window regains focus
   useRefreshOnWindowFocus(["orders", "earnings", "kyc-status"]);
@@ -137,10 +133,12 @@ const DeliveryDashboard = () => {
     const savedPermission = localStorage.getItem("notificationPermission");
 
     if (savedPermission !== "granted") {
-      showToast(
-        "Notifications are not enabled. Please enable notifications for real-time updates.",
-        "info"
-      );
+      toast({
+        title:
+          "Notifications are not enabled. Please enable notifications for real-time updates.",
+        variant: "default",
+      });
+
       return;
     }
 
