@@ -109,34 +109,41 @@ const AuthHybrid = () => {
 
       setIsOtpModalOpen(false);
 
-      /** ---- REFERRAL CODE LOGIC FOR NEW USERS ---- */
+      /** ---- REFERRAL CODE LOGIC ---- */
+
+      const {
+        data: { user: freshUser },
+      } = await supabase.auth.getUser();
+
+      if (!freshUser) return;
+
       const referralCode = localStorage.getItem("referral_code");
+      if (!referralCode) return;
 
-      if (referralCode && user) {
-        const { data: ref, error: codeError } = await supabase
-          .from("referral_codes")
-          .select("id")
-          .eq("code", referralCode)
-          .single();
-
-        if (ref?.id) {
-          // Check if this user is new (no existing referral_uses)
-          const { data: existingUse } = await supabase
-            .from("referral_uses")
-            .select("*")
-            .eq("user_id", user.id)
-            .single();
-
-          if (!existingUse) {
-            await supabase.from("referral_uses").insert({
-              referral_code_id: ref.id,
-              user_id: user.id,
-              approved: false, // pending until profile complete
-            });
-            localStorage.removeItem("referral_code");
-          }
-        }
+      let deviceId = localStorage.getItem("device_id");
+      if (!deviceId) {
+        deviceId = crypto.randomUUID();
+        localStorage.setItem("device_id", deviceId);
       }
+
+      // Invoke the backend function with both token and deviceId
+      const { error: referralError } = await supabase.functions.invoke(
+        "apply-referral",
+        {
+          body: { referralCode, deviceId },
+          headers: { Authorization: `Bearer ${freshUser?.id}` },
+        }
+      );
+
+      if (referralError) {
+        toast({
+          title: "Referral Error",
+          description: referralError.message || "Could not apply referral",
+          variant: "destructive",
+        });
+      }
+
+      localStorage.removeItem("referral_code");
     } catch {
       toast({
         title: "Unexpected Error",
