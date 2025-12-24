@@ -40,21 +40,21 @@ const ProductCard = ({
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
           {product.discount && (
-            <Badge className="absolute top-2 left-2 bg-red-500 hover:bg-red-500 text-white text-xs font-medium px-1.5 py-0.5 rounded">
+            <Badge className="absolute top-2 left-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded">
               {product.discount}% OFF
             </Badge>
           )}
-          <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm rounded px-1.5 py-0.5">
-            <span className="text-xs font-medium text-green-600">
+          <div className="absolute top-1 right-1 bg-white/90 backdrop-blur-sm rounded px-1 py-0.5">
+            <span className="text-[9px] sm:text-xs font-medium text-green-600">
               {product.deliveryTime}
             </span>
           </div>
         </div>
       </Link>
 
-      <div className="p-3 space-y-2">
+      <div className="p-2 space-y-2">
         <Link to={`/product/${product.id}`}>
-          <h3 className="font-medium text-gray-900 text-sm leading-tight line-clamp-2 hover:text-green-600 transition-colors">
+          <h3 className="font-medium text-gray-900 text-[10px] sm:text-sm leading-tight line-clamp-2 hover:text-green-600 transition-colors">
             {product.name}
           </h3>
         </Link>
@@ -62,22 +62,21 @@ const ProductCard = ({
         <p className="text-xs text-gray-500">{product.weight}</p>
 
         {/* Price and Add Button Row */}
-        <div className="flex items-center justify-between pt-1">
-          {/* Left side - Price */}
-          <div className="flex flex-col leading-tight">
-            <span className="font-bold text-gray-900 text-sm">
+        <div className="flex flex-wrap items-center justify-between gap-1 pt-1">
+          {/* Price */}
+          <div className="flex flex-col leading-tight flex-1 min-w-0">
+            <span className="font-bold text-xs sm:text-sm text-gray-900 truncate">
               Rs{product.price}
             </span>
             {product.price > 0 && product.originalPrice && (
-              <span className="text-xs text-gray-400 line-through">
+              <span className="text-[10px] sm:text-xs text-gray-400 line-through truncate">
                 Rs{product.originalPrice}
               </span>
             )}
           </div>
 
-          {/* Right side - Add/Quantity Button */}
-          {/* Right side - Add/Quantity Button */}
-          <div className="flex-shrink-0 min-w-[60px] sm:min-w-[70px]">
+          {/* Add / Quantity Button */}
+          <div className="flex-shrink-0 w-[60px] sm:w-[70px]">
             {product.stock_quantity === 0 ? (
               <span className="text-red-600 text-[10px] sm:text-xs font-semibold">
                 Out of Stock
@@ -89,8 +88,8 @@ const ProductCard = ({
                   onAddToCart(product);
                 }}
                 className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 
-       text-white border-0 text-[10px] sm:text-xs font-semibold 
-       h-7 sm:h-7 px-2 sm:px-2 rounded-lg 
+       text-white text-[10px] sm:text-xs font-semibold 
+       h-6 sm:h-7 px-2 sm:px-2 rounded-lg 
        transition-all duration-200 shadow-sm hover:shadow-md w-full"
               >
                 ADD
