@@ -1,9 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/AuthProvider";
 import { CartProvider } from "@/contexts/CartContext";
-import { ToastProvider, useSetGlobalToast } from "@/components/shared";
 import ErrorBoundary from "@/components/shared/ErrorBoundary";
 import { useActivityTracker } from "@/hooks/useActivityTracker";
 import { useSessionPersistence } from "@/hooks/useSessionPersistence";
@@ -78,7 +77,6 @@ import {
 } from "./pages/admin";
 
 import { useRequireCompleteProfile } from "./hooks/useRequireCompleteProfile";
-import DeviceIdUpdater from "./utils/detectUserDevice";
 
 // Optimized QueryClient configuration
 const queryClient = new QueryClient({
@@ -106,7 +104,6 @@ const queryClient = new QueryClient({
 });
 
 const AppContent = () => {
-  useSetGlobalToast();
   useActivityTracker();
   useSessionPersistence();
   useRequireCompleteProfile();
@@ -365,13 +362,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <DeviceIdUpdater />
         <CartProvider>
           <Router>
-            <ToastProvider>
-              <AppContent />
-              <Toaster />
-            </ToastProvider>
+            <AppContent />
+            <Toaster />
           </Router>
         </CartProvider>
       </AuthProvider>
