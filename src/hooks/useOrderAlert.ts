@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { showToast } from "@/components/shared";
+import { toast } from "./use-toast";
 
 const playAlertSound = () => {
   const audio = new Audio("/sounds/notification.wav");
@@ -19,7 +19,10 @@ export const useOrderAlert = (onNewOrder?: () => void) => {
         { event: "INSERT", schema: "public", table: "orders" },
         (payload) => {
           playAlertSound();
-          showToast(`New order placed: #${payload.new.order_number}`, "info");
+          toast({
+            title: `New order placed: #${payload.new.order_number}`,
+            variant: "default",
+          });
           if (onNewOrder) onNewOrder();
         }
       )
