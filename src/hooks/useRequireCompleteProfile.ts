@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuthContext } from "@/contexts/AuthProvider";
 import { fetchUserProfile } from "@/services/profileService";
-import { showToast } from "@/components/shared";
+import { toast } from "./use-toast";
 
 export const useRequireCompleteProfile = () => {
   const { user, loading } = useAuthContext();
@@ -33,10 +33,11 @@ export const useRequireCompleteProfile = () => {
 
         if (isIncomplete) {
           if (!hasShownToastRef.current) {
-            showToast(
-              "Please complete your profile before proceeding.",
-              "error"
-            );
+            toast({
+              title: "Please complete your profile before proceeding.",
+              variant: "destructive",
+            });
+
             hasShownToastRef.current = true;
           }
 
