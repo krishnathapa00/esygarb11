@@ -12,7 +12,6 @@ import {
   ServiceUnavailableMessage,
 } from "@/components/shared";
 import { ReferralPopup } from "@/components/user";
-import OutageModal from "./user/Outage";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -23,6 +22,7 @@ const Index = () => {
   // const [showOutageModal, setShowOutageModal] = useState(true);
 
   const { data: products = [], isLoading } = useProducts();
+
   const { user } = useAuthContext();
   const navigate = useNavigate();
 
@@ -34,10 +34,6 @@ const Index = () => {
       setIsReferralOpen(true);
     }, 500);
   }, []);
-
-  const handleLoginRequired = () => {
-    navigate("/auth");
-  };
 
   useEffect(() => {
     document.body.classList.add("with-search-bar");
@@ -52,8 +48,11 @@ const Index = () => {
   };
 
   const filteredProducts = useMemo(() => {
-    if (!searchQuery.trim()) return products;
-    return products.filter((p) =>
+    const inStockProducts = products.filter((p) => p.stock_quantity > 0);
+
+    if (!searchQuery.trim()) return inStockProducts;
+
+    return inStockProducts.filter((p) =>
       p.name?.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [products, searchQuery]);
