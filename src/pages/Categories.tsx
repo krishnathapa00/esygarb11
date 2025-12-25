@@ -19,7 +19,6 @@ const AllCategories = () => {
   const { data: categories = [], isLoading } = useQuery<Category[]>({
     queryKey: ["categories"],
     queryFn: async () => {
-      // Fetch all categories
       const { data: cats, error: catError } = await supabase
         .from("categories")
         .select("*")
@@ -27,28 +26,25 @@ const AllCategories = () => {
 
       if (catError) throw catError;
 
-      // product counts grouped by category_id
       const { data: counts, error: countError } = await supabase
         .from("products")
-        .select("category_id", { count: "exact", head: false })
-        .eq("is_active", true);
+        .select("category_id, count:category_id")
+        .eq("is_active", true)
+        .gt("stock_quantity", 0);
 
       if (countError) throw countError;
 
-      // Aggregate counts per category
       const countsMap: Record<number, number> = {};
-      counts?.forEach((p: any) => {
-        countsMap[p.category_id] = (countsMap[p.category_id] || 0) + 1;
+      counts?.forEach((row) => {
+        countsMap[row.category_id] = (countsMap[row.category_id] || 0) + 1;
       });
 
-      // Map counts into categories
-      const categoriesWithCounts = cats.map((cat) => ({
+      return cats.map((cat) => ({
         ...cat,
         product_count: countsMap[cat.id] || 0,
       }));
-
-      return categoriesWithCounts;
     },
+
     // Categories and counts rarely change - cache for 10 minutes
     staleTime: 10 * 60 * 1000,
     gcTime: 20 * 60 * 1000,
