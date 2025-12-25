@@ -62,9 +62,9 @@ const ProductCard = ({
         <p className="text-xs text-gray-500">{product.weight}</p>
 
         {/* Price and Add Button Row */}
-        <div className="flex flex-wrap items-center justify-between gap-1 pt-1">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 pt-1">
           {/* Price */}
-          <div className="flex flex-col leading-tight flex-1 min-w-0">
+          <div className="flex flex-col leading-tight">
             <span className="font-bold text-xs sm:text-sm text-gray-900 truncate">
               Rs{product.price}
             </span>
