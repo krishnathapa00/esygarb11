@@ -96,9 +96,9 @@ const SubCategoriesPage = () => {
 
   // Filter products based on search and subcategory
   const filteredProducts = useMemo(() => {
-    let filtered = products;
+    let filtered = products.filter((product) => product.stock_quantity > 0);
 
-    // Filter by subcategory if selected
+    // Filter by subcategory
     if (selectedSubCategory) {
       filtered = filtered.filter(
         (product) => product.subcategory_id === selectedSubCategory
@@ -286,4 +286,3 @@ const SubCategoriesPage = () => {
 };
 
 export default SubCategoriesPage;
-
