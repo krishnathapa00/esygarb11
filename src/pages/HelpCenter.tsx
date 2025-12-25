@@ -130,7 +130,7 @@ const HelpCenter = () => {
               <CardContent className="text-center">
                 <p className="font-medium">+9779865053325 / +9779868293232</p>
                 <p className="text-sm text-muted-foreground">
-                  7 AM - 10 PM, 7 days a week
+                  5 PM - 9 PM, 7 days a week
                 </p>
               </CardContent>
             </Card>
