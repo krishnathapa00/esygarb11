@@ -190,13 +190,16 @@ const SubCategoriesPage = () => {
                       : "text-gray-700 hover:bg-gray-50"
                   }`}
                 >
-                  All Products ({products.length})
+                  All Products (
+                  {products.filter((p) => p.stock_quantity > 0).length})
                 </button>
 
                 {/* SubCategory List */}
                 {subCategories.map((subCategory) => {
                   const productCount = products.filter(
-                    (p) => p.subcategory_id === subCategory.id
+                    (p) =>
+                      p.subcategory_id === subCategory.id &&
+                      p.stock_quantity > 0
                   ).length;
                   return (
                     <button
