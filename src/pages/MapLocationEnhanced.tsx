@@ -99,7 +99,7 @@ const MapLocationEnhanced = () => {
       if (!mapContainer.current || !window.google) return;
 
       const mapInstance = new window.google.maps.Map(mapContainer.current, {
-        zoom: 10,
+        zoom: 13,
         center: MAP_CENTER,
         mapTypeControl: true,
       });
