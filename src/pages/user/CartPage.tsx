@@ -130,7 +130,6 @@ const CartPage = () => {
         .eq("user_id", user.id);
 
       if (error) {
-        console.error("Error fetching order count:", error);
         return;
       }
 
@@ -175,29 +174,16 @@ const CartPage = () => {
       return;
     }
 
-    if (!user) {
-      toast({
-        title: "Please login to apply promo code",
-        variant: "destructive",
-      });
-      return;
-    }
-
     try {
       const { data: promo, error } = await supabase
         .from("promo_codes")
         .select("*")
         .eq("code", promoCode.toUpperCase())
+        .eq("is_active", true)
         .single<PromoCode>();
 
       if (error || !promo) {
         toast({ title: "Invalid promo code", variant: "destructive" });
-        return;
-      }
-
-      // Check if promo is active
-      if (!promo.is_active) {
-        toast({ title: "This promo code is inactive", variant: "destructive" });
         return;
       }
 
@@ -216,15 +202,15 @@ const CartPage = () => {
         return;
       }
 
-      // ✅ Check if user has already used this promo
-      const { data: alreadyUsed } = await supabase
+      // CHECK IF USER HAS ALREADY USED THIS PROMO CODE
+      const { data: usage, error: usageError } = await supabase
         .from("promo_code_usage")
-        .select("id")
+        .select("*")
+        .eq("user_id", user?.id)
         .eq("promo_code_id", promo.id)
-        .eq("user_id", user.id)
-        .maybeSingle();
+        .single();
 
-      if (alreadyUsed) {
+      if (usage) {
         toast({
           title: "Promo code already used",
           description: "You can only use this promo code once.",
@@ -236,7 +222,6 @@ const CartPage = () => {
       promo.category_ids = promo.category_ids?.map(Number) || [];
       promo.product_ids = promo.product_ids?.map(Number) || [];
 
-      // Cart checks
       if (
         promo.category_ids.length > 0 &&
         !cart.some((item) => promo.category_ids.includes(item.category_id))
@@ -269,8 +254,9 @@ const CartPage = () => {
         return;
       }
 
-      // Calculate discount
+      // CALCULATE DISCOUNT
       let discount = 0;
+
       if (promo.discount_type === "percentage") {
         discount = (totalPrice * promo.discount_value) / 100;
         if (promo.max_discount_amount) {
@@ -279,16 +265,16 @@ const CartPage = () => {
       } else if (promo.discount_type === "fixed") {
         discount = promo.discount_value;
       }
+
       discount = Math.min(discount, totalPrice);
 
-      // Apply promo
+      // APPLY PROMO LOCALLY
       setAppliedPromo(promo);
       setPromoDiscount(discount);
       setIsManualPromo(true);
 
       toast({ title: `Promo code applied! Saved Rs ${discount}` });
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
       toast({ title: "Error applying promo code", variant: "destructive" });
     }
   };
@@ -354,13 +340,13 @@ const CartPage = () => {
           </h1>
         </div>
 
-        <div className="lg:grid lg:grid-cols-3 lg:gap-8">
+        <div className="container mx-auto px-4 lg:grid lg:grid-cols-3 lg:gap-8">
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-4">
             {cart.map((item) => (
               <div
                 key={item.id}
-                className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition"
+                className="bg-white rounded-2xl p-2 shadow-sm hover:shadow-md transition"
               >
                 <div className="flex items-center gap-4">
                   <img
