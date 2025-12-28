@@ -275,6 +275,11 @@ const Checkout = () => {
           order_id: order.id,
           discount_amount: promoDiscount,
         });
+
+        // increment usage count
+        await supabase.rpc("increment_promo_used_count", {
+          promo_id: appliedPromo.id,
+        });
       }
 
       // Insert items
@@ -523,4 +528,3 @@ const Checkout = () => {
 };
 
 export default Checkout;
-
