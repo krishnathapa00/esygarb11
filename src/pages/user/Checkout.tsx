@@ -23,6 +23,7 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { DELIVERY_AREA_COORDS } from "@/data/deliveryConsts";
 import { LocationDisplay } from "@/components/delivery";
+import { useToast } from "@/hooks/use-toast";
 
 // Utility Functions
 
@@ -70,6 +71,7 @@ const Checkout = () => {
   const [orderCount, setOrderCount] = useState(null);
 
   const [showProfileModal, setShowProfileModal] = useState(true);
+  const { toast } = useToast();
 
   // ---- Promo state restored from session ----
   const [promoDiscount, setPromoDiscount] = useState(() => {
@@ -248,6 +250,70 @@ const Checkout = () => {
       return alert("Your location is outside our delivery area.");
 
     try {
+      if (appliedPromo) {
+        const { data: promo, error } = await supabase
+          .from("promo_codes")
+          .select("used_count, usage_limit, is_active, expires_at")
+          .eq("id", appliedPromo.id)
+          .single();
+
+        if (error) {
+          toast({
+            title: "Promo validation failed",
+            description: error.message,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        if (!promo.is_active) {
+          toast({
+            title: "Promo code inactive",
+            description: "This promo code is no longer active.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        if (promo.expires_at && new Date(promo.expires_at) < new Date()) {
+          toast({
+            title: "Promo code expired",
+            description: "This promo code has expired.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        if (
+          promo.usage_limit !== null &&
+          promo.used_count >= promo.usage_limit
+        ) {
+          toast({
+            title: "Usage limit reached",
+            description: "This promo code has reached its usage limit.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // USER ALREADY USED CHECK
+        const { data: alreadyUsed } = await supabase
+          .from("promo_code_usage")
+          .select("id")
+          .eq("promo_code_id", appliedPromo.id)
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (alreadyUsed) {
+          toast({
+            title: "Promo already used",
+            description: "You can only use this promo code once.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
       const orderNumber = `ORD${Date.now()}`;
 
       const { data: order, error } = await supabase
