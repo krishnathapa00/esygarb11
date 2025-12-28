@@ -378,6 +378,8 @@ const Checkout = () => {
 
       const orderDetails = {
         orderId: orderNumber,
+        userId: user.id,
+        userEmail: user.email,
         items: cart,
         totalItems,
         totalAmount,
