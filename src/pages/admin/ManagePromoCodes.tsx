@@ -189,7 +189,11 @@ const ManagePromoCodes = () => {
       if (editingPromo) {
         const { error } = await supabase
           .from("promo_codes")
-          .update(payload)
+          .update({
+            ...payload,
+            used_count: editingPromo.used_count,
+          })
+
           .eq("id", editingPromo.id);
 
         if (error) throw error;
