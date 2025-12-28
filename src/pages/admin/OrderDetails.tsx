@@ -89,6 +89,7 @@ const OrderDetails = () => {
       orderId: string;
       status: string;
     }) => {
+      // Insert order status history
       if (status === "ready_for_pickup") {
         await supabase.from("order_status_history").insert({
           order_id: orderId,
@@ -96,12 +97,19 @@ const OrderDetails = () => {
           notes: "Order prepared and ready for pickup",
         });
       }
+
+      // Determine payment_status based on status
+      let payment_status: string | null = null;
+      if (status === "delivered") payment_status = "completed";
+      if (status === "cancelled") payment_status = null;
+
       const { data, error } = await supabase
         .from("orders")
-        .update({ status })
+        .update({ status, payment_status })
         .eq("id", orderId)
         .select()
         .single();
+
       if (error) throw error;
       return data;
     },
@@ -125,16 +133,19 @@ const OrderDetails = () => {
     mutationFn: async (orderId: string) => {
       const { data, error } = await supabase
         .from("orders")
-        .update({ status: "cancelled" })
+        .update({ status: "cancelled", payment_status: null })
         .eq("id", orderId)
         .select()
         .single();
+
       if (error) throw error;
+
       await supabase.from("order_status_history").insert({
         order_id: orderId,
         status: "cancelled",
         notes: "Order cancelled by admin upon user request",
       });
+
       return data;
     },
     onSuccess: () => {
