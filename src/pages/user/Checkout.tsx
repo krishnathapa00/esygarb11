@@ -70,7 +70,7 @@ const Checkout = () => {
   const [selectedPayment, setSelectedPayment] = useState("cod");
   const [orderCount, setOrderCount] = useState(null);
 
-  const [showProfileModal, setShowProfileModal] = useState(true);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const { toast } = useToast();
 
   // ---- Promo state restored from session ----
@@ -103,7 +103,12 @@ const Checkout = () => {
         .maybeSingle();
 
       if (error) {
-        console.error("delivery_config error:", error);
+        toast({
+          title: "Failed to load delivery config",
+          description: "Using default delivery fee.",
+          variant: "destructive",
+        });
+
         return { delivery_fee: 15 };
       }
 
@@ -143,6 +148,12 @@ const Checkout = () => {
     sessionStorage.setItem("promo_discount", promoDiscount);
   }, [promoDiscount]);
 
+  useEffect(() => {
+    if (needsProfileCompletion) {
+      setShowProfileModal(true);
+    }
+  }, [needsProfileCompletion]);
+
   // Load user location
 
   useEffect(() => {
@@ -168,7 +179,12 @@ const Checkout = () => {
         .single();
 
       if (error) {
-        console.error("Profile fetch error:", error);
+        toast({
+          title: "Failed to load profile",
+          description:
+            error.message || "Unable to fetch your profile information.",
+          variant: "destructive",
+        });
         return;
       }
 
@@ -379,8 +395,14 @@ const Checkout = () => {
 
       navigate("/order-confirmation", { state: orderDetails });
     } catch (err) {
-      console.error(err);
-      alert("Failed to place order.");
+      toast({
+        title: "Order failed",
+        description:
+          err instanceof Error
+            ? err.message
+            : "Failed to place your order. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -583,7 +605,7 @@ const Checkout = () => {
 
       {/* Modal */}
       <ProfileCompletionModal
-        isOpen={showProfileModal && needsProfileCompletion}
+        isOpen={showProfileModal}
         onClose={async (updated) => {
           setShowProfileModal(false);
           if (updated) updateProfile();
