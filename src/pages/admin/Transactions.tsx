@@ -264,7 +264,9 @@ const Transactions = () => {
                           transaction.payment_status
                         )}
                       >
-                        {transaction.payment_status || "pending"}
+                        {transaction.status === "cancelled"
+                          ? "-"
+                          : transaction.payment_status || "pending"}
                       </Badge>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -274,14 +276,10 @@ const Transactions = () => {
                             ? "bg-green-100 text-green-800"
                             : transaction.status === "pending"
                             ? "bg-yellow-100 text-yellow-800"
-                            : transaction.status === "cancelled"
-                            ? "bg-gray-100 text-gray-800"
                             : "bg-blue-100 text-blue-800"
                         }
                       >
-                        {transaction.status === "cancelled"
-                          ? "-"
-                          : transaction.status || "pending"}
+                        {transaction.status || "pending"}
                       </Badge>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
