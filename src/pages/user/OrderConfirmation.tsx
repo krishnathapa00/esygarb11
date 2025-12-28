@@ -82,7 +82,11 @@ const OrderConfirmation = () => {
     }
 
     if (isCancelled) {
-      console.log("Order is cancelled");
+      toast({
+        title: "Order Cancelled",
+        description: "This order has been cancelled.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -263,4 +267,3 @@ const OrderConfirmation = () => {
 };
 
 export default OrderConfirmation;
-
