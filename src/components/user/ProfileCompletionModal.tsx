@@ -53,10 +53,9 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
   });
 
   useEffect(() => {
-    const loadProfile = async () => {
-      if (!user) return;
+    if (!user) return;
 
-      // Get address only from localStorage or defaultAddress
+    const loadProfile = async () => {
       let addressFromStorage = "";
       const savedLocation = localStorage.getItem("esygrab_user_location");
       if (savedLocation) {
@@ -64,41 +63,36 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
           const locationData = JSON.parse(savedLocation);
           addressFromStorage = locationData.address || "";
         } catch (e) {
-          console.error("Error parsing saved location:", e);
+          console.error(e);
         }
       }
 
-      try {
-        // Fetch profile, but only full_name and phone
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("full_name, phone")
-          .eq("id", user.id)
-          .single();
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, phone, delivery_location")
+        .eq("id", user.id)
+        .single();
 
-        const profileData = {
-          full_name: profile?.full_name || "",
-          phone: profile?.phone || "",
-          email: user.email || "",
-          address: addressFromStorage || defaultAddress || "",
-        };
+      const profileData = {
+        full_name: profile?.full_name || "",
+        phone: profile?.phone || "",
+        email: user.email || "",
+        address:
+          profile?.delivery_location ||
+          addressFromStorage ||
+          defaultAddress ||
+          "",
+      };
 
-        setFormData(profileData);
-        setOriginalData(profileData);
-
-        const isNew = !profile?.full_name || !profile?.phone;
-        setIsNewUser(isNew);
-        setHasChanges(false);
-      } catch (error) {
-        console.error("Error loading profile:", error);
-        setIsNewUser(true);
-      }
+      setFormData(profileData);
+      setOriginalData(profileData);
+      setIsNewUser(
+        !profile?.full_name || !profile?.phone || !profile.delivery_location
+      );
     };
 
-    if (isOpen && user) {
-      loadProfile();
-    }
-  }, [isOpen, user, defaultAddress]);
+    loadProfile();
+  }, [user, defaultAddress]);
 
   // Check for changes
   useEffect(() => {
@@ -198,12 +192,7 @@ const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
   const showSaveButton = isNewUser || hasChanges;
 
   return (
-    <Dialog
-      open={isOpen}
-      onOpenChange={(open) => {
-        if (!open) onClose(false);
-      }}
-    >
+    <Dialog open={isOpen} onOpenChange={(open) => onClose(false)}>
       <DialogContent
         className="sm:max-w-md rounded-2xl"
         onPointerDownOutside={(e) => e.preventDefault()}
