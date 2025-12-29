@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Star, Truck, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,10 +13,9 @@ const ProductDetails = () => {
   const { cart, handleAddToCart } = useCartActions();
   const { data: products } = useProducts();
   const product = products?.find((p) => p.id.toString() === id);
+  const [quantity, setQuantity] = useState(1);
 
   const mainImageRef = useRef<HTMLImageElement>(null);
-
-  const quantity = 1; // Keeping quantity as 1 for now; you can implement quantity logic as required.
 
   if (!product) {
     return (
@@ -158,19 +157,27 @@ const ProductDetails = () => {
                   ) : (
                     <div className="flex items-center space-x-2">
                       <Button
-                        onClick={() => {}}
                         variant="outline"
                         size="sm"
                         className="w-8 h-8 p-0"
+                        onClick={() =>
+                          setQuantity((prev) => Math.max(1, prev - 1))
+                        }
                       >
                         -
                       </Button>
+
                       <span className="font-semibold mx-3">{quantity}</span>
+
                       <Button
-                        onClick={() => {}}
                         variant="outline"
                         size="sm"
                         className="w-8 h-8 p-0"
+                        onClick={() =>
+                          setQuantity((prev) =>
+                            Math.min(product.stock_quantity, prev + 1)
+                          )
+                        }
                       >
                         +
                       </Button>
