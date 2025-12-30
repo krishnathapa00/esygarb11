@@ -550,7 +550,7 @@ const CartPage = () => {
               <div className="hidden md:block space-y-2">
                 {!hasFreeDelivery && remainingForFreeDelivery > 0 && (
                   <p className="text-sm text-orange-600 text-center font-medium">
-                    To get free delivery add items worth Rs{" "}
+                    To Get Free Delivery Add Items Worth Rs{" "}
                     {remainingForFreeDelivery}
                   </p>
                 )}
@@ -568,7 +568,7 @@ const CartPage = () => {
             <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4 z-50 space-y-2">
               {!hasFreeDelivery && remainingForFreeDelivery > 0 && (
                 <p className="text-sm text-orange-600 text-center font-medium">
-                  To get free delivery add items worth Rs{" "}
+                  To Get Free Delivery Add Items Worth Rs{" "}
                   {remainingForFreeDelivery}
                 </p>
               )}
