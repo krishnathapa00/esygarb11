@@ -407,12 +407,16 @@ const OrderDetails = () => {
                   <span className="text-gray-600">Payment Status</span>
                   <Badge
                     variant={
-                      order.payment_status === "completed"
+                      order.status === "cancelled"
+                        ? "destructive"
+                        : order.payment_status === "completed"
                         ? "default"
                         : "secondary"
                     }
                   >
-                    {order.payment_status || "pending"}
+                    {order.status === "cancelled"
+                      ? "—"
+                      : order.payment_status ?? "pending"}
                   </Badge>
                 </div>
                 <div className="flex justify-between">
