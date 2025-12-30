@@ -71,7 +71,6 @@ const DeliverySettings = () => {
       }
     },
     onSuccess: () => {
-      const queryClient = useQueryClient();
       queryClient.invalidateQueries({ queryKey: ["delivery-config"] });
       // Also invalidate cart and checkout related queries to update delivery fees
       queryClient.invalidateQueries({ queryKey: ["cart"] });
@@ -92,6 +91,16 @@ const DeliverySettings = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (Number(deliveryFee) < 0 || Number(partnerCharge) < 0) {
+      toast({
+        title: "Invalid values",
+        description: "Delivery fee and partner charge cannot be negative.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     updateConfigMutation.mutate({ deliveryFee, partnerCharge });
   };
 
@@ -167,4 +176,3 @@ const DeliverySettings = () => {
 };
 
 export default DeliverySettings;
-
