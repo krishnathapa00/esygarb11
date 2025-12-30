@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-interface Category {
+export interface Category {
   id: number;
   name: string;
   slug: string;
@@ -17,7 +17,7 @@ interface Category {
 const AllCategories = () => {
   // Fetch categories from database with optimized caching
   const { data: categories = [], isLoading } = useQuery<Category[]>({
-    queryKey: ["categories"],
+    queryKey: ["categories-with-counts"],
     queryFn: async () => {
       const { data: cats, error: catError } = await supabase
         .from("categories")
@@ -28,13 +28,14 @@ const AllCategories = () => {
 
       const { data: counts, error: countError } = await supabase
         .from("products")
-        .select("category_id, count:category_id")
+        .select("category_id", { count: "exact" })
         .eq("is_active", true)
         .gt("stock_quantity", 0);
 
       if (countError) throw countError;
 
       const countsMap: Record<number, number> = {};
+
       counts?.forEach((row) => {
         countsMap[row.category_id] = (countsMap[row.category_id] || 0) + 1;
       });
@@ -163,4 +164,3 @@ const AllCategories = () => {
 };
 
 export default AllCategories;
-
