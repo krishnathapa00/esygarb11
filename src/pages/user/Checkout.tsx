@@ -130,8 +130,13 @@ const Checkout = () => {
     [cart]
   );
 
-  const deliveryFee =
-    orderCount === 0 || totalPrice > 200 ? 0 : baseDeliveryFee;
+  const FREE_DELIVERY_THRESHOLD = 200;
+
+  const hasFreeDelivery =
+    orderCount === 0 || totalPrice >= FREE_DELIVERY_THRESHOLD;
+
+  const deliveryFee = hasFreeDelivery ? 0 : baseDeliveryFee;
+
   const totalAmount = totalPrice + deliveryFee - promoDiscount;
 
   const needsProfileCompletion =
@@ -565,14 +570,13 @@ const Checkout = () => {
               )}
 
               {/* Free Delivery Messages */}
-              {orderCount !== null &&
-                (orderCount === 0 || totalPrice > 200) && (
-                  <p className="text-xs text-green-600 mt-1">
-                    {orderCount === 0
-                      ? "Enjoy free delivery on your first order!"
-                      : "Free delivery — order exceeds Rs200!"}
-                  </p>
-                )}
+              {orderCount !== null && hasFreeDelivery && (
+                <p className="text-xs text-green-600 mt-1">
+                  {orderCount === 0
+                    ? "Enjoy free delivery on your first order!"
+                    : "Free delivery on orders of Rs 200 or more!"}
+                </p>
+              )}
 
               <div className="border-t pt-2 mt-3">
                 <div className="flex justify-between font-semibold text-lg">
