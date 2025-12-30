@@ -114,8 +114,16 @@ const CartPage = () => {
 
   const baseDeliveryFee = deliveryConfig?.delivery_fee ?? 10;
 
-  const deliveryFee =
-    orderCount === 0 || totalPrice > 200 ? 0 : baseDeliveryFee;
+  const FREE_DELIVERY_THRESHOLD = 200;
+  const remainingForFreeDelivery =
+    totalPrice < FREE_DELIVERY_THRESHOLD
+      ? FREE_DELIVERY_THRESHOLD - totalPrice
+      : 0;
+
+  const hasFreeDelivery =
+    orderCount === 0 || totalPrice >= FREE_DELIVERY_THRESHOLD;
+
+  const deliveryFee = hasFreeDelivery ? 0 : baseDeliveryFee;
 
   const discountAmount = promoDiscount;
   const totalAmount = totalPrice + deliveryFee - discountAmount;
@@ -514,7 +522,7 @@ const CartPage = () => {
                     </p>
                   ) : (
                     <p className="text-xs text-green-600">
-                      Free delivery on orders above Rs200!
+                      Free delivery on orders of Rs 200 or more!
                     </p>
                   )
                 ) : (
@@ -538,7 +546,15 @@ const CartPage = () => {
               </div>
 
               {/* Desktop Button */}
-              <div className="hidden md:block">
+              {/* Desktop Button */}
+              <div className="hidden md:block space-y-2">
+                {!hasFreeDelivery && remainingForFreeDelivery > 0 && (
+                  <p className="text-sm text-orange-600 text-center font-medium">
+                    To get free delivery add items worth Rs{" "}
+                    {remainingForFreeDelivery}
+                  </p>
+                )}
+
                 <Button
                   onClick={handleProceedToCheckout}
                   className="w-full py-3 text-base font-medium bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-md"
@@ -549,7 +565,14 @@ const CartPage = () => {
             </div>
 
             {/* Mobile Sticky Checkout Bar */}
-            <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4 z-50">
+            <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4 z-50 space-y-2">
+              {!hasFreeDelivery && remainingForFreeDelivery > 0 && (
+                <p className="text-sm text-orange-600 text-center font-medium">
+                  To get free delivery add items worth Rs{" "}
+                  {remainingForFreeDelivery}
+                </p>
+              )}
+
               <Button
                 onClick={handleProceedToCheckout}
                 className="w-full py-3 text-base font-medium bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl shadow-md"
