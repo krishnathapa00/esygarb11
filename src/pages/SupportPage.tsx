@@ -97,7 +97,7 @@ const SupportPage = () => {
               <p className="text-gray-600 mb-4">
                 +977-9761158650
                 <br />
-                <span className="text-sm">7 AM - 10 PM, 7 days a week</span>
+                <span className="text-sm">9 AM - 9 PM, 7 days a week</span>
               </p>
               <a href="tel:+977-9761158650">
                 <Button className="bg-green-600 hover:bg-green-700">
@@ -133,7 +133,7 @@ const SupportPage = () => {
               <p className="text-gray-600 mb-4">
                 Chat with our support team
                 <br />
-                <span className="text-sm">Available 7 AM - 10 PM</span>
+                <span className="text-sm">Available 5 PM - 9 PM</span>
               </p>
               <Button variant="outline" disabled>
                 Coming Soon
@@ -151,8 +151,8 @@ const SupportPage = () => {
                 Support Hours
               </h4>
               <p className="text-green-700 text-sm">
-                Our customer support team is available 7 days a week from 7:00
-                AM to 10:00 PM. For urgent issues outside these hours, please
+                Our customer support team is available 7 days a week from 9:00
+                AM to 9:00 PM. For urgent issues outside these hours, please
                 email us and we'll respond as soon as possible.
               </p>
             </div>
@@ -164,4 +164,3 @@ const SupportPage = () => {
 };
 
 export default SupportPage;
-
