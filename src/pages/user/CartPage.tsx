@@ -52,6 +52,10 @@ const CartPage = () => {
     0
   );
 
+  // useEffect(() => {
+  //   window.scrollTo(0, 0);
+  // }, []);
+
   const validatePromoAgainstCart = (promo: PromoCode | null) => {
     if (!promo) return false;
 
@@ -498,7 +502,7 @@ const CartPage = () => {
             </div>
 
             {/* Order Summary */}
-            <div className="bg-white rounded-2xl p-5 shadow-sm sticky top-24">
+            <div className="bg-white rounded-2xl p-3 shadow-sm sticky top-24">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
                 Order Summary
               </h3>
@@ -545,7 +549,6 @@ const CartPage = () => {
                 </div>
               </div>
 
-              {/* Desktop Button */}
               {/* Desktop Button */}
               <div className="hidden md:block space-y-2">
                 {!hasFreeDelivery && remainingForFreeDelivery > 0 && (
