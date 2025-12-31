@@ -564,6 +564,28 @@ const CartPage = () => {
                 >
                   Proceed to Checkout
                 </Button>
+                <div className="mt-3 rounded-xl bg-gray-50 border border-gray-200 px-3 py-2 text-left">
+                  <p className="text-[11px] font-semibold text-gray-800 tracking-wide">
+                    CANCELLATION POLICY
+                  </p>
+
+                  <p className="text-[11px] text-gray-600 leading-snug mt-1">
+                    Orders can be cancelled within{" "}
+                    <span className="font-medium text-gray-800">3 minutes</span>{" "}
+                    of placement. After this, the order may already be
+                    processed.
+                  </p>
+
+                  <p className="text-[11px] text-gray-600 mt-1">
+                    Need help?{" "}
+                    <Link
+                      to="/support"
+                      className="font-medium text-green-600 hover:underline"
+                    >
+                      Contact EsyGrab Support
+                    </Link>
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -582,6 +604,27 @@ const CartPage = () => {
               >
                 Proceed to Checkout
               </Button>
+              <div className="mt-3 rounded-xl bg-gray-50 border border-gray-200 px-3 py-2 text-left">
+                <p className="text-[11px] font-semibold text-gray-800 tracking-wide">
+                  CANCELLATION POLICY
+                </p>
+
+                <p className="text-[11px] text-gray-600 leading-snug mt-1">
+                  Orders can be cancelled within{" "}
+                  <span className="font-medium text-gray-800">3 minutes</span>{" "}
+                  of placement. After this, the order may already be processed.
+                </p>
+
+                <p className="text-[11px] text-gray-600 mt-1">
+                  Need help?{" "}
+                  <Link
+                    to="/support"
+                    className="font-medium text-green-600 hover:underline"
+                  >
+                    Contact EsyGrab Support
+                  </Link>
+                </p>
+              </div>
             </div>
           </div>
         </div>
