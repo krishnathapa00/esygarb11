@@ -30,6 +30,7 @@ const MapLocationEnhanced = () => {
   const map = useRef<any>(null);
   const marker = useRef<any>(null);
 
+  const [userTyping, setUserTyping] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState<any[]>([]);
@@ -78,6 +79,7 @@ const MapLocationEnhanced = () => {
   };
 
   // ------------------- Load Map -------------------
+
   useEffect(() => {
     if (!mapContainer.current) return;
 
@@ -219,7 +221,8 @@ const MapLocationEnhanced = () => {
 
   // ------------------- Search Suggestions -------------------
   useEffect(() => {
-    if (!searchQuery.trim() || !window.google) {
+    // If no query or user is not typing, clear suggestions
+    if (!searchQuery.trim() || !userTyping || !window.google) {
       setSuggestions([]);
       return;
     }
@@ -228,6 +231,11 @@ const MapLocationEnhanced = () => {
     service.getPlacePredictions(
       { input: searchQuery, componentRestrictions: { country: "np" } },
       (predictions: any, status: any) => {
+        if (!searchQuery.trim()) {
+          setSuggestions([]);
+          return;
+        }
+
         if (
           status === window.google.maps.places.PlacesServiceStatus.OK &&
           predictions
@@ -238,7 +246,7 @@ const MapLocationEnhanced = () => {
         }
       }
     );
-  }, [searchQuery]);
+  }, [searchQuery, userTyping]);
 
   const handleSuggestionClick = (placeId: string, description: string) => {
     if (!window.google || !map.current) return;
@@ -257,6 +265,7 @@ const MapLocationEnhanced = () => {
 
     setSuggestions([]);
     setSearchQuery(description);
+    setUserTyping(false);
   };
 
   const handleSearchLocation = (address: string) => {
@@ -315,7 +324,6 @@ const MapLocationEnhanced = () => {
       });
 
       if (error) {
-        console.error("Error saving location to Supabase:", error);
         toast({
           title: "Error",
           description: "Could not update location on server.",
@@ -378,13 +386,24 @@ const MapLocationEnhanced = () => {
             <Input
               id="search"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                setSearchQuery(value);
+
+                if (value.trim() === "") {
+                  setUserTyping(false);
+                  setSuggestions([]);
+                } else {
+                  setUserTyping(true);
+                }
+              }}
               placeholder="Search for a place (e.g., New Baneshwor, Kathmandu)"
               className="flex-1"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
                   handleSearchLocation(searchQuery);
+                  setUserTyping(false);
                 }
               }}
             />
