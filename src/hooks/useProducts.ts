@@ -60,7 +60,7 @@ export const useProducts = () => {
           "https://via.placeholder.com/300x300?text=No+Image",
         image_urls: product.image_urls || [],
         weight: product.weight || "1 unit",
-        deliveryTime: product.delivery_time || "10 mins",
+        deliveryTime: product.delivery_time ?? "10 mins",
         category: product.categories?.name || "Unknown",
         categoryId: product.categories?.id ?? -1,
         categorySlug: product.categories?.slug || "Unknown",
@@ -72,9 +72,9 @@ export const useProducts = () => {
         isActive: product.is_active,
       })) as Product[];
     },
-    // Cache category products for 3 minutes
-    staleTime: 3 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
+    // Products change frequently but cache for 2 minutes
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 };
 
@@ -108,7 +108,7 @@ export const useProductsByCategory = (categoryId: number) => {
           product.image_url ||
           "https://via.placeholder.com/300x300?text=No+Image",
         weight: product.weight || "1 unit",
-        deliveryTime: product.delivery_time || "10 mins",
+        deliveryTime: product.delivery_time ?? "10 mins",
         category: product.categories?.name || "Unknown",
         stock_quantity: product.stock_quantity,
         rating: 4.5,
