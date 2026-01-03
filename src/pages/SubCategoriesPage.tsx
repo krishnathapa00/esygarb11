@@ -33,6 +33,7 @@ interface Product {
   subcategory_id: number;
   category_id: number;
   stock_quantity: number;
+  delivery_time?: string;
 }
 
 const SubCategoriesPage = () => {
@@ -236,7 +237,7 @@ const SubCategoriesPage = () => {
                     image: product.image_url || "/placeholder.svg",
                     weight: product.weight || "",
                     discount: product.discount,
-                    deliveryTime: "10 min",
+                    deliveryTime: product.delivery_time ?? "10 mins",
                     category: category?.name || "",
                     categoryId: product.category_id,
                     stock_quantity: product.stock_quantity,
