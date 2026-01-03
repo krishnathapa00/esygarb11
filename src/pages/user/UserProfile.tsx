@@ -385,9 +385,9 @@ const UserProfile = () => {
                       register={register}
                       required
                       pattern={{
-                        value: /^98\d{8}$/,
+                        value: /^9\d{9}$/,
                         message:
-                          "Phone number must start with 98 and be 10 digits",
+                          "Phone number must start with 9 and be 10 digits",
                       }}
                     />
                     <div className="flex flex-col gap-2">
