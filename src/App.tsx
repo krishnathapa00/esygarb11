@@ -78,6 +78,7 @@ import {
 
 import { useRequireCompleteProfile } from "./hooks/useRequireCompleteProfile";
 import AdminOutOfStock from "./pages/admin/AdminOutOfStock";
+import ScrollToTop from "./components/ScrollToTop";
 
 // Optimized QueryClient configuration
 const queryClient = new QueryClient({
@@ -374,6 +375,7 @@ function App() {
       <AuthProvider>
         <CartProvider>
           <Router>
+            <ScrollToTop />
             <AppContent />
             <Toaster />
           </Router>
