@@ -20,6 +20,7 @@ import AdminLayout from "./components/AdminLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 interface DashboardData {
   totalOrders: number;
@@ -40,6 +41,7 @@ const AdminDashboard = () => {
   const [customDate, setCustomDate] = useState<Date | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const getStartEndDates = useCallback(() => {
     const now = new Date();
@@ -275,9 +277,19 @@ const AdminDashboard = () => {
 
           {/* Inventory */}
           <Card>
-            <CardHeader>
-              <CardTitle>Inventory Alerts</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between gap-2">
+              <CardTitle className="text-base">Inventory Alerts</CardTitle>
+
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => navigate("/admin/out-of-stock")}
+                className="w-auto px-3 py-1 text-xs bg-red-600 hover:bg-red-700 text-white"
+              >
+                View Out of Stock
+              </Button>
             </CardHeader>
+
             <CardContent className="space-y-3">
               {data?.lowStockProducts.map((product) => (
                 <div
@@ -312,4 +324,3 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
-
