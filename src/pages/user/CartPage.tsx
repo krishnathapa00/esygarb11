@@ -352,7 +352,7 @@ const CartPage = () => {
           </h1>
         </div>
 
-        <div className="container mx-auto px-4 pb-20 lg:grid lg:grid-cols-3 lg:gap-8">
+        <div className="container mx-auto px-2 pb-20 lg:grid lg:grid-cols-3 lg:gap-8">
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-4">
             {cart.map((item) => (
@@ -360,7 +360,7 @@ const CartPage = () => {
                 key={item.id}
                 className="bg-white rounded-2xl p-2 shadow-sm hover:shadow-md transition"
               >
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 flex-shrink-0">
                   <img
                     src={item.image}
                     alt={item.name}
