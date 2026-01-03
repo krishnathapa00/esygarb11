@@ -352,7 +352,7 @@ const CartPage = () => {
           </h1>
         </div>
 
-        <div className="container mx-auto px-4 lg:grid lg:grid-cols-3 lg:gap-8">
+        <div className="container mx-auto px-4 pb-20 lg:grid lg:grid-cols-3 lg:gap-8">
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-4">
             {cart.map((item) => (
@@ -590,7 +590,7 @@ const CartPage = () => {
             </div>
 
             {/* Mobile Sticky Checkout Bar */}
-            <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4 z-50 space-y-2">
+            <div className="md:hidden bg-white border-t shadow-lg p-4 z-50 space-y-2">
               {!hasFreeDelivery && remainingForFreeDelivery > 0 && (
                 <p className="text-sm text-orange-600 text-center font-medium">
                   To Get Free Delivery Add Items Worth Rs{" "}
@@ -611,8 +611,8 @@ const CartPage = () => {
 
                 <p className="text-[11px] text-gray-600 leading-snug mt-1">
                   Orders can be cancelled within{" "}
-                  <span className="font-medium text-gray-800">1 minute</span>{" "}
-                  of placement. After this, the order may already be processed.
+                  <span className="font-medium text-gray-800">1 minute</span> of
+                  placement. After this, the order may already be processed.
                 </p>
 
                 <p className="text-[11px] text-gray-600 mt-1">
