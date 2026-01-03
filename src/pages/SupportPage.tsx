@@ -95,11 +95,11 @@ const SupportPage = () => {
                 Call Us
               </h4>
               <p className="text-gray-600 mb-4">
-                +977-9761158650
+                +977-9865053325
                 <br />
                 <span className="text-sm">9 AM - 9 PM, 7 days a week</span>
               </p>
-              <a href="tel:+977-9761158650">
+              <a href="tel:+977-9865053325">
                 <Button className="bg-green-600 hover:bg-green-700">
                   Call Now
                 </Button>
