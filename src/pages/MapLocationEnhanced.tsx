@@ -37,6 +37,7 @@ const MapLocationEnhanced = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [markerPosition, setMarkerPosition] = useState(MAP_CENTER);
   const [isWithinRange, setIsWithinRange] = useState(true);
+  const suppressAutocomplete = useRef(false);
 
   const deliveryPolygon = useRef<any>(null);
 
@@ -220,7 +221,11 @@ const MapLocationEnhanced = () => {
 
   // ------------------- Search Suggestions -------------------
   useEffect(() => {
-    if (!window.google || searchQuery.trim().length === 0) {
+    if (
+      suppressAutocomplete.current ||
+      !window.google ||
+      searchQuery.trim().length === 0
+    ) {
       setSuggestions([]);
       return;
     }
@@ -242,6 +247,8 @@ const MapLocationEnhanced = () => {
   }, [searchQuery]);
 
   const handleSuggestionClick = (placeId: string, description: string) => {
+    suppressAutocomplete.current = true;
+
     if (!window.google || !map.current) return;
 
     const service = new window.google.maps.places.PlacesService(map.current);
@@ -258,6 +265,10 @@ const MapLocationEnhanced = () => {
 
     setSuggestions([]);
     setSearchQuery(description);
+
+    requestAnimationFrame(() => {
+      suppressAutocomplete.current = false;
+    });
   };
 
   const handleSearchLocation = (address: string) => {
