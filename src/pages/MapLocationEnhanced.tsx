@@ -30,7 +30,6 @@ const MapLocationEnhanced = () => {
   const map = useRef<any>(null);
   const marker = useRef<any>(null);
 
-  const [userTyping, setUserTyping] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState<any[]>([]);
@@ -221,8 +220,7 @@ const MapLocationEnhanced = () => {
 
   // ------------------- Search Suggestions -------------------
   useEffect(() => {
-    // If no query or user is not typing, clear suggestions
-    if (!searchQuery.trim() || !userTyping || !window.google) {
+    if (!window.google || searchQuery.trim().length === 0) {
       setSuggestions([]);
       return;
     }
@@ -231,11 +229,6 @@ const MapLocationEnhanced = () => {
     service.getPlacePredictions(
       { input: searchQuery, componentRestrictions: { country: "np" } },
       (predictions: any, status: any) => {
-        if (!searchQuery.trim()) {
-          setSuggestions([]);
-          return;
-        }
-
         if (
           status === window.google.maps.places.PlacesServiceStatus.OK &&
           predictions
@@ -246,7 +239,7 @@ const MapLocationEnhanced = () => {
         }
       }
     );
-  }, [searchQuery, userTyping]);
+  }, [searchQuery]);
 
   const handleSuggestionClick = (placeId: string, description: string) => {
     if (!window.google || !map.current) return;
@@ -265,7 +258,6 @@ const MapLocationEnhanced = () => {
 
     setSuggestions([]);
     setSearchQuery(description);
-    setUserTyping(false);
   };
 
   const handleSearchLocation = (address: string) => {
@@ -391,10 +383,9 @@ const MapLocationEnhanced = () => {
                 setSearchQuery(value);
 
                 if (value.trim() === "") {
-                  setUserTyping(false);
                   setSuggestions([]);
+                  setSelectedLocation("");
                 } else {
-                  setUserTyping(true);
                 }
               }}
               placeholder="Search for a place (e.g., New Baneshwor, Kathmandu)"
@@ -403,7 +394,6 @@ const MapLocationEnhanced = () => {
                 if (e.key === "Enter") {
                   e.preventDefault();
                   handleSearchLocation(searchQuery);
-                  setUserTyping(false);
                 }
               }}
             />
@@ -420,7 +410,7 @@ const MapLocationEnhanced = () => {
             </Button>
           </div>
 
-          {suggestions.length > 0 && (
+          {suggestions.length > 0 && searchQuery.trim().length > 0 && (
             <div className="absolute z-10 bg-white border rounded w-full mt-1 shadow max-h-60 overflow-y-auto">
               {suggestions.map((s) => (
                 <div
