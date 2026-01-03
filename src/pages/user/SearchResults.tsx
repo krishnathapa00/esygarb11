@@ -2,8 +2,7 @@ import { useSearchParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { Header } from "@/components/shared";
 import ProductCard from "@/components/shared/ProductCard";
-import { useProducts } from "@/hooks/useProducts";
-import { Product } from "@/hooks/useProducts";
+import { Product, useProducts } from "@/hooks/useProducts";
 import { useCartActions } from "@/hooks/useCart";
 
 const SearchResults = () => {
@@ -23,17 +22,23 @@ const SearchResults = () => {
 
     const queryLower = searchQuery.toLowerCase();
 
+    // Exact matches first, must be in stock
     const exactMatches = products.filter(
-      (product: Product) => product.name.toLowerCase() === queryLower
+      (product: Product) =>
+        product.name.toLowerCase() === queryLower && product.inStock
     );
 
+    // Partial matches
     const otherMatches = products.filter(
       (product: Product) =>
-        product.name.toLowerCase().includes(queryLower) ||
-        product.subcategory?.toLowerCase().includes(queryLower) ||
-        product.description?.toLowerCase().includes(queryLower)
+        !exactMatches.includes(product) &&
+        product.inStock &&
+        (product.name.toLowerCase().includes(queryLower) ||
+          product.subcategory?.toLowerCase().includes(queryLower) ||
+          product.description?.toLowerCase().includes(queryLower))
     );
 
+    // Collect subcategories from exact + partial matches
     const matchedSubcategories = new Set(
       exactMatches
         .concat(otherMatches)
@@ -41,15 +46,19 @@ const SearchResults = () => {
         .filter(Boolean)
     );
 
+    // Include other products in the same subcategories, in stock only
     const expandedResults = products.filter(
       (product) =>
-        matchedSubcategories.has(product.subcategory) ||
-        exactMatches.includes(product)
+        product.inStock &&
+        !exactMatches.includes(product) &&
+        !otherMatches.includes(product) &&
+        matchedSubcategories.has(product.subcategory)
     );
 
     const sortedResults = [
       ...exactMatches,
-      ...expandedResults.filter((p) => !exactMatches.includes(p)),
+      ...otherMatches,
+      ...expandedResults,
     ];
 
     return sortedResults;
