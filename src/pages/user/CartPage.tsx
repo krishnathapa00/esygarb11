@@ -571,7 +571,7 @@ const CartPage = () => {
 
                   <p className="text-[11px] text-gray-600 leading-snug mt-1">
                     Orders can be cancelled within{" "}
-                    <span className="font-medium text-gray-800">3 minutes</span>{" "}
+                    <span className="font-medium text-gray-800">1 minute</span>{" "}
                     of placement. After this, the order may already be
                     processed.
                   </p>
@@ -611,7 +611,7 @@ const CartPage = () => {
 
                 <p className="text-[11px] text-gray-600 leading-snug mt-1">
                   Orders can be cancelled within{" "}
-                  <span className="font-medium text-gray-800">3 minutes</span>{" "}
+                  <span className="font-medium text-gray-800">1 minute</span>{" "}
                   of placement. After this, the order may already be processed.
                 </p>
 
