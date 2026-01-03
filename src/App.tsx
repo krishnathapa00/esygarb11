@@ -77,7 +77,6 @@ import {
 } from "./pages/admin";
 
 import { useRequireCompleteProfile } from "./hooks/useRequireCompleteProfile";
-import MapLocationTest from "./TestMapDelivery/MapLocationTest";
 import AdminOutOfStock from "./pages/admin/AdminOutofStock";
 
 // Optimized QueryClient configuration
