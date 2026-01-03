@@ -77,6 +77,8 @@ import {
 } from "./pages/admin";
 
 import { useRequireCompleteProfile } from "./hooks/useRequireCompleteProfile";
+import MapLocationTest from "./TestMapDelivery/MapLocationTest";
+import AdminOutOfStock from "./pages/admin/AdminOutofStock";
 
 // Optimized QueryClient configuration
 const queryClient = new QueryClient({
@@ -138,6 +140,7 @@ const AppContent = () => {
           <Route path="/order-history" element={<OrderHistory />} />
           <Route path="/profile" element={<UserProfile />} />
           <Route path="/map-location" element={<MapLocationEnhanced />} />
+          {/* <Route path="/map-location" element={<MapLocationTest />} /> */}
           <Route path="/waitlist" element={<Waitlist />} />
           <Route path="/help-center" element={<HelpCenter />} />
           <Route path="/returns-refunds" element={<ReturnsRefunds />} />
