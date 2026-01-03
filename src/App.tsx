@@ -77,7 +77,7 @@ import {
 } from "./pages/admin";
 
 import { useRequireCompleteProfile } from "./hooks/useRequireCompleteProfile";
-import AdminOutOfStock from "./pages/admin/AdminOutofStock";
+import AdminOutOfStock from "./pages/admin/AdminOutOfStock";
 
 // Optimized QueryClient configuration
 const queryClient = new QueryClient({
