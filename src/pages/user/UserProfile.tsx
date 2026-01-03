@@ -374,12 +374,21 @@ const UserProfile = () => {
                       name="full_name"
                       register={register}
                       required
+                      pattern={{
+                        value: /^[A-Za-z\s]+$/,
+                        message: "Full name should contain only letters",
+                      }}
                     />
                     <InputField
                       label="Phone Number"
                       name="phone"
                       register={register}
                       required
+                      pattern={{
+                        value: /^98\d{8}$/,
+                        message:
+                          "Phone number must start with 98 and be 10 digits",
+                      }}
                     />
                     <div className="flex flex-col gap-2">
                       <label
