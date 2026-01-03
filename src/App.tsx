@@ -231,6 +231,14 @@ const AppContent = () => {
             }
           />
           <Route
+            path="/admin/out-of-stock"
+            element={
+              <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
+                <AdminOutOfStock />
+              </RoleProtectedRoute>
+            }
+          />
+          <Route
             path="/admin/products"
             element={
               <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
