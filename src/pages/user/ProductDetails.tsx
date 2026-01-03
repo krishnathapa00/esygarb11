@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useProducts } from "@/hooks/useProducts";
 import { useCartActions } from "@/hooks/useCart";
 import { toast } from "@/hooks/use-toast";
-import { Header } from "@/components/shared";
+import { Header, ProductCard } from "@/components/shared";
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -16,6 +16,26 @@ const ProductDetails = () => {
   const [quantity, setQuantity] = useState(1);
 
   const mainImageRef = useRef<HTMLImageElement>(null);
+
+  const similarProducts = products
+    ?.filter(
+      (p) =>
+        p.subcategory === product.subcategory &&
+        p.id !== product.id &&
+        p.stock_quantity > 0
+    )
+    .slice(0, 10); // top 10 similar products
+
+  const getCartQuantity = (productId: number) => {
+    const item = cart.find((c) => c.id === productId);
+    return item ? item.quantity : 0;
+  };
+
+  const handleUpdateQuantity = (productId: number, quantity: number) => {
+    const item = cart.find((c) => c.id === productId);
+    if (!item) return;
+    handleAddToCart({ ...item, quantity }); // update quantity in cart
+  };
 
   if (!product) {
     return (
@@ -219,6 +239,31 @@ const ProductDetails = () => {
             </div>
           </div>
         </div>
+        {similarProducts && similarProducts.length > 0 && (
+          <div className="mt-10">
+            <h2 className="text-2xl font-bold mb-4">Similar Products</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+              {similarProducts.map((p) => (
+                <ProductCard
+                  key={p.id}
+                  product={p}
+                  cartQuantity={getCartQuantity(p.id)}
+                  onAddToCart={(product) =>
+                    handleAddToCart({
+                      id: product.id,
+                      name: product.name,
+                      price: product.price,
+                      image: product.image,
+                      weight: product.weight,
+                      quantity: 1,
+                    })
+                  }
+                  onUpdateQuantity={handleUpdateQuantity}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
