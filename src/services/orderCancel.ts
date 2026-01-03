@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-const CANCEL_WINDOW_MS = 3 * 60 * 1000;
+const CANCEL_WINDOW_MS = 1 * 60 * 1000;
 
 const getRemainingSeconds = (createdAt: string) => {
   const createdTime = new Date(createdAt).getTime();
