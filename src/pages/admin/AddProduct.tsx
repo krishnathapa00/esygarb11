@@ -448,9 +448,10 @@ const AddProduct = () => {
                 <CardContent className="space-y-4">
                   <div>
                     <Label htmlFor="delivery_time">
-                      Delivery Time Estimation
+                      Delivery Time Estimations
                     </Label>
                     <Select
+                      value={productData.delivery_time}
                       onValueChange={(value) =>
                         handleInputChange("delivery_time", value)
                       }
@@ -534,4 +535,3 @@ const AddProduct = () => {
 };
 
 export default AddProduct;
-
