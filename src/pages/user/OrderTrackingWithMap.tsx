@@ -74,7 +74,7 @@ const OrderTrackingWithMap = () => {
     const orderCreated = new Date(order.created_at).getTime();
     const now = Date.now();
     const diffMinutes = (now - orderCreated) / 1000 / 60;
-    return diffMinutes <= 2;
+    return diffMinutes <= 1;
   };
 
   const cancelOrder = async () => {
