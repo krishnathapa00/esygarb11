@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,35 +34,12 @@ const DeliveryDashboard = () => {
     audio.current = new Audio("/sounds/notification.wav");
   }, []);
 
-  useEffect(() => {
-    window.addEventListener("click", unlockAudio, { once: true });
-
-    return () => {
-      window.removeEventListener("click", unlockAudio);
-    };
-  }, []);
-
   const playNotificationSound = () => {
     if (audio.current) {
-      audio.current.play().catch(() => {
-        unlockAudio();
+      audio.current.play().catch((err) => {
+        console.error("Audio play failed:", err);
       });
     }
-  };
-
-  const unlockAudio = () => {
-    if (!audio.current) return;
-
-    audio.current.volume = 0;
-    audio.current
-      .play()
-      .then(() => {
-        audio.current.pause();
-        audio.current.currentTime = 0;
-        audio.current.volume = 1;
-        window.removeEventListener("click", unlockAudio);
-      })
-      .catch(() => {});
   };
 
   // Refresh data when window regains focus
@@ -89,8 +66,7 @@ const DeliveryDashboard = () => {
         `
         )
         .or(
-          `delivery_partner_id.eq.${user?.id},
-         status.eq.ready_for_pickup`
+          `delivery_partner_id.eq.${user?.id},status.in.(ready_for_pickup,confirmed,dispatched)`
         )
         .order("created_at", { ascending: false });
 
@@ -99,10 +75,6 @@ const DeliveryDashboard = () => {
     },
     enabled: !!user?.id,
   });
-
-  const fetchOrdersCallback = useCallback(() => {
-    fetchOrders();
-  }, [fetchOrders]);
 
   // Fetch earnings with React Query
   const { data: earnings = [] } = useQuery({
@@ -131,21 +103,18 @@ const DeliveryDashboard = () => {
       const { error } = await supabase
         .from("orders")
         .update(updateData)
-        .eq("id", orderId)
-        .is("delivery_partner_id", null)
-        .eq("status", "ready_for_pickup");
+        .eq("id", orderId);
 
       if (error) throw error;
       return orderId;
     },
-    onSuccess: (orderId) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders", user?.id] });
       toast({
         title: "Order Accepted",
         description:
           "Order has been assigned to you. Navigate to start delivery.",
       });
-      navigate(`/delivery-partner/navigate/${orderId}`);
     },
     onError: (error) => {
       console.error("Error accepting order:", error);
@@ -201,11 +170,14 @@ const DeliveryDashboard = () => {
           table: "orders",
         },
         (payload) => {
+          const newStatus = payload.new?.status;
+          const oldStatus = payload.old?.status;
+
           if (
-            payload.new?.status === "ready_for_pickup" &&
-            !payload.new?.delivery_partner_id
+            oldStatus !== "ready_for_pickup" &&
+            newStatus === "ready_for_pickup"
           ) {
-            fetchOrdersCallback();
+            fetchOrders();
             playNotificationSound();
             vibrateDevice();
             showPushNotification(payload.new);
@@ -220,11 +192,8 @@ const DeliveryDashboard = () => {
           table: "orders",
         },
         (payload) => {
-          if (
-            payload.new?.status === "ready_for_pickup" &&
-            !payload.new?.delivery_partner_id
-          ) {
-            fetchOrdersCallback();
+          if (payload.new?.status === "ready_for_pickup") {
+            fetchOrders();
             playNotificationSound();
             vibrateDevice();
             showPushNotification(payload.new);
@@ -322,6 +291,8 @@ const DeliveryDashboard = () => {
 
   const handleAcceptOrder = (orderId: string) => {
     acceptOrderMutation.mutate(orderId);
+    // Navigate to delivery map navigation page
+    navigate(`/delivery-partner/navigate/${orderId}`);
   };
 
   const rejectOrder = async (orderId: string) => {
@@ -334,8 +305,7 @@ const DeliveryDashboard = () => {
           status: "ready_for_pickup",
         })
         .eq("id", orderId)
-        .eq("delivery_partner_id", user?.id)
-        .eq("status", "ready_for_pickup");
+        .eq("delivery_partner_id", user?.id);
 
       if (error) throw error;
 
@@ -360,7 +330,7 @@ const DeliveryDashboard = () => {
     switch (status) {
       case "ready_for_pickup":
         return "bg-blue-100 text-blue-800";
-      case "dispatched": // accepted
+      case "accepted":
         return "bg-yellow-100 text-yellow-800";
       case "out_for_delivery":
         return "bg-orange-100 text-orange-800";
@@ -408,14 +378,18 @@ const DeliveryDashboard = () => {
     isOnline && kycStatus === "approved"
       ? orders.filter(
           (order) =>
-            order.status === "ready_for_pickup" && !order.delivery_partner_id
+            (order.status === "ready_for_pickup" ||
+              order.status === "confirmed" ||
+              order.status === "dispatched") &&
+            (!order.delivery_partner_id ||
+              order.delivery_partner_id === user?.id)
         )
       : [];
 
   const myActiveOrders = orders.filter(
     (order) =>
       order.delivery_partner_id === user.id &&
-      ["dispatched", "out_for_delivery"].includes(order.status)
+      !["delivered", "cancelled"].includes(order.status)
   );
 
   const recentDeliveries = orders
@@ -615,6 +589,7 @@ const DeliveryDashboard = () => {
         </div>
 
         {/* Available Orders - Only show when online and KYC approved */}
+        {/* Available Orders - Only show when online and KYC approved */}
         {isOnline && kycStatus === "approved" && (
           <Card>
             <CardHeader>
@@ -626,88 +601,105 @@ const DeliveryDashboard = () => {
             <CardContent>
               {availableOrders.length > 0 ? (
                 <div className="space-y-4">
-                  {availableOrders.map((order) => (
-                    <div
-                      key={order.id}
-                      className="border rounded-lg p-4 space-y-3 hover:bg-gray-50 transition-colors"
-                    >
-                      <div className="flex justify-between items-start">
+                  {availableOrders.map((order) => {
+                    const isAutoAssigned =
+                      order.delivery_partner_id === user?.id &&
+                      order.status === "dispatched";
+
+                    return (
+                      <div
+                        key={order.id}
+                        className="border rounded-lg p-4 space-y-3 hover:bg-gray-50 transition-colors"
+                      >
+                        {/* Order info */}
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4" />
+                              <span className="font-medium">
+                                {order.profiles?.full_name}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Phone className="h-4 w-4" />
+                              <span>
+                                {order.profiles?.phone ||
+                                  order.profiles?.phone_number}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <MapPin className="h-4 w-4" />
+                              <span>{order.delivery_address}</span>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <Badge className={getStatusColor(order.status)}>
+                              {order.status.replace("_", " ")}
+                            </Badge>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {order.estimated_delivery}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Order items */}
                         <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4" />
-                            <span className="font-medium">
-                              {order.profiles?.full_name}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Phone className="h-4 w-4" />
-                            <span>
-                              {order.profiles?.phone ||
-                                order.profiles?.phone_number}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <MapPin className="h-4 w-4" />
-                            <span>{order.delivery_address}</span>
+                          <p className="text-sm font-medium">Order Items:</p>
+                          {order.order_items?.map(
+                            (item: any, index: number) => (
+                              <p
+                                key={index}
+                                className="text-sm text-muted-foreground"
+                              >
+                                {item.quantity}x {item.products?.name}
+                              </p>
+                            )
+                          )}
+                        </div>
+
+                        {/* Buttons or Auto-Accept info */}
+                        <div className="flex justify-between items-center pt-2 border-t">
+                          <span className="font-semibold text-lg">
+                            Rs{" "}
+                            {parseFloat(
+                              order.total_amount?.toString() || "0"
+                            ).toFixed(2)}
+                          </span>
+                          <div className="flex gap-2">
+                            {!order.delivery_partner_id ? (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() =>
+                                    rejectOrder(order.id.toString())
+                                  }
+                                >
+                                  Reject
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={() =>
+                                    handleAcceptOrder(order.id.toString())
+                                  }
+                                  disabled={acceptOrderMutation.isPending}
+                                  className="bg-green-600 hover:bg-green-700"
+                                >
+                                  {acceptOrderMutation.isPending
+                                    ? "Accepting..."
+                                    : "Accept Order"}
+                                </Button>
+                              </>
+                            ) : (
+                              <span className="text-green-600 font-medium">
+                                Auto-assigned by Admin
+                              </span>
+                            )}
                           </div>
                         </div>
-                        <div className="text-right">
-                          <Badge className={getStatusColor(order.status)}>
-                            {order.status === "dispatched"
-                              ? "Accepted"
-                              : order.status.replace("_", " ")}
-                          </Badge>
-
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {order.estimated_delivery}
-                          </p>
-                        </div>
                       </div>
-
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium">Order Items:</p>
-                        {order.order_items?.map((item: any, index: number) => (
-                          <p
-                            key={index}
-                            className="text-sm text-muted-foreground"
-                          >
-                            {item.quantity}x {item.products?.name}
-                          </p>
-                        ))}
-                      </div>
-
-                      <div className="flex justify-between items-center pt-2 border-t">
-                        <span className="font-semibold text-lg">
-                          Rs{" "}
-                          {parseFloat(
-                            order.total_amount?.toString() || "0"
-                          ).toFixed(2)}
-                        </span>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => rejectOrder(order.id.toString())}
-                            disabled={order.status !== "ready_for_pickup"}
-                          >
-                            Reject
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={() =>
-                              handleAcceptOrder(order.id.toString())
-                            }
-                            disabled={acceptOrderMutation.isPending}
-                            className="bg-green-600 hover:bg-green-700"
-                          >
-                            {acceptOrderMutation.isPending
-                              ? "Accepting..."
-                              : "Accept Order"}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="text-center text-muted-foreground py-8">
@@ -759,9 +751,7 @@ const DeliveryDashboard = () => {
                         </div>
                       </div>
                       <Badge className={getStatusColor(order.status)}>
-                        {order.status === "dispatched"
-                          ? "Accepted"
-                          : order.status.replace("_", " ")}
+                        {order.status.replace("_", " ")}
                       </Badge>
                     </div>
 
