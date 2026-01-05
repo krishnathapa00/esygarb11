@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,12 +34,35 @@ const DeliveryDashboard = () => {
     audio.current = new Audio("/sounds/notification.wav");
   }, []);
 
+  useEffect(() => {
+    window.addEventListener("click", unlockAudio, { once: true });
+
+    return () => {
+      window.removeEventListener("click", unlockAudio);
+    };
+  }, []);
+
   const playNotificationSound = () => {
     if (audio.current) {
-      audio.current.play().catch((err) => {
-        console.error("Audio play failed:", err);
+      audio.current.play().catch(() => {
+        unlockAudio();
       });
     }
+  };
+
+  const unlockAudio = () => {
+    if (!audio.current) return;
+
+    audio.current.volume = 0;
+    audio.current
+      .play()
+      .then(() => {
+        audio.current.pause();
+        audio.current.currentTime = 0;
+        audio.current.volume = 1;
+        window.removeEventListener("click", unlockAudio);
+      })
+      .catch(() => {});
   };
 
   // Refresh data when window regains focus
@@ -66,7 +89,8 @@ const DeliveryDashboard = () => {
         `
         )
         .or(
-          `delivery_partner_id.eq.${user?.id},status.in.(ready_for_pickup,confirmed,dispatched)`
+          `delivery_partner_id.eq.${user?.id},
+         status.eq.ready_for_pickup`
         )
         .order("created_at", { ascending: false });
 
@@ -75,6 +99,10 @@ const DeliveryDashboard = () => {
     },
     enabled: !!user?.id,
   });
+
+  const fetchOrdersCallback = useCallback(() => {
+    fetchOrders();
+  }, [fetchOrders]);
 
   // Fetch earnings with React Query
   const { data: earnings = [] } = useQuery({
@@ -103,18 +131,21 @@ const DeliveryDashboard = () => {
       const { error } = await supabase
         .from("orders")
         .update(updateData)
-        .eq("id", orderId);
+        .eq("id", orderId)
+        .is("delivery_partner_id", null)
+        .eq("status", "ready_for_pickup");
 
       if (error) throw error;
       return orderId;
     },
-    onSuccess: () => {
+    onSuccess: (orderId) => {
       queryClient.invalidateQueries({ queryKey: ["orders", user?.id] });
       toast({
         title: "Order Accepted",
         description:
           "Order has been assigned to you. Navigate to start delivery.",
       });
+      navigate(`/delivery-partner/navigate/${orderId}`);
     },
     onError: (error) => {
       console.error("Error accepting order:", error);
@@ -170,14 +201,11 @@ const DeliveryDashboard = () => {
           table: "orders",
         },
         (payload) => {
-          const newStatus = payload.new?.status;
-          const oldStatus = payload.old?.status;
-
           if (
-            oldStatus !== "ready_for_pickup" &&
-            newStatus === "ready_for_pickup"
+            payload.new?.status === "ready_for_pickup" &&
+            !payload.new?.delivery_partner_id
           ) {
-            fetchOrders();
+            fetchOrdersCallback();
             playNotificationSound();
             vibrateDevice();
             showPushNotification(payload.new);
@@ -192,8 +220,11 @@ const DeliveryDashboard = () => {
           table: "orders",
         },
         (payload) => {
-          if (payload.new?.status === "ready_for_pickup") {
-            fetchOrders();
+          if (
+            payload.new?.status === "ready_for_pickup" &&
+            !payload.new?.delivery_partner_id
+          ) {
+            fetchOrdersCallback();
             playNotificationSound();
             vibrateDevice();
             showPushNotification(payload.new);
@@ -291,8 +322,6 @@ const DeliveryDashboard = () => {
 
   const handleAcceptOrder = (orderId: string) => {
     acceptOrderMutation.mutate(orderId);
-    // Navigate to delivery map navigation page
-    navigate(`/delivery-partner/navigate/${orderId}`);
   };
 
   const rejectOrder = async (orderId: string) => {
@@ -305,7 +334,8 @@ const DeliveryDashboard = () => {
           status: "ready_for_pickup",
         })
         .eq("id", orderId)
-        .eq("delivery_partner_id", user?.id);
+        .eq("delivery_partner_id", user?.id)
+        .eq("status", "ready_for_pickup");
 
       if (error) throw error;
 
@@ -330,7 +360,7 @@ const DeliveryDashboard = () => {
     switch (status) {
       case "ready_for_pickup":
         return "bg-blue-100 text-blue-800";
-      case "accepted":
+      case "dispatched": // accepted
         return "bg-yellow-100 text-yellow-800";
       case "out_for_delivery":
         return "bg-orange-100 text-orange-800";
@@ -378,18 +408,14 @@ const DeliveryDashboard = () => {
     isOnline && kycStatus === "approved"
       ? orders.filter(
           (order) =>
-            (order.status === "ready_for_pickup" ||
-              order.status === "confirmed" ||
-              order.status === "dispatched") &&
-            (!order.delivery_partner_id ||
-              order.delivery_partner_id === user?.id)
+            order.status === "ready_for_pickup" && !order.delivery_partner_id
         )
       : [];
 
   const myActiveOrders = orders.filter(
     (order) =>
       order.delivery_partner_id === user.id &&
-      !["delivered", "cancelled"].includes(order.status)
+      ["dispatched", "out_for_delivery"].includes(order.status)
   );
 
   const recentDeliveries = orders
@@ -627,8 +653,11 @@ const DeliveryDashboard = () => {
                         </div>
                         <div className="text-right">
                           <Badge className={getStatusColor(order.status)}>
-                            {order.status.replace("_", " ")}
+                            {order.status === "dispatched"
+                              ? "Accepted"
+                              : order.status.replace("_", " ")}
                           </Badge>
+
                           <p className="text-sm text-muted-foreground mt-1">
                             {order.estimated_delivery}
                           </p>
@@ -659,6 +688,7 @@ const DeliveryDashboard = () => {
                             size="sm"
                             variant="outline"
                             onClick={() => rejectOrder(order.id.toString())}
+                            disabled={order.status !== "ready_for_pickup"}
                           >
                             Reject
                           </Button>
@@ -729,7 +759,9 @@ const DeliveryDashboard = () => {
                         </div>
                       </div>
                       <Badge className={getStatusColor(order.status)}>
-                        {order.status.replace("_", " ")}
+                        {order.status === "dispatched"
+                          ? "Accepted"
+                          : order.status.replace("_", " ")}
                       </Badge>
                     </div>
 
@@ -801,4 +833,3 @@ const DeliveryDashboard = () => {
 };
 
 export default DeliveryDashboard;
-
