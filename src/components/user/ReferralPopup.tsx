@@ -24,10 +24,10 @@ const ReferralPopup = ({ isOpen, onClose, isLoggedIn }: ReferralPopupProps) => {
         <div className="bg-gradient-to-br from-primary to-primary/80 p-6 text-primary-foreground relative">
           <DialogTitle className="text-xl font-bold flex items-center gap-2">
             <Gift className="w-6 h-6" />
-            Share with Friends & Earn!
+            Invite Friends. Get FREE Delivery.
           </DialogTitle>
           <p className="text-primary-foreground/90 text-sm mt-2">
-            Earn Rs.10 for every friend who joins using your referral link.
+            Invite friends. Get rewarded with FREE delivery on your next order!
           </p>
         </div>
 
