@@ -23,7 +23,7 @@ const banners = [
     title: (
       <>
         10% OFF <br />
-        First Order Free Delivery
+        First Order + Free Delivery
       </>
     ),
     subtitle: "Use Promo Code: FLAT10 (Valid for 1 Week)",
