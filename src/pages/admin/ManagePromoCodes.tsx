@@ -345,7 +345,9 @@ const ManagePromoCodes = () => {
                           ? `${promo.discount_value}%`
                           : `NPR ${promo.discount_value}`}
                       </div>
-                      {promo.max_discount_amount && (
+                      {promo.max_discount_amount !== null &&
+                       promo.max_discount_amount !== undefined &&
+                       promo.max_discount_amount > 0 && (
                         <div className="text-xs text-muted-foreground">
                           Max: NPR {promo.max_discount_amount}
                         </div>
