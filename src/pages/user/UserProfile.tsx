@@ -239,7 +239,7 @@ const UserProfile = () => {
         icon: Gift,
         label: "Refer & Earn",
         href: "/referral",
-        description: "Earn Rs 10 per referral",
+        description: "Earn 1 Free Delivery per referral",
       },
       {
         icon: History,
