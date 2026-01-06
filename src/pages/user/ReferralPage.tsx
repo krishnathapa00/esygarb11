@@ -22,8 +22,6 @@ const ReferralPage = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [referralCodeId, setReferralCodeId] = useState<number | null>(null);
-  const [walletBalance, setWalletBalance] = useState(0);
-
   const [earnedRewards, setEarnedRewards] = useState(0);
 
   const [copied, setCopied] = useState(false);
@@ -81,7 +79,7 @@ const ReferralPage = () => {
 
     setAppliedReferralCode(inputCode.trim().toUpperCase());
     toast({
-      title: "Congratulations!",
+      title: "Free Delivery Unlocked!",
       description: "Referral code applied successfully.",
     });
   };
@@ -116,11 +114,11 @@ const ReferralPage = () => {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("wallet_balance")
+        .select("free_delivery_count")
         .eq("id", userId)
         .single();
 
-      setWalletBalance(profile?.wallet_balance || 0);
+      setEarnedRewards(profile?.free_delivery_count || 0);
 
       /** Fetch referral code + ID in a single query */
       const { data: referral, error: codeErr } = await supabase
@@ -150,14 +148,13 @@ const ReferralPage = () => {
       setReferralCode(code);
       setReferralCodeId(codeId);
 
-      /** Fetch all referral uses for this code (only ONE query) */
+      /** Fetch all referral uses for this code */
       const { data: uses } = await supabase
         .from("referral_uses")
         .select("*")
         .eq("referral_code_id", codeId);
 
-      const approved = uses?.filter((u) => u.approved).length || 0;
-      setEarnedRewards(approved);
+      setEarnedRewards(profile?.free_delivery_count || 0);
 
       setLoading(false);
     };
@@ -187,8 +184,8 @@ const ReferralPage = () => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "Get Rs.10 on EsyGrab!",
-          text: `Use my referral code ${referralCode}!`,
+          title: "Get Free Delivery on EsyGrab!",
+          text: `Use my referral code ${referralCode} and unlock free delivery!`,
           url: referralLink,
         });
       } catch {
@@ -225,9 +222,11 @@ const ReferralPage = () => {
               <Gift className="w-8 h-8" />
             </div>
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold">Refer & Earn</h1>
+              <h1 className="text-2xl md:text-3xl font-bold">
+                Unlock Free Delivery!
+              </h1>
               <p className="text-sm md:text-base text-muted-foreground">
-                Share the love, earn rewards!
+                Invite friends and get FREE delivery on your next orders.
               </p>
             </div>
           </div>
@@ -241,8 +240,8 @@ const ReferralPage = () => {
           {/* Stat Card */}
           <StatCard
             icon={<Gift className="text-white" />}
-            label="Total Rewards Earned"
-            value={`Rs ${walletBalance}`}
+            label="Free Deliveries Earned"
+            value={`${earnedRewards}`}
             color="bg-green-500"
           />
 
@@ -256,7 +255,8 @@ const ReferralPage = () => {
                   🎉 <strong>Congratulations!</strong>
                   <br />
                   You applied code{" "}
-                  <span className="font-mono">{appliedReferralCode}</span>
+                  <span className="font-mono">{appliedReferralCode}</span> and
+                  unlocked FREE delivery!
                 </div>
               ) : (
                 <div className="flex gap-3 flex-col sm:flex-row">
@@ -301,24 +301,18 @@ const ReferralPage = () => {
             <ul className="space-y-4 text-sm text-muted-foreground">
               <li className="flex items-start gap-3">
                 <span className="mt-1 w-2 h-2 rounded-full bg-primary"></span>
-                <p>
-                  <strong>User must be within New Baneshwor</strong> for the
-                  referral to be valid.
-                </p>
+                <p>Only new users can count for free delivery rewards.</p>
               </li>
               <li className="flex items-start gap-3">
                 <span className="mt-1 w-2 h-2 rounded-full bg-primary"></span>
                 <p>
-                  User must <strong>complete their profile</strong> and select{" "}
-                  <strong>auto-detected location</strong>.
+                  Each friend = 1 FREE delivery automatically applied at
+                  checkout.
                 </p>
               </li>
               <li className="flex items-start gap-3">
                 <span className="mt-1 w-2 h-2 rounded-full bg-primary"></span>
-                <p>
-                  Manually typed locations will <strong>NOT</strong> be
-                  accepted.
-                </p>
+                <p>Sharing your referral code multiple times is encouraged!</p>
               </li>
               <li className="flex items-start gap-3">
                 <span className="mt-1 w-2 h-2 rounded-full bg-primary"></span>
