@@ -3,20 +3,33 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const banners = [
+  // {
+  //   id: 1,
+  //   title: (
+  //     <>
+  //       Service Hours:
+  //       <br />
+  //       10 AM - 5 PM
+  //     </>
+  //   ),
+  //   subtitle:
+  //     "All services are available during our standard operating hours. Expect delivery within 10 minutes.",
+  //   backgroundColor: "from-green-600 to-emerald-600",
+  //   image: null,
+  //   altText: "Service Hours",
+  // },
   {
     id: 1,
     title: (
       <>
-        Service Hours:
-        <br />
-        5 PM - 9 PM
+        10% OFF <br />
+        First Order Free Delivery
       </>
     ),
-    subtitle:
-      "All services are available during our standard operating hours. Expect delivery within 10 minutes.",
-    backgroundColor: "from-green-600 to-emerald-600",
-    image: null,
-    altText: "Service Hours",
+    subtitle: "Use Promo Code: FLAT10 (Valid for 1 Week)",
+    backgroundColor: "from-purple-600 to-pink-600",
+    image: "/images/flatdiscount.jpeg",
+    altText: "FLAT10 Promo",
   },
   {
     id: 2,
@@ -106,7 +119,7 @@ const BannerCarousel = () => {
                         ? banner.title
                         : "Banner image"
                     }
-                    className="w-full h-40 lg:h-48 object-cover rounded-xl shadow-lg"
+                    className="w-full h-40 lg:h-56 object-fill rounded-xl shadow-lg"
                   />
                 </div>
               )}
