@@ -130,7 +130,7 @@ const Checkout = () => {
     [cart]
   );
 
-  const FREE_DELIVERY_THRESHOLD = 200;
+  const FREE_DELIVERY_THRESHOLD = 400;
 
   const hasFreeDelivery =
     orderCount === 0 || totalPrice >= FREE_DELIVERY_THRESHOLD;
