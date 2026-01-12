@@ -63,6 +63,9 @@ const Checkout = () => {
   const { cart, resetCart, mergeGuestCart } = useCart();
   const { profile, updateProfile } = useUserProfile();
 
+  const [freeDeliveryCount, setFreeDeliveryCount] = useState(0);
+  const [useFreeDelivery, setUseFreeDelivery] = useState(false);
+
   const [deliveryCoords, setDeliveryCoords] = useState(null);
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [isWithinRange, setIsWithinRange] = useState(true);
@@ -131,12 +134,11 @@ const Checkout = () => {
   );
 
   const FREE_DELIVERY_THRESHOLD = 400;
-
   const hasFreeDelivery =
-    orderCount === 0 || totalPrice >= FREE_DELIVERY_THRESHOLD;
-
+    useFreeDelivery ||
+    orderCount === 0 ||
+    totalPrice >= FREE_DELIVERY_THRESHOLD;
   const deliveryFee = hasFreeDelivery ? 0 : baseDeliveryFee;
-
   const totalAmount = totalPrice + deliveryFee - promoDiscount;
 
   const needsProfileCompletion =
@@ -230,7 +232,6 @@ const Checkout = () => {
   }, [deliveryCoords]);
 
   // Fetch previous order count
-
   useEffect(() => {
     if (!user) return;
 
@@ -239,6 +240,32 @@ const Checkout = () => {
       .select("id", { count: "exact" })
       .eq("user_id", user.id)
       .then(({ count }) => setOrderCount(count ?? 0));
+  }, [user]);
+
+  // Fetch free delivery rewards
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchFreeDelivery = async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("free_delivery_count")
+        .eq("user_id", user.id)
+        .single();
+
+      if (error) {
+        toast({
+          title: "Failed to load rewards",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setFreeDeliveryCount(data?.free_delivery_count ?? 0);
+    };
+
+    fetchFreeDelivery();
   }, [user]);
 
   // Auth + guest cart restore
@@ -353,6 +380,16 @@ const Checkout = () => {
         .single();
 
       if (error) throw error;
+
+      // Deduct free delivery reward if used
+      if (useFreeDelivery && freeDeliveryCount > 0) {
+        await supabase
+          .from("profiles")
+          .update({ free_delivery_count: freeDeliveryCount - 1 })
+          .eq("user_id", user.id);
+
+        setFreeDeliveryCount((prev) => prev - 1);
+      }
 
       // Insert promo usage
       if (order && appliedPromo) {
@@ -556,7 +593,17 @@ const Checkout = () => {
                 <span>Subtotal ({totalItems} items)</span>
                 <span>Rs {totalPrice}</span>
               </div>
-
+              {freeDeliveryCount > 0 && (
+                <Button
+                  variant={useFreeDelivery ? "secondary" : "outline"}
+                  className="w-full text-sm mb-2"
+                  onClick={() => setUseFreeDelivery(!useFreeDelivery)}
+                >
+                  {useFreeDelivery
+                    ? `Using 1 Free Delivery Reward`
+                    : `Use 1 Free Delivery Reward (${freeDeliveryCount} available)`}
+                </Button>
+              )}
               <div className="flex justify-between">
                 <span>Delivery Fee</span>
                 <span>Rs {deliveryFee}</span>
