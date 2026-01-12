@@ -621,7 +621,7 @@ const Checkout = () => {
                 <p className="text-xs text-green-600 mt-1">
                   {orderCount === 0
                     ? "Enjoy free delivery on your first order!"
-                    : "Free delivery on orders of Rs 200 or more!"}
+                    : "Free delivery on orders of Rs 400 or more!"}
                 </p>
               )}
 
