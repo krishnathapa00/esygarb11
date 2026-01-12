@@ -44,6 +44,8 @@ const CartPage = () => {
   const [promoDiscount, setPromoDiscount] = useState(0);
   const [isManualPromo, setIsManualPromo] = useState(false);
 
+  const [freeDeliveryCount, setFreeDeliveryCount] = useState(0);
+
   const [orderCount, setOrderCount] = useState<number | null>(null);
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -51,10 +53,6 @@ const CartPage = () => {
     (sum, item) => sum + item.price * item.quantity,
     0
   );
-
-  // useEffect(() => {
-  //   window.scrollTo(0, 0);
-  // }, []);
 
   const validatePromoAgainstCart = (promo: PromoCode | null) => {
     if (!promo) return false;
@@ -131,6 +129,24 @@ const CartPage = () => {
 
   const discountAmount = promoDiscount;
   const totalAmount = totalPrice + deliveryFee - discountAmount;
+
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchFreeDeliveryCount = async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("free_delivery_count")
+        .eq("user_id", user.id)
+        .single();
+
+      if (!error) {
+        setFreeDeliveryCount(data?.free_delivery_count ?? 0);
+      }
+    };
+
+    fetchFreeDeliveryCount();
+  }, [user]);
 
   useEffect(() => {
     const fetchOrderCount = async () => {
@@ -519,6 +535,14 @@ const CartPage = () => {
                   <span>Delivery Fee</span>
                   <span>Rs {deliveryFee}</span>
                 </div>
+
+                {freeDeliveryCount > 0 && (
+                  <p className="text-xs text-green-600 mt-1">
+                    You have {freeDeliveryCount} free delivery reward
+                    {freeDeliveryCount > 1 ? "s" : ""}. Use them at checkout.
+                  </p>
+                )}
+
                 {deliveryFee === 0 ? (
                   orderCount === 0 ? (
                     <p className="text-xs text-green-600">
@@ -526,7 +550,7 @@ const CartPage = () => {
                     </p>
                   ) : (
                     <p className="text-xs text-green-600">
-                      Free delivery on orders of Rs 200 or more!
+                      Free delivery on orders of Rs 400 or more!
                     </p>
                   )
                 ) : (
