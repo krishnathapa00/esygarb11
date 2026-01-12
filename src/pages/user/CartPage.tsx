@@ -118,7 +118,7 @@ const CartPage = () => {
 
   const baseDeliveryFee = deliveryConfig?.delivery_fee ?? 10;
 
-  const FREE_DELIVERY_THRESHOLD = 200;
+  const FREE_DELIVERY_THRESHOLD = 400;
   const remainingForFreeDelivery =
     totalPrice < FREE_DELIVERY_THRESHOLD
       ? FREE_DELIVERY_THRESHOLD - totalPrice
