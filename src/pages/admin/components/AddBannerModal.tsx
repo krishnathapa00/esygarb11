@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,12 +18,14 @@ interface AddBannerModalProps {
   isOpen: boolean;
   onClose: () => void;
   onBannerAdded: () => void;
+  banner?: any | null;
 }
 
 const AddBannerModal = ({
   isOpen,
   onClose,
   onBannerAdded,
+  banner,
 }: AddBannerModalProps) => {
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
@@ -32,28 +34,49 @@ const AddBannerModal = ({
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleAddBanner = async () => {
+  useEffect(() => {
+    if (banner) {
+      setTitle(banner.title || "");
+      setSubtitle(banner.subtitle || "");
+      setImage(banner.image_url || "");
+      setGradient(
+        BANNER_GRADIENTS.find(
+          (g) => g.from === banner.gradient_from && g.to === banner.gradient_to
+        ) || BANNER_GRADIENTS[0]
+      );
+    } else {
+      setTitle("");
+      setSubtitle("");
+      setImage("");
+      setGradient(BANNER_GRADIENTS[0]);
+    }
+  }, [banner, isOpen]);
+
+  const handleSaveBanner = async () => {
     if (!title)
       return toast({ title: "Title is required", variant: "destructive" });
 
     setLoading(true);
-    const { error } = await supabase.from("banners").insert([
-      {
-        title,
-        subtitle,
-        image_url: image || null,
-        gradient_from: gradient.from,
-        gradient_to: gradient.to,
-        sort_order: 0,
-        is_active: true,
-      },
-    ]);
+
+    const payload = {
+      title,
+      subtitle,
+      image_url: image || null,
+      gradient_from: gradient.from,
+      gradient_to: gradient.to,
+    };
+
+    const { error } = banner
+      ? await supabase.from("banners").update(payload).eq("id", banner.id)
+      : await supabase
+          .from("banners")
+          .insert([{ ...payload, sort_order: 0, is_active: true }]);
+
     setLoading(false);
 
     if (error) {
-      console.log(error);
       return toast({
-        title: "Failed to add banner",
+        title: "Failed to save banner",
         description: error.message,
         variant: "destructive",
       });
@@ -61,10 +84,6 @@ const AddBannerModal = ({
 
     onBannerAdded();
     onClose();
-    setTitle("");
-    setSubtitle("");
-    setImage("");
-    setGradient(BANNER_GRADIENTS[0]);
   };
 
   if (!isOpen) return null;
@@ -83,7 +102,7 @@ const AddBannerModal = ({
         {/* Form Section */}
         <div className="flex-1 flex flex-col gap-6 p-6 bg-card rounded-2xl shadow-md">
           <h2 className="text-2xl font-extrabold text-gray-900">
-            Add New Banner
+            {banner ? "Edit Banner" : "Add New Banner"}
           </h2>
 
           {/* Title & Subtitle */}
@@ -146,14 +165,14 @@ const AddBannerModal = ({
               ))}
             </div>
           </div>
-
-          {/* Submit Button */}
-          <Button
-            onClick={handleAddBanner}
-            disabled={loading}
-            className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-md transition-all duration-200"
-          >
-            {loading ? "Adding..." : "Add Banner"}
+          <Button onClick={handleSaveBanner} disabled={loading}>
+            {loading
+              ? banner
+                ? "Saving..."
+                : "Adding..."
+              : banner
+              ? "Save Changes"
+              : "Add Banner"}
           </Button>
         </div>
       </div>
