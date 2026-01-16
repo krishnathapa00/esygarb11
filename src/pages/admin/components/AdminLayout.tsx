@@ -11,6 +11,8 @@ import {
   LogOut,
   Menu,
   X,
+  Image,
+  UserCheck,
 } from "lucide-react";
 import { useOrderAlert } from "@/hooks/useOrderAlert";
 import { supabase } from "@/integrations/supabase/client";
@@ -129,13 +131,14 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           <NavItem to="/admin/products" icon={Package} label="Products" />
           <NavItem to="/admin/categories" icon={Tag} label="Categories" />
           <NavItem to="/admin/users" icon={Users} label="Users" />
-          <NavItem to="/admin/kyc" icon={Users} label="KYC Verification" />
+          <NavItem to="/admin/kyc" icon={UserCheck} label="KYC Verification" />
           <NavItem
             to="/admin/delivery-partners"
             icon={Truck}
             label="Delivery Partners"
           />
           <NavItem to="/admin/promo-codes" icon={Tag} label="Promo Codes" />
+          <NavItem to="/admin/banners" icon={Image} label="Banners" />
           <NavItem
             to="/admin/delivery-settings"
             icon={Truck}
