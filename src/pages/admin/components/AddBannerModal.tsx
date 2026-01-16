@@ -66,22 +66,49 @@ const AddBannerModal = ({
       gradient_to: gradient.to,
     };
 
-    const { error } = banner
-      ? await supabase.from("banners").update(payload).eq("id", banner.id)
-      : await supabase
-          .from("banners")
-          .insert([{ ...payload, sort_order: 0, is_active: true }]);
+    if (banner) {
+      // Editing existing banner
+      const { error } = await supabase
+        .from("banners")
+        .update(payload)
+        .eq("id", banner.id);
 
-    setLoading(false);
+      if (error) {
+        setLoading(false);
+        return toast({
+          title: "Failed to save banner",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    } else {
+      // Adding new banner
+      const { data: existingBanners } = await supabase
+        .from("banners")
+        .select("sort_order")
+        .order("sort_order", { ascending: false })
+        .limit(1);
 
-    if (error) {
-      return toast({
-        title: "Failed to save banner",
-        description: error.message,
-        variant: "destructive",
-      });
+      const nextSortOrder =
+        existingBanners && existingBanners.length > 0
+          ? existingBanners[0].sort_order + 1
+          : 1;
+
+      const { error } = await supabase
+        .from("banners")
+        .insert([{ ...payload, sort_order: nextSortOrder, is_active: true }]);
+
+      if (error) {
+        setLoading(false);
+        return toast({
+          title: "Failed to add banner",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     }
 
+    setLoading(false);
     onBannerAdded();
     onClose();
   };
