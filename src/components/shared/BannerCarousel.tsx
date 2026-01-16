@@ -1,69 +1,35 @@
 import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-const banners = [
-  // {
-  //   id: 1,
-  //   title: (
-  //     <>
-  //       Service Hours:
-  //       <br />
-  //       10 AM - 5 PM
-  //     </>
-  //   ),
-  //   subtitle:
-  //     "All services are available during our standard operating hours. Expect delivery within 10 minutes.",
-  //   backgroundColor: "from-green-600 to-emerald-600",
-  //   image: null,
-  //   altText: "Service Hours",
-  // },
-  {
-    id: 1,
-    title: (
-      <>
-        10% OFF <br />
-        First Order + Free Delivery
-      </>
-    ),
-    subtitle: "Use Promo Code: FLAT10 (Valid for 1 Week)",
-    backgroundColor: "from-purple-600 to-pink-600",
-    image: "/images/flatdiscount.jpeg",
-    altText: "FLAT10 Promo",
-  },
-  {
-    id: 2,
-    title: "Fresh Groceries Delivered in 10 Minutes!",
-    subtitle:
-      "Get farm-fresh vegetables, fruits, and daily essentials delivered to your doorstep",
-    backgroundColor: "from-green-500 to-emerald-600",
-    image:
-      "https://images.unsplash.com/photo-1542838132-92c53300491e?w=600&h=300&fit=crop",
-  },
-  {
-    id: 3,
-    title: "Save Big on Your Daily Essentials",
-    subtitle:
-      "Up to 30% off on fruits, vegetables, and household items this week",
-    backgroundColor: "from-blue-500 to-cyan-600",
-    image:
-      "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&h=300&fit=crop",
-  },
-  {
-    id: 4,
-    title: "Premium Quality, Guaranteed Fresh",
-    subtitle:
-      "Hand-picked produce from local farms, quality assured by our experts",
-    backgroundColor: "from-orange-500 to-amber-600",
-    image:
-      "https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=600&h=300&fit=crop",
-  },
-];
+import { supabase } from "@/integrations/supabase/client";
 
 const BannerCarousel = () => {
+  const [banners, setBanners] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
+    const fetchBanners = async () => {
+      const { data, error } = await supabase
+        .from("banners")
+        .select("*")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+
+      if (error) {
+        console.error("Failed to fetch banners:", error);
+        return;
+      }
+
+      setBanners(data || []);
+      setLoading(false);
+    };
+
+    fetchBanners();
+  }, []);
+
+  useEffect(() => {
+    if (banners.length === 0) return;
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % banners.length);
     }, 5000);
@@ -79,6 +45,16 @@ const BannerCarousel = () => {
     setCurrentSlide((prev) => (prev - 1 + banners.length) % banners.length);
   };
 
+  if (!loading && banners.length === 0) {
+    return null;
+  }
+
+  if (loading) {
+    return (
+      <div className="h-48 md:h-64 lg:h-80 rounded-2xl bg-muted animate-pulse mb-8" />
+    );
+  }
+
   return (
     <div className="relative overflow-hidden rounded-2xl h-48 md:h-64 lg:h-80 mb-8">
       <div
@@ -88,11 +64,11 @@ const BannerCarousel = () => {
         {banners.map((banner) => (
           <div
             key={banner.id}
-            className={`w-full h-full flex-shrink-0 bg-gradient-to-r ${banner.backgroundColor} relative`}
+            className={`w-full h-full flex-shrink-0 bg-gradient-to-r ${banner.gradient_from} ${banner.gradient_to} relative`}
           >
             <div
               className={`absolute inset-0 flex flex-col justify-center items-center text-center p-6 md:p-8 lg:p-12 ${
-                banner.image
+                banner.image_url
                   ? "md:flex-row md:justify-between md:text-left"
                   : ""
               }`}
@@ -108,10 +84,10 @@ const BannerCarousel = () => {
                 )}
               </div>
 
-              {banner.image && (
+              {banner.image_url && (
                 <div className="hidden md:block flex-1 max-w-xs lg:max-w-md">
                   <img
-                    src={banner.image}
+                    src={banner.image_url}
                     alt={
                       banner.altText
                         ? banner.altText
