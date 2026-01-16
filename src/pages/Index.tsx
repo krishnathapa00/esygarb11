@@ -12,8 +12,8 @@ import {
   ServiceUnavailableMessage,
 } from "@/components/shared";
 // import { ReferralPopup } from "@/components/user";
-import FoodAnnouncementSection from "@/components/food/FoodAnnouncementSection";
-import FoodPreviewSlider from "@/components/food/FoodPreviewSlider";
+// import FoodAnnouncementSection from "@/components/food/FoodAnnouncementSection";
+// import FoodPreviewSlider from "@/components/food/FoodPreviewSlider";
 import OutageModal from "./user/Outage";
 
 const Index = () => {
