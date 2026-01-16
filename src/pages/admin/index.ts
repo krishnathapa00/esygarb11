@@ -18,3 +18,5 @@ export { default as ManagePromoCodes } from "./ManagePromoCodes";
 export { default as ManageUsers } from "./ManageUsers";
 export { default as OrderDetails } from "./OrderDetails";
 export { default as Transactions } from "./Transactions";
+export { default as AdminBannerPage } from "./AdminBannerPage";
+
