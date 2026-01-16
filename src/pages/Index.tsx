@@ -11,7 +11,10 @@ import {
   ProductSection,
   ServiceUnavailableMessage,
 } from "@/components/shared";
-import { ReferralPopup } from "@/components/user";
+// import { ReferralPopup } from "@/components/user";
+import FoodAnnouncementSection from "@/components/food/FoodAnnouncementSection";
+import FoodPreviewSlider from "@/components/food/FoodPreviewSlider";
+import OutageModal from "./user/Outage";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -61,8 +64,12 @@ const Index = () => {
     navigate(`/product/${productId}`);
   };
 
+  const nonFoodProducts = filteredProducts.filter(
+    (product) => product.categorySlug !== "food-items"
+  );
+
   // Group products by category dynamically and sort categories
-  const productsByCategory = filteredProducts.reduce((acc, product) => {
+  const productsByCategory = nonFoodProducts.reduce((acc, product) => {
     const categoryId = product.categoryId ?? -1;
     const categoryName = product.category || "Other";
     const categorySlug = product.categorySlug || "unknown";
@@ -130,6 +137,8 @@ const Index = () => {
         ) : (
           <>
             <BannerCarousel />
+
+            <FoodAnnouncementSection />
 
             <section className="mb-8">
               <CategoryGrid onCategorySelect={handleCategorySelect} />
