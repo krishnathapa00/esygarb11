@@ -74,6 +74,7 @@ import {
   AddProductNew,
   OrderDetails,
   ManagePromoCodes,
+  AdminBannerPage,
 } from "./pages/admin";
 
 import { useRequireCompleteProfile } from "./hooks/useRequireCompleteProfile";
@@ -334,6 +335,14 @@ const AppContent = () => {
             element={
               <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
                 <DeliverySettings />
+              </RoleProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/banners"
+            element={
+              <RoleProtectedRoute allowedRoles={["admin", "super_admin"]}>
+                <AdminBannerPage />
               </RoleProtectedRoute>
             }
           />
